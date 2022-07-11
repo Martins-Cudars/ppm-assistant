@@ -37,8 +37,46 @@ const calculateSkillWithExp = (skill, experience) => {
   return Math.round(skill * (1 + experience / 500));
 };
 
+const calculatePositionsQualities = (player) => {
+  const positionPotentials = [];
+
+  positionSettings.forEach((position) => {
+    let qualities = 0;
+    let modifier = 0;
+
+    for (const [key, value] of Object.entries(position.ratios)) {
+      qualities += player.qualities[key] * value;
+      modifier += value;
+    }
+
+    positionPotentials.push({
+      position: position.name,
+      potential: Math.min(qualities / modifier),
+    });
+  });
+
+  return positionPotentials;
+};
+
+const calculateBestPotential = (potentials) => {
+  let bestPotential = {
+    position: "Unknown",
+    potential: 0,
+  };
+
+  potentials.forEach((potential) => {
+    if (potential.potential > bestPotential.potential) {
+      bestPotential.position = potential.position;
+      bestPotential.potential = potential.potential;
+    }
+  });
+  return bestPotential;
+};
+
 export {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
+  calculatePositionsQualities,
+  calculateBestPotential,
 };

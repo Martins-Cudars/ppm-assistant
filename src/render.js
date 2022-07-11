@@ -27,4 +27,13 @@ const renderComparison = (skill) => {
   return ratingOuter;
 };
 
-export { renderTableCell, renderComparison };
+const renderPotential = (bestPotential) => {
+  const potential = document.createElement("div");
+  potential.classList.add("potential");
+  potential.textContent = `Best potential position is ${
+    bestPotential.position
+  } with ${Math.round(bestPotential.potential)}`;
+  return potential;
+};
+
+export { renderTableCell, renderComparison, renderPotential };

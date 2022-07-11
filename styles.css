@@ -1,13 +1,30 @@
+.player-profile {
+  font-size: 14px;
+  background-color: #fff;
+  border-bottom: 1px solid #cfcfcf;
+  border-radius: 5px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.comparison {
+  display: flex;
+  justify-content: center;
+}
+
 .rating {
   width: 80px;
   height: 29px;
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-empty.svg");
+  background-repeat: repeat-x;
+  background-size: 16px;
+  background-position: left center;
 }
 
 .rating__inner {
   height: 29px;
   background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star.svg");
   background-repeat: repeat-x;
-
   background-size: 16px;
   background-position: left center;
 }
