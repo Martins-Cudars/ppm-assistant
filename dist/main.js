@@ -165,55 +165,13 @@ const $18c53b0039ffc5db$export$c1975daa4eb91b44 = (bestPotential)=>{
         playerRow.appendChild(ratingTd);
     });
 };
-const $95930220612465e5$var$viewPlayerProfile = ()=>{
-    const playerTable = document.getElementById("table-1");
-    const player = {
-        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
-        skills: {
-            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
-            defence: parseInt(playerTable.querySelector("#defense").textContent),
-            offence: parseInt(playerTable.querySelector("#attack").textContent),
-            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
-            passing: parseInt(playerTable.querySelector("#passing").textContent),
-            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
-            aggression: parseInt(playerTable.querySelector("#aggressive").textContent)
-        },
-        qualities: {
-            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
-            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
-            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
-            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
-            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
-            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
-            aggression: parseInt(playerTable.querySelector("#kva_aggressive").textContent)
-        },
-        experience: parseInt(playerTable.querySelector("#experience").textContent),
-        overall: playerTable.querySelector("#index_skill").textContent
-    };
-    const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
-    const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
-    const contentColumn = document.querySelector(".column_left");
-    const content = document.createElement("div");
-    content.classList.add("player-profile");
-    const skill = document.createElement("div");
-    skill.classList.add("skill");
-    skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
-    content.appendChild(skill);
-    const comparison = document.createElement("div");
-    comparison.classList.add("comparison");
-    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)));
-    content.appendChild(comparison);
-    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
-    const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
-    content.appendChild(potential);
-    contentColumn.appendChild(content);
-};
 const $95930220612465e5$var$viewLineupChange = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
         head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("POS", "th1"));
         head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("RATING", "th1"));
     });
     playerRows.forEach((playerRow, index)=>{
         const playerColumns = playerRow.querySelectorAll("td");
@@ -234,8 +192,13 @@ const $95930220612465e5$var$viewLineupChange = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+        playerRow.appendChild(ratingTd);
     });
 };
 const $95930220612465e5$var$viewMarket = ()=>{
@@ -280,6 +243,49 @@ const $95930220612465e5$var$viewMarket = ()=>{
         ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
         playerRow.appendChild(ratingTd);
     });
+};
+const $95930220612465e5$var$viewPlayerProfile = ()=>{
+    const playerTable = document.getElementById("table-1");
+    const player = {
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#defense").textContent),
+            offence: parseInt(playerTable.querySelector("#attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            aggression: parseInt(playerTable.querySelector("#aggressive").textContent)
+        },
+        qualities: {
+            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
+            aggression: parseInt(playerTable.querySelector("#kva_aggressive").textContent)
+        },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+    const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
+    const contentColumn = document.querySelector(".column_left");
+    const content = document.createElement("div");
+    content.classList.add("player-profile");
+    const skill = document.createElement("div");
+    skill.classList.add("skill");
+    skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
+    content.appendChild(skill);
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)));
+    content.appendChild(comparison);
+    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+    const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
+    content.appendChild(potential);
+    contentColumn.appendChild(content);
 };
 /**
  * Run View Functions
