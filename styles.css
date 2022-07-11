@@ -1,0 +1,13 @@
+.rating {
+  width: 80px;
+  height: 29px;
+}
+
+.rating__inner {
+  height: 29px;
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star.svg");
+  background-repeat: repeat-x;
+
+  background-size: 16px;
+  background-position: left center;
+}

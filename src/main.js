@@ -1,94 +1,10 @@
-console.log("main.js loaded");
-/**
- * Settings
- */
-
-const positionSettings = [
-  {
-    name: "Goalie",
-    ratios: {
-      goalie: 1,
-      technical: 0.5,
-      passing: 0.5,
-    },
-  },
-  {
-    name: "Defence",
-    ratios: {
-      defence: 1,
-      passing: 0.5,
-      aggression: 0.5,
-    },
-  },
-  {
-    name: "Winger",
-    ratios: {
-      offence: 1,
-      technical: 0.5,
-      aggression: 0.5,
-    },
-  },
-  {
-    name: "Center",
-    ratios: {
-      offence: 1,
-      technical: 0.5,
-      passing: 0.5,
-    },
-  },
-];
-
-/**
- * Calculate Functions
- */
-
-calculateSkillWithExp = (skill, experience) => {
-  return Math.round(skill * (1 + experience / 500));
-};
-
-const calculatePositionsSkills = (player) => {
-  const positionSkills = [];
-  positionSettings.forEach((position) => {
-    const skills = [];
-
-    for (const [key, value] of Object.entries(position.ratios)) {
-      skills.push(parseInt(player.skills[key]) / value);
-    }
-
-    positionSkills.push({
-      position: position.name,
-      level: Math.min(...skills),
-    });
-  });
-
-  return positionSkills;
-};
-
-calculateBestPosition = (skills) => {
-  let bestPosition = {
-    position: "Unknown",
-    skill: 0,
-  };
-
-  skills.forEach((skill) => {
-    if (skill.level > bestPosition.skill) {
-      bestPosition.position = skill.position;
-      bestPosition.skill = skill.level;
-    }
-  });
-  return bestPosition;
-};
-
-/**
- * Render Functions
- */
-
-const renderTableCell = (content, cssClass) => {
-  const cell = document.createElement("td");
-  cell.classList.add(cssClass);
-  cell.textContent = content;
-  return cell;
-};
+import { positionSettings } from "./settings.js";
+import {
+  calculatePositionsSkills,
+  calculateBestPosition,
+  calculateSkillWithExp,
+} from "./calculations.js";
+import { renderTableCell, renderComparison } from "./render.js";
 
 /**
  * View Functions
@@ -107,6 +23,7 @@ const viewPlayerList = () => {
   tableHeads.forEach((head) => {
     head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
     head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
+    head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
   });
 
   playerRows.forEach((playerRow, index) => {
@@ -132,17 +49,22 @@ const viewPlayerList = () => {
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
     const skills = calculatePositionsSkills(player);
     const bestPosition = calculateBestPosition(skills);
+    const bestSkillWithExp = calculateSkillWithExp(
+      bestPosition.skill,
+      player.experience
+    );
 
     playerRow.appendChild(
       renderTableCell(bestPosition.position, `${rowClass}td1`)
     );
 
-    playerRow.appendChild(
-      renderTableCell(
-        calculateSkillWithExp(bestPosition.skill, player.experience),
-        `${rowClass}td2`
-      )
-    );
+    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
+
+    const ratingTd = document.createElement("td");
+    ratingTd.classList.add(`${rowClass}td1`);
+    ratingTd.appendChild(renderComparison(bestPosition.skill));
+
+    playerRow.appendChild(ratingTd);
   });
 };
 

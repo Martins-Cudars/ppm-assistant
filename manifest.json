@@ -3,11 +3,18 @@
   "description": "Build an Extension!",
   "version": "1.0",
   "manifest_version": 3,
+  "web_accessible_resources": [
+    {
+      "resources": ["src/icons/star.svg"],
+      "matches": ["https://hockey.powerplaymanager.com/*"],
+      "use_dynamic_url": true
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["https://hockey.powerplaymanager.com/*"],
       "css": ["styles.css"],
-      "js": ["main.js"]
+      "js": ["dist/main.js"]
     }
   ],
   "permissions": ["storage"]
