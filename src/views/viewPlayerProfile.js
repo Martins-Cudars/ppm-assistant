@@ -5,11 +5,7 @@ import {
   calculatePositionsQualities,
   calculateBestPotential,
 } from "~/src/calculations.js";
-import {
-  renderTableCell,
-  renderComparison,
-  renderPotential,
-} from "~/src/render.js";
+import { renderComparison, renderPotential } from "~/src/render.js";
 
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
