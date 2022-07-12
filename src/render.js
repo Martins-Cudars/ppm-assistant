@@ -41,8 +41,6 @@ const renderComparison = (skill) => {
   }
 
   ratingInner.setAttribute("style", `width: ${ratingPercentage}%`);
-  ratingOuter.setAttribute("alt", `${ratingPercentage}%`);
-
   ratingOuter.appendChild(ratingInner);
 
   return ratingOuter;

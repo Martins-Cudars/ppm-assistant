@@ -125,7 +125,6 @@ const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
         ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).high - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) * 100, 100);
     }
     ratingInner.setAttribute("style", `width: ${ratingPercentage}%`);
-    ratingOuter.setAttribute("alt", `${ratingPercentage}%`);
     ratingOuter.appendChild(ratingInner);
     return ratingOuter;
 };
