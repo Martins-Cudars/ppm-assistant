@@ -9,9 +9,6 @@ const renderTableCell = (content, cssClass) => {
 
 const renderComparison = (skill) => {
   const ratingPercentage = Math.min((skill / ratingSettings.low) * 100, 100);
-  console.log(
-    `skill is ${skill}, compared to ${ratingSettings.low}, is ${ratingPercentage}`
-  );
 
   const ratingOuter = document.createElement("div");
   const ratingInner = document.createElement("div");

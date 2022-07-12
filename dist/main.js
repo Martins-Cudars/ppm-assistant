@@ -107,7 +107,6 @@ const $18c53b0039ffc5db$export$b36ad6a61166502b = (content, cssClass)=>{
 };
 const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
     const ratingPercentage = Math.min(skill / (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low * 100, 100);
-    console.log(`skill is ${skill}, compared to ${(0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low}, is ${ratingPercentage}`);
     const ratingOuter = document.createElement("div");
     const ratingInner = document.createElement("div");
     ratingOuter.classList.add("rating");
@@ -216,6 +215,49 @@ var $8c58922ff46d23a2$export$2e2bcd8739ae039 = $8c58922ff46d23a2$var$viewPlayerP
 
 
 
+const $1367a000d1b1e933$var$viewLineupChange = ()=>{
+    const tables = document.querySelectorAll(".table");
+    tables.forEach((table)=>{
+        const tableHeads = table.querySelectorAll("thead");
+        const playerRows = table.querySelector("tbody").querySelectorAll("tr");
+        tableHeads.forEach((head)=>{
+            head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("POS", "th1"));
+            head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("SK", "th2"));
+            head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("RATING", "th1"));
+        });
+        playerRows.forEach((playerRow, index)=>{
+            const playerColumns = playerRow.querySelectorAll("td");
+            const player = {
+                name: playerColumns[1].textContent,
+                skills: {
+                    goalie: playerColumns[4].textContent,
+                    defence: playerColumns[5].textContent,
+                    offence: playerColumns[6].textContent,
+                    shooting: playerColumns[7].textContent,
+                    passing: playerColumns[8].textContent,
+                    technical: playerColumns[9].textContent,
+                    aggression: playerColumns[10].textContent
+                },
+                experience: parseInt(playerColumns[11].textContent)
+            };
+            const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+            const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+            const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+            const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+            playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
+            playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
+            const ratingTd = document.createElement("td");
+            ratingTd.classList.add(`${rowClass}td1`);
+            ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+            playerRow.appendChild(ratingTd);
+        });
+    });
+};
+var $1367a000d1b1e933$export$2e2bcd8739ae039 = $1367a000d1b1e933$var$viewLineupChange;
+
+
+
+
 const $eb760bba466069f0$var$viewLineupChange = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
@@ -309,6 +351,7 @@ var $732c1c75caf626a8$export$2e2bcd8739ae039 = $732c1c75caf626a8$var$viewMarket;
  * Run View Functions
  */ if (window.location.href.includes("speletaju-parskats")) (0, $72f8ded643bf6cd3$export$2e2bcd8739ae039)();
 if (window.location.href.includes("speletajs")) (0, $8c58922ff46d23a2$export$2e2bcd8739ae039)();
+if (window.location.href.includes("mainas")) (0, $1367a000d1b1e933$export$2e2bcd8739ae039)();
 if (window.location.href.includes("rediget-mainu")) (0, $eb760bba466069f0$export$2e2bcd8739ae039)();
 if (window.location.href.includes("/lv/tirgus")) (0, $732c1c75caf626a8$export$2e2bcd8739ae039)();
 
