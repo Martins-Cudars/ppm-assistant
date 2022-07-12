@@ -5,7 +5,12 @@
   "manifest_version": 3,
   "web_accessible_resources": [
     {
-      "resources": ["src/icons/star-gold.svg", "src/icons/star-empty.svg"],
+      "resources": [
+        "src/icons/star-diamond.svg",
+        "src/icons/star-gold.svg",
+        "src/icons/star-silver.svg",
+        "src/icons/star-empty.svg"
+      ],
       "matches": ["https://hockey.powerplaymanager.com/*"],
       "use_dynamic_url": true
     }
