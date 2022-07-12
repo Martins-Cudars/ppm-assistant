@@ -15,15 +15,29 @@
 .rating {
   width: 80px;
   height: 29px;
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-empty.svg");
   background-repeat: repeat-x;
   background-size: 16px;
   background-position: left center;
 }
 
+.rating--empty {
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-empty.svg");
+}
+
+.rating--silver {
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-silver.svg");
+}
+
+.rating--gold {
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-gold.svg");
+}
+
+.rating--diamond {
+  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-diamond.svg");
+}
+
 .rating__inner {
   height: 29px;
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-gold.svg");
   background-repeat: repeat-x;
   background-size: 16px;
   background-position: left center;

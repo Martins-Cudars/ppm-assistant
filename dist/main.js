@@ -106,11 +106,24 @@ const $18c53b0039ffc5db$export$b36ad6a61166502b = (content, cssClass)=>{
     return cell;
 };
 const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
-    const ratingPercentage = Math.min(skill / (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low * 100, 100);
+    let ratingPercentage;
     const ratingOuter = document.createElement("div");
     const ratingInner = document.createElement("div");
     ratingOuter.classList.add("rating");
     ratingInner.classList.add("rating__inner");
+    if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) {
+        ratingOuter.classList.add("rating--empty");
+        ratingInner.classList.add("rating--silver");
+        ratingPercentage = Math.min(skill / (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low * 100, 100);
+    } else if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
+        ratingOuter.classList.add("rating--silver");
+        ratingInner.classList.add("rating--gold");
+        ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) * 100, 100);
+    } else if (skill >= (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
+        ratingOuter.classList.add("rating--gold");
+        ratingInner.classList.add("rating--diamond");
+        ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).high - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) * 100, 100);
+    }
     ratingInner.setAttribute("style", `width: ${ratingPercentage}%`);
     ratingOuter.setAttribute("alt", `${ratingPercentage}%`);
     ratingOuter.appendChild(ratingInner);
