@@ -227,29 +227,31 @@ const $1367a000d1b1e933$var$viewLineupChange = ()=>{
         });
         playerRows.forEach((playerRow, index)=>{
             const playerColumns = playerRow.querySelectorAll("td");
-            const player = {
-                name: playerColumns[1].textContent,
-                skills: {
-                    goalie: playerColumns[4].textContent,
-                    defence: playerColumns[5].textContent,
-                    offence: playerColumns[6].textContent,
-                    shooting: playerColumns[7].textContent,
-                    passing: playerColumns[8].textContent,
-                    technical: playerColumns[9].textContent,
-                    aggression: playerColumns[10].textContent
-                },
-                experience: parseInt(playerColumns[11].textContent)
-            };
-            const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-            const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
-            const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-            const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
-            playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
-            playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
-            const ratingTd = document.createElement("td");
-            ratingTd.classList.add(`${rowClass}td1`);
-            ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
-            playerRow.appendChild(ratingTd);
+            if (playerColumns.length > 2) {
+                const player = {
+                    name: playerColumns[1].textContent,
+                    skills: {
+                        goalie: playerColumns[4].textContent,
+                        defence: playerColumns[5].textContent,
+                        offence: playerColumns[6].textContent,
+                        shooting: playerColumns[7].textContent,
+                        passing: playerColumns[8].textContent,
+                        technical: playerColumns[9].textContent,
+                        aggression: playerColumns[10].textContent
+                    },
+                    experience: parseInt(playerColumns[11].textContent)
+                };
+                const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+                const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+                const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+                const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+                playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
+                playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
+                const ratingTd = document.createElement("td");
+                ratingTd.classList.add(`${rowClass}td1`);
+                ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+                playerRow.appendChild(ratingTd);
+            } else playerColumns[1].colSpan = 16;
         });
     });
 };
