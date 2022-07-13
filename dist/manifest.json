@@ -9,20 +9,19 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "src/icons/star-diamond.svg",
-        "src/icons/star-gold.svg",
-        "src/icons/star-silver.svg",
-        "src/icons/star-empty.svg"
+        "icons/star-diamond.svg",
+        "icons/star-gold.svg",
+        "icons/star-silver.svg",
+        "icons/star-empty.svg"
       ],
-      "matches": ["https://hockey.powerplaymanager.com/*"],
-      "use_dynamic_url": true
+      "matches": ["https://hockey.powerplaymanager.com/*"]
     }
   ],
   "content_scripts": [
     {
       "matches": ["https://hockey.powerplaymanager.com/*"],
       "css": ["styles.css"],
-      "js": ["dist/main.js"]
+      "js": ["main.js"]
     }
   ],
   "permissions": ["storage"]

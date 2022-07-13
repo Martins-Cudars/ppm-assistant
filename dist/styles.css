@@ -21,19 +21,19 @@
 }
 
 .rating--empty {
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-empty.svg");
+  background-image: url("/icons/star-empty.svg");
 }
 
 .rating--silver {
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-silver.svg");
+  background-image: url("/icons/star-silver.svg");
 }
 
 .rating--gold {
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-gold.svg");
+  background-image: url("/icons/star-gold.svg");
 }
 
 .rating--diamond {
-  background-image: url("chrome-extension://__MSG_@@extension_id__/src/icons/star-diamond.svg");
+  background-image: url("chrome-extension://__MSG_@@extension_id__/icons/star-diamond.svg");
 }
 
 .rating__inner {

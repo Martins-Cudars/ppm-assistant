@@ -112,19 +112,19 @@ const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
     ratingOuter.classList.add("rating");
     ratingInner.classList.add("rating__inner");
     if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) {
-        ratingOuter.classList.add("rating--empty");
-        ratingInner.classList.add("rating--silver");
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-empty.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
         ratingPercentage = Math.min(skill / (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low * 100, 100);
     } else if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
-        ratingOuter.classList.add("rating--silver");
-        ratingInner.classList.add("rating--gold");
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
         ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) * 100, 100);
     } else if (skill >= (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
-        ratingOuter.classList.add("rating--gold");
-        ratingInner.classList.add("rating--diamond");
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-diamond.svg")})`;
         ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).high - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) * 100, 100);
     }
-    ratingInner.setAttribute("style", `width: ${ratingPercentage}%`);
+    ratingInner.style.width = `${ratingPercentage}%`;
     ratingOuter.appendChild(ratingInner);
     return ratingOuter;
 };

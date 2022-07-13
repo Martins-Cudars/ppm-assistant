@@ -17,12 +17,20 @@ const renderComparison = (skill) => {
   ratingInner.classList.add("rating__inner");
 
   if (skill < ratingSettings.low) {
-    ratingOuter.classList.add("rating--empty");
-    ratingInner.classList.add("rating--silver");
+    ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-empty.svg"
+    )})`;
+    ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-silver.svg"
+    )})`;
     ratingPercentage = Math.min((skill / ratingSettings.low) * 100, 100);
   } else if (skill < ratingSettings.medium) {
-    ratingOuter.classList.add("rating--silver");
-    ratingInner.classList.add("rating--gold");
+    ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-silver.svg"
+    )})`;
+    ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-gold.svg"
+    )})`;
     ratingPercentage = Math.min(
       ((skill - ratingSettings.low) /
         (ratingSettings.medium - ratingSettings.low)) *
@@ -30,8 +38,12 @@ const renderComparison = (skill) => {
       100
     );
   } else if (skill >= ratingSettings.medium) {
-    ratingOuter.classList.add("rating--gold");
-    ratingInner.classList.add("rating--diamond");
+    ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-gold.svg"
+    )})`;
+    ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL(
+      "icons/star-diamond.svg"
+    )})`;
     ratingPercentage = Math.min(
       ((skill - ratingSettings.medium) /
         (ratingSettings.high - ratingSettings.medium)) *
@@ -40,7 +52,7 @@ const renderComparison = (skill) => {
     );
   }
 
-  ratingInner.setAttribute("style", `width: ${ratingPercentage}%`);
+  ratingInner.style.width = `${ratingPercentage}%`;
   ratingOuter.appendChild(ratingInner);
 
   return ratingOuter;
