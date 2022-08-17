@@ -99,17 +99,17 @@ const $78fc06ffa0ef6332$export$82338cb6413791b1 = (potentials)=>{
 const $78fc06ffa0ef6332$export$1aeb1f3968a4604c = (skills, position)=>{
     const positionRatios = (0, $f4e261e811334a0a$export$28a5266254550ff3).find((name)=>name.name === position.position).ratios;
     let minimumSkill = {
-        position: "unkown",
-        skill: 9999
+        skill: "unkown",
+        ability: 9999
     };
     for (const [key, value] of Object.entries(positionRatios)){
         const adjustedSkill = parseInt(skills[key]) / value;
-        if (adjustedSkill < minimumSkill.skill) {
-            minimumSkill.position = key;
-            minimumSkill.skill = adjustedSkill;
+        if (adjustedSkill < minimumSkill.ability) {
+            minimumSkill.skill = key;
+            minimumSkill.ability = adjustedSkill * value;
         }
     }
-    console.log(minimumSkill);
+    console.log(`skill ${minimumSkill.skill} : ${minimumSkill.ability}`);
     return positionRatios;
 };
 

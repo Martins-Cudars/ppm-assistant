@@ -78,18 +78,18 @@ const calculateTrainableSkill = (skills, position) => {
     (name) => name.name === position.position
   ).ratios;
 
-  let minimumSkill = { position: "unkown", skill: 9999 };
+  let minimumSkill = { skill: "unkown", ability: 9999 };
 
   for (const [key, value] of Object.entries(positionRatios)) {
     const adjustedSkill = parseInt(skills[key]) / value;
 
-    if (adjustedSkill < minimumSkill.skill) {
-      minimumSkill.position = key;
-      minimumSkill.skill = adjustedSkill;
+    if (adjustedSkill < minimumSkill.ability) {
+      minimumSkill.skill = key;
+      minimumSkill.ability = adjustedSkill * value;
     }
   }
 
-  console.log(minimumSkill);
+  console.log(`skill ${minimumSkill.skill} : ${minimumSkill.ability}`);
   return positionRatios;
 };
 
