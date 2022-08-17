@@ -96,6 +96,22 @@ const $78fc06ffa0ef6332$export$82338cb6413791b1 = (potentials)=>{
     });
     return bestPotential;
 };
+const $78fc06ffa0ef6332$export$1aeb1f3968a4604c = (skills, position)=>{
+    const positionRatios = (0, $f4e261e811334a0a$export$28a5266254550ff3).find((name)=>name.name === position.position).ratios;
+    let minimumSkill = {
+        position: "unkown",
+        skill: 9999
+    };
+    for (const [key, value] of Object.entries(positionRatios)){
+        const adjustedSkill = parseInt(skills[key]) / value;
+        if (adjustedSkill < minimumSkill.skill) {
+            minimumSkill.position = key;
+            minimumSkill.skill = adjustedSkill;
+        }
+    }
+    console.log(minimumSkill);
+    return positionRatios;
+};
 
 
 
@@ -206,6 +222,7 @@ const $8c58922ff46d23a2$var$viewPlayerProfile = ()=>{
     };
     const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
     const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
+    const trainableSkill = (0, $78fc06ffa0ef6332$export$1aeb1f3968a4604c)(player.skills, bestPosition);
     const contentColumn = document.querySelector(".column_left");
     const content = document.createElement("div");
     content.classList.add("player-profile");

@@ -73,10 +73,31 @@ const calculateBestPotential = (potentials) => {
   return bestPotential;
 };
 
+const calculateTrainableSkill = (skills, position) => {
+  const positionRatios = positionSettings.find(
+    (name) => name.name === position.position
+  ).ratios;
+
+  let minimumSkill = { position: "unkown", skill: 9999 };
+
+  for (const [key, value] of Object.entries(positionRatios)) {
+    const adjustedSkill = parseInt(skills[key]) / value;
+
+    if (adjustedSkill < minimumSkill.skill) {
+      minimumSkill.position = key;
+      minimumSkill.skill = adjustedSkill;
+    }
+  }
+
+  console.log(minimumSkill);
+  return positionRatios;
+};
+
 export {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
   calculatePositionsQualities,
   calculateBestPotential,
+  calculateTrainableSkill,
 };

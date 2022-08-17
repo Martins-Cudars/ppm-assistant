@@ -4,6 +4,7 @@ import {
   calculateSkillWithExp,
   calculatePositionsQualities,
   calculateBestPotential,
+  calculateTrainableSkill,
 } from "~/src/calculations.js";
 import { renderComparison, renderPotential } from "~/src/render.js";
 
@@ -48,6 +49,8 @@ const viewPlayerProfile = () => {
 
   const positions = calculatePositionsSkills(player);
   const bestPosition = calculateBestPosition(positions);
+
+  const trainableSkill = calculateTrainableSkill(player.skills, bestPosition);
 
   const contentColumn = document.querySelector(".column_left");
 
