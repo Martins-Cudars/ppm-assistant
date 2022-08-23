@@ -67,4 +67,17 @@ const renderPotential = (bestPotential) => {
   return potential;
 };
 
-export { renderTableCell, renderComparison, renderPotential };
+const renderTrainableSkill = (trainableSkill) => {
+  const trainableSkillElement = document.createElement("div");
+  trainableSkillElement.classList.add("trainable-skill");
+  trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
+
+  return trainableSkillElement;
+};
+
+export {
+  renderTableCell,
+  renderComparison,
+  renderPotential,
+  renderTrainableSkill,
+};

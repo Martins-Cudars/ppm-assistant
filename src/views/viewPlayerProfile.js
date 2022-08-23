@@ -6,7 +6,11 @@ import {
   calculateBestPotential,
   calculateTrainableSkill,
 } from "~/src/calculations.js";
-import { renderComparison, renderPotential } from "~/src/render.js";
+import {
+  renderComparison,
+  renderPotential,
+  renderTrainableSkill,
+} from "~/src/render.js";
 
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
@@ -49,13 +53,15 @@ const viewPlayerProfile = () => {
 
   const positions = calculatePositionsSkills(player);
   const bestPosition = calculateBestPosition(positions);
-
   const trainableSkill = calculateTrainableSkill(player.skills, bestPosition);
 
   const contentColumn = document.querySelector(".column_left");
 
   const content = document.createElement("div");
   content.classList.add("player-profile");
+
+  const content2 = document.createElement("div");
+  content2.classList.add("player-profile");
 
   const skill = document.createElement("div");
   skill.classList.add("skill");
@@ -81,7 +87,11 @@ const viewPlayerProfile = () => {
   const potential = renderPotential(bestPotential);
   content.appendChild(potential);
 
+  const trainableSkillElement = renderTrainableSkill(trainableSkill);
+  content2.appendChild(trainableSkillElement);
+
   contentColumn.appendChild(content);
+  contentColumn.appendChild(content2);
 };
 
 export default viewPlayerProfile;
