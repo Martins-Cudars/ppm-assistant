@@ -1,3 +1,21 @@
+:root {
+  --red: #8a1f1f;
+  --orange: #e95f28;
+  --white: #fff;
+  --green: #90ab57;
+  --green2: #225c39;
+
+  --rank-a-plus: #1458a5;
+  --rank-a: #0c3f7a;
+  --rank-b-plus: #88df76;
+  --rank-b: #61a354;
+  --rank-c-plus: #e2cd47;
+  --rank-c: #96930a;
+  --rank-d-plus: #f79606;
+  --rank-d: #dd6617;
+  --rank-f: #b30000;
+}
+
 .player-profile {
   font-size: 14px;
   background-color: #fff;
@@ -5,6 +23,75 @@
   border-radius: 5px;
   padding: 12px;
   margin-top: 12px;
+}
+
+.player-profile--potential {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.player-profile .potential__badge {
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.player-profile .potential__text {
+  text-align: left;
+}
+
+.potential__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background-color: orange;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+
+.potential__badge--small {
+  font-size: 0.65rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.potential__badge--a-plus {
+  background-color: var(--rank-a-plus);
+}
+
+.potential__badge--a {
+  background-color: var(--rank-a);
+}
+
+.potential__badge--b-plus {
+  background-color: var(--rank-b-plus);
+}
+
+.potential__badge--b {
+  background-color: var(--rank-b);
+}
+
+.potential__badge--c-plus {
+  background-color: var(--rank-c-plus);
+}
+
+.potential__badge--c {
+  background-color: var(--rank-c);
+}
+
+.potential__badge--d-plus {
+  background-color: var(--rank-d-plus);
+}
+
+.potential__badge--d {
+  background-color: var(--rank-d);
+}
+
+.potential__badge--f {
+  background-color: var(--rank-f);
 }
 
 .comparison {

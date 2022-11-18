@@ -1,4 +1,5 @@
 import { ratingSettings } from "./settings.js";
+import { potentialGrade } from "./utilities.js";
 
 const renderTableCell = (content, cssClass) => {
   const cell = document.createElement("td");
@@ -60,11 +61,27 @@ const renderComparison = (skill) => {
 
 const renderPotential = (bestPotential) => {
   const potential = document.createElement("div");
-  potential.classList.add("potential");
+  potential.classList.add("potential__text");
   potential.textContent = `Best potential position is ${
     bestPotential.position
   } with ${Math.round(bestPotential.potential)}`;
   return potential;
+};
+
+const renderPotentialBadge = (potential, size) => {
+  const badge = document.createElement("div");
+  badge.classList.add("potential__badge");
+
+  if (size) {
+    badge.classList.add(`potential__badge--${size}`);
+  }
+
+  const potentialObj = potentialGrade(potential);
+  badge.classList.add(`potential__badge--${potentialObj.class}`);
+
+  badge.textContent = potentialObj.label;
+
+  return badge;
 };
 
 const renderTrainableSkill = (trainableSkill) => {
@@ -79,5 +96,6 @@ export {
   renderTableCell,
   renderComparison,
   renderPotential,
+  renderPotentialBadge,
   renderTrainableSkill,
 };

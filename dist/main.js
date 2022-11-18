@@ -98,21 +98,76 @@ const $78fc06ffa0ef6332$export$82338cb6413791b1 = (potentials)=>{
 };
 const $78fc06ffa0ef6332$export$1aeb1f3968a4604c = (skills, position)=>{
     const positionRatios = (0, $f4e261e811334a0a$export$28a5266254550ff3).find((name)=>name.name === position.position).ratios;
-    let minimumSkill = {
-        skill: "unkown",
-        ability: 9999
+    const trainableSkill = {
+        minimumSkill: {
+            skill: null,
+            ability: null
+        },
+        maximumSkill: {
+            skill: null,
+            ability: null
+        },
+        difference: null
     };
     for (const [key, value] of Object.entries(positionRatios)){
         const adjustedSkill = parseInt(skills[key]) / value;
-        if (adjustedSkill < minimumSkill.ability) {
-            minimumSkill.skill = key;
-            minimumSkill.ability = adjustedSkill * value;
-        }
+        if (trainableSkill.minimumSkill.ability === null || adjustedSkill < trainableSkill.minimumSkill.ability) trainableSkill.minimumSkill = {
+            skill: key,
+            ability: adjustedSkill * value
+        };
+        trainableSkill.maximumSkill = {
+            skill: key,
+            ability: adjustedSkill * value
+        };
     }
-    console.log(`skill ${minimumSkill.skill} : ${minimumSkill.ability}`);
-    return positionRatios;
+    trainableSkill.difference = trainableSkill.maximumSkill.ability / positionRatios[trainableSkill.maximumSkill.skill] - trainableSkill.minimumSkill.ability / positionRatios[trainableSkill.minimumSkill.skill];
+    return trainableSkill;
 };
 
+
+
+const $7a499cf51e07ffbe$export$a15314779c685f5c = (potential)=>{
+    if (!potential || potential === null) return {
+        label: "?",
+        class: "unknown"
+    };
+    if (potential >= 95) return {
+        label: "A+",
+        class: "a-plus"
+    };
+    if (potential >= 90) return {
+        label: "A",
+        class: "a"
+    };
+    if (potential >= 85) return {
+        label: "B+",
+        class: "b-plus"
+    };
+    if (potential >= 80) return {
+        label: "B",
+        class: "b"
+    };
+    if (potential >= 75) return {
+        label: "C+",
+        class: "c-plus"
+    };
+    if (potential >= 70) return {
+        label: "C",
+        class: "c"
+    };
+    if (potential >= 60) return {
+        label: "D+",
+        class: "d-plus"
+    };
+    if (potential >= 50) return {
+        label: "D",
+        class: "d"
+    };
+    if (potential < 50) return {
+        label: "F",
+        class: "f"
+    };
+};
 
 
 const $18c53b0039ffc5db$export$b36ad6a61166502b = (content, cssClass)=>{
@@ -146,9 +201,24 @@ const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
 };
 const $18c53b0039ffc5db$export$c1975daa4eb91b44 = (bestPotential)=>{
     const potential = document.createElement("div");
-    potential.classList.add("potential");
+    potential.classList.add("potential__text");
     potential.textContent = `Best potential position is ${bestPotential.position} with ${Math.round(bestPotential.potential)}`;
     return potential;
+};
+const $18c53b0039ffc5db$export$1e190777fe7d790a = (potential, size)=>{
+    const badge = document.createElement("div");
+    badge.classList.add("potential__badge");
+    if (size) badge.classList.add(`potential__badge--${size}`);
+    const potentialObj = (0, $7a499cf51e07ffbe$export$a15314779c685f5c)(potential);
+    badge.classList.add(`potential__badge--${potentialObj.class}`);
+    badge.textContent = potentialObj.label;
+    return badge;
+};
+const $18c53b0039ffc5db$export$4fd609a04677ca67 = (trainableSkill)=>{
+    const trainableSkillElement = document.createElement("div");
+    trainableSkillElement.classList.add("trainable-skill");
+    trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
+    return trainableSkillElement;
 };
 
 
@@ -174,6 +244,15 @@ const $72f8ded643bf6cd3$var$viewPlayerList = ()=>{
                 passing: playerColumns[10].textContent,
                 technical: playerColumns[11].textContent,
                 aggression: playerColumns[12].textContent
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
             },
             experience: parseInt(playerColumns[13].textContent),
             overall: playerColumns[14].textContent
@@ -226,6 +305,11 @@ const $8c58922ff46d23a2$var$viewPlayerProfile = ()=>{
     const contentColumn = document.querySelector(".column_left");
     const content = document.createElement("div");
     content.classList.add("player-profile");
+    const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const content2 = document.createElement("div");
+    content2.classList.add("player-profile");
     const skill = document.createElement("div");
     skill.classList.add("skill");
     skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
@@ -235,9 +319,15 @@ const $8c58922ff46d23a2$var$viewPlayerProfile = ()=>{
     comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)));
     content.appendChild(comparison);
     const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+    const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
+    potentialBox.appendChild(potentialBadge);
     const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
-    content.appendChild(potential);
+    potentialBox.appendChild(potential);
+    const trainableSkillElement = (0, $18c53b0039ffc5db$export$4fd609a04677ca67)(trainableSkill);
+    content2.appendChild(trainableSkillElement);
     contentColumn.appendChild(content);
+    contentColumn.appendChild(potentialBox);
+    contentColumn.appendChild(content2);
 };
 var $8c58922ff46d23a2$export$2e2bcd8739ae039 = $8c58922ff46d23a2$var$viewPlayerProfile;
 
@@ -339,6 +429,7 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
         head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("POS", "th1"));
         head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("SK", "th2"));
         head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("RATING", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("TRN", "th2"));
     });
     const getSkill = (column)=>{
         return parseInt([].reduce.call(column.childNodes, (a, b)=>{
@@ -347,6 +438,7 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
     };
     playerRows.forEach((playerRow, index)=>{
         const playerColumns = playerRow.querySelectorAll("td");
+        const playerQualities = playerRow.querySelectorAll(".kva");
         const player = {
             name: playerColumns[0].textContent,
             age: playerColumns[1].textContent,
@@ -359,6 +451,15 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
                 passing: getSkill(playerColumns[9]),
                 technical: getSkill(playerColumns[10]),
                 aggression: getSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
             },
             experience: parseInt(playerColumns[12].textContent),
             overall: playerColumns[13].textContent
@@ -373,9 +474,49 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
         ratingTd.classList.add(`${rowClass}td1`);
         ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
         playerRow.appendChild(ratingTd);
+        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+        const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
     });
 };
 var $732c1c75caf626a8$export$2e2bcd8739ae039 = $732c1c75caf626a8$var$viewMarket;
+
+
+
+
+const $31279b7a0c59ec2f$var$viewTraining = ()=>{
+    console.log("viewTraining");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("GRADE", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const player = {
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
+            }
+        };
+        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+        const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+var $31279b7a0c59ec2f$export$2e2bcd8739ae039 = $31279b7a0c59ec2f$var$viewTraining;
 
 
 /**
@@ -383,6 +524,7 @@ var $732c1c75caf626a8$export$2e2bcd8739ae039 = $732c1c75caf626a8$var$viewMarket;
  */ if (window.location.href.includes("speletaju-parskats")) (0, $72f8ded643bf6cd3$export$2e2bcd8739ae039)();
 if (window.location.href.includes("speletajs")) (0, $8c58922ff46d23a2$export$2e2bcd8739ae039)();
 if (window.location.href.includes("mainas")) (0, $1367a000d1b1e933$export$2e2bcd8739ae039)();
+if (window.location.href.includes("speletaju-trenini")) (0, $31279b7a0c59ec2f$export$2e2bcd8739ae039)();
 if (window.location.href.includes("rediget-mainu")) (0, $eb760bba466069f0$export$2e2bcd8739ae039)();
 if (window.location.href.includes("/lv/tirgus")) (0, $732c1c75caf626a8$export$2e2bcd8739ae039)();
 

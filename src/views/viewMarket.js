@@ -2,8 +2,14 @@ import {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
+  calculatePositionsQualities,
+  calculateBestPotential,
 } from "~/src/calculations.js";
-import { renderTableCell, renderComparison } from "~/src/render.js";
+import {
+  renderTableCell,
+  renderComparison,
+  renderPotentialBadge,
+} from "~/src/render.js";
 
 /**
  * View Functions
@@ -23,6 +29,7 @@ const viewMarket = () => {
     head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
     head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
     head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
+    head.querySelector("tr").appendChild(renderTableCell("TRN", "th2"));
   });
 
   const getSkill = (column) => {
@@ -39,6 +46,7 @@ const viewMarket = () => {
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
+    const playerQualities = playerRow.querySelectorAll(".kva");
 
     const player = {
       name: playerColumns[0].textContent,
@@ -52,6 +60,15 @@ const viewMarket = () => {
         passing: getSkill(playerColumns[9]),
         technical: getSkill(playerColumns[10]),
         aggression: getSkill(playerColumns[11]),
+      },
+      qualities: {
+        goalie: parseInt(playerQualities[0].textContent),
+        defence: parseInt(playerQualities[1].textContent),
+        offence: parseInt(playerQualities[2].textContent),
+        shooting: parseInt(playerQualities[3].textContent),
+        passing: parseInt(playerQualities[4].textContent),
+        technical: parseInt(playerQualities[5].textContent),
+        aggression: parseInt(playerQualities[6].textContent),
       },
       experience: parseInt(playerColumns[12].textContent),
       overall: playerColumns[13].textContent,
@@ -76,6 +93,21 @@ const viewMarket = () => {
     ratingTd.appendChild(renderComparison(bestSkillWithExp));
 
     playerRow.appendChild(ratingTd);
+
+    const bestPotential = calculateBestPotential(
+      calculatePositionsQualities(player)
+    );
+
+    const potentialBadge = renderPotentialBadge(
+      bestPotential.potential,
+      "small"
+    );
+
+    const potentialTd = document.createElement("td");
+    potentialTd.classList.add(`${rowClass}td2`);
+    potentialTd.appendChild(potentialBadge);
+
+    playerRow.appendChild(potentialTd);
   });
 };
 

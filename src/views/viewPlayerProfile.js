@@ -9,6 +9,7 @@ import {
 import {
   renderComparison,
   renderPotential,
+  renderPotentialBadge,
   renderTrainableSkill,
 } from "~/src/render.js";
 
@@ -60,6 +61,10 @@ const viewPlayerProfile = () => {
   const content = document.createElement("div");
   content.classList.add("player-profile");
 
+  const potentialBox = document.createElement("div");
+  potentialBox.classList.add("player-profile");
+  potentialBox.classList.add("player-profile--potential");
+
   const content2 = document.createElement("div");
   content2.classList.add("player-profile");
 
@@ -84,13 +89,18 @@ const viewPlayerProfile = () => {
   const bestPotential = calculateBestPotential(
     calculatePositionsQualities(player)
   );
+
+  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  potentialBox.appendChild(potentialBadge);
+
   const potential = renderPotential(bestPotential);
-  content.appendChild(potential);
+  potentialBox.appendChild(potential);
 
   const trainableSkillElement = renderTrainableSkill(trainableSkill);
   content2.appendChild(trainableSkillElement);
 
   contentColumn.appendChild(content);
+  contentColumn.appendChild(potentialBox);
   contentColumn.appendChild(content2);
 };
 
