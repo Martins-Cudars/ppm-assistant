@@ -16,6 +16,14 @@
   --rank-f: #b30000;
 }
 
+/**
+* Utilities
+*/
+
+.td-center {
+  text-align: -webkit-center;
+}
+
 .player-profile {
   font-size: 14px;
   background-color: #fff;

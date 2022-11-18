@@ -417,10 +417,10 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("POS", "th1"));
-        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("SK", "th2"));
-        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("RATING", "th1"));
-        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("TRN", "th2"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Pos", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Sk", "th2"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Rating", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Grd", "th2"));
     });
     const getSkill = (column)=>{
         return parseInt([].reduce.call(column.childNodes, (a, b)=>{
@@ -469,6 +469,7 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
         potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.classList.add("td-center");
         potentialTd.appendChild(potentialBadge);
         playerRow.appendChild(potentialTd);
     });
@@ -483,7 +484,7 @@ const $31279b7a0c59ec2f$var$viewTraining = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("GRADE", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Grd", "th1"));
     });
     playerRows.forEach((playerRow, index)=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
@@ -503,6 +504,7 @@ const $31279b7a0c59ec2f$var$viewTraining = ()=>{
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
         potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
         potentialTd.appendChild(potentialBadge);
         playerRow.appendChild(potentialTd);
     });

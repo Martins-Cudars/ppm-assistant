@@ -18,7 +18,7 @@ const viewTraining = () => {
     .querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("GRADE", "th1"));
+    head.querySelector("tr").appendChild(renderTableCell("Grd", "th1"));
   });
 
   playerRows.forEach((playerRow, index) => {
@@ -48,6 +48,7 @@ const viewTraining = () => {
     );
     const potentialTd = document.createElement("td");
     potentialTd.classList.add(`${rowClass}td1`);
+    potentialTd.classList.add("td-center");
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);

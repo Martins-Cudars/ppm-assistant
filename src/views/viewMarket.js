@@ -26,10 +26,10 @@ const viewMarket = () => {
     .querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("TRN", "th2"));
+    head.querySelector("tr").appendChild(renderTableCell("Pos", "th1"));
+    head.querySelector("tr").appendChild(renderTableCell("Sk", "th2"));
+    head.querySelector("tr").appendChild(renderTableCell("Rating", "th1"));
+    head.querySelector("tr").appendChild(renderTableCell("Grd", "th2"));
   });
 
   const getSkill = (column) => {
@@ -105,6 +105,7 @@ const viewMarket = () => {
 
     const potentialTd = document.createElement("td");
     potentialTd.classList.add(`${rowClass}td2`);
+    potentialTd.classList.add("td-center");
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
