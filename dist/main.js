@@ -245,15 +245,6 @@ const $72f8ded643bf6cd3$var$viewPlayerList = ()=>{
                 technical: playerColumns[11].textContent,
                 aggression: playerColumns[12].textContent
             },
-            qualities: {
-                goalie: parseInt(playerQualities[0].textContent),
-                defence: parseInt(playerQualities[1].textContent),
-                offence: parseInt(playerQualities[2].textContent),
-                shooting: parseInt(playerQualities[3].textContent),
-                passing: parseInt(playerQualities[4].textContent),
-                technical: parseInt(playerQualities[5].textContent),
-                aggression: parseInt(playerQualities[6].textContent)
-            },
             experience: parseInt(playerColumns[13].textContent),
             overall: playerColumns[14].textContent
         };
