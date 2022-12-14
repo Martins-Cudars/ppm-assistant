@@ -1,4 +1,4 @@
-const $f4e261e811334a0a$export$28a5266254550ff3 = [
+const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
     {
         name: "Goalie",
         ratios: {
@@ -32,16 +32,16 @@ const $f4e261e811334a0a$export$28a5266254550ff3 = [
         }
     }, 
 ];
-const $f4e261e811334a0a$export$593f2d24ede2dfb0 = {
+const $05be6c1d1617fb2b$export$593f2d24ede2dfb0 = {
     low: 500,
     medium: 1000,
     high: 1500
 };
 
 
-const $78fc06ffa0ef6332$export$f424e510a287eb0 = (player)=>{
+const $78fc06ffa0ef6332$export$f424e510a287eb0 = (player, positionSettings)=>{
     const positionSkills = [];
-    (0, $f4e261e811334a0a$export$28a5266254550ff3).forEach((position)=>{
+    positionSettings.forEach((position)=>{
         const skills = [];
         for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
         positionSkills.push({
@@ -67,9 +67,9 @@ const $78fc06ffa0ef6332$export$fefc44fbabdf230f = (skills)=>{
 const $78fc06ffa0ef6332$export$5898f23eb7acb0be = (skill, experience)=>{
     return Math.round(skill * (1 + experience / 500));
 };
-const $78fc06ffa0ef6332$export$bf339f9dce5a47df = (player)=>{
+const $78fc06ffa0ef6332$export$bf339f9dce5a47df = (player, positionSettings)=>{
     const positionPotentials = [];
-    (0, $f4e261e811334a0a$export$28a5266254550ff3).forEach((position)=>{
+    positionSettings.forEach((position)=>{
         let qualities = 0;
         let modifier = 0;
         for (const [key, value] of Object.entries(position.ratios)){
@@ -96,34 +96,6 @@ const $78fc06ffa0ef6332$export$82338cb6413791b1 = (potentials)=>{
     });
     return bestPotential;
 };
-const $78fc06ffa0ef6332$export$1aeb1f3968a4604c = (skills, position)=>{
-    const positionRatios = (0, $f4e261e811334a0a$export$28a5266254550ff3).find((name)=>name.name === position.position).ratios;
-    const trainableSkill = {
-        minimumSkill: {
-            skill: null,
-            ability: null
-        },
-        maximumSkill: {
-            skill: null,
-            ability: null
-        },
-        difference: null
-    };
-    for (const [key, value] of Object.entries(positionRatios)){
-        const adjustedSkill = parseInt(skills[key]) / value;
-        if (trainableSkill.minimumSkill.ability === null || adjustedSkill < trainableSkill.minimumSkill.ability) trainableSkill.minimumSkill = {
-            skill: key,
-            ability: adjustedSkill * value
-        };
-        trainableSkill.maximumSkill = {
-            skill: key,
-            ability: adjustedSkill * value
-        };
-    }
-    trainableSkill.difference = trainableSkill.maximumSkill.ability / positionRatios[trainableSkill.maximumSkill.skill] - trainableSkill.minimumSkill.ability / positionRatios[trainableSkill.minimumSkill.skill];
-    return trainableSkill;
-};
-
 
 
 const $7a499cf51e07ffbe$export$a15314779c685f5c = (potential)=>{
@@ -176,24 +148,24 @@ const $18c53b0039ffc5db$export$b36ad6a61166502b = (content, cssClass)=>{
     cell.textContent = content;
     return cell;
 };
-const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill)=>{
+const $18c53b0039ffc5db$export$83fab2b954b58590 = (skill, ratingSettings)=>{
     let ratingPercentage;
     const ratingOuter = document.createElement("div");
     const ratingInner = document.createElement("div");
     ratingOuter.classList.add("rating");
     ratingInner.classList.add("rating__inner");
-    if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) {
+    if (skill < ratingSettings.low) {
         ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-empty.svg")})`;
         ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
-        ratingPercentage = Math.min(skill / (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low * 100, 100);
-    } else if (skill < (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
+        ratingPercentage = Math.min(skill / ratingSettings.low * 100, 100);
+    } else if (skill < ratingSettings.medium) {
         ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
         ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
-        ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).low) * 100, 100);
-    } else if (skill >= (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) {
+        ratingPercentage = Math.min((skill - ratingSettings.low) / (ratingSettings.medium - ratingSettings.low) * 100, 100);
+    } else if (skill >= ratingSettings.medium) {
         ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
         ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-diamond.svg")})`;
-        ratingPercentage = Math.min((skill - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) / ((0, $f4e261e811334a0a$export$593f2d24ede2dfb0).high - (0, $f4e261e811334a0a$export$593f2d24ede2dfb0).medium) * 100, 100);
+        ratingPercentage = Math.min((skill - ratingSettings.medium) / (ratingSettings.high - ratingSettings.medium) * 100, 100);
     }
     ratingInner.style.width = `${ratingPercentage}%`;
     ratingOuter.appendChild(ratingInner);
@@ -222,7 +194,7 @@ const $18c53b0039ffc5db$export$4fd609a04677ca67 = (trainableSkill)=>{
 };
 
 
-const $72f8ded643bf6cd3$var$viewPlayerList = ()=>{
+const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -249,23 +221,24 @@ const $72f8ded643bf6cd3$var$viewPlayerList = ()=>{
             overall: playerColumns[14].textContent
         };
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
         playerRow.appendChild(ratingTd);
     });
 };
-var $72f8ded643bf6cd3$export$2e2bcd8739ae039 = $72f8ded643bf6cd3$var$viewPlayerList;
+var $4cd00c11b313a3a7$export$2e2bcd8739ae039 = $4cd00c11b313a3a7$var$viewPlayerList;
 
 
 
 
-const $8c58922ff46d23a2$var$viewPlayerProfile = ()=>{
+
+const $47e313680aa18398$var$viewPlayerProfile = ()=>{
     const playerTable = document.getElementById("table-1");
     const player = {
         careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
@@ -290,42 +263,37 @@ const $8c58922ff46d23a2$var$viewPlayerProfile = ()=>{
         experience: parseInt(playerTable.querySelector("#experience").textContent),
         overall: playerTable.querySelector("#index_skill").textContent
     };
-    const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+    const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
     const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
-    const trainableSkill = (0, $78fc06ffa0ef6332$export$1aeb1f3968a4604c)(player.skills, bestPosition);
     const contentColumn = document.querySelector(".column_left");
     const content = document.createElement("div");
     content.classList.add("player-profile");
     const potentialBox = document.createElement("div");
     potentialBox.classList.add("player-profile");
     potentialBox.classList.add("player-profile--potential");
-    const content2 = document.createElement("div");
-    content2.classList.add("player-profile");
     const skill = document.createElement("div");
     skill.classList.add("skill");
     skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
     content.appendChild(skill);
     const comparison = document.createElement("div");
     comparison.classList.add("comparison");
-    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)));
+    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
     content.appendChild(comparison);
-    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
     const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
     potentialBox.appendChild(potentialBadge);
     const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
     potentialBox.appendChild(potential);
-    const trainableSkillElement = (0, $18c53b0039ffc5db$export$4fd609a04677ca67)(trainableSkill);
-    content2.appendChild(trainableSkillElement);
     contentColumn.appendChild(content);
     contentColumn.appendChild(potentialBox);
-    contentColumn.appendChild(content2);
 };
-var $8c58922ff46d23a2$export$2e2bcd8739ae039 = $8c58922ff46d23a2$var$viewPlayerProfile;
+var $47e313680aa18398$export$2e2bcd8739ae039 = $47e313680aa18398$var$viewPlayerProfile;
 
 
 
 
-const $1367a000d1b1e933$var$viewLineupChange = ()=>{
+
+const $49e9dbd41eda08ef$var$viewLineupChange = ()=>{
     const tables = document.querySelectorAll(".table");
     tables.forEach((table)=>{
         const tableHeads = table.querySelectorAll("thead");
@@ -352,25 +320,26 @@ const $1367a000d1b1e933$var$viewLineupChange = ()=>{
                     experience: parseInt(playerColumns[11].textContent)
                 };
                 const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-                const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+                const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
                 const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
                 const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
                 playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
                 playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
                 const ratingTd = document.createElement("td");
                 ratingTd.classList.add(`${rowClass}td1`);
-                ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+                ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
                 playerRow.appendChild(ratingTd);
             } else playerColumns[1].colSpan = 16;
         });
     });
 };
-var $1367a000d1b1e933$export$2e2bcd8739ae039 = $1367a000d1b1e933$var$viewLineupChange;
+var $49e9dbd41eda08ef$export$2e2bcd8739ae039 = $49e9dbd41eda08ef$var$viewLineupChange;
 
 
 
 
-const $eb760bba466069f0$var$viewLineupChange = ()=>{
+
+const $003292cd27b2be11$var$viewLineupChange = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -383,37 +352,37 @@ const $eb760bba466069f0$var$viewLineupChange = ()=>{
         const player = {
             name: playerColumns[2].textContent,
             skills: {
-                goalie: playerColumns[6].textContent,
-                defence: playerColumns[7].textContent,
-                offence: playerColumns[8].textContent,
-                shooting: playerColumns[9].textContent,
-                passing: playerColumns[10].textContent,
-                technical: playerColumns[11].textContent,
-                aggression: playerColumns[12].textContent
+                goalie: playerColumns[playerColumns.length - 10].textContent,
+                defence: playerColumns[playerColumns.length - 9].textContent,
+                offence: playerColumns[playerColumns.length - 8].textContent,
+                shooting: playerColumns[playerColumns.length - 7].textContent,
+                passing: playerColumns[playerColumns.length - 6].textContent,
+                technical: playerColumns[playerColumns.length - 5].textContent,
+                aggression: playerColumns[playerColumns.length - 4].textContent
             },
-            experience: parseInt(playerColumns[13].textContent),
-            overall: playerColumns[14].textContent
+            experience: parseInt(playerColumns[playerColumns.length - 3].textContent)
         };
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
         playerRow.appendChild(ratingTd);
     });
 };
-var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupChange;
+var $003292cd27b2be11$export$2e2bcd8739ae039 = $003292cd27b2be11$var$viewLineupChange;
+
 
 
 
 
 /**
  * View Functions
- */ const $732c1c75caf626a8$var$viewMarket = ()=>{
+ */ const $5ccfa3f7960e806b$var$viewMarket = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -456,16 +425,16 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
             overall: playerColumns[13].textContent
         };
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player);
+        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp));
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
         playerRow.appendChild(ratingTd);
-        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
         potentialTd.classList.add(`${rowClass}td2`);
@@ -474,12 +443,13 @@ var $eb760bba466069f0$export$2e2bcd8739ae039 = $eb760bba466069f0$var$viewLineupC
         playerRow.appendChild(potentialTd);
     });
 };
-var $732c1c75caf626a8$export$2e2bcd8739ae039 = $732c1c75caf626a8$var$viewMarket;
+var $5ccfa3f7960e806b$export$2e2bcd8739ae039 = $5ccfa3f7960e806b$var$viewMarket;
 
 
 
 
-const $31279b7a0c59ec2f$var$viewTraining = ()=>{
+
+const $938b3fb7a05b1e09$var$viewTraining = ()=>{
     console.log("viewTraining");
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
@@ -500,7 +470,7 @@ const $31279b7a0c59ec2f$var$viewTraining = ()=>{
                 aggression: parseInt(playerQualities[6].textContent)
             }
         };
-        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player));
+        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
         potentialTd.classList.add(`${rowClass}td1`);
@@ -509,17 +479,222 @@ const $31279b7a0c59ec2f$var$viewTraining = ()=>{
         playerRow.appendChild(potentialTd);
     });
 };
-var $31279b7a0c59ec2f$export$2e2bcd8739ae039 = $31279b7a0c59ec2f$var$viewTraining;
+var $938b3fb7a05b1e09$export$2e2bcd8739ae039 = $938b3fb7a05b1e09$var$viewTraining;
 
 
 /**
  * Run View Functions
- */ if (window.location.href.includes("speletaju-parskats")) (0, $72f8ded643bf6cd3$export$2e2bcd8739ae039)();
-if (window.location.href.includes("speletajs")) (0, $8c58922ff46d23a2$export$2e2bcd8739ae039)();
-if (window.location.href.includes("mainas")) (0, $1367a000d1b1e933$export$2e2bcd8739ae039)();
-if (window.location.href.includes("speletaju-trenini")) (0, $31279b7a0c59ec2f$export$2e2bcd8739ae039)();
-if (window.location.href.includes("rediget-mainu")) (0, $eb760bba466069f0$export$2e2bcd8739ae039)();
-if (window.location.href.includes("/lv/tirgus")) (0, $732c1c75caf626a8$export$2e2bcd8739ae039)();
+ */ const $73e5c51a6eddb90a$var$initHockey = ()=>{
+    if (window.location.href.includes("speletaju-parskats")) (0, $4cd00c11b313a3a7$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("speletajs")) (0, $47e313680aa18398$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("mainas")) (0, $49e9dbd41eda08ef$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("speletaju-trenini")) (0, $938b3fb7a05b1e09$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("rediget-mainu")) (0, $003292cd27b2be11$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("/lv/tirgus")) (0, $5ccfa3f7960e806b$export$2e2bcd8739ae039)();
+};
+var $73e5c51a6eddb90a$export$2e2bcd8739ae039 = $73e5c51a6eddb90a$var$initHockey;
+
+
+const $d72e2c82b342b23f$export$28a5266254550ff3 = [
+    {
+        name: "GK",
+        ratios: {
+            goalie: 1,
+            technical: 0.75,
+            speed: 0.75,
+            passing: 0.25,
+            heading: 0.25
+        }
+    },
+    {
+        name: "D",
+        ratios: {
+            defence: 1,
+            technical: 0.5,
+            speed: 0.75,
+            passing: 0.5,
+            heading: 0.25
+        }
+    },
+    {
+        name: "CD",
+        ratios: {
+            defence: 1,
+            technical: 0.5,
+            speed: 0.5,
+            passing: 0.5,
+            heading: 0.5
+        }
+    },
+    {
+        name: "M",
+        ratios: {
+            midfield: 1,
+            technical: 0.5,
+            speed: 0.75,
+            passing: 0.5,
+            heading: 0.25
+        }
+    },
+    {
+        name: "CM",
+        ratios: {
+            midfield: 1,
+            technical: 0.75,
+            speed: 0.25,
+            passing: 0.75,
+            heading: 0.25
+        }
+    },
+    {
+        name: "F",
+        ratios: {
+            offence: 1,
+            technical: 0.75,
+            speed: 0.75,
+            passing: 0.5,
+            heading: 0.25
+        }
+    },
+    {
+        name: "CF",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            speed: 0.75,
+            passing: 0.25,
+            heading: 0.25
+        }
+    }, 
+];
+const $d72e2c82b342b23f$export$593f2d24ede2dfb0 = {
+    low: 300,
+    medium: 600,
+    high: 900
+};
+
+
+
+
+const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[2].textContent,
+            careerLongitivity: Array.from(playerColumns[5].textContent)[0],
+            skills: {
+                goalie: playerColumns[6].textContent,
+                defence: playerColumns[7].textContent,
+                midfield: playerColumns[8].textContent,
+                offence: playerColumns[9].textContent,
+                shooting: playerColumns[10].textContent,
+                passing: playerColumns[11].textContent,
+                technical: playerColumns[12].textContent,
+                speed: playerColumns[13].textContent,
+                heading: playerColumns[14].textContent
+            },
+            experience: parseInt(playerColumns[15].textContent),
+            overall: playerColumns[16].textContent
+        };
+        console.log(player);
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
+        const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
+        playerRow.appendChild(ratingTd);
+    });
+};
+var $16d6774ae8f01de0$export$2e2bcd8739ae039 = $16d6774ae8f01de0$var$viewPlayerList;
+
+
+
+
+
+const $711c76ff1e59871f$var$viewPlayerProfile = ()=>{
+    console.log("soccer - view player profile");
+    const playerTable = document.getElementById("table-1");
+    const player = {
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#defense").textContent),
+            midfield: parseInt(playerTable.querySelector("#midfield").textContent),
+            offence: parseInt(playerTable.querySelector("#attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            speed: parseInt(playerTable.querySelector("#speed").textContent),
+            heading: parseInt(playerTable.querySelector("#heading").textContent)
+        },
+        // qualities: {
+        //   goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+        //   defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+        //   offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+        //   shooting: parseInt(
+        //     playerTable.querySelector("#kva_shooting").textContent
+        //   ),
+        //   passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+        //   technical: parseInt(
+        //     playerTable.querySelector("#technique_quality").textContent
+        //   ),
+        //   aggression: parseInt(
+        //     playerTable.querySelector("#kva_aggressive").textContent
+        //   ),
+        // },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
+    const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
+    const contentColumn = document.querySelector(".column_left");
+    const content = document.createElement("div");
+    content.classList.add("player-profile");
+    const skill = document.createElement("div");
+    skill.classList.add("skill");
+    skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
+    content.appendChild(skill);
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
+    content.appendChild(comparison);
+    contentColumn.appendChild(content);
+};
+var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerProfile;
+
+
+// import viewLineup from "./views/viewLineup";
+// import viewLineupChange from "./views/viewLineupChange";
+// import viewMarket from "./views/viewMarket";
+// import viewTraining from "./views/viewTraining";
+/**
+ * Run View Functions
+ */ const $51b5e71d03992dd2$var$initSoccer = ()=>{
+    if (window.location.href.includes("speletaju-parskats")) (0, $16d6774ae8f01de0$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("speletajs")) (0, $711c76ff1e59871f$export$2e2bcd8739ae039)();
+// if (window.location.href.includes("mainas")) viewLineup();
+// if (window.location.href.includes("speletaju-trenini")) viewTraining();
+// if (window.location.href.includes("rediget-mainu")) viewLineupChange();
+// if (window.location.href.includes("/lv/tirgus")) viewMarket();
+};
+var $51b5e71d03992dd2$export$2e2bcd8739ae039 = $51b5e71d03992dd2$var$initSoccer;
+
+
+console.log(window.location.href);
+if (window.location.href.includes("hockey.powerplaymanager.com")) (0, $73e5c51a6eddb90a$export$2e2bcd8739ae039)();
+if (window.location.href.includes("soccer.powerplaymanager.com")) (0, $51b5e71d03992dd2$export$2e2bcd8739ae039)();
 
 
 //# sourceMappingURL=main.js.map

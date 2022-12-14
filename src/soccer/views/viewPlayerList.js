@@ -1,3 +1,4 @@
+import { positionSettings, ratingSettings } from "../settings";
 import {
   calculatePositionsSkills,
   calculateBestPosition,
@@ -5,7 +6,7 @@ import {
 } from "~/src/calculations.js";
 import { renderTableCell, renderComparison } from "~/src/render.js";
 
-const viewLineupChange = () => {
+const viewPlayerList = () => {
   const tableHeads = document
     .getElementById("table-1")
     .querySelectorAll("thead");
@@ -25,22 +26,29 @@ const viewLineupChange = () => {
     const playerColumns = playerRow.querySelectorAll("td");
 
     const player = {
-      name: playerColumns[2].textContent,
+      name: playerColumns[0].textContent,
+      age: playerColumns[2].textContent,
+      careerLongitivity: Array.from(playerColumns[5].textContent)[0],
       skills: {
         goalie: playerColumns[6].textContent,
         defence: playerColumns[7].textContent,
-        offence: playerColumns[8].textContent,
-        shooting: playerColumns[9].textContent,
-        passing: playerColumns[10].textContent,
-        technical: playerColumns[11].textContent,
-        aggression: playerColumns[12].textContent,
+        midfield: playerColumns[8].textContent,
+        offence: playerColumns[9].textContent,
+        shooting: playerColumns[10].textContent,
+        passing: playerColumns[11].textContent,
+        technical: playerColumns[12].textContent,
+        speed: playerColumns[13].textContent,
+        heading: playerColumns[14].textContent,
       },
-      experience: parseInt(playerColumns[13].textContent),
-      overall: playerColumns[14].textContent,
+
+      experience: parseInt(playerColumns[15].textContent),
+      overall: playerColumns[16].textContent,
     };
 
+    console.log(player);
+
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player);
+    const skills = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(skills);
     const bestSkillWithExp = calculateSkillWithExp(
       bestPosition.skill,
@@ -51,19 +59,14 @@ const viewLineupChange = () => {
       renderTableCell(bestPosition.position, `${rowClass}td1`)
     );
 
-    playerRow.appendChild(
-      renderTableCell(
-        calculateSkillWithExp(bestPosition.skill, player.experience),
-        `${rowClass}td2`
-      )
-    );
+    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp));
+    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
 
     playerRow.appendChild(ratingTd);
   });
 };
 
-export default viewLineupChange;
+export default viewPlayerList;

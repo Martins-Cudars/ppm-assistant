@@ -1,9 +1,11 @@
+import { positionSettings } from "../settings";
+
 import {
   calculatePositionsQualities,
   calculateBestPotential,
 } from "~/src/calculations.js";
 
-import { renderTableCell, renderPotentialBadge } from "../render";
+import { renderTableCell, renderPotentialBadge } from "~/src/render";
 
 const viewTraining = () => {
   console.log("viewTraining");
@@ -39,7 +41,7 @@ const viewTraining = () => {
     };
 
     const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player)
+      calculatePositionsQualities(player, positionSettings)
     );
 
     const potentialBadge = renderPotentialBadge(

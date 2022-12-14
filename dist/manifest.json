@@ -14,12 +14,18 @@
         "icons/star-silver.svg",
         "icons/star-empty.svg"
       ],
-      "matches": ["https://hockey.powerplaymanager.com/*"]
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*"
+      ]
     }
   ],
   "content_scripts": [
     {
-      "matches": ["https://hockey.powerplaymanager.com/*"],
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*"
+      ],
       "css": ["styles.css"],
       "js": ["main.js"]
     }

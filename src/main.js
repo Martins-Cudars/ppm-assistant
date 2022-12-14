@@ -1,17 +1,8 @@
-import viewPlayerList from "./views/viewPlayerList";
-import viewPlayerProfile from "./views/viewPlayerProfile";
-import viewLineup from "./views/viewLineup";
-import viewLineupChange from "./views/viewLineupChange";
-import viewMarket from "./views/viewMarket";
-import viewTraining from "./views/viewTraining";
+import initHockey from "~/src/hockey/hockey.js";
+import initSoccer from "~/src/soccer/soccer.js";
 
-/**
- * Run View Functions
- */
+console.log(window.location.href);
 
-if (window.location.href.includes("speletaju-parskats")) viewPlayerList();
-if (window.location.href.includes("speletajs")) viewPlayerProfile();
-if (window.location.href.includes("mainas")) viewLineup();
-if (window.location.href.includes("speletaju-trenini")) viewTraining();
-if (window.location.href.includes("rediget-mainu")) viewLineupChange();
-if (window.location.href.includes("/lv/tirgus")) viewMarket();
+if (window.location.href.includes("hockey.powerplaymanager.com")) initHockey();
+
+if (window.location.href.includes("soccer.powerplaymanager.com")) initSoccer();

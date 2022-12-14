@@ -1,3 +1,4 @@
+import { positionSettings, ratingSettings } from "../settings";
 import {
   calculatePositionsSkills,
   calculateBestPosition,
@@ -75,7 +76,7 @@ const viewMarket = () => {
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player);
+    const skills = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(skills);
     const bestSkillWithExp = calculateSkillWithExp(
       bestPosition.skill,
@@ -90,12 +91,12 @@ const viewMarket = () => {
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp));
+    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
 
     playerRow.appendChild(ratingTd);
 
     const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player)
+      calculatePositionsQualities(player, positionSettings)
     );
 
     const potentialBadge = renderPotentialBadge(

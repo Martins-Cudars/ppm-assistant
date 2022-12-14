@@ -1,4 +1,3 @@
-import { ratingSettings } from "./settings.js";
 import { potentialGrade } from "./utilities.js";
 
 const renderTableCell = (content, cssClass) => {
@@ -8,7 +7,7 @@ const renderTableCell = (content, cssClass) => {
   return cell;
 };
 
-const renderComparison = (skill) => {
+const renderComparison = (skill, ratingSettings) => {
   let ratingPercentage;
 
   const ratingOuter = document.createElement("div");

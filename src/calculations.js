@@ -1,7 +1,6 @@
-import { positionSettings } from "./settings.js";
-
-const calculatePositionsSkills = (player) => {
+const calculatePositionsSkills = (player, positionSettings) => {
   const positionSkills = [];
+
   positionSettings.forEach((position) => {
     const skills = [];
 
@@ -37,7 +36,7 @@ const calculateSkillWithExp = (skill, experience) => {
   return Math.round(skill * (1 + experience / 500));
 };
 
-const calculatePositionsQualities = (player) => {
+const calculatePositionsQualities = (player, positionSettings) => {
   const positionPotentials = [];
 
   positionSettings.forEach((position) => {
@@ -73,50 +72,10 @@ const calculateBestPotential = (potentials) => {
   return bestPotential;
 };
 
-const calculateTrainableSkill = (skills, position) => {
-  const positionRatios = positionSettings.find(
-    (name) => name.name === position.position
-  ).ratios;
-
-  const trainableSkill = {
-    minimumSkill: { skill: null, ability: null },
-    maximumSkill: { skill: null, ability: null },
-    difference: null,
-  };
-
-  for (const [key, value] of Object.entries(positionRatios)) {
-    const adjustedSkill = parseInt(skills[key]) / value;
-
-    if (
-      trainableSkill.minimumSkill.ability === null ||
-      adjustedSkill < trainableSkill.minimumSkill.ability
-    ) {
-      trainableSkill.minimumSkill = {
-        skill: key,
-        ability: adjustedSkill * value,
-      };
-    }
-
-    trainableSkill.maximumSkill = {
-      skill: key,
-      ability: adjustedSkill * value,
-    };
-  }
-
-  trainableSkill.difference =
-    trainableSkill.maximumSkill.ability /
-      positionRatios[trainableSkill.maximumSkill.skill] -
-    trainableSkill.minimumSkill.ability /
-      positionRatios[trainableSkill.minimumSkill.skill];
-
-  return trainableSkill;
-};
-
 export {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
   calculatePositionsQualities,
   calculateBestPotential,
-  calculateTrainableSkill,
 };
