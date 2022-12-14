@@ -45,8 +45,6 @@ const viewPlayerList = () => {
       overall: playerColumns[16].textContent,
     };
 
-    console.log(player);
-
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
     const skills = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(skills);

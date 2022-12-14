@@ -30,11 +30,13 @@ const viewTraining = () => {
       qualities: {
         goalie: parseInt(playerQualities[0].textContent),
         defence: parseInt(playerQualities[1].textContent),
-        offence: parseInt(playerQualities[2].textContent),
-        shooting: parseInt(playerQualities[3].textContent),
-        passing: parseInt(playerQualities[4].textContent),
-        technical: parseInt(playerQualities[5].textContent),
-        aggression: parseInt(playerQualities[6].textContent),
+        midfield: parseInt(playerQualities[2].textContent),
+        offence: parseInt(playerQualities[3].textContent),
+        shooting: parseInt(playerQualities[4].textContent),
+        passing: parseInt(playerQualities[5].textContent),
+        technical: parseInt(playerQualities[6].textContent),
+        speed: parseInt(playerQualities[7].textContent),
+        heading: parseInt(playerQualities[8].textContent),
       },
     };
 

@@ -15,8 +15,6 @@ import {
 } from "~/src/render.js";
 
 const viewPlayerProfile = () => {
-  console.log("soccer - view player profile");
-
   const playerTable = document.getElementById("table-1");
 
   const player = {
@@ -36,21 +34,23 @@ const viewPlayerProfile = () => {
       speed: parseInt(playerTable.querySelector("#speed").textContent),
       heading: parseInt(playerTable.querySelector("#heading").textContent),
     },
-    // qualities: {
-    //   goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
-    //   defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
-    //   offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
-    //   shooting: parseInt(
-    //     playerTable.querySelector("#kva_shooting").textContent
-    //   ),
-    //   passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
-    //   technical: parseInt(
-    //     playerTable.querySelector("#technique_quality").textContent
-    //   ),
-    //   aggression: parseInt(
-    //     playerTable.querySelector("#kva_aggressive").textContent
-    //   ),
-    // },
+    qualities: {
+      goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+      defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+      midfield: parseInt(
+        playerTable.querySelector("#kva_midfield").textContent
+      ),
+      offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+      shooting: parseInt(
+        playerTable.querySelector("#kva_shooting").textContent
+      ),
+      passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+      technical: parseInt(
+        playerTable.querySelector("#technique_quality").textContent
+      ),
+      speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
+      heading: parseInt(playerTable.querySelector("#kva_heading").textContent),
+    },
     experience: parseInt(playerTable.querySelector("#experience").textContent),
     overall: playerTable.querySelector("#index_skill").textContent,
   };
@@ -60,8 +60,8 @@ const viewPlayerProfile = () => {
 
   const contentColumn = document.querySelector(".column_left");
 
-  const content = document.createElement("div");
-  content.classList.add("player-profile");
+  const skillBox = document.createElement("div");
+  skillBox.classList.add("player-profile");
 
   const skill = document.createElement("div");
   skill.classList.add("skill");
@@ -70,7 +70,7 @@ const viewPlayerProfile = () => {
     bestPosition.skill
   } (${calculateSkillWithExp(bestPosition.skill, player.experience)})`;
 
-  content.appendChild(skill);
+  skillBox.appendChild(skill);
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
@@ -80,9 +80,24 @@ const viewPlayerProfile = () => {
       ratingSettings
     )
   );
-  content.appendChild(comparison);
+  skillBox.appendChild(comparison);
+  contentColumn.appendChild(skillBox);
 
-  contentColumn.appendChild(content);
+  const potentialBox = document.createElement("div");
+  potentialBox.classList.add("player-profile");
+  potentialBox.classList.add("player-profile--potential");
+
+  const bestPotential = calculateBestPotential(
+    calculatePositionsQualities(player, positionSettings)
+  );
+
+  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  potentialBox.appendChild(potentialBadge);
+
+  const potential = renderPotential(bestPotential);
+  potentialBox.appendChild(potential);
+
+  contentColumn.appendChild(potentialBox);
 };
 
 export default viewPlayerProfile;
