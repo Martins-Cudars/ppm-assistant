@@ -528,7 +528,7 @@ const $d72e2c82b342b23f$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "D",
+        name: "SD",
         ratios: {
             defence: 1,
             technical: 0.5,
@@ -548,7 +548,7 @@ const $d72e2c82b342b23f$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "M",
+        name: "SM",
         ratios: {
             midfield: 1,
             technical: 0.5,
@@ -568,7 +568,7 @@ const $d72e2c82b342b23f$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "F",
+        name: "SF",
         ratios: {
             offence: 1,
             technical: 0.75,

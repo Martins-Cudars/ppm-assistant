@@ -10,7 +10,7 @@ const positionSettings = [
     },
   },
   {
-    name: "D",
+    name: "SD",
     ratios: {
       defence: 1,
       technical: 0.5,
@@ -30,7 +30,7 @@ const positionSettings = [
     },
   },
   {
-    name: "M",
+    name: "SM",
     ratios: {
       midfield: 1,
       technical: 0.5,
@@ -50,7 +50,7 @@ const positionSettings = [
     },
   },
   {
-    name: "F",
+    name: "SF",
     ratios: {
       offence: 1,
       technical: 0.75,
