@@ -121,15 +121,26 @@ const viewPlayerProfile = () => {
   potentialBox.classList.add("player-profile");
   potentialBox.classList.add("player-profile--potential");
 
-  const bestPotential = calculateBestPotential(
-    calculatePositionsQualities(player, positionSettings)
-  );
+  const potentials = calculatePositionsQualities(player, positionSettings);
+  const bestPotential = calculateBestPotential(potentials);
 
   const potentialBadge = renderPotentialBadge(bestPotential.potential);
   potentialBox.appendChild(potentialBadge);
 
   const potentialDescription = renderPotential(bestPotential);
   potentialBox.appendChild(potentialDescription);
+
+  const allPotentials = document.createElement("div");
+  allPotentials.classList.add("potential__positions");
+
+  let potentialList = ``;
+
+  potentials.forEach((potential) => {
+    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+  });
+
+  allPotentials.innerHTML = potentialList;
+  potentialBox.appendChild(allPotentials);
 
   contentColumn.appendChild(potentialBox);
 };

@@ -1,6 +1,6 @@
 const positionSettings = [
   {
-    name: "Goalie",
+    name: "G",
     ratios: {
       goalie: 1,
       technical: 0.5,
@@ -8,7 +8,7 @@ const positionSettings = [
     },
   },
   {
-    name: "Defence",
+    name: "D",
     ratios: {
       defence: 1,
       passing: 0.5,
@@ -16,7 +16,7 @@ const positionSettings = [
     },
   },
   {
-    name: "Winger",
+    name: "W",
     ratios: {
       offence: 1,
       technical: 0.5,
@@ -24,7 +24,7 @@ const positionSettings = [
     },
   },
   {
-    name: "Center",
+    name: "C",
     ratios: {
       offence: 1,
       technical: 0.5,

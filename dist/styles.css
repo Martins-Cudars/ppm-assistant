@@ -35,7 +35,8 @@
 
 .player-profile--potential,
 .player-profile--ability {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px 1fr;
   align-items: center;
   gap: 0.5rem;
 }
@@ -46,16 +47,26 @@
 
 .player-profile .potential__badge,
 .player-profile .ability__position {
-  flex-grow: 0;
-  flex-shrink: 0;
+  grid-row: 1;
+  grid-column: 1;
+}
+.player-profile .potential__text,
+.player-profile .ability__text {
+  grid-row: 1;
+  grid-column: 2;
 }
 
 .player-profile .potential__text {
   text-align: left;
+  font-size: 12px;
 }
 
 .player-profile .ability__text {
   text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
 }
 
 .player-profile .ability__text div:nth-child(1) {
@@ -67,14 +78,7 @@
   font-size: 9px;
 }
 
-.ability__text {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 12px;
-}
-
-.ability__position {
+.player-profile .ability__position {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,9 +90,12 @@
   font-size: 1.25rem;
 }
 
-.ability__positions {
-  flex-grow: 1;
+.player-profile .ability__positions,
+.player-profile .potential__positions {
+  grid-row: 2;
+  grid-column: 1 / span 2;
   display: flex;
+  justify-content: space-between;
   font-size: 12px;
 }
 

@@ -1,6 +1,6 @@
 const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
     {
-        name: "Goalie",
+        name: "G",
         ratios: {
             goalie: 1,
             technical: 0.5,
@@ -8,7 +8,7 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "Defence",
+        name: "D",
         ratios: {
             defence: 1,
             passing: 0.5,
@@ -16,7 +16,7 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "Winger",
+        name: "W",
         ratios: {
             offence: 1,
             technical: 0.5,
@@ -24,7 +24,7 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
         }
     },
     {
-        name: "Center",
+        name: "C",
         ratios: {
             offence: 1,
             technical: 0.5,
@@ -52,8 +52,7 @@ const $78fc06ffa0ef6332$export$f424e510a287eb0 = (player, positionSettings)=>{
     return positionSkills;
 };
 const $78fc06ffa0ef6332$export$fefc44fbabdf230f = (skills)=>{
-    const bestPosition = skills.sort((a, b)=>b.level - a.level)[0];
-    return bestPosition;
+    return skills.sort((a, b)=>b.level - a.level)[0];
 };
 const $78fc06ffa0ef6332$export$5898f23eb7acb0be = (skill, experience)=>{
     return Math.round(skill * (1 + experience / 500));
@@ -69,23 +68,13 @@ const $78fc06ffa0ef6332$export$bf339f9dce5a47df = (player, positionSettings)=>{
         }
         positionPotentials.push({
             position: position.name,
-            potential: Math.min(qualities / modifier)
+            potential: Math.round(Math.min(qualities / modifier))
         });
     });
     return positionPotentials;
 };
 const $78fc06ffa0ef6332$export$82338cb6413791b1 = (potentials)=>{
-    let bestPotential = {
-        position: "Unknown",
-        potential: 0
-    };
-    potentials.forEach((potential)=>{
-        if (potential.potential > bestPotential.potential) {
-            bestPotential.position = potential.position;
-            bestPotential.potential = potential.potential;
-        }
-    });
-    return bestPotential;
+    return potentials.sort((a, b)=>b.potential - a.potential)[0];
 };
 
 
@@ -257,25 +246,54 @@ const $47e313680aa18398$var$viewPlayerProfile = ()=>{
     const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
     const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
     const contentColumn = document.querySelector(".column_left");
-    const content = document.createElement("div");
-    content.classList.add("player-profile");
-    const potentialBox = document.createElement("div");
-    potentialBox.classList.add("player-profile");
-    potentialBox.classList.add("player-profile--potential");
-    const skill = document.createElement("div");
-    skill.classList.add("skill");
-    skill.textContent = `${bestPosition.position} ${bestPosition.level} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience)})`;
-    content.appendChild(skill);
+    /**
+   * Ability Box
+   */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position1 = document.createElement("div");
+    position1.classList.add("ability__position");
+    position1.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position1);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience)}</div>
+   <div>(${bestPosition.level})</div>`;
     const comparison = document.createElement("div");
     comparison.classList.add("comparison");
     comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience), (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
-    content.appendChild(comparison);
-    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
+    /**
+   * Potential Box
+   */ const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const potentials = (0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
+    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)(potentials);
     const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
     potentialBox.appendChild(potentialBadge);
-    const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
-    potentialBox.appendChild(potential);
-    contentColumn.appendChild(content);
+    const potentialDescription = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
     contentColumn.appendChild(potentialBox);
 };
 var $47e313680aa18398$export$2e2bcd8739ae039 = $47e313680aa18398$var$viewPlayerProfile;
@@ -678,11 +696,20 @@ const $711c76ff1e59871f$var$viewPlayerProfile = ()=>{
    */ const potentialBox = document.createElement("div");
     potentialBox.classList.add("player-profile");
     potentialBox.classList.add("player-profile--potential");
-    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3)));
+    const potentials = (0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
+    const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)(potentials);
     const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
     potentialBox.appendChild(potentialBadge);
     const potentialDescription = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
     potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
     contentColumn.appendChild(potentialBox);
 };
 var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerProfile;

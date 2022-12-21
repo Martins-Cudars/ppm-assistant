@@ -57,21 +57,42 @@ const viewPlayerProfile = () => {
 
   const contentColumn = document.querySelector(".column_left");
 
-  const content = document.createElement("div");
-  content.classList.add("player-profile");
+  /**
+   * Ability Box
+   */
+  const abilityBox = document.createElement("div");
+  abilityBox.classList.add("player-profile");
+  abilityBox.classList.add("player-profile--ability");
 
-  const potentialBox = document.createElement("div");
-  potentialBox.classList.add("player-profile");
-  potentialBox.classList.add("player-profile--potential");
+  const position = document.createElement("div");
+  position.classList.add("ability__position");
+  position.textContent = bestPosition.position;
 
-  const skill = document.createElement("div");
-  skill.classList.add("skill");
+  const allPositions = document.createElement("div");
+  allPositions.classList.add("ability__positions");
 
-  skill.textContent = `${bestPosition.position} ${
-    bestPosition.level
-  } (${calculateSkillWithExp(bestPosition.level, player.experience)})`;
+  let positionList = ``;
 
-  content.appendChild(skill);
+  positions.forEach((position) => {
+    positionList += `<div>${position.position} ${calculateSkillWithExp(
+      position.level,
+      player.experience
+    )}</div>`;
+  });
+
+  allPositions.innerHTML = positionList;
+
+  abilityBox.appendChild(position);
+
+  const abilityDescription = document.createElement("div");
+  abilityDescription.classList.add("ability__text");
+
+  const abilityValue = document.createElement("div");
+  abilityValue.innerHTML = `<div>${calculateSkillWithExp(
+    bestPosition.level,
+    player.experience
+  )}</div>
+   <div>(${bestPosition.level})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
@@ -81,19 +102,43 @@ const viewPlayerProfile = () => {
       ratingSettings
     )
   );
-  content.appendChild(comparison);
 
-  const bestPotential = calculateBestPotential(
-    calculatePositionsQualities(player, positionSettings)
-  );
+  abilityDescription.appendChild(abilityValue);
+  abilityDescription.appendChild(comparison);
+  abilityBox.appendChild(abilityDescription);
+
+  abilityBox.appendChild(allPositions);
+
+  contentColumn.appendChild(abilityBox);
+
+  /**
+   * Potential Box
+   */
+  const potentialBox = document.createElement("div");
+  potentialBox.classList.add("player-profile");
+  potentialBox.classList.add("player-profile--potential");
+
+  const potentials = calculatePositionsQualities(player, positionSettings);
+  const bestPotential = calculateBestPotential(potentials);
 
   const potentialBadge = renderPotentialBadge(bestPotential.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potential = renderPotential(bestPotential);
-  potentialBox.appendChild(potential);
+  const potentialDescription = renderPotential(bestPotential);
+  potentialBox.appendChild(potentialDescription);
 
-  contentColumn.appendChild(content);
+  const allPotentials = document.createElement("div");
+  allPotentials.classList.add("potential__positions");
+
+  let potentialList = ``;
+
+  potentials.forEach((potential) => {
+    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+  });
+
+  allPotentials.innerHTML = potentialList;
+  potentialBox.appendChild(allPotentials);
+
   contentColumn.appendChild(potentialBox);
 };
 
