@@ -68,8 +68,8 @@ const viewPlayerProfile = () => {
   skill.classList.add("skill");
 
   skill.textContent = `${bestPosition.position} ${
-    bestPosition.skill
-  } (${calculateSkillWithExp(bestPosition.skill, player.experience)})`;
+    bestPosition.level
+  } (${calculateSkillWithExp(bestPosition.level, player.experience)})`;
 
   content.appendChild(skill);
 
@@ -77,7 +77,7 @@ const viewPlayerProfile = () => {
   comparison.classList.add("comparison");
   comparison.appendChild(
     renderComparison(
-      calculateSkillWithExp(bestPosition.skill, player.experience),
+      calculateSkillWithExp(bestPosition.level, player.experience),
       ratingSettings
     )
   );

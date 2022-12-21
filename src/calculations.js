@@ -10,7 +10,7 @@ const calculatePositionsSkills = (player, positionSettings) => {
 
     positionSkills.push({
       position: position.name,
-      level: Math.min(...skills),
+      level: Math.round(Math.min(...skills)),
     });
   });
 
@@ -18,17 +18,7 @@ const calculatePositionsSkills = (player, positionSettings) => {
 };
 
 const calculateBestPosition = (skills) => {
-  let bestPosition = {
-    position: "Unknown",
-    skill: 0,
-  };
-
-  skills.forEach((skill) => {
-    if (skill.level > bestPosition.skill) {
-      bestPosition.position = skill.position;
-      bestPosition.skill = skill.level;
-    }
-  });
+  const bestPosition = skills.sort((a, b) => b.level - a.level)[0];
   return bestPosition;
 };
 

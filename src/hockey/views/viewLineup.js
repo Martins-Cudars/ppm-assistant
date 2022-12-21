@@ -41,7 +41,7 @@ const viewLineupChange = () => {
         const skills = calculatePositionsSkills(player, positionSettings);
         const bestPosition = calculateBestPosition(skills);
         const bestSkillWithExp = calculateSkillWithExp(
-          bestPosition.skill,
+          bestPosition.level,
           player.experience
         );
 
@@ -51,7 +51,7 @@ const viewLineupChange = () => {
 
         playerRow.appendChild(
           renderTableCell(
-            calculateSkillWithExp(bestPosition.skill, player.experience),
+            calculateSkillWithExp(bestPosition.level, player.experience),
             `${rowClass}td2`
           )
         );

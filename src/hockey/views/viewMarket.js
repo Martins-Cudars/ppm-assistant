@@ -79,7 +79,7 @@ const viewMarket = () => {
     const skills = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(skills);
     const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.skill,
+      bestPosition.level,
       player.experience
     );
 

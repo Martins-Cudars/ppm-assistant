@@ -60,29 +60,63 @@ const viewPlayerProfile = () => {
 
   const contentColumn = document.querySelector(".column_left");
 
-  const skillBox = document.createElement("div");
-  skillBox.classList.add("player-profile");
+  /**
+   * Ability Box
+   */
+  const abilityBox = document.createElement("div");
+  abilityBox.classList.add("player-profile");
+  abilityBox.classList.add("player-profile--ability");
 
-  const skill = document.createElement("div");
-  skill.classList.add("skill");
+  const position = document.createElement("div");
+  position.classList.add("ability__position");
+  position.textContent = bestPosition.position;
 
-  skill.textContent = `${bestPosition.position} ${
-    bestPosition.skill
-  } (${calculateSkillWithExp(bestPosition.skill, player.experience)})`;
+  const allPositions = document.createElement("div");
+  allPositions.classList.add("ability__positions");
 
-  skillBox.appendChild(skill);
+  let positionList = ``;
+
+  positions.forEach((position) => {
+    positionList += `<div>${position.position} ${calculateSkillWithExp(
+      position.level,
+      player.experience
+    )}</div>`;
+  });
+
+  allPositions.innerHTML = positionList;
+
+  abilityBox.appendChild(position);
+
+  const abilityDescription = document.createElement("div");
+  abilityDescription.classList.add("ability__text");
+
+  const abilityValue = document.createElement("div");
+  abilityValue.innerHTML = `<div>${calculateSkillWithExp(
+    bestPosition.level,
+    player.experience
+  )}</div>
+  <div>(${bestPosition.level})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
   comparison.appendChild(
     renderComparison(
-      calculateSkillWithExp(bestPosition.skill, player.experience),
+      calculateSkillWithExp(bestPosition.level, player.experience),
       ratingSettings
     )
   );
-  skillBox.appendChild(comparison);
-  contentColumn.appendChild(skillBox);
 
+  abilityDescription.appendChild(abilityValue);
+  abilityDescription.appendChild(comparison);
+  abilityBox.appendChild(abilityDescription);
+
+  abilityBox.appendChild(allPositions);
+
+  contentColumn.appendChild(abilityBox);
+
+  /**
+   * Potential Box
+   */
   const potentialBox = document.createElement("div");
   potentialBox.classList.add("player-profile");
   potentialBox.classList.add("player-profile--potential");
@@ -94,8 +128,8 @@ const viewPlayerProfile = () => {
   const potentialBadge = renderPotentialBadge(bestPotential.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potential = renderPotential(bestPotential);
-  potentialBox.appendChild(potential);
+  const potentialDescription = renderPotential(bestPotential);
+  potentialBox.appendChild(potentialDescription);
 
   contentColumn.appendChild(potentialBox);
 };

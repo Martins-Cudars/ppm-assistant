@@ -46,22 +46,13 @@ const $78fc06ffa0ef6332$export$f424e510a287eb0 = (player, positionSettings)=>{
         for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
         positionSkills.push({
             position: position.name,
-            level: Math.min(...skills)
+            level: Math.round(Math.min(...skills))
         });
     });
     return positionSkills;
 };
 const $78fc06ffa0ef6332$export$fefc44fbabdf230f = (skills)=>{
-    let bestPosition = {
-        position: "Unknown",
-        skill: 0
-    };
-    skills.forEach((skill)=>{
-        if (skill.level > bestPosition.skill) {
-            bestPosition.position = skill.position;
-            bestPosition.skill = skill.level;
-        }
-    });
+    const bestPosition = skills.sort((a, b)=>b.level - a.level)[0];
     return bestPosition;
 };
 const $78fc06ffa0ef6332$export$5898f23eb7acb0be = (skill, experience)=>{
@@ -223,7 +214,7 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");
@@ -273,11 +264,11 @@ const $47e313680aa18398$var$viewPlayerProfile = ()=>{
     potentialBox.classList.add("player-profile--potential");
     const skill = document.createElement("div");
     skill.classList.add("skill");
-    skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
+    skill.textContent = `${bestPosition.position} ${bestPosition.level} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience)})`;
     content.appendChild(skill);
     const comparison = document.createElement("div");
     comparison.classList.add("comparison");
-    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
+    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience), (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
     content.appendChild(comparison);
     const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
     const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
@@ -322,9 +313,9 @@ const $49e9dbd41eda08ef$var$viewLineupChange = ()=>{
                 const rowClass = index % 2 === 0 ? "tr1" : "tr0";
                 const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
                 const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-                const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+                const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
                 playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
-                playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
+                playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience), `${rowClass}td2`));
                 const ratingTd = document.createElement("td");
                 ratingTd.classList.add(`${rowClass}td1`);
                 ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
@@ -365,9 +356,9 @@ const $003292cd27b2be11$var$viewLineupChange = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
-        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), `${rowClass}td2`));
+        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience), `${rowClass}td2`));
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
         ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
@@ -427,7 +418,7 @@ var $003292cd27b2be11$export$2e2bcd8739ae039 = $003292cd27b2be11$var$viewLineupC
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");
@@ -606,7 +597,7 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
-        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");
@@ -653,25 +644,45 @@ const $711c76ff1e59871f$var$viewPlayerProfile = ()=>{
     const positions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
     const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(positions);
     const contentColumn = document.querySelector(".column_left");
-    const skillBox = document.createElement("div");
-    skillBox.classList.add("player-profile");
-    const skill = document.createElement("div");
-    skill.classList.add("skill");
-    skill.textContent = `${bestPosition.position} ${bestPosition.skill} (${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience)})`;
-    skillBox.appendChild(skill);
+    /**
+   * Ability Box
+   */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position1 = document.createElement("div");
+    position1.classList.add("ability__position");
+    position1.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position1);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience)}</div>
+  <div>(${bestPosition.level})</div>`;
     const comparison = document.createElement("div");
     comparison.classList.add("comparison");
-    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.skill, player.experience), (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
-    skillBox.appendChild(comparison);
-    contentColumn.appendChild(skillBox);
-    const potentialBox = document.createElement("div");
+    comparison.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)((0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience), (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
+    /**
+   * Potential Box
+   */ const potentialBox = document.createElement("div");
     potentialBox.classList.add("player-profile");
     potentialBox.classList.add("player-profile--potential");
     const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3)));
     const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential);
     potentialBox.appendChild(potentialBadge);
-    const potential = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
-    potentialBox.appendChild(potential);
+    const potentialDescription = (0, $18c53b0039ffc5db$export$c1975daa4eb91b44)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
     contentColumn.appendChild(potentialBox);
 };
 var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerProfile;

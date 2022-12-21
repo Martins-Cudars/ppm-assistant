@@ -33,19 +33,63 @@
   margin-top: 12px;
 }
 
-.player-profile--potential {
+.player-profile--potential,
+.player-profile--ability {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
-.player-profile .potential__badge {
-  flex-grow: 1;
+.player-profile--ability {
+  flex-wrap: wrap;
+}
+
+.player-profile .potential__badge,
+.player-profile .ability__position {
+  flex-grow: 0;
   flex-shrink: 0;
 }
 
 .player-profile .potential__text {
   text-align: left;
+}
+
+.player-profile .ability__text {
+  text-align: center;
+}
+
+.player-profile .ability__text div:nth-child(1) {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.player-profile .ability__text div:nth-child(2) {
+  font-size: 9px;
+}
+
+.ability__text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 12px;
+}
+
+.ability__position {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background-color: rgb(40, 94, 130);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+
+.ability__positions {
+  flex-grow: 1;
+  display: flex;
+  font-size: 12px;
 }
 
 .potential__badge {
