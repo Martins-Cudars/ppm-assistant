@@ -37,6 +37,13 @@ const calculatePositionsQualities = (player, positionSettings) => {
       modifier += value;
     }
 
+    if (position.bonus) {
+      for (const [key, value] of Object.entries(position.bonus)) {
+        qualities += player.qualities[key] * value;
+        modifier += value;
+      }
+    }
+
     positionPotentials.push({
       position: position.name,
       potential: Math.round(Math.min(qualities / modifier)),

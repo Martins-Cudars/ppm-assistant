@@ -13,6 +13,9 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
             defence: 1,
             passing: 0.5,
             aggression: 0.5
+        },
+        bonus: {
+            technical: 0.5
         }
     },
     {
@@ -21,6 +24,9 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
             offence: 1,
             technical: 0.5,
             aggression: 0.5
+        },
+        bonus: {
+            shooting: 0.75
         }
     },
     {
@@ -29,6 +35,9 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
             offence: 1,
             technical: 0.5,
             passing: 0.5
+        },
+        bonus: {
+            shooting: 0.5
         }
     }, 
 ];
@@ -65,6 +74,10 @@ const $78fc06ffa0ef6332$export$bf339f9dce5a47df = (player, positionSettings)=>{
         for (const [key, value] of Object.entries(position.ratios)){
             qualities += player.qualities[key] * value;
             modifier += value;
+        }
+        if (position.bonus) for (const [key1, value1] of Object.entries(position.bonus)){
+            qualities += player.qualities[key1] * value1;
+            modifier += value1;
         }
         positionPotentials.push({
             position: position.name,

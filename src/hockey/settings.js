@@ -14,6 +14,9 @@ const positionSettings = [
       passing: 0.5,
       aggression: 0.5,
     },
+    bonus: {
+      technical: 0.5,
+    },
   },
   {
     name: "W",
@@ -22,6 +25,9 @@ const positionSettings = [
       technical: 0.5,
       aggression: 0.5,
     },
+    bonus: {
+      shooting: 0.75,
+    },
   },
   {
     name: "C",
@@ -29,6 +35,9 @@ const positionSettings = [
       offence: 1,
       technical: 0.5,
       passing: 0.5,
+    },
+    bonus: {
+      shooting: 0.5,
     },
   },
 ];
