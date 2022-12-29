@@ -17,7 +17,6 @@ import {
  */
 
 const viewMarket = () => {
-  console.log("viewMarket");
   const tableHeads = document
     .getElementById("table-1")
     .querySelectorAll("thead");
@@ -79,8 +78,6 @@ const viewMarket = () => {
       experience: parseInt(playerColumns[13].textContent),
       overall: playerColumns[14].textContent,
     };
-
-    console.log(player);
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
     const skills = calculatePositionsSkills(player, positionSettings);

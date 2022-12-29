@@ -734,7 +734,6 @@ var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerP
 /**
  * View Functions
  */ const $73932bdad6fcf7ee$var$viewMarket = ()=>{
-    console.log("viewMarket");
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -780,7 +779,6 @@ var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerP
             experience: parseInt(playerColumns[13].textContent),
             overall: playerColumns[14].textContent
         };
-        console.log(player);
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
