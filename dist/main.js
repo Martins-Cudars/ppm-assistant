@@ -731,6 +731,81 @@ var $711c76ff1e59871f$export$2e2bcd8739ae039 = $711c76ff1e59871f$var$viewPlayerP
 
 
 
+/**
+ * View Functions
+ */ const $73932bdad6fcf7ee$var$viewMarket = ()=>{
+    console.log("viewMarket");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Pos", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Sk", "th2"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Rating", "th1"));
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Grd", "th2"));
+    });
+    const getSkill = (column)=>{
+        return parseInt([].reduce.call(column.childNodes, (a, b)=>{
+            return a + (b.nodeType === 3 ? b.textContent : "");
+        }, ""));
+    };
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[1].textContent,
+            careerLongitivity: Array.from(playerColumns[3].textContent)[0],
+            skills: {
+                goalie: getSkill(playerColumns[4]),
+                defence: getSkill(playerColumns[5]),
+                midfield: getSkill(playerColumns[6]),
+                offence: getSkill(playerColumns[7]),
+                shooting: getSkill(playerColumns[8]),
+                passing: getSkill(playerColumns[9]),
+                technical: getSkill(playerColumns[10]),
+                speed: getSkill(playerColumns[11]),
+                heading: getSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                midfield: parseInt(playerQualities[2].textContent),
+                offence: parseInt(playerQualities[3].textContent),
+                shooting: parseInt(playerQualities[4].textContent),
+                passing: parseInt(playerQualities[5].textContent),
+                technical: parseInt(playerQualities[6].textContent),
+                speed: parseInt(playerQualities[7].textContent),
+                heading: parseInt(playerQualities[7].textContent)
+            },
+            experience: parseInt(playerColumns[13].textContent),
+            overall: playerColumns[14].textContent
+        };
+        console.log(player);
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
+        const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+        const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
+        playerRow.appendChild(ratingTd);
+        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3)));
+        const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+var $73932bdad6fcf7ee$export$2e2bcd8739ae039 = $73932bdad6fcf7ee$var$viewMarket;
+
+
+
+
+
 const $330661c0fd2d6392$var$viewTraining = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
@@ -772,8 +847,8 @@ var $330661c0fd2d6392$export$2e2bcd8739ae039 = $330661c0fd2d6392$var$viewTrainin
     if (window.location.href.includes("speletajs")) (0, $711c76ff1e59871f$export$2e2bcd8739ae039)();
     // if (window.location.href.includes("mainas")) viewLineup();
     if (window.location.href.includes("speletaju-trenini")) (0, $330661c0fd2d6392$export$2e2bcd8739ae039)();
-// if (window.location.href.includes("rediget-mainu")) viewLineupChange();
-// if (window.location.href.includes("/lv/tirgus")) viewMarket();
+    // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
+    if (window.location.href.includes("speletaju-tirgus")) (0, $73932bdad6fcf7ee$export$2e2bcd8739ae039)();
 };
 var $51b5e71d03992dd2$export$2e2bcd8739ae039 = $51b5e71d03992dd2$var$initSoccer;
 
