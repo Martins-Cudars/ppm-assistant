@@ -96,11 +96,19 @@ const viewPlayerList = () => {
   positionFilter.classList.add("position-filter");
   positionFilter.classList.add("white_box");
 
-  const positionButtonAll = renderButton("All");
-  const positionButtonW = renderButton("W");
-  const positionButtonC = renderButton("C");
-  const positionButtonD = renderButton("D");
-  const positionButtonG = renderButton("G");
+  const positionButtonAll = renderButton(`All (${playerRows.length})`);
+  const positionButtonW = renderButton(
+    `W (${document.querySelectorAll(".position-w").length})`
+  );
+  const positionButtonC = renderButton(
+    `C (${document.querySelectorAll(".position-c").length})`
+  );
+  const positionButtonD = renderButton(
+    `D (${document.querySelectorAll(".position-d").length})`
+  );
+  const positionButtonG = renderButton(
+    `G (${document.querySelectorAll(".position-g").length})`
+  );
 
   positionButtonAll.addEventListener("click", () => filterByPositions("All"));
   positionButtonW.addEventListener("click", () => filterByPositions("W"));

@@ -249,11 +249,11 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
     const positionFilter = document.createElement("div");
     positionFilter.classList.add("position-filter");
     positionFilter.classList.add("white_box");
-    const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("All");
-    const positionButtonW = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("W");
-    const positionButtonC = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("C");
-    const positionButtonD = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("D");
-    const positionButtonG = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("G");
+    const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`All (${playerRows.length})`);
+    const positionButtonW = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`W (${document.querySelectorAll(".position-w").length})`);
+    const positionButtonC = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`C (${document.querySelectorAll(".position-c").length})`);
+    const positionButtonD = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`D (${document.querySelectorAll(".position-d").length})`);
+    const positionButtonG = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`G (${document.querySelectorAll(".position-g").length})`);
     positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
     positionButtonW.addEventListener("click", ()=>filterByPositions("W"));
     positionButtonC.addEventListener("click", ()=>filterByPositions("C"));
