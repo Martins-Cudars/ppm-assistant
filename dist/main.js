@@ -185,9 +185,15 @@ const $18c53b0039ffc5db$export$4fd609a04677ca67 = (trainableSkill)=>{
     trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
     return trainableSkillElement;
 };
+const $18c53b0039ffc5db$export$9b8b2ad360b4fa1b = (text)=>{
+    const button = document.createElement("button");
+    button.innerText = text;
+    return button;
+};
 
 
 const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
+    const mainContent = document.getElementsByClassName("main_content");
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -197,6 +203,7 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
     });
     playerRows.forEach((playerRow, index)=>{
         const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
         const player = {
             name: playerColumns[0].textContent,
             age: playerColumns[2].textContent,
@@ -216,6 +223,7 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
@@ -224,6 +232,39 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
         ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $05be6c1d1617fb2b$export$593f2d24ede2dfb0)));
         playerRow.appendChild(ratingTd);
     });
+    const filterByPositions = (pos)=>{
+        if (pos === "All") {
+            document.querySelectorAll(".player-row").forEach((row)=>{
+                row.style.display = "table-row";
+            });
+            return;
+        }
+        document.querySelectorAll(".player-row").forEach((row)=>{
+            row.style.display = "none";
+        });
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
+            row.style.display = "table-row";
+        });
+    };
+    const positionFilter = document.createElement("div");
+    positionFilter.classList.add("position-filter");
+    positionFilter.classList.add("white_box");
+    const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("All");
+    const positionButtonW = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("W");
+    const positionButtonC = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("C");
+    const positionButtonD = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("D");
+    const positionButtonG = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)("G");
+    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
+    positionButtonW.addEventListener("click", ()=>filterByPositions("W"));
+    positionButtonC.addEventListener("click", ()=>filterByPositions("C"));
+    positionButtonD.addEventListener("click", ()=>filterByPositions("D"));
+    positionButtonG.addEventListener("click", ()=>filterByPositions("G"));
+    positionFilter.append(positionButtonAll);
+    positionFilter.append(positionButtonW);
+    positionFilter.append(positionButtonC);
+    positionFilter.append(positionButtonD);
+    positionFilter.append(positionButtonG);
+    mainContent[0].prepend(positionFilter);
 };
 var $4cd00c11b313a3a7$export$2e2bcd8739ae039 = $4cd00c11b313a3a7$var$viewPlayerList;
 
@@ -629,6 +670,7 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
+        playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestSkillWithExp, `${rowClass}td2`));
         const ratingTd = document.createElement("td");

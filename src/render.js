@@ -91,10 +91,17 @@ const renderTrainableSkill = (trainableSkill) => {
   return trainableSkillElement;
 };
 
+const renderButton = (text) => {
+  const button = document.createElement("button");
+  button.innerText = text;
+  return button;
+};
+
 export {
   renderTableCell,
   renderComparison,
   renderPotential,
   renderPotentialBadge,
   renderTrainableSkill,
+  renderButton,
 };

@@ -53,6 +53,8 @@ const viewPlayerList = () => {
       player.experience
     );
 
+    playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
+
     playerRow.appendChild(
       renderTableCell(bestPosition.position, `${rowClass}td1`)
     );

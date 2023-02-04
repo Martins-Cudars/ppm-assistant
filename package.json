@@ -2,7 +2,7 @@
   "source": "src/main.js",
   "main": "dist/main.js",
   "scripts": {
-    "watch": "parcel watch",
+    "dev": "parcel watch",
     "build": "parcel build"
   },
   "devDependencies": {
