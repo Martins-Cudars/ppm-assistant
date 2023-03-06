@@ -641,6 +641,7 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
     });
     playerRows.forEach((playerRow, index)=>{
         const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
         const player = {
             name: playerColumns[0].textContent,
             age: playerColumns[2].textContent,
@@ -690,6 +691,7 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
     positionFilter.classList.add("position-filter");
     positionFilter.classList.add("white_box");
     const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`All (${playerRows.length})`);
+    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
     positionFilter.append(positionButtonAll);
     (0, $d72e2c82b342b23f$export$28a5266254550ff3).forEach((pos)=>{
         const positionButton = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);

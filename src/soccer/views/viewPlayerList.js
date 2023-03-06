@@ -27,6 +27,7 @@ const viewPlayerList = () => {
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
+    playerRow.classList.add(`player-row`);
 
     const player = {
       name: playerColumns[0].textContent,
@@ -98,6 +99,7 @@ const viewPlayerList = () => {
   positionFilter.classList.add("white_box");
 
   const positionButtonAll = renderButton(`All (${playerRows.length})`);
+  positionButtonAll.addEventListener("click", () => filterByPositions("All"));
   positionFilter.append(positionButtonAll);
 
   positionSettings.forEach((pos) => {
