@@ -250,20 +250,12 @@ const $4cd00c11b313a3a7$var$viewPlayerList = ()=>{
     positionFilter.classList.add("position-filter");
     positionFilter.classList.add("white_box");
     const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`All (${playerRows.length})`);
-    const positionButtonW = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`W (${document.querySelectorAll(".position-w").length})`);
-    const positionButtonC = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`C (${document.querySelectorAll(".position-c").length})`);
-    const positionButtonD = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`D (${document.querySelectorAll(".position-d").length})`);
-    const positionButtonG = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`G (${document.querySelectorAll(".position-g").length})`);
-    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
-    positionButtonW.addEventListener("click", ()=>filterByPositions("W"));
-    positionButtonC.addEventListener("click", ()=>filterByPositions("C"));
-    positionButtonD.addEventListener("click", ()=>filterByPositions("D"));
-    positionButtonG.addEventListener("click", ()=>filterByPositions("G"));
     positionFilter.append(positionButtonAll);
-    positionFilter.append(positionButtonW);
-    positionFilter.append(positionButtonC);
-    positionFilter.append(positionButtonD);
-    positionFilter.append(positionButtonG);
+    (0, $05be6c1d1617fb2b$export$28a5266254550ff3).forEach((pos)=>{
+        const positionButton = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
+        positionFilter.append(positionButton);
+    });
     mainContent[0].prepend(positionFilter);
 };
 var $4cd00c11b313a3a7$export$2e2bcd8739ae039 = $4cd00c11b313a3a7$var$viewPlayerList;
@@ -639,6 +631,7 @@ const $d72e2c82b342b23f$export$593f2d24ede2dfb0 = {
 
 
 const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
+    const mainContent = document.getElementsByClassName("main_content");
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
     tableHeads.forEach((head)=>{
@@ -669,6 +662,7 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const skills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
         const bestSkillWithExp = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(bestPosition.level, player.experience);
         playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
         playerRow.appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)(bestPosition.position, `${rowClass}td1`));
@@ -678,6 +672,31 @@ const $16d6774ae8f01de0$var$viewPlayerList = ()=>{
         ratingTd.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(bestSkillWithExp, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
         playerRow.appendChild(ratingTd);
     });
+    const filterByPositions = (pos)=>{
+        if (pos === "All") {
+            document.querySelectorAll(".player-row").forEach((row)=>{
+                row.style.display = "table-row";
+            });
+            return;
+        }
+        document.querySelectorAll(".player-row").forEach((row)=>{
+            row.style.display = "none";
+        });
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
+            row.style.display = "table-row";
+        });
+    };
+    const positionFilter = document.createElement("div");
+    positionFilter.classList.add("position-filter");
+    positionFilter.classList.add("white_box");
+    const positionButtonAll = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`All (${playerRows.length})`);
+    positionFilter.append(positionButtonAll);
+    (0, $d72e2c82b342b23f$export$28a5266254550ff3).forEach((pos)=>{
+        const positionButton = (0, $18c53b0039ffc5db$export$9b8b2ad360b4fa1b)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
+        positionFilter.append(positionButton);
+    });
+    mainContent[0].prepend(positionFilter);
 };
 var $16d6774ae8f01de0$export$2e2bcd8739ae039 = $16d6774ae8f01de0$var$viewPlayerList;
 

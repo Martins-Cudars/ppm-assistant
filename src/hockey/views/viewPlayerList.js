@@ -91,36 +91,21 @@ const viewPlayerList = () => {
         row.style.display = "table-row";
       });
   };
+  
 
   const positionFilter = document.createElement("div");
   positionFilter.classList.add("position-filter");
   positionFilter.classList.add("white_box");
 
   const positionButtonAll = renderButton(`All (${playerRows.length})`);
-  const positionButtonW = renderButton(
-    `W (${document.querySelectorAll(".position-w").length})`
-  );
-  const positionButtonC = renderButton(
-    `C (${document.querySelectorAll(".position-c").length})`
-  );
-  const positionButtonD = renderButton(
-    `D (${document.querySelectorAll(".position-d").length})`
-  );
-  const positionButtonG = renderButton(
-    `G (${document.querySelectorAll(".position-g").length})`
-  );
-
-  positionButtonAll.addEventListener("click", () => filterByPositions("All"));
-  positionButtonW.addEventListener("click", () => filterByPositions("W"));
-  positionButtonC.addEventListener("click", () => filterByPositions("C"));
-  positionButtonD.addEventListener("click", () => filterByPositions("D"));
-  positionButtonG.addEventListener("click", () => filterByPositions("G"));
-
   positionFilter.append(positionButtonAll);
-  positionFilter.append(positionButtonW);
-  positionFilter.append(positionButtonC);
-  positionFilter.append(positionButtonD);
-  positionFilter.append(positionButtonG);
+
+  positionSettings.forEach((pos) => {
+    const positionButton = renderButton(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+    positionButton.addEventListener("click", () => filterByPositions(pos.name));
+    positionFilter.append(positionButton)
+  });
+
 
   mainContent[0].prepend(positionFilter);
 };
