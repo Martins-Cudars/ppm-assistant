@@ -838,9 +838,8 @@ const $1948c881c645f6b6$var$viewLineupChange = ()=>{
             } else playerColumns[1].colSpan = 16;
         });
     });
-    const formation = document.querySelector("#lineup");
-    const formationPlayers = formation.querySelectorAll(".player");
-    const formationSlots = formation.querySelectorAll(".player_slot");
+    const formationEl = document.querySelector("#lineup");
+    const formationSlots = formationEl.querySelectorAll(".player_slot");
     const findPosition = (formationId)=>{
         const formationPositions = {
             GK: [
@@ -923,18 +922,28 @@ const $1948c881c645f6b6$var$viewLineupChange = ()=>{
                 const position = findPosition(id);
                 const playerId = player.getAttribute("id").substring(12);
                 const playerData = findPlayer(playerId);
-                console.log(`player: ${playerData.name}, position: ${position}`);
                 const playerSkills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(playerData, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
                 const captionEl = player.querySelector(".lineup_spot_caption");
-                const positionEl = document.createElement("div");
                 const skill1 = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
-                positionEl.textContent = `${position} (${skill1})`;
-                // captionEl.appendChild(positionEl);
+                if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
                 captionEl.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(skill1, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
             }
         });
     };
     showFormationRankings();
+    const fieldEl = document.querySelector("#lineup .lineup_field");
+    const config = {
+        attributes: false,
+        childList: true,
+        subtree: true
+    };
+    const callback = (mutationList, observer)=>{
+        observer.disconnect();
+        showFormationRankings();
+        observer.observe(fieldEl, config);
+    };
+    const observer1 = new MutationObserver(callback);
+    observer1.observe(fieldEl, config);
 };
 var $1948c881c645f6b6$export$2e2bcd8739ae039 = $1948c881c645f6b6$var$viewLineupChange;
 

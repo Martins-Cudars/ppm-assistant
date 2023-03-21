@@ -76,9 +76,8 @@ const viewLineupChange = () => {
     });
   });
 
-  const formation = document.querySelector("#lineup");
-  const formationPlayers = formation.querySelectorAll(".player");
-  const formationSlots = formation.querySelectorAll(".player_slot");
+  const formationEl = document.querySelector("#lineup");
+  const formationSlots = formationEl.querySelectorAll(".player_slot");
 
   const findPosition = (formationId) => {
     const formationPositions = {
@@ -119,17 +118,16 @@ const viewLineupChange = () => {
         const position = findPosition(id)
         const playerId = player.getAttribute("id").substring(12)
         const playerData = findPlayer(playerId)
-        console.log(`player: ${playerData.name}, position: ${position}`)
 
         const playerSkills = calculatePositionsSkills(playerData, positionSettings);
 
         const captionEl = player.querySelector(".lineup_spot_caption");
-        const positionEl = document.createElement("div");
         const skill = calculateSkillWithExp(playerSkills.find(skill => skill.position === position).level, playerData.experience)
 
-        positionEl.textContent = `${position} (${skill})`;
+        if (captionEl.querySelector(".rating")) {
+          captionEl.querySelector(".rating").remove()
+        }
 
-        // captionEl.appendChild(positionEl);
         captionEl.appendChild(renderComparison(skill, ratingSettings))
         
       }
@@ -137,8 +135,23 @@ const viewLineupChange = () => {
     })
   };
 
-
   showFormationRankings();
+
+  const fieldEl = document.querySelector("#lineup .lineup_field");
+
+  const config = { attributes: false, childList: true, subtree: true };
+
+  const callback = (mutationList, observer) => {
+    observer.disconnect();
+    showFormationRankings();
+    observer.observe(fieldEl, config);
+
+  };
+
+  const observer = new MutationObserver(callback);
+  observer.observe(fieldEl, config);
+
+
 };
 
 export default viewLineupChange;

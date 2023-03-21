@@ -12,4 +12,5 @@ const potentialGrade = (potential) => {
   if (potential < 50) return { label: "F", class: "f" };
 };
 
+
 export { potentialGrade };
