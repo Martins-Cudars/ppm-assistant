@@ -12,7 +12,7 @@ import viewTraining from "./views/viewTraining";
 const initSoccer = () => {
   if (window.location.href.includes("speletaju-parskats")) viewPlayerList();
   if (window.location.href.includes("speletajs")) viewPlayerProfile();
-  if (window.location.href.includes("sastavs")) viewLineup();
+  if (window.location.href.includes("sastavs") || window.location.href.includes('izkartojuma-versija')) viewLineup();
   if (window.location.href.includes("speletaju-trenini")) viewTraining();
   // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
   if (window.location.href.includes("speletaju-tirgus")) viewMarket();

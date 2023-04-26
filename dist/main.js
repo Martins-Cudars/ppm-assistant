@@ -549,75 +549,81 @@ var $938b3fb7a05b1e09$export$2e2bcd8739ae039 = $938b3fb7a05b1e09$var$viewTrainin
 var $73e5c51a6eddb90a$export$2e2bcd8739ae039 = $73e5c51a6eddb90a$var$initHockey;
 
 
+const $d72e2c82b342b23f$var$ratios = {
+    main: 1,
+    high: 0.8,
+    medium: 0.6,
+    low: 0.4
+};
 const $d72e2c82b342b23f$export$28a5266254550ff3 = [
     {
         name: "GK",
         ratios: {
-            goalie: 1,
-            technical: 0.75,
-            speed: 0.75,
-            passing: 0.25,
-            heading: 0.25
+            goalie: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.high,
+            speed: $d72e2c82b342b23f$var$ratios.high,
+            passing: $d72e2c82b342b23f$var$ratios.low,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     },
     {
         name: "SD",
         ratios: {
-            defence: 1,
-            technical: 0.5,
-            speed: 0.75,
-            passing: 0.5,
-            heading: 0.25
+            defence: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.medium,
+            speed: $d72e2c82b342b23f$var$ratios.high,
+            passing: $d72e2c82b342b23f$var$ratios.medium,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     },
     {
         name: "CD",
         ratios: {
-            defence: 1,
-            technical: 0.5,
-            speed: 0.5,
-            passing: 0.5,
-            heading: 0.5
+            defence: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.medium,
+            speed: $d72e2c82b342b23f$var$ratios.medium,
+            passing: $d72e2c82b342b23f$var$ratios.medium,
+            heading: $d72e2c82b342b23f$var$ratios.medium
         }
     },
     {
         name: "SM",
         ratios: {
-            midfield: 1,
-            technical: 0.5,
-            speed: 0.75,
-            passing: 0.5,
-            heading: 0.25
+            midfield: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.medium,
+            speed: $d72e2c82b342b23f$var$ratios.high,
+            passing: $d72e2c82b342b23f$var$ratios.medium,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     },
     {
         name: "CM",
         ratios: {
-            midfield: 1,
-            technical: 0.75,
-            speed: 0.25,
-            passing: 0.75,
-            heading: 0.25
+            midfield: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.high,
+            speed: $d72e2c82b342b23f$var$ratios.low,
+            passing: $d72e2c82b342b23f$var$ratios.high,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     },
     {
         name: "SF",
         ratios: {
-            offence: 1,
-            technical: 0.75,
-            speed: 0.75,
-            passing: 0.5,
-            heading: 0.25
+            offence: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.high,
+            speed: $d72e2c82b342b23f$var$ratios.high,
+            passing: $d72e2c82b342b23f$var$ratios.medium,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     },
     {
         name: "CF",
         ratios: {
-            offence: 1,
-            technical: 0.5,
-            speed: 0.75,
-            passing: 0.25,
-            heading: 0.25
+            offence: $d72e2c82b342b23f$var$ratios.main,
+            technical: $d72e2c82b342b23f$var$ratios.medium,
+            speed: $d72e2c82b342b23f$var$ratios.high,
+            passing: $d72e2c82b342b23f$var$ratios.low,
+            heading: $d72e2c82b342b23f$var$ratios.low
         }
     }, 
 ];
@@ -1063,7 +1069,7 @@ var $330661c0fd2d6392$export$2e2bcd8739ae039 = $330661c0fd2d6392$var$viewTrainin
  */ const $51b5e71d03992dd2$var$initSoccer = ()=>{
     if (window.location.href.includes("speletaju-parskats")) (0, $16d6774ae8f01de0$export$2e2bcd8739ae039)();
     if (window.location.href.includes("speletajs")) (0, $711c76ff1e59871f$export$2e2bcd8739ae039)();
-    if (window.location.href.includes("sastavs")) (0, $1948c881c645f6b6$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("sastavs") || window.location.href.includes("izkartojuma-versija")) (0, $1948c881c645f6b6$export$2e2bcd8739ae039)();
     if (window.location.href.includes("speletaju-trenini")) (0, $330661c0fd2d6392$export$2e2bcd8739ae039)();
     // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
     if (window.location.href.includes("speletaju-tirgus")) (0, $73932bdad6fcf7ee$export$2e2bcd8739ae039)();
