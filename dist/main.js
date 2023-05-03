@@ -538,12 +538,9 @@ const $938b3fb7a05b1e09$var$viewTraining = ()=>{
                 aggression: parseInt(playerQualities[6].textContent)
             }
         };
-        console.log(player);
         const playerPositions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
         const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(playerPositions);
         const potentials = (0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
-        console.log(bestPosition);
-        console.log((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
         const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
