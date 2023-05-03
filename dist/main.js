@@ -553,6 +553,58 @@ const $938b3fb7a05b1e09$var$viewTraining = ()=>{
 var $938b3fb7a05b1e09$export$2e2bcd8739ae039 = $938b3fb7a05b1e09$var$viewTraining;
 
 
+
+
+
+const $06dee6e1aba49e53$var$extractSkill = (el)=>{
+    const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+    return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
+const $06dee6e1aba49e53$var$viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, $18c53b0039ffc5db$export$b36ad6a61166502b)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                goalie: $06dee6e1aba49e53$var$extractSkill(playerColumns[6]),
+                defence: $06dee6e1aba49e53$var$extractSkill(playerColumns[7]),
+                offence: $06dee6e1aba49e53$var$extractSkill(playerColumns[8]),
+                shooting: $06dee6e1aba49e53$var$extractSkill(playerColumns[9]),
+                passing: $06dee6e1aba49e53$var$extractSkill(playerColumns[10]),
+                technical: $06dee6e1aba49e53$var$extractSkill(playerColumns[11]),
+                aggression: $06dee6e1aba49e53$var$extractSkill(playerColumns[12])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
+            }
+        };
+        const playerPositions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
+        const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(playerPositions);
+        const potentials = (0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+var $06dee6e1aba49e53$export$2e2bcd8739ae039 = $06dee6e1aba49e53$var$viewTraining;
+
+
 /**
  * Run View Functions
  */ const $73e5c51a6eddb90a$var$initHockey = ()=>{
@@ -562,6 +614,7 @@ var $938b3fb7a05b1e09$export$2e2bcd8739ae039 = $938b3fb7a05b1e09$var$viewTrainin
     if (window.location.href.includes("speletaju-trenini")) (0, $938b3fb7a05b1e09$export$2e2bcd8739ae039)();
     if (window.location.href.includes("rediget-mainu")) (0, $003292cd27b2be11$export$2e2bcd8739ae039)();
     if (window.location.href.includes("/lv/tirgus")) (0, $5ccfa3f7960e806b$export$2e2bcd8739ae039)();
+    if (window.location.href.includes("treninnometne")) (0, $06dee6e1aba49e53$export$2e2bcd8739ae039)();
 };
 var $73e5c51a6eddb90a$export$2e2bcd8739ae039 = $73e5c51a6eddb90a$var$initHockey;
 

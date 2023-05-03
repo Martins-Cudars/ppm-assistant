@@ -4,6 +4,7 @@ import viewLineup from "./views/viewLineup";
 import viewLineupChange from "./views/viewLineupChange";
 import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
+import viewTrainingCamp from "./views/viewTrainingCamp";
 
 /**
  * Run View Functions
@@ -16,6 +17,7 @@ const initHockey = () => {
   if (window.location.href.includes("speletaju-trenini")) viewTraining();
   if (window.location.href.includes("rediget-mainu")) viewLineupChange();
   if (window.location.href.includes("/lv/tirgus")) viewMarket();
+  if (window.location.href.includes("treninnometne")) viewTrainingCamp();
 };
 
 export default initHockey;
