@@ -2,7 +2,6 @@ import { positionSettings } from "../settings";
 
 import {
   calculatePositionsQualities,
-  calculateBestPotential,
   calculatePositionsSkills,
   calculateBestPosition,
 } from "~/src/calculations.js";
