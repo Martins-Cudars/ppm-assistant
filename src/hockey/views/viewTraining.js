@@ -3,9 +3,16 @@ import { positionSettings } from "../settings";
 import {
   calculatePositionsQualities,
   calculateBestPotential,
+  calculatePositionsSkills,
+  calculateBestPosition,
 } from "~/src/calculations.js";
 
 import { renderTableCell, renderPotentialBadge } from "~/src/render";
+
+const extractSkill = (el) => {
+  const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+  return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
 
 const viewTraining = () => {
   const tableHeads = document
@@ -25,8 +32,18 @@ const viewTraining = () => {
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
 
     const playerQualities = playerRow.querySelectorAll(".kva");
+    const playerColumns = playerRow.querySelectorAll("td");
 
     const player = {
+      skills: {
+        goalie: extractSkill(playerColumns[5]),
+        defence: extractSkill(playerColumns[6]),
+        offence: extractSkill(playerColumns[7]),
+        shooting: extractSkill(playerColumns[8]),
+        passing: extractSkill(playerColumns[9]),
+        technical: extractSkill(playerColumns[10]),
+        aggression: extractSkill(playerColumns[11]),
+      },
       qualities: {
         goalie: parseInt(playerQualities[0].textContent),
         defence: parseInt(playerQualities[1].textContent),
@@ -38,8 +55,17 @@ const viewTraining = () => {
       },
     };
 
-    const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player, positionSettings)
+    console.log(player);
+
+    const playerPositions = calculatePositionsSkills(player, positionSettings);
+    const bestPosition = calculateBestPosition(playerPositions);
+    const potentials = calculatePositionsQualities(player, positionSettings);
+
+    console.log(bestPosition);
+    console.log(calculatePositionsQualities(player, positionSettings));
+
+    const bestPotential = potentials.find(
+      (el) => el.position === bestPosition.position
     );
 
     const potentialBadge = renderPotentialBadge(

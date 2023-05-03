@@ -504,6 +504,10 @@ var $5ccfa3f7960e806b$export$2e2bcd8739ae039 = $5ccfa3f7960e806b$var$viewMarket;
 
 
 
+const $938b3fb7a05b1e09$var$extractSkill = (el)=>{
+    const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+    return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
 const $938b3fb7a05b1e09$var$viewTraining = ()=>{
     const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
     const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
@@ -513,7 +517,17 @@ const $938b3fb7a05b1e09$var$viewTraining = ()=>{
     playerRows.forEach((playerRow, index)=>{
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
         const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
         const player = {
+            skills: {
+                goalie: $938b3fb7a05b1e09$var$extractSkill(playerColumns[5]),
+                defence: $938b3fb7a05b1e09$var$extractSkill(playerColumns[6]),
+                offence: $938b3fb7a05b1e09$var$extractSkill(playerColumns[7]),
+                shooting: $938b3fb7a05b1e09$var$extractSkill(playerColumns[8]),
+                passing: $938b3fb7a05b1e09$var$extractSkill(playerColumns[9]),
+                technical: $938b3fb7a05b1e09$var$extractSkill(playerColumns[10]),
+                aggression: $938b3fb7a05b1e09$var$extractSkill(playerColumns[11])
+            },
             qualities: {
                 goalie: parseInt(playerQualities[0].textContent),
                 defence: parseInt(playerQualities[1].textContent),
@@ -524,7 +538,13 @@ const $938b3fb7a05b1e09$var$viewTraining = ()=>{
                 aggression: parseInt(playerQualities[6].textContent)
             }
         };
-        const bestPotential = (0, $78fc06ffa0ef6332$export$82338cb6413791b1)((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
+        console.log(player);
+        const playerPositions = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
+        const bestPosition = (0, $78fc06ffa0ef6332$export$fefc44fbabdf230f)(playerPositions);
+        const potentials = (0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3));
+        console.log(bestPosition);
+        console.log((0, $78fc06ffa0ef6332$export$bf339f9dce5a47df)(player, (0, $05be6c1d1617fb2b$export$28a5266254550ff3)));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
         const potentialBadge = (0, $18c53b0039ffc5db$export$1e190777fe7d790a)(bestPotential.potential, "small");
         const potentialTd = document.createElement("td");
         potentialTd.classList.add(`${rowClass}td1`);
