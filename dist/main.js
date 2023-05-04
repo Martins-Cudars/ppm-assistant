@@ -39,7 +39,7 @@ const $05be6c1d1617fb2b$export$28a5266254550ff3 = [
         bonus: {
             shooting: 0.5
         }
-    }, 
+    }
 ];
 const $05be6c1d1617fb2b$export$593f2d24ede2dfb0 = {
     low: 500,
@@ -75,9 +75,9 @@ const $78fc06ffa0ef6332$export$bf339f9dce5a47df = (player, positionSettings)=>{
             qualities += player.qualities[key] * value;
             modifier += value;
         }
-        if (position.bonus) for (const [key1, value1] of Object.entries(position.bonus)){
-            qualities += player.qualities[key1] * value1;
-            modifier += value1;
+        if (position.bonus) for (const [key, value] of Object.entries(position.bonus)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
         }
         positionPotentials.push({
             position: position.name,
@@ -297,9 +297,9 @@ const $47e313680aa18398$var$viewPlayerProfile = ()=>{
    */ const abilityBox = document.createElement("div");
     abilityBox.classList.add("player-profile");
     abilityBox.classList.add("player-profile--ability");
-    const position1 = document.createElement("div");
-    position1.classList.add("ability__position");
-    position1.textContent = bestPosition.position;
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
     const allPositions = document.createElement("div");
     allPositions.classList.add("ability__positions");
     let positionList = ``;
@@ -307,7 +307,7 @@ const $47e313680aa18398$var$viewPlayerProfile = ()=>{
         positionList += `<div>${position.position} ${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(position.level, player.experience)}</div>`;
     });
     allPositions.innerHTML = positionList;
-    abilityBox.appendChild(position1);
+    abilityBox.appendChild(position);
     const abilityDescription = document.createElement("div");
     abilityDescription.classList.add("ability__text");
     const abilityValue = document.createElement("div");
@@ -621,9 +621,9 @@ var $73e5c51a6eddb90a$export$2e2bcd8739ae039 = $73e5c51a6eddb90a$var$initHockey;
 
 const $d72e2c82b342b23f$var$ratios = {
     main: 1,
-    high: 0.8,
-    medium: 0.6,
-    low: 0.4
+    high: 0.75,
+    medium: 0.5,
+    low: 0.25
 };
 const $d72e2c82b342b23f$export$28a5266254550ff3 = [
     {
@@ -695,7 +695,7 @@ const $d72e2c82b342b23f$export$28a5266254550ff3 = [
             passing: $d72e2c82b342b23f$var$ratios.low,
             heading: $d72e2c82b342b23f$var$ratios.low
         }
-    }, 
+    }
 ];
 const $d72e2c82b342b23f$export$593f2d24ede2dfb0 = {
     low: 300,
@@ -819,9 +819,9 @@ const $711c76ff1e59871f$var$viewPlayerProfile = ()=>{
    */ const abilityBox = document.createElement("div");
     abilityBox.classList.add("player-profile");
     abilityBox.classList.add("player-profile--ability");
-    const position1 = document.createElement("div");
-    position1.classList.add("ability__position");
-    position1.textContent = bestPosition.position;
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
     const allPositions = document.createElement("div");
     allPositions.classList.add("ability__positions");
     let positionList = ``;
@@ -829,7 +829,7 @@ const $711c76ff1e59871f$var$viewPlayerProfile = ()=>{
         positionList += `<div>${position.position} ${(0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(position.level, player.experience)}</div>`;
     });
     allPositions.innerHTML = positionList;
-    abilityBox.appendChild(position1);
+    abilityBox.appendChild(position);
     const abilityDescription = document.createElement("div");
     abilityDescription.classList.add("ability__text");
     const abilityValue = document.createElement("div");
@@ -1000,9 +1000,9 @@ const $1948c881c645f6b6$var$viewLineupChange = ()=>{
                 const playerData = findPlayer(playerId);
                 const playerSkills = (0, $78fc06ffa0ef6332$export$f424e510a287eb0)(playerData, (0, $d72e2c82b342b23f$export$28a5266254550ff3));
                 const captionEl = player.querySelector(".lineup_spot_caption");
-                const skill1 = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
+                const skill = (0, $78fc06ffa0ef6332$export$5898f23eb7acb0be)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
                 if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
-                captionEl.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(skill1, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
+                captionEl.appendChild((0, $18c53b0039ffc5db$export$83fab2b954b58590)(skill, (0, $d72e2c82b342b23f$export$593f2d24ede2dfb0)));
             }
         });
     };
@@ -1018,8 +1018,8 @@ const $1948c881c645f6b6$var$viewLineupChange = ()=>{
         showFormationRankings();
         observer.observe(fieldEl, config);
     };
-    const observer1 = new MutationObserver(callback);
-    observer1.observe(fieldEl, config);
+    const observer = new MutationObserver(callback);
+    observer.observe(fieldEl, config);
 };
 var $1948c881c645f6b6$export$2e2bcd8739ae039 = $1948c881c645f6b6$var$viewLineupChange;
 

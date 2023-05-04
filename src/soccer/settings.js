@@ -1,8 +1,8 @@
 const ratios = {
   main: 1,
-  high: 0.8,
-  medium: 0.6,
-  low: 0.4,
+  high: 0.75,
+  medium: 0.5,
+  low: 0.25,
 };
 
 const positionSettings = [
