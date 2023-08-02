@@ -25,9 +25,13 @@ const calculateSeasonProgress = (seasonDay) => {
   return seasonDay / 112;
 };
 
+// TODO: Refactor this function
+// this might be unnecessary code, it's current only use is to adjust the ratio for Goalies
 const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
-  const seasonDay = getCurrentSeasonDay();
+  const seasonDay = 1;
   const seasonProgress = calculateSeasonProgress(seasonDay);
+
+  console.log(`current seasonProgress: ${seasonProgress}`);
 
   let positionRatio = 1;
 
@@ -75,38 +79,68 @@ const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
   return newPredictData;
 };
 
-const renderPotentialChart = (data, el, seasonDay = 1) => {
+const renderPotentialChart = (data, el) => {
   const predictData = recalculatePredictDataAccordingToSeasonDay(data.position);
+
+  const seasonDay = getCurrentSeasonDay();
+  const seasonProgress = calculateSeasonProgress(seasonDay);
 
   const playerSkillArr = [];
   const playerSkillExpArr = [];
 
-  for (i = 15; i < 41; i++) {
-    if (data.age === i) {
-      playerSkillArr.push(data.skill);
-      playerSkillExpArr.push(calculateSkillWithExp(data.skill, data.exp));
-    } else {
-      playerSkillArr.push(null);
-      playerSkillExpArr.push(null);
-    }
-  }
+  playerSkillArr.push({
+    x: Math.round((data.age + seasonProgress) * 10) / 10,
+    y: data.skill,
+  });
+  playerSkillExpArr.push({
+    x: Math.round((data.age + seasonProgress) * 10) / 10,
+    y: calculateSkillWithExp(data.skill, data.exp),
+  });
+
+  console.log(playerSkillArr);
+
+  console.log(
+    predictData.map((row) => {
+      return { x: row.age, y: row.skill };
+    })
+  );
 
   const chartConfig = {
     type: "line",
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          type: "linear",
+          title: {
+            display: true,
+            text: "Age",
+          },
+          min: 15,
+          max: 40,
+
+          ticks: {
+            stepSize: 1,
+          },
+        },
+      },
+    },
     data: {
-      labels: predictData.map((row) => row.age),
+      // labels: predictData.map((row) => parseInt(row.age)),
       datasets: [
         {
           label: "Perfect Player Skill",
-          data: predictData.map((row) => row.skill),
+          data: predictData.map((row) => {
+            return { x: row.age, y: row.skill };
+          }),
           backgroundColor: "rgba(56, 50, 58, 0.5)",
           pointBackgroundColor: "rgba(56, 50, 58, 0.5)",
         },
         {
           label: "Perfect Player Skill With Exp",
-          data: predictData.map((row) =>
-            calculateSkillWithExp(row.skill, row.exp)
-          ),
+          data: predictData.map((row) => {
+            return { x: row.age, y: calculateSkillWithExp(row.skill, row.exp) };
+          }),
           backgroundColor: "rgba(29, 27, 29, 0.5)",
           pointBackgroundColor: "rgba(29, 27, 29, 0.5)",
         },
