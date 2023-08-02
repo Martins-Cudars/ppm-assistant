@@ -1,6 +1,11 @@
 {
   "source": "src/main.js",
-  "main": "dist/main.js",
+  "targets": {
+    "default": {
+      "distDir": "./dist"
+    }
+  },
+  "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "dev": "parcel watch",
     "build": "parcel build"

@@ -1,4 +1,5 @@
 import { positionSettings, ratingSettings } from "../settings";
+import { renderPotentialChart } from "~/src/charts";
 
 import {
   calculatePositionsSkills,
@@ -16,7 +17,11 @@ import {
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
 
+  // If player table is not found, return
+  if (!playerTable) return new Error("Player table not found");
+
   const player = {
+    age: parseInt(playerTable.querySelector("#age").textContent),
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span").textContent)[0]
     ),
@@ -57,6 +62,8 @@ const viewPlayerProfile = () => {
 
   const contentColumn = document.querySelector(".column_left");
 
+  // If content column is not found, return
+  if (!contentColumn) return new Error("Content column not found");
   /**
    * Ability Box
    */
@@ -146,8 +153,22 @@ const viewPlayerProfile = () => {
    */
 
   const chartBox = document.createElement("div");
+  const chartCanvas = document.createElement("canvas");
+
   chartBox.classList.add("player-chart");
-  chartBox.innerText = "Chart";
+  chartCanvas.classList.add("player-chart__canvas");
+
+  renderPotentialChart(
+    {
+      age: player.age,
+      skill: bestPosition.level,
+      position: bestPosition.position,
+      exp: player.experience,
+    },
+    chartCanvas
+  );
+
+  chartBox.appendChild(chartCanvas);
 
   document.querySelector(".profile_player_center").appendChild(chartBox);
 };
