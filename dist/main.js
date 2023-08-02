@@ -142,15 +142,15 @@
       this[globalName] = mainExports;
     }
   }
-})({"9naZM":[function(require,module,exports) {
-"use strict";
+})({"dr3gM":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = 1234;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "916932b22e4085ab";
 module.bundle.HMR_BUNDLE_ID = "7173f5c12a771bd8";
-/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
+"use strict";
+/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
   HMRAsset,
   HMRMessage,
@@ -158,7 +158,7 @@ import type {
 interface ParcelRequire {
   (string): mixed;
   cache: {|[string]: ParcelModule|};
-  hotData: mixed;
+  hotData: {|[string]: mixed|};
   Module: any;
   parent: ?ParcelRequire;
   isParcelRequire: true;
@@ -200,7 +200,7 @@ var OldModule = module.bundle.Module;
 function Module(moduleName) {
     OldModule.call(this, moduleName);
     this.hot = {
-        data: module.bundle.hotData,
+        data: module.bundle.hotData[moduleName],
         _acceptCallbacks: [],
         _disposeCallbacks: [],
         accept: function(fn) {
@@ -210,49 +210,70 @@ function Module(moduleName) {
             this._disposeCallbacks.push(fn);
         }
     };
-    module.bundle.hotData = undefined;
+    module.bundle.hotData[moduleName] = undefined;
 }
 module.bundle.Module = Module;
-var checkedAssets, acceptedAssets, assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
+module.bundle.hotData = {};
+var checkedAssets /*: {|[string]: boolean|} */ , assetsToDispose /*: Array<[ParcelRequire, string]> */ , assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
 function getHostname() {
     return HMR_HOST || (location.protocol.indexOf("http") === 0 ? location.hostname : "localhost");
 }
 function getPort() {
     return HMR_PORT || location.port;
-} // eslint-disable-next-line no-redeclare
+}
+// eslint-disable-next-line no-redeclare
 var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
     var hostname = getHostname();
     var port = getPort();
     var protocol = HMR_SECURE || location.protocol == "https:" && !/localhost|127.0.0.1|0.0.0.0/.test(hostname) ? "wss" : "ws";
-    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/"); // Web extension context
-    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome; // Safari doesn't support sourceURL in error stacks.
+    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/");
+    // Web extension context
+    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome;
+    // Safari doesn't support sourceURL in error stacks.
     // eval may also be disabled via CSP, so do a quick check.
     var supportsSourceURL = false;
     try {
         (0, eval)('throw new Error("test"); //# sourceURL=test.js');
     } catch (err) {
         supportsSourceURL = err.stack.includes("test.js");
-    } // $FlowFixMe
-    ws.onmessage = async function(event) {
+    }
+    // $FlowFixMe
+    ws.onmessage = async function(event /*: {data: string, ...} */ ) {
         checkedAssets = {} /*: {|[string]: boolean|} */ ;
-        acceptedAssets = {} /*: {|[string]: boolean|} */ ;
         assetsToAccept = [];
-        var data = JSON.parse(event.data);
+        assetsToDispose = [];
+        var data /*: HMRMessage */  = JSON.parse(event.data);
         if (data.type === "update") {
             // Remove error overlay if there is one
             if (typeof document !== "undefined") removeErrorOverlay();
-            let assets = data.assets.filter((asset)=>asset.envHash === HMR_ENV_HASH); // Handle HMR Update
+            let assets = data.assets.filter((asset)=>asset.envHash === HMR_ENV_HASH);
+            // Handle HMR Update
             let handled = assets.every((asset)=>{
                 return asset.type === "css" || asset.type === "js" && hmrAcceptCheck(module.bundle.root, asset.id, asset.depsByBundle);
             });
             if (handled) {
-                console.clear(); // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
+                console.clear();
+                // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
                 if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") window.dispatchEvent(new CustomEvent("parcelhmraccept"));
                 await hmrApplyUpdates(assets);
-                for(var i = 0; i < assetsToAccept.length; i++){
-                    var id = assetsToAccept[i][1];
-                    if (!acceptedAssets[id]) hmrAcceptRun(assetsToAccept[i][0], id);
+                // Dispose all old assets.
+                let processedAssets = {} /*: {|[string]: boolean|} */ ;
+                for(let i = 0; i < assetsToDispose.length; i++){
+                    let id = assetsToDispose[i][1];
+                    if (!processedAssets[id]) {
+                        hmrDispose(assetsToDispose[i][0], id);
+                        processedAssets[id] = true;
+                    }
+                }
+                // Run accept callbacks. This will also re-execute other disposed assets in topological order.
+                processedAssets = {};
+                for(let i = 0; i < assetsToAccept.length; i++){
+                    let id = assetsToAccept[i][1];
+                    if (!processedAssets[id]) {
+                        hmrAccept(assetsToAccept[i][0], id);
+                        processedAssets[id] = true;
+                    }
                 }
             } else fullReload();
         }
@@ -265,7 +286,8 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
             if (typeof document !== "undefined") {
                 // Render the fancy html overlay
                 removeErrorOverlay();
-                var overlay = createErrorOverlay(data.diagnostics.html); // $FlowFixMe
+                var overlay = createErrorOverlay(data.diagnostics.html);
+                // $FlowFixMe
                 document.body.appendChild(overlay);
             }
         }
@@ -281,7 +303,7 @@ function removeErrorOverlay() {
     var overlay = document.getElementById(OVERLAY_ID);
     if (overlay) {
         overlay.remove();
-        console.log("[parcel] \u2728 Error resolved");
+        console.log("[parcel] ✨ Error resolved");
     }
 }
 function createErrorOverlay(diagnostics) {
@@ -331,12 +353,16 @@ function getParents(bundle, id) /*: Array<[ParcelRequire, string]> */ {
     return parents;
 }
 function updateLink(link) {
+    var href = link.getAttribute("href");
+    if (!href) return;
     var newLink = link.cloneNode();
     newLink.onload = function() {
         if (link.parentNode !== null) // $FlowFixMe
         link.parentNode.removeChild(link);
     };
-    newLink.setAttribute("href", link.getAttribute("href").split("?")[0] + "?" + Date.now()); // $FlowFixMe
+    newLink.setAttribute("href", // $FlowFixMe
+    href.split("?")[0] + "?" + Date.now());
+    // $FlowFixMe
     link.parentNode.insertBefore(newLink, link.nextSibling);
 }
 var cssTimeout = null;
@@ -346,7 +372,7 @@ function reloadCSS() {
         var links = document.querySelectorAll('link[rel="stylesheet"]');
         for(var i = 0; i < links.length; i++){
             // $FlowFixMe[incompatible-type]
-            var href = links[i].getAttribute("href");
+            var href /*: string */  = links[i].getAttribute("href");
             var hostname = getHostname();
             var servedFromHMRServer = hostname === "localhost" ? new RegExp("^(https?:\\/\\/(0.0.0.0|127.0.0.1)|localhost):" + getPort()).test(href) : href.indexOf(hostname + ":" + getPort());
             var absolute = /^https?:\/\//i.test(href) && href.indexOf(location.origin) !== 0 && !servedFromHMRServer;
@@ -423,7 +449,7 @@ async function hmrApplyUpdates(assets) {
         });
     }
 }
-function hmrApply(bundle, asset) {
+function hmrApply(bundle /*: ParcelRequire */ , asset /*:  HMRAsset */ ) {
     var modules = bundle.modules;
     if (!modules) return;
     if (asset.type === "css") reloadCSS();
@@ -443,7 +469,7 @@ function hmrApply(bundle, asset) {
             if (supportsSourceURL) // Global eval. We would use `new Function` here but browser
             // support for source maps is better with eval.
             (0, eval)(asset.output);
-             // $FlowFixMe
+            // $FlowFixMe
             let fn = global.parcelHotUpdate[asset.id];
             modules[asset.id] = [
                 fn,
@@ -452,27 +478,29 @@ function hmrApply(bundle, asset) {
         } else if (bundle.parent) hmrApply(bundle.parent, asset);
     }
 }
-function hmrDelete(bundle, id1) {
+function hmrDelete(bundle, id) {
     let modules = bundle.modules;
     if (!modules) return;
-    if (modules[id1]) {
+    if (modules[id]) {
         // Collect dependencies that will become orphaned when this module is deleted.
-        let deps = modules[id1][1];
+        let deps = modules[id][1];
         let orphans = [];
         for(let dep in deps){
             let parents = getParents(module.bundle.root, deps[dep]);
             if (parents.length === 1) orphans.push(deps[dep]);
-        } // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
-        delete modules[id1];
-        delete bundle.cache[id1]; // Now delete the orphans.
+        }
+        // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
+        delete modules[id];
+        delete bundle.cache[id];
+        // Now delete the orphans.
         orphans.forEach((id)=>{
             hmrDelete(module.bundle.root, id);
         });
-    } else if (bundle.parent) hmrDelete(bundle.parent, id1);
+    } else if (bundle.parent) hmrDelete(bundle.parent, id);
 }
-function hmrAcceptCheck(bundle, id, depsByBundle) {
+function hmrAcceptCheck(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
     if (hmrAcceptCheckOne(bundle, id, depsByBundle)) return true;
-     // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
+    // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
     let parents = getParents(module.bundle.root, id);
     let accepted = false;
     while(parents.length > 0){
@@ -493,7 +521,7 @@ function hmrAcceptCheck(bundle, id, depsByBundle) {
     }
     return accepted;
 }
-function hmrAcceptCheckOne(bundle, id, depsByBundle) {
+function hmrAcceptCheckOne(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
     var modules = bundle.modules;
     if (!modules) return;
     if (depsByBundle && !depsByBundle[bundle.HMR_BUNDLE_ID]) {
@@ -505,30 +533,44 @@ function hmrAcceptCheckOne(bundle, id, depsByBundle) {
     if (checkedAssets[id]) return true;
     checkedAssets[id] = true;
     var cached = bundle.cache[id];
-    assetsToAccept.push([
+    assetsToDispose.push([
         bundle,
         id
     ]);
-    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) return true;
+    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) {
+        assetsToAccept.push([
+            bundle,
+            id
+        ]);
+        return true;
+    }
 }
-function hmrAcceptRun(bundle, id) {
+function hmrDispose(bundle /*: ParcelRequire */ , id /*: string */ ) {
     var cached = bundle.cache[id];
-    bundle.hotData = {};
-    if (cached && cached.hot) cached.hot.data = bundle.hotData;
+    bundle.hotData[id] = {};
+    if (cached && cached.hot) cached.hot.data = bundle.hotData[id];
     if (cached && cached.hot && cached.hot._disposeCallbacks.length) cached.hot._disposeCallbacks.forEach(function(cb) {
-        cb(bundle.hotData);
+        cb(bundle.hotData[id]);
     });
     delete bundle.cache[id];
+}
+function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
+    // Execute the module.
     bundle(id);
-    cached = bundle.cache[id];
+    // Run the accept callbacks in the new version of the module.
+    var cached = bundle.cache[id];
     if (cached && cached.hot && cached.hot._acceptCallbacks.length) cached.hot._acceptCallbacks.forEach(function(cb) {
         var assetsToAlsoAccept = cb(function() {
             return getParents(module.bundle.root, id);
         });
-        if (assetsToAlsoAccept && assetsToAccept.length) // $FlowFixMe[method-unbinding]
-        assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
+        if (assetsToAlsoAccept && assetsToAccept.length) {
+            assetsToAlsoAccept.forEach(function(a) {
+                hmrDispose(a[0], a[1]);
+            });
+            // $FlowFixMe[method-unbinding]
+            assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
+        }
     });
-    acceptedAssets[id] = true;
 }
 
 },{}],"fZBAS":[function(require,module,exports) {
@@ -691,7 +733,7 @@ const positionSettings = [
         bonus: {
             shooting: 0.5
         }
-    }, 
+    }
 ];
 const ratingSettings = {
     low: 500,
@@ -828,7 +870,7 @@ const playerGrowthPrediction = [
         age: 40,
         skill: 440,
         exp: 278
-    }, 
+    }
 ];
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"5oERU":[function(require,module,exports) {
@@ -896,9 +938,9 @@ const calculatePositionsQualities = (player, positionSettings)=>{
             qualities += player.qualities[key] * value;
             modifier += value;
         }
-        if (position.bonus) for (const [key1, value1] of Object.entries(position.bonus)){
-            qualities += player.qualities[key1] * value1;
-            modifier += value1;
+        if (position.bonus) for (const [key, value] of Object.entries(position.bonus)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
         }
         positionPotentials.push({
             position: position.name,
@@ -1069,9 +1111,9 @@ const viewPlayerProfile = ()=>{
    */ const abilityBox = document.createElement("div");
     abilityBox.classList.add("player-profile");
     abilityBox.classList.add("player-profile--ability");
-    const position1 = document.createElement("div");
-    position1.classList.add("ability__position");
-    position1.textContent = bestPosition.position;
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
     const allPositions = document.createElement("div");
     allPositions.classList.add("ability__positions");
     let positionList = ``;
@@ -1079,7 +1121,7 @@ const viewPlayerProfile = ()=>{
         positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
     });
     allPositions.innerHTML = positionList;
-    abilityBox.appendChild(position1);
+    abilityBox.appendChild(position);
     const abilityDescription = document.createElement("div");
     abilityDescription.classList.add("ability__text");
     const abilityValue = document.createElement("div");
@@ -1155,9 +1197,12 @@ const getCurrentSeasonDay = ()=>{
 const calculateSeasonProgress = (seasonDay)=>{
     return seasonDay / 112;
 };
+// TODO: Refactor this function
+// this might be unnecessary code, it's current only use is to adjust the ratio for Goalies
 const recalculatePredictDataAccordingToSeasonDay = (position = null)=>{
-    const seasonDay = getCurrentSeasonDay();
+    const seasonDay = 1;
     const seasonProgress = calculateSeasonProgress(seasonDay);
+    console.log(`current seasonProgress: ${seasonProgress}`);
     let positionRatio = 1;
     console.log(position);
     // adjust ratio for Goalies, because they only need 2 skill points per ability compared to
@@ -1181,31 +1226,68 @@ const recalculatePredictDataAccordingToSeasonDay = (position = null)=>{
     console.log(newPredictData);
     return newPredictData;
 };
-const renderPotentialChart = (data, el, seasonDay = 1)=>{
+const renderPotentialChart = (data, el)=>{
     const predictData = recalculatePredictDataAccordingToSeasonDay(data.position);
+    const seasonDay = getCurrentSeasonDay();
+    const seasonProgress = calculateSeasonProgress(seasonDay);
     const playerSkillArr = [];
     const playerSkillExpArr = [];
-    for(i = 15; i < 41; i++)if (data.age === i) {
-        playerSkillArr.push(data.skill);
-        playerSkillExpArr.push((0, _calculationsJs.calculateSkillWithExp)(data.skill, data.exp));
-    } else {
-        playerSkillArr.push(null);
-        playerSkillExpArr.push(null);
-    }
+    playerSkillArr.push({
+        x: Math.round((data.age + seasonProgress) * 10) / 10,
+        y: data.skill
+    });
+    playerSkillExpArr.push({
+        x: Math.round((data.age + seasonProgress) * 10) / 10,
+        y: (0, _calculationsJs.calculateSkillWithExp)(data.skill, data.exp)
+    });
+    console.log(playerSkillArr);
+    console.log(predictData.map((row)=>{
+        return {
+            x: row.age,
+            y: row.skill
+        };
+    }));
     const chartConfig = {
         type: "line",
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    type: "linear",
+                    title: {
+                        display: true,
+                        text: "Age"
+                    },
+                    min: 15,
+                    max: 40,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        },
         data: {
-            labels: predictData.map((row)=>row.age),
+            // labels: predictData.map((row) => parseInt(row.age)),
             datasets: [
                 {
                     label: "Perfect Player Skill",
-                    data: predictData.map((row)=>row.skill),
+                    data: predictData.map((row)=>{
+                        return {
+                            x: row.age,
+                            y: row.skill
+                        };
+                    }),
                     backgroundColor: "rgba(56, 50, 58, 0.5)",
                     pointBackgroundColor: "rgba(56, 50, 58, 0.5)"
                 },
                 {
                     label: "Perfect Player Skill With Exp",
-                    data: predictData.map((row)=>(0, _calculationsJs.calculateSkillWithExp)(row.skill, row.exp)),
+                    data: predictData.map((row)=>{
+                        return {
+                            x: row.age,
+                            y: (0, _calculationsJs.calculateSkillWithExp)(row.skill, row.exp)
+                        };
+                    }),
                     backgroundColor: "rgba(29, 27, 29, 0.5)",
                     pointBackgroundColor: "rgba(29, 27, 29, 0.5)"
                 },
@@ -1226,14 +1308,14 @@ const renderPotentialChart = (data, el, seasonDay = 1)=>{
                     pointStyle: "circle",
                     borderColor: "rgba(255, 0, 4, 0.9)",
                     pointRadius: 8
-                }, 
+                }
             ]
         }
     };
     return new (0, _autoDefault.default)(el, chartConfig);
 };
 
-},{"chart.js/auto":"fPqP2","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU","~/src/calculations.js":"6mg5U","~/src/hockey/settings.js":"aAEvc"}],"fPqP2":[function(require,module,exports) {
+},{"chart.js/auto":"fPqP2","~/src/hockey/settings.js":"aAEvc","~/src/calculations.js":"6mg5U","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"fPqP2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _chartJs = require("../dist/chart.js");
@@ -1242,7 +1324,12 @@ parcelHelpers.exportAll(_chartJs, exports);
 exports.default = (0, _chartJs.Chart);
 
 },{"../dist/chart.js":"k5F58","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"k5F58":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+/*!
+ * Chart.js v4.3.2
+ * https://www.chartjs.org
+ * (c) 2023 Chart.js Contributors
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Animation", ()=>Animation);
 parcelHelpers.export(exports, "Animations", ()=>Animations);
@@ -1291,16 +1378,15 @@ parcelHelpers.export(exports, "plugins", ()=>plugins);
 parcelHelpers.export(exports, "registerables", ()=>registerables);
 parcelHelpers.export(exports, "registry", ()=>registry);
 parcelHelpers.export(exports, "scales", ()=>scales);
-var _definePropertyMjs = require("@swc/helpers/src/_define_property.mjs");
-var _definePropertyMjsDefault = parcelHelpers.interopDefault(_definePropertyMjs);
-/*!
- * Chart.js v4.3.0
- * https://www.chartjs.org
- * (c) 2023 Chart.js Contributors
- * Released under the MIT License
- */ var _helpersSegmentJs = require("./chunks/helpers.segment.js");
+var _helpersSegmentJs = require("./chunks/helpers.segment.js");
 var _color = require("@kurkle/color");
 class Animator {
+    constructor(){
+        this._request = null;
+        this._charts = new Map();
+        this._running = false;
+        this._lastDate = undefined;
+    }
     _notify(chart, anims, date, type) {
         const callbacks = anims.listeners[type];
         const numSteps = anims.duration;
@@ -1326,20 +1412,20 @@ class Animator {
             if (!anims.running || !anims.items.length) return;
             const items = anims.items;
             let i = items.length - 1;
-            let draw1 = false;
+            let draw = false;
             let item;
             for(; i >= 0; --i){
                 item = items[i];
                 if (item._active) {
                     if (item._total > anims.duration) anims.duration = item._total;
                     item.tick(date);
-                    draw1 = true;
+                    draw = true;
                 } else {
                     items[i] = items[items.length - 1];
                     items.pop();
                 }
             }
-            if (draw1) {
+            if (draw) {
                 chart.draw();
                 this._notify(chart, anims, date, "progress");
             }
@@ -1406,12 +1492,6 @@ class Animator {
     remove(chart) {
         return this._charts.delete(chart);
     }
-    constructor(){
-        this._request = null;
-        this._charts = new Map();
-        this._running = false;
-        this._lastDate = undefined;
-    }
 }
 var animator = /* #__PURE__ */ new Animator();
 const transparent = "transparent";
@@ -1429,6 +1509,31 @@ const interpolators = {
     }
 };
 class Animation {
+    constructor(cfg, target, prop, to){
+        const currentValue = target[prop];
+        to = (0, _helpersSegmentJs.a)([
+            cfg.to,
+            to,
+            currentValue,
+            cfg.from
+        ]);
+        const from = (0, _helpersSegmentJs.a)([
+            cfg.from,
+            currentValue,
+            to
+        ]);
+        this._active = true;
+        this._fn = cfg.fn || interpolators[cfg.type || typeof from];
+        this._easing = (0, _helpersSegmentJs.e)[cfg.easing] || (0, _helpersSegmentJs.e).linear;
+        this._start = Math.floor(Date.now() + (cfg.delay || 0));
+        this._duration = this._total = Math.floor(cfg.duration);
+        this._loop = !!cfg.loop;
+        this._target = target;
+        this._prop = prop;
+        this._from = from;
+        this._to = to;
+        this._promises = undefined;
+    }
     active() {
         return this._active;
     }
@@ -1499,33 +1604,13 @@ class Animation {
         const promises = this._promises || [];
         for(let i = 0; i < promises.length; i++)promises[i][method]();
     }
-    constructor(cfg, target, prop, to){
-        const currentValue = target[prop];
-        to = (0, _helpersSegmentJs.a)([
-            cfg.to,
-            to,
-            currentValue,
-            cfg.from
-        ]);
-        const from = (0, _helpersSegmentJs.a)([
-            cfg.from,
-            currentValue,
-            to
-        ]);
-        this._active = true;
-        this._fn = cfg.fn || interpolators[cfg.type || typeof from];
-        this._easing = (0, _helpersSegmentJs.e)[cfg.easing] || (0, _helpersSegmentJs.e).linear;
-        this._start = Math.floor(Date.now() + (cfg.delay || 0));
-        this._duration = this._total = Math.floor(cfg.duration);
-        this._loop = !!cfg.loop;
-        this._target = target;
-        this._prop = prop;
-        this._from = from;
-        this._to = to;
-        this._promises = undefined;
-    }
 }
 class Animations {
+    constructor(chart, config){
+        this._chart = chart;
+        this._properties = new Map();
+        this.configure(config);
+    }
     configure(config) {
         if (!(0, _helpersSegmentJs.i)(config)) return;
         const animationOptions = Object.keys((0, _helpersSegmentJs.d).animation);
@@ -1594,11 +1679,6 @@ class Animations {
             animator.add(this._chart, animations);
             return true;
         }
-    }
-    constructor(chart, config){
-        this._chart = chart;
-        this._properties = new Map();
-        this.configure(config);
     }
 }
 function awaitAll(animations, properties) {
@@ -1704,7 +1784,7 @@ function getStackKey(indexScale, valueScale, meta) {
     return `${indexScale.id}.${valueScale.id}.${meta.stack || meta.type}`;
 }
 function getUserBounds(scale) {
-    const { min , max , minDefined , maxDefined  } = scale.getUserBounds();
+    const { min, max, minDefined, maxDefined } = scale.getUserBounds();
     return {
         min: minDefined ? min : Number.NEGATIVE_INFINITY,
         max: maxDefined ? max : Number.POSITIVE_INFINITY
@@ -1722,9 +1802,9 @@ function getLastIndexInStack(stack, vScale, positive, type) {
     return null;
 }
 function updateStacks(controller, parsed) {
-    const { chart , _cachedMeta: meta  } = controller;
+    const { chart, _cachedMeta: meta } = controller;
     const stacks = chart._stacks || (chart._stacks = {});
-    const { iScale , vScale , index: datasetIndex  } = meta;
+    const { iScale, vScale, index: datasetIndex } = meta;
     const iAxis = iScale.axis;
     const vAxis = vScale.axis;
     const key = getStackKey(iScale, vScale, meta);
@@ -1732,9 +1812,9 @@ function updateStacks(controller, parsed) {
     let stack;
     for(let i = 0; i < ilen; ++i){
         const item = parsed[i];
-        const { [iAxis]: index1 , [vAxis]: value  } = item;
+        const { [iAxis]: index, [vAxis]: value } = item;
         const itemStacks = item._stacks || (item._stacks = {});
-        stack = itemStacks[vAxis] = getOrCreateStack(stacks, key, index1);
+        stack = itemStacks[vAxis] = getOrCreateStack(stacks, key, index);
         stack[datasetIndex] = value;
         stack._top = getLastIndexInStack(stack, vScale, true, meta.type);
         stack._bottom = getLastIndexInStack(stack, vScale, false, meta.type);
@@ -1743,27 +1823,27 @@ function updateStacks(controller, parsed) {
     }
 }
 function getFirstScaleId(chart, axis) {
-    const scales1 = chart.scales;
-    return Object.keys(scales1).filter((key)=>scales1[key].axis === axis).shift();
+    const scales = chart.scales;
+    return Object.keys(scales).filter((key)=>scales[key].axis === axis).shift();
 }
-function createDatasetContext(parent, index2) {
+function createDatasetContext(parent, index) {
     return (0, _helpersSegmentJs.j)(parent, {
         active: false,
         dataset: undefined,
-        datasetIndex: index2,
-        index: index2,
+        datasetIndex: index,
+        index,
         mode: "default",
         type: "dataset"
     });
 }
-function createDataContext(parent, index3, element) {
+function createDataContext(parent, index, element) {
     return (0, _helpersSegmentJs.j)(parent, {
         active: false,
-        dataIndex: index3,
+        dataIndex: index,
         parsed: undefined,
         raw: undefined,
         element,
-        index: index3,
+        index,
         mode: "default",
         type: "data"
     });
@@ -1787,6 +1867,31 @@ const createStack = (canStack, meta, chart)=>canStack && !meta.hidden && meta._s
         values: null
     };
 class DatasetController {
+    static defaults = {};
+    static datasetElementType = null;
+    static dataElementType = null;
+    constructor(chart, datasetIndex){
+        this.chart = chart;
+        this._ctx = chart.ctx;
+        this.index = datasetIndex;
+        this._cachedDataOpts = {};
+        this._cachedMeta = this.getMeta();
+        this._type = this._cachedMeta.type;
+        this.options = undefined;
+        this._parsing = false;
+        this._data = undefined;
+        this._objectData = undefined;
+        this._sharedOptions = undefined;
+        this._drawStart = undefined;
+        this._drawCount = undefined;
+        this.enableOptionSharing = false;
+        this.supportsDecimation = false;
+        this.$context = undefined;
+        this._syncList = [];
+        this.datasetElementType = new.target.datasetElementType;
+        this.dataElementType = new.target.dataElementType;
+        this.initialize();
+    }
     initialize() {
         const meta = this._cachedMeta;
         this.configure();
@@ -1883,8 +1988,8 @@ class DatasetController {
         this._cachedDataOpts = {};
     }
     parse(start, count) {
-        const { _cachedMeta: meta , _data: data  } = this;
-        const { iScale , _stacked  } = meta;
+        const { _cachedMeta: meta, _data: data } = this;
+        const { iScale, _stacked } = meta;
         const iAxis = iScale.axis;
         let sorted = start === 0 && count === data.length ? true : meta._sorted;
         let prev = start > 0 && meta._parsed[start - 1];
@@ -1910,56 +2015,56 @@ class DatasetController {
         if (_stacked) updateStacks(this, parsed);
     }
     parsePrimitiveData(meta, data, start, count) {
-        const { iScale , vScale  } = meta;
+        const { iScale, vScale } = meta;
         const iAxis = iScale.axis;
         const vAxis = vScale.axis;
         const labels = iScale.getLabels();
         const singleScale = iScale === vScale;
         const parsed = new Array(count);
-        let i, ilen, index4;
+        let i, ilen, index;
         for(i = 0, ilen = count; i < ilen; ++i){
-            index4 = i + start;
+            index = i + start;
             parsed[i] = {
-                [iAxis]: singleScale || iScale.parse(labels[index4], index4),
-                [vAxis]: vScale.parse(data[index4], index4)
+                [iAxis]: singleScale || iScale.parse(labels[index], index),
+                [vAxis]: vScale.parse(data[index], index)
             };
         }
         return parsed;
     }
     parseArrayData(meta, data, start, count) {
-        const { xScale , yScale  } = meta;
+        const { xScale, yScale } = meta;
         const parsed = new Array(count);
-        let i, ilen, index5, item;
+        let i, ilen, index, item;
         for(i = 0, ilen = count; i < ilen; ++i){
-            index5 = i + start;
-            item = data[index5];
+            index = i + start;
+            item = data[index];
             parsed[i] = {
-                x: xScale.parse(item[0], index5),
-                y: yScale.parse(item[1], index5)
+                x: xScale.parse(item[0], index),
+                y: yScale.parse(item[1], index)
             };
         }
         return parsed;
     }
     parseObjectData(meta, data, start, count) {
-        const { xScale , yScale  } = meta;
-        const { xAxisKey ="x" , yAxisKey ="y"  } = this._parsing;
+        const { xScale, yScale } = meta;
+        const { xAxisKey = "x", yAxisKey = "y" } = this._parsing;
         const parsed = new Array(count);
-        let i, ilen, index6, item;
+        let i, ilen, index, item;
         for(i = 0, ilen = count; i < ilen; ++i){
-            index6 = i + start;
-            item = data[index6];
+            index = i + start;
+            item = data[index];
             parsed[i] = {
-                x: xScale.parse((0, _helpersSegmentJs.f)(item, xAxisKey), index6),
-                y: yScale.parse((0, _helpersSegmentJs.f)(item, yAxisKey), index6)
+                x: xScale.parse((0, _helpersSegmentJs.f)(item, xAxisKey), index),
+                y: yScale.parse((0, _helpersSegmentJs.f)(item, yAxisKey), index)
             };
         }
         return parsed;
     }
-    getParsed(index7) {
-        return this._cachedMeta._parsed[index7];
+    getParsed(index) {
+        return this._cachedMeta._parsed[index];
     }
-    getDataElement(index8) {
-        return this._cachedMeta.data[index8];
+    getDataElement(index) {
+        return this._cachedMeta.data[index];
     }
     applyStack(scale, parsed, mode) {
         const chart = this.chart;
@@ -1995,7 +2100,7 @@ class DatasetController {
             min: Number.POSITIVE_INFINITY,
             max: Number.NEGATIVE_INFINITY
         };
-        const { min: otherMin , max: otherMax  } = getUserBounds(otherScale);
+        const { min: otherMin, max: otherMax } = getUserBounds(otherScale);
         let i, parsed;
         function _skip() {
             parsed = _parsed[i];
@@ -2027,11 +2132,11 @@ class DatasetController {
     getMaxOverflow() {
         return false;
     }
-    getLabelAndValue(index9) {
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
         const iScale = meta.iScale;
         const vScale = meta.vScale;
-        const parsed = this.getParsed(index9);
+        const parsed = this.getParsed(index);
         return {
             label: iScale ? "" + iScale.getLabelForValue(parsed[iScale.axis]) : "",
             value: vScale ? "" + vScale.getLabelForValue(parsed[vScale.axis]) : ""
@@ -2047,35 +2152,35 @@ class DatasetController {
         const ctx = this._ctx;
         const chart = this.chart;
         const meta = this._cachedMeta;
-        const elements1 = meta.data || [];
+        const elements = meta.data || [];
         const area = chart.chartArea;
         const active = [];
         const start = this._drawStart || 0;
-        const count = this._drawCount || elements1.length - start;
+        const count = this._drawCount || elements.length - start;
         const drawActiveElementsOnTop = this.options.drawActiveElementsOnTop;
         let i;
         if (meta.dataset) meta.dataset.draw(ctx, area, start, count);
         for(i = start; i < start + count; ++i){
-            const element = elements1[i];
+            const element = elements[i];
             if (element.hidden) continue;
             if (element.active && drawActiveElementsOnTop) active.push(element);
             else element.draw(ctx, area);
         }
         for(i = 0; i < active.length; ++i)active[i].draw(ctx, area);
     }
-    getStyle(index10, active) {
+    getStyle(index, active) {
         const mode = active ? "active" : "default";
-        return index10 === undefined && this._cachedMeta.dataset ? this.resolveDatasetElementOptions(mode) : this.resolveDataElementOptions(index10 || 0, mode);
+        return index === undefined && this._cachedMeta.dataset ? this.resolveDatasetElementOptions(mode) : this.resolveDataElementOptions(index || 0, mode);
     }
-    getContext(index11, active, mode) {
+    getContext(index, active, mode) {
         const dataset = this.getDataset();
         let context;
-        if (index11 >= 0 && index11 < this._cachedMeta.data.length) {
-            const element = this._cachedMeta.data[index11];
-            context = element.$context || (element.$context = createDataContext(this.getContext(), index11, element));
-            context.parsed = this.getParsed(index11);
-            context.raw = dataset.data[index11];
-            context.index = context.dataIndex = index11;
+        if (index >= 0 && index < this._cachedMeta.data.length) {
+            const element = this._cachedMeta.data[index];
+            context = element.$context || (element.$context = createDataContext(this.getContext(), index, element));
+            context.parsed = this.getParsed(index);
+            context.raw = dataset.data[index];
+            context.index = context.dataIndex = index;
         } else {
             context = this.$context || (this.$context = createDatasetContext(this.chart.getContext(), this.index));
             context.dataset = dataset;
@@ -2088,15 +2193,15 @@ class DatasetController {
     resolveDatasetElementOptions(mode) {
         return this._resolveElementOptions(this.datasetElementType.id, mode);
     }
-    resolveDataElementOptions(index12, mode) {
-        return this._resolveElementOptions(this.dataElementType.id, mode, index12);
+    resolveDataElementOptions(index, mode) {
+        return this._resolveElementOptions(this.dataElementType.id, mode, index);
     }
-    _resolveElementOptions(elementType, mode = "default", index13) {
+    _resolveElementOptions(elementType, mode = "default", index) {
         const active = mode === "active";
         const cache = this._cachedDataOpts;
         const cacheKey = elementType + "-" + mode;
         const cached = cache[cacheKey];
-        const sharing = this.enableOptionSharing && (0, _helpersSegmentJs.h)(index13);
+        const sharing = this.enableOptionSharing && (0, _helpersSegmentJs.h)(index);
         if (cached) return cloneIfNotShared(cached, sharing);
         const config = this.chart.config;
         const scopeKeys = config.datasetElementScopeKeys(this._type, elementType);
@@ -2111,7 +2216,7 @@ class DatasetController {
         ];
         const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
         const names = Object.keys((0, _helpersSegmentJs.d).elements[elementType]);
-        const context = ()=>this.getContext(index13, active, mode);
+        const context = ()=>this.getContext(index, active, mode);
         const values = config.resolveNamedOptions(scopes, names, context, prefixes);
         if (values.$shared) {
             values.$shared = sharing;
@@ -2119,7 +2224,7 @@ class DatasetController {
         }
         return values;
     }
-    _resolveAnimations(index14, transition, active) {
+    _resolveAnimations(index, transition, active) {
         const chart = this.chart;
         const cache = this._cachedDataOpts;
         const cacheKey = `animation-${transition}`;
@@ -2130,7 +2235,7 @@ class DatasetController {
             const config = this.chart.config;
             const scopeKeys = config.datasetAnimationScopeKeys(this._type, transition);
             const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
-            options = config.createResolver(scopes, this.getContext(index14, active, transition));
+            options = config.createResolver(scopes, this.getContext(index, active, transition));
         }
         const animations = new Animations(chart, options && options.animations);
         if (options && options._cacheable) cache[cacheKey] = Object.freeze(animations);
@@ -2154,25 +2259,25 @@ class DatasetController {
             includeOptions
         };
     }
-    updateElement(element, index15, properties, mode) {
+    updateElement(element, index, properties, mode) {
         if (isDirectUpdateMode(mode)) Object.assign(element, properties);
-        else this._resolveAnimations(index15, mode).update(element, properties);
+        else this._resolveAnimations(index, mode).update(element, properties);
     }
     updateSharedOptions(sharedOptions, mode, newOptions) {
         if (sharedOptions && !isDirectUpdateMode(mode)) this._resolveAnimations(undefined, mode).update(sharedOptions, newOptions);
     }
-    _setStyle(element, index16, mode, active) {
+    _setStyle(element, index, mode, active) {
         element.active = active;
-        const options = this.getStyle(index16, active);
-        this._resolveAnimations(index16, mode, active).update(element, {
+        const options = this.getStyle(index, active);
+        this._resolveAnimations(index, mode, active).update(element, {
             options: !active && this.getSharedOptions(options) || options
         });
     }
-    removeHoverStyle(element, datasetIndex, index17) {
-        this._setStyle(element, index17, "active", false);
+    removeHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, "active", false);
     }
-    setHoverStyle(element, datasetIndex, index18) {
-        this._setStyle(element, index18, "active", true);
+    setHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, "active", true);
     }
     _removeDatasetHoverStyle() {
         const element = this._cachedMeta.dataset;
@@ -2184,10 +2289,10 @@ class DatasetController {
     }
     _resyncElements(resetNewElements) {
         const data = this._data;
-        const elements2 = this._cachedMeta.data;
+        const elements = this._cachedMeta.data;
         for (const [method, arg1, arg2] of this._syncList)this[method](arg1, arg2);
         this._syncList = [];
-        const numMeta = elements2.length;
+        const numMeta = elements.length;
         const numData = data.length;
         const count = Math.min(numData, numMeta);
         if (count) this.parse(0, count);
@@ -2271,32 +2376,7 @@ class DatasetController {
             arguments.length
         ]);
     }
-    constructor(chart, datasetIndex){
-        this.chart = chart;
-        this._ctx = chart.ctx;
-        this.index = datasetIndex;
-        this._cachedDataOpts = {};
-        this._cachedMeta = this.getMeta();
-        this._type = this._cachedMeta.type;
-        this.options = undefined;
-        this._parsing = false;
-        this._data = undefined;
-        this._objectData = undefined;
-        this._sharedOptions = undefined;
-        this._drawStart = undefined;
-        this._drawCount = undefined;
-        this.enableOptionSharing = false;
-        this.supportsDecimation = false;
-        this.$context = undefined;
-        this._syncList = [];
-        this.datasetElementType = new.target.datasetElementType;
-        this.dataElementType = new.target.dataElementType;
-        this.initialize();
-    }
 }
-(0, _definePropertyMjsDefault.default)(DatasetController, "defaults", {});
-(0, _definePropertyMjsDefault.default)(DatasetController, "datasetElementType", null);
-(0, _definePropertyMjsDefault.default)(DatasetController, "dataElementType", null);
 function getAllScaleValues(scale, type) {
     if (!scale._cache.$bar) {
         const visibleMetas = scale.getMatchingVisibleMetas(type);
@@ -2327,7 +2407,7 @@ function computeMinSampleSize(meta) {
     }
     return min;
 }
-function computeFitCategoryTraits(index19, ruler, options, stackCount) {
+function computeFitCategoryTraits(index, ruler, options, stackCount) {
     const thickness = options.barThickness;
     let size, ratio;
     if ((0, _helpersSegmentJs.k)(thickness)) {
@@ -2340,14 +2420,14 @@ function computeFitCategoryTraits(index19, ruler, options, stackCount) {
     return {
         chunk: size / stackCount,
         ratio,
-        start: ruler.pixels[index19] - size / 2
+        start: ruler.pixels[index] - size / 2
     };
 }
-function computeFlexCategoryTraits(index20, ruler, options, stackCount) {
+function computeFlexCategoryTraits(index, ruler, options, stackCount) {
     const pixels = ruler.pixels;
-    const curr = pixels[index20];
-    let prev = index20 > 0 ? pixels[index20 - 1] : null;
-    let next = index20 < pixels.length - 1 ? pixels[index20 + 1] : null;
+    const curr = pixels[index];
+    let prev = index > 0 ? pixels[index - 1] : null;
+    let next = index < pixels.length - 1 ? pixels[index + 1] : null;
     const percent = options.categoryPercentage;
     if (prev === null) prev = curr - (next === null ? ruler.end - ruler.start : next - curr);
     if (next === null) next = curr + curr - prev;
@@ -2433,7 +2513,7 @@ function borderProps(properties) {
         bottom
     };
 }
-function setBorderSkipped(properties, options, stack, index21) {
+function setBorderSkipped(properties, options, stack, index) {
     let edge = options.borderSkipped;
     const res = {};
     if (!edge) {
@@ -2449,11 +2529,11 @@ function setBorderSkipped(properties, options, stack, index21) {
         };
         return;
     }
-    const { start , end , reverse , top , bottom  } = borderProps(properties);
+    const { start, end, reverse, top, bottom } = borderProps(properties);
     if (edge === "middle" && stack) {
         properties.enableBorderRadius = true;
-        if ((stack._top || 0) === index21) edge = top;
-        else if ((stack._bottom || 0) === index21) edge = bottom;
+        if ((stack._top || 0) === index) edge = top;
+        else if ((stack._bottom || 0) === index) edge = bottom;
         else {
             res[parseEdge(bottom, start, end, reverse)] = true;
             edge = top;
@@ -2475,10 +2555,45 @@ function swap(orig, v1, v2) {
 function startEnd(v, start, end) {
     return v === "start" ? start : v === "end" ? end : v;
 }
-function setInflateAmount(properties, { inflateAmount  }, ratio) {
+function setInflateAmount(properties, { inflateAmount }, ratio) {
     properties.inflateAmount = inflateAmount === "auto" ? ratio === 1 ? 0.33 : 0 : inflateAmount;
 }
 class BarController extends DatasetController {
+    static id = "bar";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "bar",
+        categoryPercentage: 0.8,
+        barPercentage: 0.9,
+        grouped: true,
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "base",
+                    "width",
+                    "height"
+                ]
+            }
+        }
+    };
+    static overrides = {
+        scales: {
+            _index_: {
+                type: "category",
+                offset: true,
+                grid: {
+                    offset: true
+                }
+            },
+            _value_: {
+                type: "linear",
+                beginAtZero: true
+            }
+        }
+    };
     parsePrimitiveData(meta, data, start, count) {
         return parseArrayOrPrimitive(meta, data, start, count);
     }
@@ -2486,8 +2601,8 @@ class BarController extends DatasetController {
         return parseArrayOrPrimitive(meta, data, start, count);
     }
     parseObjectData(meta, data, start, count) {
-        const { iScale , vScale  } = meta;
-        const { xAxisKey ="x" , yAxisKey ="y"  } = this._parsing;
+        const { iScale, vScale } = meta;
+        const { xAxisKey = "x", yAxisKey = "y" } = this._parsing;
         const iAxisKey = iScale.axis === "x" ? xAxisKey : yAxisKey;
         const vAxisKey = vScale.axis === "x" ? xAxisKey : yAxisKey;
         const parsed = [];
@@ -2511,10 +2626,10 @@ class BarController extends DatasetController {
     getMaxOverflow() {
         return 0;
     }
-    getLabelAndValue(index22) {
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
-        const { iScale , vScale  } = meta;
-        const parsed = this.getParsed(index22);
+        const { iScale, vScale } = meta;
+        const parsed = this.getParsed(index);
         const custom = parsed._custom;
         const value = isFloatBar(custom) ? "[" + custom.start + ", " + custom.end + "]" : "" + vScale.getLabelForValue(parsed[vScale.axis]);
         return {
@@ -2534,11 +2649,11 @@ class BarController extends DatasetController {
     }
     updateElements(bars, start, count, mode) {
         const reset = mode === "reset";
-        const { index: index23 , _cachedMeta: { vScale  }  } = this;
+        const { index, _cachedMeta: { vScale } } = this;
         const base = vScale.getBasePixel();
         const horizontal = vScale.isHorizontal();
         const ruler = this._getRuler();
-        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
         for(let i = start; i < start + count; i++){
             const parsed = this.getParsed(i);
             const vpixels = reset || (0, _helpersSegmentJs.k)(parsed[vScale.axis]) ? {
@@ -2550,7 +2665,7 @@ class BarController extends DatasetController {
             const properties = {
                 horizontal,
                 base: vpixels.base,
-                enableBorderRadius: !stack || isFloatBar(parsed._custom) || index23 === stack._top || index23 === stack._bottom,
+                enableBorderRadius: !stack || isFloatBar(parsed._custom) || index === stack._top || index === stack._bottom,
                 x: horizontal ? vpixels.head : ipixels.center,
                 y: horizontal ? ipixels.center : vpixels.head,
                 height: horizontal ? ipixels.size : Math.abs(vpixels.size),
@@ -2558,13 +2673,13 @@ class BarController extends DatasetController {
             };
             if (includeOptions) properties.options = sharedOptions || this.resolveDataElementOptions(i, bars[i].active ? "active" : mode);
             const options = properties.options || bars[i].options;
-            setBorderSkipped(properties, options, stack, index23);
+            setBorderSkipped(properties, options, stack, index);
             setInflateAmount(properties, options, ruler.ratio);
             this.updateElement(bars[i], i, properties, mode);
         }
     }
     _getStacks(last, dataIndex) {
-        const { iScale  } = this._cachedMeta;
+        const { iScale } = this._cachedMeta;
         const metasets = iScale.getMatchingVisibleMetas(this._type).filter((meta)=>meta.controller.options.grouped);
         const stacked = iScale.options.stacked;
         const stacks = [];
@@ -2573,21 +2688,21 @@ class BarController extends DatasetController {
             const val = parsed && parsed[meta.vScale.axis];
             if ((0, _helpersSegmentJs.k)(val) || isNaN(val)) return true;
         };
-        for (const meta1 of metasets){
-            if (dataIndex !== undefined && skipNull(meta1)) continue;
-            if (stacked === false || stacks.indexOf(meta1.stack) === -1 || stacked === undefined && meta1.stack === undefined) stacks.push(meta1.stack);
-            if (meta1.index === last) break;
+        for (const meta of metasets){
+            if (dataIndex !== undefined && skipNull(meta)) continue;
+            if (stacked === false || stacks.indexOf(meta.stack) === -1 || stacked === undefined && meta.stack === undefined) stacks.push(meta.stack);
+            if (meta.index === last) break;
         }
         if (!stacks.length) stacks.push(undefined);
         return stacks;
     }
-    _getStackCount(index24) {
-        return this._getStacks(undefined, index24).length;
+    _getStackCount(index) {
+        return this._getStacks(undefined, index).length;
     }
     _getStackIndex(datasetIndex, name, dataIndex) {
         const stacks = this._getStacks(datasetIndex, dataIndex);
-        const index25 = name !== undefined ? stacks.indexOf(name) : -1;
-        return index25 === -1 ? stacks.length - 1 : index25;
+        const index = name !== undefined ? stacks.indexOf(name) : -1;
+        return index === -1 ? stacks.length - 1 : index;
     }
     _getRuler() {
         const opts = this.options;
@@ -2609,10 +2724,10 @@ class BarController extends DatasetController {
             ratio: barThickness ? 1 : opts.categoryPercentage * opts.barPercentage
         };
     }
-    _calculateBarValuePixels(index26) {
-        const { _cachedMeta: { vScale , _stacked , index: datasetIndex  } , options: { base: baseValue , minBarLength  }  } = this;
+    _calculateBarValuePixels(index) {
+        const { _cachedMeta: { vScale, _stacked, index: datasetIndex }, options: { base: baseValue, minBarLength } } = this;
         const actualBase = baseValue || 0;
-        const parsed = this.getParsed(index26);
+        const parsed = this.getParsed(index);
         const custom = parsed._custom;
         const floating = isFloatBar(custom);
         let value = parsed[vScale.axis];
@@ -2631,7 +2746,7 @@ class BarController extends DatasetController {
         }
         const startValue = !(0, _helpersSegmentJs.k)(baseValue) && !floating ? baseValue : start;
         let base = vScale.getPixelForValue(startValue);
-        if (this.chart.getDataVisibility(index26)) head = vScale.getPixelForValue(start + length);
+        if (this.chart.getDataVisibility(index)) head = vScale.getPixelForValue(start + length);
         else head = base;
         size = head - base;
         if (Math.abs(size) < minBarLength) {
@@ -2657,20 +2772,20 @@ class BarController extends DatasetController {
             center: head + size / 2
         };
     }
-    _calculateBarIndexPixels(index27, ruler) {
+    _calculateBarIndexPixels(index, ruler) {
         const scale = ruler.scale;
         const options = this.options;
         const skipNull = options.skipNull;
         const maxBarThickness = (0, _helpersSegmentJs.v)(options.maxBarThickness, Infinity);
         let center, size;
         if (ruler.grouped) {
-            const stackCount = skipNull ? this._getStackCount(index27) : ruler.stackCount;
-            const range = options.barThickness === "flex" ? computeFlexCategoryTraits(index27, ruler, options, stackCount) : computeFitCategoryTraits(index27, ruler, options, stackCount);
-            const stackIndex = this._getStackIndex(this.index, this._cachedMeta.stack, skipNull ? index27 : undefined);
+            const stackCount = skipNull ? this._getStackCount(index) : ruler.stackCount;
+            const range = options.barThickness === "flex" ? computeFlexCategoryTraits(index, ruler, options, stackCount) : computeFitCategoryTraits(index, ruler, options, stackCount);
+            const stackIndex = this._getStackIndex(this.index, this._cachedMeta.stack, skipNull ? index : undefined);
             center = range.start + range.chunk * stackIndex + range.chunk / 2;
             size = Math.min(maxBarThickness, range.chunk * range.ratio);
         } else {
-            center = scale.getPixelForValue(this.getParsed(index27)[scale.axis], index27);
+            center = scale.getPixelForValue(this.getParsed(index)[scale.axis], index);
             size = Math.min(maxBarThickness, ruler.min * ruler.ratio);
         }
         return {
@@ -2689,42 +2804,33 @@ class BarController extends DatasetController {
         for(; i < ilen; ++i)if (this.getParsed(i)[vScale.axis] !== null) rects[i].draw(this._ctx);
     }
 }
-(0, _definePropertyMjsDefault.default)(BarController, "id", "bar");
-(0, _definePropertyMjsDefault.default)(BarController, "defaults", {
-    datasetElementType: false,
-    dataElementType: "bar",
-    categoryPercentage: 0.8,
-    barPercentage: 0.9,
-    grouped: true,
-    animations: {
-        numbers: {
-            type: "number",
-            properties: [
-                "x",
-                "y",
-                "base",
-                "width",
-                "height"
-            ]
-        }
-    }
-});
-(0, _definePropertyMjsDefault.default)(BarController, "overrides", {
-    scales: {
-        _index_: {
-            type: "category",
-            offset: true,
-            grid: {
-                offset: true
-            }
-        },
-        _value_: {
-            type: "linear",
-            beginAtZero: true
-        }
-    }
-});
 class BubbleController extends DatasetController {
+    static id = "bubble";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "point",
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "borderWidth",
+                    "radius"
+                ]
+            }
+        }
+    };
+    static overrides = {
+        scales: {
+            x: {
+                type: "linear"
+            },
+            y: {
+                type: "linear"
+            }
+        }
+    };
     initialize() {
         this.enableOptionSharing = true;
         super.initialize();
@@ -2756,16 +2862,16 @@ class BubbleController extends DatasetController {
         for(let i = data.length - 1; i >= 0; --i)max = Math.max(max, data[i].size(this.resolveDataElementOptions(i)) / 2);
         return max > 0 && max;
     }
-    getLabelAndValue(index28) {
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
         const labels = this.chart.data.labels || [];
-        const { xScale , yScale  } = meta;
-        const parsed = this.getParsed(index28);
+        const { xScale, yScale } = meta;
+        const parsed = this.getParsed(index);
         const x = xScale.getLabelForValue(parsed.x);
         const y = yScale.getLabelForValue(parsed.y);
         const r = parsed._custom;
         return {
-            label: labels[index28] || "",
+            label: labels[index] || "",
             value: "(" + x + ", " + y + (r ? ", " + r : "") + ")"
         };
     }
@@ -2775,8 +2881,8 @@ class BubbleController extends DatasetController {
     }
     updateElements(points, start, count, mode) {
         const reset = mode === "reset";
-        const { iScale , vScale  } = this._cachedMeta;
-        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const { iScale, vScale } = this._cachedMeta;
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
         const iAxis = iScale.axis;
         const vAxis = vScale.axis;
         for(let i = start; i < start + count; i++){
@@ -2793,9 +2899,9 @@ class BubbleController extends DatasetController {
             this.updateElement(point, i, properties, mode);
         }
     }
-    resolveDataElementOptions(index29, mode) {
-        const parsed = this.getParsed(index29);
-        let values = super.resolveDataElementOptions(index29, mode);
+    resolveDataElementOptions(index, mode) {
+        const parsed = this.getParsed(index);
+        let values = super.resolveDataElementOptions(index, mode);
         if (values.$shared) values = Object.assign({}, values, {
             $shared: false
         });
@@ -2805,32 +2911,6 @@ class BubbleController extends DatasetController {
         return values;
     }
 }
-(0, _definePropertyMjsDefault.default)(BubbleController, "id", "bubble");
-(0, _definePropertyMjsDefault.default)(BubbleController, "defaults", {
-    datasetElementType: false,
-    dataElementType: "point",
-    animations: {
-        numbers: {
-            type: "number",
-            properties: [
-                "x",
-                "y",
-                "borderWidth",
-                "radius"
-            ]
-        }
-    }
-});
-(0, _definePropertyMjsDefault.default)(BubbleController, "overrides", {
-    scales: {
-        x: {
-            type: "linear"
-        },
-        y: {
-            type: "linear"
-        }
-    }
-});
 function getRatioAndOffset(rotation, circumference, cutout) {
     let ratioX = 1;
     let ratioY = 1;
@@ -2862,6 +2942,84 @@ function getRatioAndOffset(rotation, circumference, cutout) {
     };
 }
 class DoughnutController extends DatasetController {
+    static id = "doughnut";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "arc",
+        animation: {
+            animateRotate: true,
+            animateScale: false
+        },
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "circumference",
+                    "endAngle",
+                    "innerRadius",
+                    "outerRadius",
+                    "startAngle",
+                    "x",
+                    "y",
+                    "offset",
+                    "borderWidth",
+                    "spacing"
+                ]
+            }
+        },
+        cutout: "50%",
+        rotation: 0,
+        circumference: 360,
+        radius: "100%",
+        spacing: 0,
+        indexAxis: "r"
+    };
+    static descriptors = {
+        _scriptable: (name)=>name !== "spacing",
+        _indexable: (name)=>name !== "spacing" && !name.startsWith("borderDash") && !name.startsWith("hoverBorderDash")
+    };
+    static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const { labels: { pointStyle, color } } = chart.legend.options;
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    strokeStyle: style.borderColor,
+                                    fontColor: color,
+                                    lineWidth: style.borderWidth,
+                                    pointStyle: pointStyle,
+                                    hidden: !chart.getDataVisibility(i),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.enableOptionSharing = true;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.offsetX = undefined;
+        this.offsetY = undefined;
+    }
     linkScales() {}
     parse(start, count) {
         const data = this.getDataset().data;
@@ -2870,11 +3028,11 @@ class DoughnutController extends DatasetController {
         else {
             let getter = (i)=>+data[i];
             if ((0, _helpersSegmentJs.i)(data[start])) {
-                const { key ="value"  } = this._parsing;
+                const { key = "value" } = this._parsing;
                 getter = (i)=>+(0, _helpersSegmentJs.f)(data[i], key);
             }
-            let i1, ilen;
-            for(i1 = start, ilen = start + count; i1 < ilen; ++i1)meta._parsed[i1] = getter(i1);
+            let i, ilen;
+            for(i = start, ilen = start + count; i < ilen; ++i)meta._parsed[i] = getter(i);
         }
     }
     _getRotation() {
@@ -2900,15 +3058,15 @@ class DoughnutController extends DatasetController {
     }
     update(mode) {
         const chart = this.chart;
-        const { chartArea  } = chart;
+        const { chartArea } = chart;
         const meta = this._cachedMeta;
         const arcs = meta.data;
         const spacing = this.getMaxBorderWidth() + this.getMaxOffset(arcs) + this.options.spacing;
         const maxSize = Math.max((Math.min(chartArea.width, chartArea.height) - spacing) / 2, 0);
         const cutout = Math.min((0, _helpersSegmentJs.m)(this.options.cutout, maxSize), 1);
         const chartWeight = this._getRingWeight(this.index);
-        const { circumference , rotation  } = this._getRotationExtents();
-        const { ratioX , ratioY , offsetX , offsetY  } = getRatioAndOffset(rotation, circumference, cutout);
+        const { circumference, rotation } = this._getRotationExtents();
+        const { ratioX, ratioY, offsetX, offsetY } = getRatioAndOffset(rotation, circumference, cutout);
         const maxWidth = (chartArea.width - spacing) / ratioX;
         const maxHeight = (chartArea.height - spacing) / ratioY;
         const maxRadius = Math.max(Math.min(maxWidth, maxHeight) / 2, 0);
@@ -2940,7 +3098,7 @@ class DoughnutController extends DatasetController {
         const animateScale = reset && animationOpts.animateScale;
         const innerRadius = animateScale ? 0 : this.innerRadius;
         const outerRadius = animateScale ? 0 : this.outerRadius;
-        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
         let startAngle = this._getRotation();
         let i;
         for(i = 0; i < start; ++i)startAngle += this._circumference(i, reset);
@@ -2977,13 +3135,13 @@ class DoughnutController extends DatasetController {
         if (total > 0 && !isNaN(value)) return (0, _helpersSegmentJs.T) * (Math.abs(value) / total);
         return 0;
     }
-    getLabelAndValue(index30) {
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
         const chart = this.chart;
         const labels = chart.data.labels || [];
-        const value = (0, _helpersSegmentJs.o)(meta._parsed[index30], chart.options.locale);
+        const value = (0, _helpersSegmentJs.o)(meta._parsed[index], chart.options.locale);
         return {
-            label: labels[index30] || "",
+            label: labels[index] || "",
             value
         };
     }
@@ -3025,86 +3183,25 @@ class DoughnutController extends DatasetController {
     _getVisibleDatasetWeightTotal() {
         return this._getRingWeightOffset(this.chart.data.datasets.length) || 1;
     }
-    constructor(chart, datasetIndex){
-        super(chart, datasetIndex);
-        this.enableOptionSharing = true;
-        this.innerRadius = undefined;
-        this.outerRadius = undefined;
-        this.offsetX = undefined;
-        this.offsetY = undefined;
-    }
 }
-(0, _definePropertyMjsDefault.default)(DoughnutController, "id", "doughnut");
-(0, _definePropertyMjsDefault.default)(DoughnutController, "defaults", {
-    datasetElementType: false,
-    dataElementType: "arc",
-    animation: {
-        animateRotate: true,
-        animateScale: false
-    },
-    animations: {
-        numbers: {
-            type: "number",
-            properties: [
-                "circumference",
-                "endAngle",
-                "innerRadius",
-                "outerRadius",
-                "startAngle",
-                "x",
-                "y",
-                "offset",
-                "borderWidth",
-                "spacing"
-            ]
-        }
-    },
-    cutout: "50%",
-    rotation: 0,
-    circumference: 360,
-    radius: "100%",
-    spacing: 0,
-    indexAxis: "r"
-});
-(0, _definePropertyMjsDefault.default)(DoughnutController, "descriptors", {
-    _scriptable: (name)=>name !== "spacing",
-    _indexable: (name)=>name !== "spacing" && !name.startsWith("borderDash") && !name.startsWith("hoverBorderDash")
-});
-(0, _definePropertyMjsDefault.default)(DoughnutController, "overrides", {
-    aspectRatio: 1,
-    plugins: {
-        legend: {
-            labels: {
-                generateLabels (chart) {
-                    const data = chart.data;
-                    if (data.labels.length && data.datasets.length) {
-                        const { labels: { pointStyle , color  }  } = chart.legend.options;
-                        return data.labels.map((label, i)=>{
-                            const meta = chart.getDatasetMeta(0);
-                            const style = meta.controller.getStyle(i);
-                            return {
-                                text: label,
-                                fillStyle: style.backgroundColor,
-                                strokeStyle: style.borderColor,
-                                fontColor: color,
-                                lineWidth: style.borderWidth,
-                                pointStyle: pointStyle,
-                                hidden: !chart.getDataVisibility(i),
-                                index: i
-                            };
-                        });
-                    }
-                    return [];
-                }
+class LineController extends DatasetController {
+    static id = "line";
+    static defaults = {
+        datasetElementType: "line",
+        dataElementType: "point",
+        showLine: true,
+        spanGaps: false
+    };
+    static overrides = {
+        scales: {
+            _index_: {
+                type: "category"
             },
-            onClick (e, legendItem, legend) {
-                legend.chart.toggleDataVisibility(legendItem.index);
-                legend.chart.update();
+            _value_: {
+                type: "linear"
             }
         }
-    }
-});
-class LineController extends DatasetController {
+    };
     initialize() {
         this.enableOptionSharing = true;
         this.supportsDecimation = true;
@@ -3112,9 +3209,9 @@ class LineController extends DatasetController {
     }
     update(mode) {
         const meta = this._cachedMeta;
-        const { dataset: line , data: points = [] , _dataset  } = meta;
+        const { dataset: line, data: points = [], _dataset } = meta;
         const animationsDisabled = this.chart._animationsDisabled;
-        let { start , count  } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
+        let { start, count } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
         this._drawStart = start;
         this._drawCount = count;
         if ((0, _helpersSegmentJs.w)(meta)) {
@@ -3124,7 +3221,7 @@ class LineController extends DatasetController {
         line._chart = this.chart;
         line._datasetIndex = this.index;
         line._decimated = !!_dataset._decimated;
-        line.points = points;
+        line.points = points.slice(Math.max(this._drawStart - 1, 0), this._drawStart + this._drawCount);
         const options = this.resolveDatasetElementOptions(mode);
         if (!this.options.showLine) options.borderWidth = 0;
         options.segment = this.options.segment;
@@ -3136,11 +3233,11 @@ class LineController extends DatasetController {
     }
     updateElements(points, start, count, mode) {
         const reset = mode === "reset";
-        const { iScale , vScale , _stacked , _dataset  } = this._cachedMeta;
-        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const { iScale, vScale, _stacked, _dataset } = this._cachedMeta;
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
         const iAxis = iScale.axis;
         const vAxis = vScale.axis;
-        const { spanGaps , segment  } = this.options;
+        const { spanGaps, segment } = this.options;
         const maxGapLength = (0, _helpersSegmentJs.x)(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
         const directUpdate = this.chart._animationsDisabled || reset || mode === "none";
         const end = start + count;
@@ -3184,31 +3281,92 @@ class LineController extends DatasetController {
         super.draw();
     }
 }
-(0, _definePropertyMjsDefault.default)(LineController, "id", "line");
-(0, _definePropertyMjsDefault.default)(LineController, "defaults", {
-    datasetElementType: "line",
-    dataElementType: "point",
-    showLine: true,
-    spanGaps: false
-});
-(0, _definePropertyMjsDefault.default)(LineController, "overrides", {
-    scales: {
-        _index_: {
-            type: "category"
-        },
-        _value_: {
-            type: "linear"
-        }
-    }
-});
 class PolarAreaController extends DatasetController {
-    getLabelAndValue(index31) {
+    static id = "polarArea";
+    static defaults = {
+        dataElementType: "arc",
+        animation: {
+            animateRotate: true,
+            animateScale: true
+        },
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "startAngle",
+                    "endAngle",
+                    "innerRadius",
+                    "outerRadius"
+                ]
+            }
+        },
+        indexAxis: "r",
+        startAngle: 0
+    };
+    static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const { labels: { pointStyle, color } } = chart.legend.options;
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    strokeStyle: style.borderColor,
+                                    fontColor: color,
+                                    lineWidth: style.borderWidth,
+                                    pointStyle: pointStyle,
+                                    hidden: !chart.getDataVisibility(i),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        },
+        scales: {
+            r: {
+                type: "radialLinear",
+                angleLines: {
+                    display: false
+                },
+                beginAtZero: true,
+                grid: {
+                    circular: true
+                },
+                pointLabels: {
+                    display: false
+                },
+                startAngle: 0
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+    }
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
         const chart = this.chart;
         const labels = chart.data.labels || [];
-        const value = (0, _helpersSegmentJs.o)(meta._parsed[index31].r, chart.options.locale);
+        const value = (0, _helpersSegmentJs.o)(meta._parsed[index].r, chart.options.locale);
         return {
-            label: labels[index31] || "",
+            label: labels[index] || "",
             value
         };
     }
@@ -3226,9 +3384,9 @@ class PolarAreaController extends DatasetController {
             min: Number.POSITIVE_INFINITY,
             max: Number.NEGATIVE_INFINITY
         };
-        meta.data.forEach((element, index32)=>{
-            const parsed = this.getParsed(index32).r;
-            if (!isNaN(parsed) && this.chart.getDataVisibility(index32)) {
+        meta.data.forEach((element, index)=>{
+            const parsed = this.getParsed(index).r;
+            if (!isNaN(parsed) && this.chart.getDataVisibility(index)) {
                 if (parsed < range.min) range.min = parsed;
                 if (parsed > range.max) range.max = parsed;
             }
@@ -3284,108 +3442,50 @@ class PolarAreaController extends DatasetController {
     countVisibleElements() {
         const meta = this._cachedMeta;
         let count = 0;
-        meta.data.forEach((element, index33)=>{
-            if (!isNaN(this.getParsed(index33).r) && this.chart.getDataVisibility(index33)) count++;
+        meta.data.forEach((element, index)=>{
+            if (!isNaN(this.getParsed(index).r) && this.chart.getDataVisibility(index)) count++;
         });
         return count;
     }
-    _computeAngle(index34, mode, defaultAngle) {
-        return this.chart.getDataVisibility(index34) ? (0, _helpersSegmentJs.t)(this.resolveDataElementOptions(index34, mode).angle || defaultAngle) : 0;
-    }
-    constructor(chart, datasetIndex){
-        super(chart, datasetIndex);
-        this.innerRadius = undefined;
-        this.outerRadius = undefined;
+    _computeAngle(index, mode, defaultAngle) {
+        return this.chart.getDataVisibility(index) ? (0, _helpersSegmentJs.t)(this.resolveDataElementOptions(index, mode).angle || defaultAngle) : 0;
     }
 }
-(0, _definePropertyMjsDefault.default)(PolarAreaController, "id", "polarArea");
-(0, _definePropertyMjsDefault.default)(PolarAreaController, "defaults", {
-    dataElementType: "arc",
-    animation: {
-        animateRotate: true,
-        animateScale: true
-    },
-    animations: {
-        numbers: {
-            type: "number",
-            properties: [
-                "x",
-                "y",
-                "startAngle",
-                "endAngle",
-                "innerRadius",
-                "outerRadius"
-            ]
-        }
-    },
-    indexAxis: "r",
-    startAngle: 0
-});
-(0, _definePropertyMjsDefault.default)(PolarAreaController, "overrides", {
-    aspectRatio: 1,
-    plugins: {
-        legend: {
-            labels: {
-                generateLabels (chart) {
-                    const data = chart.data;
-                    if (data.labels.length && data.datasets.length) {
-                        const { labels: { pointStyle , color  }  } = chart.legend.options;
-                        return data.labels.map((label, i)=>{
-                            const meta = chart.getDatasetMeta(0);
-                            const style = meta.controller.getStyle(i);
-                            return {
-                                text: label,
-                                fillStyle: style.backgroundColor,
-                                strokeStyle: style.borderColor,
-                                fontColor: color,
-                                lineWidth: style.borderWidth,
-                                pointStyle: pointStyle,
-                                hidden: !chart.getDataVisibility(i),
-                                index: i
-                            };
-                        });
-                    }
-                    return [];
-                }
-            },
-            onClick (e, legendItem, legend) {
-                legend.chart.toggleDataVisibility(legendItem.index);
-                legend.chart.update();
+class PieController extends DoughnutController {
+    static id = "pie";
+    static defaults = {
+        cutout: 0,
+        rotation: 0,
+        circumference: 360,
+        radius: "100%"
+    };
+}
+class RadarController extends DatasetController {
+    static id = "radar";
+    static defaults = {
+        datasetElementType: "line",
+        dataElementType: "point",
+        indexAxis: "r",
+        showLine: true,
+        elements: {
+            line: {
+                fill: "start"
             }
         }
-    },
-    scales: {
-        r: {
-            type: "radialLinear",
-            angleLines: {
-                display: false
-            },
-            beginAtZero: true,
-            grid: {
-                circular: true
-            },
-            pointLabels: {
-                display: false
-            },
-            startAngle: 0
+    };
+    static overrides = {
+        aspectRatio: 1,
+        scales: {
+            r: {
+                type: "radialLinear"
+            }
         }
-    }
-});
-class PieController extends DoughnutController {
-}
-(0, _definePropertyMjsDefault.default)(PieController, "id", "pie");
-(0, _definePropertyMjsDefault.default)(PieController, "defaults", {
-    cutout: 0,
-    rotation: 0,
-    circumference: 360,
-    radius: "100%"
-});
-class RadarController extends DatasetController {
-    getLabelAndValue(index35) {
+    };
+    getLabelAndValue(index) {
         const vScale = this._cachedMeta.vScale;
-        const parsed = this.getParsed(index35);
+        const parsed = this.getParsed(index);
         return {
-            label: vScale.getLabels()[index35],
+            label: vScale.getLabels()[index],
             value: "" + vScale.getLabelForValue(parsed[vScale.axis])
         };
     }
@@ -3430,44 +3530,44 @@ class RadarController extends DatasetController {
         }
     }
 }
-(0, _definePropertyMjsDefault.default)(RadarController, "id", "radar");
-(0, _definePropertyMjsDefault.default)(RadarController, "defaults", {
-    datasetElementType: "line",
-    dataElementType: "point",
-    indexAxis: "r",
-    showLine: true,
-    elements: {
-        line: {
-            fill: "start"
-        }
-    }
-});
-(0, _definePropertyMjsDefault.default)(RadarController, "overrides", {
-    aspectRatio: 1,
-    scales: {
-        r: {
-            type: "radialLinear"
-        }
-    }
-});
 class ScatterController extends DatasetController {
-    getLabelAndValue(index36) {
+    static id = "scatter";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "point",
+        showLine: false,
+        fill: false
+    };
+    static overrides = {
+        interaction: {
+            mode: "point"
+        },
+        scales: {
+            x: {
+                type: "linear"
+            },
+            y: {
+                type: "linear"
+            }
+        }
+    };
+    getLabelAndValue(index) {
         const meta = this._cachedMeta;
         const labels = this.chart.data.labels || [];
-        const { xScale , yScale  } = meta;
-        const parsed = this.getParsed(index36);
+        const { xScale, yScale } = meta;
+        const parsed = this.getParsed(index);
         const x = xScale.getLabelForValue(parsed.x);
         const y = yScale.getLabelForValue(parsed.y);
         return {
-            label: labels[index36] || "",
+            label: labels[index] || "",
             value: "(" + x + ", " + y + ")"
         };
     }
     update(mode) {
         const meta = this._cachedMeta;
-        const { data: points = []  } = meta;
+        const { data: points = [] } = meta;
         const animationsDisabled = this.chart._animationsDisabled;
-        let { start , count  } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
+        let { start, count } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
         this._drawStart = start;
         this._drawCount = count;
         if ((0, _helpersSegmentJs.w)(meta)) {
@@ -3475,7 +3575,8 @@ class ScatterController extends DatasetController {
             count = points.length;
         }
         if (this.options.showLine) {
-            const { dataset: line , _dataset  } = meta;
+            if (!this.datasetElementType) this.addElements();
+            const { dataset: line, _dataset } = meta;
             line._chart = this.chart;
             line._datasetIndex = this.index;
             line._decimated = !!_dataset._decimated;
@@ -3486,23 +3587,26 @@ class ScatterController extends DatasetController {
                 animated: !animationsDisabled,
                 options
             }, mode);
+        } else if (this.datasetElementType) {
+            delete meta.dataset;
+            this.datasetElementType = false;
         }
         this.updateElements(points, start, count, mode);
     }
     addElements() {
-        const { showLine  } = this.options;
+        const { showLine } = this.options;
         if (!this.datasetElementType && showLine) this.datasetElementType = this.chart.registry.getElement("line");
         super.addElements();
     }
     updateElements(points, start, count, mode) {
         const reset = mode === "reset";
-        const { iScale , vScale , _stacked , _dataset  } = this._cachedMeta;
+        const { iScale, vScale, _stacked, _dataset } = this._cachedMeta;
         const firstOpts = this.resolveDataElementOptions(start, mode);
         const sharedOptions = this.getSharedOptions(firstOpts);
         const includeOptions = this.includeOptions(mode, sharedOptions);
         const iAxis = iScale.axis;
         const vAxis = vScale.axis;
-        const { spanGaps , segment  } = this.options;
+        const { spanGaps, segment } = this.options;
         const maxGapLength = (0, _helpersSegmentJs.x)(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
         const directUpdate = this.chart._animationsDisabled || reset || mode === "none";
         let prevParsed = start > 0 && this.getParsed(start - 1);
@@ -3541,26 +3645,6 @@ class ScatterController extends DatasetController {
         return Math.max(border, firstPoint, lastPoint) / 2;
     }
 }
-(0, _definePropertyMjsDefault.default)(ScatterController, "id", "scatter");
-(0, _definePropertyMjsDefault.default)(ScatterController, "defaults", {
-    datasetElementType: false,
-    dataElementType: "point",
-    showLine: false,
-    fill: false
-});
-(0, _definePropertyMjsDefault.default)(ScatterController, "overrides", {
-    interaction: {
-        mode: "point"
-    },
-    scales: {
-        x: {
-            type: "linear"
-        },
-        y: {
-            type: "linear"
-        }
-    }
-});
 var controllers = /*#__PURE__*/ Object.freeze({
     __proto__: null,
     BarController: BarController,
@@ -3597,6 +3681,10 @@ var controllers = /*#__PURE__*/ Object.freeze({
    */ static override(members) {
         Object.assign(DateAdapterBase.prototype, members);
     }
+    options;
+    constructor(options){
+        this.options = options || {};
+    }
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     init() {}
     formats() {
@@ -3620,16 +3708,12 @@ var controllers = /*#__PURE__*/ Object.freeze({
     endOf() {
         return abstract();
     }
-    constructor(options){
-        (0, _definePropertyMjsDefault.default)(this, "options", void 0);
-        this.options = options || {};
-    }
 }
 var adapters = {
     _date: DateAdapterBase
 };
 function binarySearch(metaset, axis, value, intersect) {
-    const { controller , data , _sorted  } = metaset;
+    const { controller, data, _sorted } = metaset;
     const iScale = controller._cachedMeta.iScale;
     if (iScale && axis === iScale.axis && axis !== "r" && _sorted && data.length) {
         const lookupMethod = iScale._reversePixels ? (0, _helpersSegmentJs.A) : (0, _helpersSegmentJs.B);
@@ -3656,11 +3740,11 @@ function evaluateInteractionItems(chart, axis, position, handler, intersect) {
     const metasets = chart.getSortedVisibleDatasetMetas();
     const value = position[axis];
     for(let i = 0, ilen = metasets.length; i < ilen; ++i){
-        const { index: index37 , data  } = metasets[i];
-        const { lo , hi  } = binarySearch(metasets[i], axis, value, intersect);
+        const { index, data } = metasets[i];
+        const { lo, hi } = binarySearch(metasets[i], axis, value, intersect);
         for(let j = lo; j <= hi; ++j){
             const element = data[j];
-            if (!element.skip) handler(element, index37, j);
+            if (!element.skip) handler(element, index, j);
         }
     }
 }
@@ -3676,12 +3760,12 @@ function getDistanceMetricForAxis(axis) {
 function getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) {
     const items = [];
     if (!includeInvisible && !chart.isPointInArea(position)) return items;
-    const evaluationFunc = function(element, datasetIndex, index38) {
+    const evaluationFunc = function(element, datasetIndex, index) {
         if (!includeInvisible && !(0, _helpersSegmentJs.C)(element, chart.chartArea, 0)) return;
         if (element.inRange(position.x, position.y, useFinalPosition)) items.push({
             element,
             datasetIndex,
-            index: index38
+            index
         });
     };
     evaluateInteractionItems(chart, axis, position, evaluationFunc, true);
@@ -3689,19 +3773,19 @@ function getIntersectItems(chart, position, axis, useFinalPosition, includeInvis
 }
 function getNearestRadialItems(chart, position, axis, useFinalPosition) {
     let items = [];
-    function evaluationFunc(element, datasetIndex, index39) {
-        const { startAngle , endAngle  } = element.getProps([
+    function evaluationFunc(element, datasetIndex, index) {
+        const { startAngle, endAngle } = element.getProps([
             "startAngle",
             "endAngle"
         ], useFinalPosition);
-        const { angle  } = (0, _helpersSegmentJs.D)(element, {
+        const { angle } = (0, _helpersSegmentJs.D)(element, {
             x: position.x,
             y: position.y
         });
         if ((0, _helpersSegmentJs.p)(angle, startAngle, endAngle)) items.push({
             element,
             datasetIndex,
-            index: index39
+            index
         });
     }
     evaluateInteractionItems(chart, axis, position, evaluationFunc);
@@ -3711,26 +3795,26 @@ function getNearestCartesianItems(chart, position, axis, intersect, useFinalPosi
     let items = [];
     const distanceMetric = getDistanceMetricForAxis(axis);
     let minDistance = Number.POSITIVE_INFINITY;
-    function evaluationFunc(element, datasetIndex, index40) {
-        const inRange1 = element.inRange(position.x, position.y, useFinalPosition);
-        if (intersect && !inRange1) return;
+    function evaluationFunc(element, datasetIndex, index) {
+        const inRange = element.inRange(position.x, position.y, useFinalPosition);
+        if (intersect && !inRange) return;
         const center = element.getCenterPoint(useFinalPosition);
         const pointInArea = !!includeInvisible || chart.isPointInArea(center);
-        if (!pointInArea && !inRange1) return;
+        if (!pointInArea && !inRange) return;
         const distance = distanceMetric(position, center);
         if (distance < minDistance) {
             items = [
                 {
                     element,
                     datasetIndex,
-                    index: index40
+                    index
                 }
             ];
             minDistance = distance;
         } else if (distance === minDistance) items.push({
             element,
             datasetIndex,
-            index: index40
+            index
         });
     }
     evaluateInteractionItems(chart, axis, position, evaluationFunc);
@@ -3744,12 +3828,12 @@ function getAxisItems(chart, position, axis, intersect, useFinalPosition) {
     const items = [];
     const rangeMethod = axis === "x" ? "inXRange" : "inYRange";
     let intersectsItem = false;
-    evaluateInteractionItems(chart, axis, position, (element, datasetIndex, index41)=>{
+    evaluateInteractionItems(chart, axis, position, (element, datasetIndex, index)=>{
         if (element[rangeMethod](position[axis], useFinalPosition)) {
             items.push({
                 element,
                 datasetIndex,
-                index: index41
+                index
             });
             intersectsItem = intersectsItem || element.inRange(position.x, position.y, useFinalPosition);
         }
@@ -3765,18 +3849,18 @@ var Interaction = {
             const axis = options.axis || "x";
             const includeInvisible = options.includeInvisible || false;
             const items = options.intersect ? getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) : getNearestItems(chart, position, axis, false, useFinalPosition, includeInvisible);
-            const elements3 = [];
+            const elements = [];
             if (!items.length) return [];
             chart.getSortedVisibleDatasetMetas().forEach((meta)=>{
-                const index42 = items[0].index;
-                const element = meta.data[index42];
-                if (element && !element.skip) elements3.push({
+                const index = items[0].index;
+                const element = meta.data[index];
+                if (element && !element.skip) elements.push({
                     element,
                     datasetIndex: meta.index,
-                    index: index42
+                    index
                 });
             });
-            return elements3;
+            return elements;
         },
         dataset (chart, e, options, useFinalPosition) {
             const position = (0, _helpersSegmentJs.z)(e, chart);
@@ -3841,7 +3925,7 @@ function wrapBoxes(boxes) {
     let i, ilen, box, pos, stack, stackWeight;
     for(i = 0, ilen = (boxes || []).length; i < ilen; ++i){
         box = boxes[i];
-        ({ position: pos , options: { stack , stackWeight =1  }  } = box);
+        ({ position: pos, options: { stack, stackWeight = 1 } } = box);
         layoutBoxes.push({
             index: i,
             box,
@@ -3854,10 +3938,10 @@ function wrapBoxes(boxes) {
     }
     return layoutBoxes;
 }
-function buildStacks(layouts1) {
+function buildStacks(layouts) {
     const stacks = {};
-    for (const wrap of layouts1){
-        const { stack , pos , stackWeight  } = wrap;
+    for (const wrap of layouts){
+        const { stack, pos, stackWeight } = wrap;
         if (!stack || !STATIC_POSITIONS.includes(pos)) continue;
         const _stack = stacks[stack] || (stacks[stack] = {
             count: 0,
@@ -3870,13 +3954,13 @@ function buildStacks(layouts1) {
     }
     return stacks;
 }
-function setLayoutDims(layouts2, params) {
-    const stacks = buildStacks(layouts2);
-    const { vBoxMaxWidth , hBoxMaxHeight  } = params;
+function setLayoutDims(layouts, params) {
+    const stacks = buildStacks(layouts);
+    const { vBoxMaxWidth, hBoxMaxHeight } = params;
     let i, ilen, layout;
-    for(i = 0, ilen = layouts2.length; i < ilen; ++i){
-        layout = layouts2[i];
-        const { fullSize  } = layout.box;
+    for(i = 0, ilen = layouts.length; i < ilen; ++i){
+        layout = layouts[i];
+        const { fullSize } = layout.box;
         const stack = stacks[layout.stack];
         const factor = stack && layout.stackWeight / stack.weight;
         if (layout.horizontal) {
@@ -3917,7 +4001,7 @@ function updateMaxPadding(maxPadding, boxPadding) {
     maxPadding.right = Math.max(maxPadding.right, boxPadding.right);
 }
 function updateDims(chartArea, params, layout, stacks) {
-    const { pos , box  } = layout;
+    const { pos, box } = layout;
     const maxPadding = chartArea.maxPadding;
     if (!(0, _helpersSegmentJs.i)(pos)) {
         if (layout.size) chartArea[pos] -= layout.size;
@@ -3985,7 +4069,7 @@ function fitBoxes(boxes, chartArea, params, stacks) {
         layout = boxes[i];
         box = layout.box;
         box.update(layout.width || chartArea.w, layout.height || chartArea.h, getMargins(layout.horizontal, chartArea));
-        const { same , other  } = updateDims(chartArea, params, layout, stacks);
+        const { same, other } = updateDims(chartArea, params, layout, stacks);
         refit |= same && refitBoxes.length;
         changed = changed || other;
         if (!box.fullSize) refitBoxes.push(layout);
@@ -4002,7 +4086,7 @@ function setBoxDims(box, left, top, width, height) {
 }
 function placeBoxes(boxes, chartArea, params, stacks) {
     const userPadding = params.padding;
-    let { x , y  } = chartArea;
+    let { x, y } = chartArea;
     for (const layout of boxes){
         const box = layout.box;
         const stack = stacks[layout.stack] || {
@@ -4053,8 +4137,8 @@ var layouts = {
         chart.boxes.push(item);
     },
     removeBox (chart, layoutItem) {
-        const index43 = chart.boxes ? chart.boxes.indexOf(layoutItem) : -1;
-        if (index43 !== -1) chart.boxes.splice(index43, 1);
+        const index = chart.boxes ? chart.boxes.indexOf(layoutItem) : -1;
+        if (index !== -1) chart.boxes.splice(index, 1);
     },
     configure (chart, item, options) {
         item.fullSize = options.fullSize;
@@ -4205,7 +4289,7 @@ function removeListener(chart, type, listener) {
 }
 function fromNativeEvent(event, chart) {
     const type = EVENT_TYPES[event.type] || event.type;
-    const { x , y  } = (0, _helpersSegmentJs.z)(event, chart);
+    const { x, y } = (0, _helpersSegmentJs.z)(event, chart);
     return {
         type,
         chart,
@@ -4370,8 +4454,15 @@ function _detectPlatform(canvas) {
     return DomPlatform;
 }
 class Element {
+    static defaults = {};
+    static defaultRoutes = undefined;
+    x;
+    y;
+    active = false;
+    options;
+    $animations;
     tooltipPosition(useFinalPosition) {
-        const { x , y  } = this.getProps([
+        const { x, y } = this.getProps([
             "x",
             "y"
         ], useFinalPosition);
@@ -4393,16 +4484,7 @@ class Element {
         });
         return ret;
     }
-    constructor(){
-        (0, _definePropertyMjsDefault.default)(this, "x", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "y", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "active", false);
-        (0, _definePropertyMjsDefault.default)(this, "options", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "$animations", void 0);
-    }
 }
-(0, _definePropertyMjsDefault.default)(Element, "defaults", {});
-(0, _definePropertyMjsDefault.default)(Element, "defaultRoutes", undefined);
 function autoSkip(scale, ticks) {
     const tickOpts = scale.options.ticks;
     const determinedMaxTicks = determineMaxTicks(scale);
@@ -4504,19 +4586,19 @@ function sample(arr, numItems) {
     for(; i < len; i += increment)result.push(arr[Math.floor(i)]);
     return result;
 }
-function getPixelForGridLine(scale, index44, offsetGridLines) {
+function getPixelForGridLine(scale, index, offsetGridLines) {
     const length = scale.ticks.length;
-    const validIndex1 = Math.min(index44, length - 1);
+    const validIndex = Math.min(index, length - 1);
     const start = scale._startPixel;
     const end = scale._endPixel;
     const epsilon = 1e-6;
-    let lineValue = scale.getPixelForTick(validIndex1);
+    let lineValue = scale.getPixelForTick(validIndex);
     let offset;
     if (offsetGridLines) {
         if (length === 1) offset = Math.max(lineValue - start, end - lineValue);
-        else if (index44 === 0) offset = (scale.getPixelForTick(1) - lineValue) / 2;
-        else offset = (lineValue - scale.getPixelForTick(validIndex1 - 1)) / 2;
-        lineValue += validIndex1 < index44 ? offset : -offset;
+        else if (index === 0) offset = (scale.getPixelForTick(1) - lineValue) / 2;
+        else offset = (lineValue - scale.getPixelForTick(validIndex - 1)) / 2;
+        lineValue += validIndex < index ? offset : -offset;
         if (lineValue < start - epsilon || lineValue > end + epsilon) return;
     }
     return lineValue;
@@ -4548,10 +4630,10 @@ function createScaleContext(parent, scale) {
         type: "scale"
     });
 }
-function createTickContext(parent, index45, tick) {
+function createTickContext(parent, index, tick) {
     return (0, _helpersSegmentJs.j)(parent, {
         tick,
-        index: index45,
+        index,
         type: "tick"
     });
 }
@@ -4561,8 +4643,8 @@ function titleAlign(align, position, reverse) {
     return ret;
 }
 function titleArgs(scale, offset, position, align) {
-    const { top , left , bottom , right , chart  } = scale;
-    const { chartArea , scales: scales2  } = chart;
+    const { top, left, bottom, right, chart } = scale;
+    const { chartArea, scales } = chart;
     let rotation = 0;
     let maxWidth, titleX, titleY;
     const height = bottom - top;
@@ -4572,7 +4654,7 @@ function titleArgs(scale, offset, position, align) {
         if ((0, _helpersSegmentJs.i)(position)) {
             const positionAxisID = Object.keys(position)[0];
             const value = position[positionAxisID];
-            titleY = scales2[positionAxisID].getPixelForValue(value) + height - offset;
+            titleY = scales[positionAxisID].getPixelForValue(value) + height - offset;
         } else if (position === "center") titleY = (chartArea.bottom + chartArea.top) / 2 + height - offset;
         else titleY = offsetFromEdge(scale, position, offset);
         maxWidth = right - left;
@@ -4580,7 +4662,7 @@ function titleArgs(scale, offset, position, align) {
         if ((0, _helpersSegmentJs.i)(position)) {
             const positionAxisID = Object.keys(position)[0];
             const value = position[positionAxisID];
-            titleX = scales2[positionAxisID].getPixelForValue(value) - width + offset;
+            titleX = scales[positionAxisID].getPixelForValue(value) - width + offset;
         } else if (position === "center") titleX = (chartArea.left + chartArea.right) / 2 - width + offset;
         else titleX = offsetFromEdge(scale, position, offset);
         titleY = (0, _helpersSegmentJs.a2)(align, bottom, top);
@@ -4594,6 +4676,56 @@ function titleArgs(scale, offset, position, align) {
     };
 }
 class Scale extends Element {
+    constructor(cfg){
+        super();
+        this.id = cfg.id;
+        this.type = cfg.type;
+        this.options = undefined;
+        this.ctx = cfg.ctx;
+        this.chart = cfg.chart;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this._margins = {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
+        };
+        this.maxWidth = undefined;
+        this.maxHeight = undefined;
+        this.paddingTop = undefined;
+        this.paddingBottom = undefined;
+        this.paddingLeft = undefined;
+        this.paddingRight = undefined;
+        this.axis = undefined;
+        this.labelRotation = undefined;
+        this.min = undefined;
+        this.max = undefined;
+        this._range = undefined;
+        this.ticks = [];
+        this._gridLineItems = null;
+        this._labelItems = null;
+        this._labelSizes = null;
+        this._length = 0;
+        this._maxLength = 0;
+        this._longestTextCache = {};
+        this._startPixel = undefined;
+        this._endPixel = undefined;
+        this._reversePixels = false;
+        this._userMax = undefined;
+        this._userMin = undefined;
+        this._suggestedMax = undefined;
+        this._suggestedMin = undefined;
+        this._ticksLength = 0;
+        this._borderValue = 0;
+        this._cache = {};
+        this._dataLimitsCached = false;
+        this.$context = undefined;
+    }
     init(options) {
         this.options = options.setContext(this.getContext());
         this.axis = options.axis;
@@ -4606,7 +4738,7 @@ class Scale extends Element {
         return raw;
     }
     getUserBounds() {
-        let { _userMin , _userMax , _suggestedMin , _suggestedMax  } = this;
+        let { _userMin, _userMax, _suggestedMin, _suggestedMax } = this;
         _userMin = (0, _helpersSegmentJs.O)(_userMin, Number.POSITIVE_INFINITY);
         _userMax = (0, _helpersSegmentJs.O)(_userMax, Number.NEGATIVE_INFINITY);
         _suggestedMin = (0, _helpersSegmentJs.O)(_suggestedMin, Number.POSITIVE_INFINITY);
@@ -4619,7 +4751,7 @@ class Scale extends Element {
         };
     }
     getMinMax(canStack) {
-        let { min , max , minDefined , maxDefined  } = this.getUserBounds();
+        let { min, max, minDefined, maxDefined } = this.getUserBounds();
         let range;
         if (minDefined && maxDefined) return {
             min,
@@ -4667,7 +4799,7 @@ class Scale extends Element {
         ]);
     }
     update(maxWidth, maxHeight, margins) {
-        const { beginAtZero , grace , ticks: tickOpts  } = this.options;
+        const { beginAtZero, grace, ticks: tickOpts } = this.options;
         const sampleSize = tickOpts.sampleSize;
         this.beforeUpdate();
         this.maxWidth = maxWidth;
@@ -4851,7 +4983,7 @@ class Scale extends Element {
             width: 0,
             height: 0
         };
-        const { chart , options: { ticks: tickOpts , title: titleOpts , grid: gridOpts  }  } = this;
+        const { chart, options: { ticks: tickOpts, title: titleOpts, grid: gridOpts } } = this;
         const display = this._isVisible();
         const isHorizontal = this.isHorizontal();
         if (display) {
@@ -4864,7 +4996,7 @@ class Scale extends Element {
                 minSize.width = getTickMarkLength(gridOpts) + titleHeight;
             }
             if (tickOpts.display && this.ticks.length) {
-                const { first , last , widest , highest  } = this._getLabelSizes();
+                const { first, last, widest, highest } = this._getLabelSizes();
                 const tickPadding = tickOpts.padding * 2;
                 const angleRadians = (0, _helpersSegmentJs.t)(this.labelRotation);
                 const cos = Math.cos(angleRadians);
@@ -4889,7 +5021,7 @@ class Scale extends Element {
         }
     }
     _calculatePadding(first, last, sin, cos) {
-        const { ticks: { align , padding  } , position  } = this.options;
+        const { ticks: { align, padding }, position } = this.options;
         const isRotated = this.labelRotation !== 0;
         const labelsBelowTicks = position !== "top" && this.axis === "x";
         if (this.isHorizontal()) {
@@ -4941,7 +5073,7 @@ class Scale extends Element {
         ]);
     }
     isHorizontal() {
-        const { axis , position  } = this.options;
+        const { axis, position } = this.options;
         return position === "top" || position === "bottom" || axis === "x";
     }
     isFullSize() {
@@ -4969,7 +5101,7 @@ class Scale extends Element {
         return labelSizes;
     }
     _computeLabelSizes(ticks, length, maxTicksLimit) {
-        const { ctx , _longestTextCache: caches  } = this;
+        const { ctx, _longestTextCache: caches } = this;
         const widths = [];
         const heights = [];
         const increment = Math.floor(length / getTicksLimit(length, maxTicksLimit));
@@ -5024,10 +5156,10 @@ class Scale extends Element {
         return NaN;
     }
     getValueForPixel(pixel) {}
-    getPixelForTick(index46) {
+    getPixelForTick(index) {
         const ticks = this.ticks;
-        if (index46 < 0 || index46 > ticks.length - 1) return null;
-        return this.getPixelForValue(ticks[index46].value);
+        if (index < 0 || index > ticks.length - 1) return null;
+        return this.getPixelForValue(ticks[index].value);
     }
     getPixelForDecimal(decimal) {
         if (this._reversePixels) decimal = 1 - decimal;
@@ -5042,14 +5174,14 @@ class Scale extends Element {
         return this.getPixelForValue(this.getBaseValue());
     }
     getBaseValue() {
-        const { min , max  } = this;
+        const { min, max } = this;
         return min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0;
     }
-    getContext(index47) {
+    getContext(index) {
         const ticks = this.ticks || [];
-        if (index47 >= 0 && index47 < ticks.length) {
-            const tick = ticks[index47];
-            return tick.$context || (tick.$context = createTickContext(this.getContext(), index47, tick));
+        if (index >= 0 && index < ticks.length) {
+            const tick = ticks[index];
+            return tick.$context || (tick.$context = createTickContext(this.getContext(), index, tick));
         }
         return this.$context || (this.$context = createScaleContext(this.chart.getContext(), this));
     }
@@ -5073,7 +5205,7 @@ class Scale extends Element {
         const axis = this.axis;
         const chart = this.chart;
         const options = this.options;
-        const { grid , position , border  } = options;
+        const { grid, position, border } = options;
         const offset = grid.offset;
         const isHorizontal = this.isHorizontal();
         const ticks = this.ticks;
@@ -5180,10 +5312,10 @@ class Scale extends Element {
     _computeLabelItems(chartArea) {
         const axis = this.axis;
         const options = this.options;
-        const { position , ticks: optionTicks  } = options;
+        const { position, ticks: optionTicks } = options;
         const isHorizontal = this.isHorizontal();
         const ticks = this.ticks;
-        const { align , crossAlign , padding , mirror  } = optionTicks;
+        const { align, crossAlign, padding, mirror } = optionTicks;
         const tl = getTickMarkLength(options.grid);
         const tickAndPadding = tl + padding;
         const hTickAndPadding = mirror ? -padding : tickAndPadding;
@@ -5315,7 +5447,7 @@ class Scale extends Element {
         return items;
     }
     _getXAxisLabelAlignment() {
-        const { position , ticks  } = this.options;
+        const { position, ticks } = this.options;
         const rotation = -(0, _helpersSegmentJs.t)(this.labelRotation);
         if (rotation) return position === "top" ? "left" : "right";
         let align = "center";
@@ -5325,7 +5457,7 @@ class Scale extends Element {
         return align;
     }
     _getYAxisLabelAlignment(tl) {
-        const { position , ticks: { crossAlign , mirror , padding  }  } = this.options;
+        const { position, ticks: { crossAlign, mirror, padding } } = this.options;
         const labelSizes = this._getLabelSizes();
         const tickAndPadding = tl + padding;
         const widest = labelSizes.widest.width;
@@ -5399,7 +5531,7 @@ class Scale extends Element {
         };
     }
     drawBackground() {
-        const { ctx , options: { backgroundColor  } , left , top , width , height  } = this;
+        const { ctx, options: { backgroundColor }, left, top, width, height } = this;
         if (backgroundColor) {
             ctx.save();
             ctx.fillStyle = backgroundColor;
@@ -5411,9 +5543,9 @@ class Scale extends Element {
         const grid = this.options.grid;
         if (!this._isVisible() || !grid.display) return 0;
         const ticks = this.ticks;
-        const index48 = ticks.findIndex((t)=>t.value === value);
-        if (index48 >= 0) {
-            const opts = grid.setContext(this.getContext(index48));
+        const index = ticks.findIndex((t)=>t.value === value);
+        if (index >= 0) {
+            const opts = grid.setContext(this.getContext(index));
             return opts.lineWidth;
         }
         return 0;
@@ -5460,7 +5592,7 @@ class Scale extends Element {
         }
     }
     drawBorder() {
-        const { chart , ctx , options: { border , grid  }  } = this;
+        const { chart, ctx, options: { border, grid } } = this;
         const borderOpts = border.setContext(this.getContext());
         const axisWidth = border.display ? borderOpts.width : 0;
         if (!axisWidth) return;
@@ -5502,7 +5634,7 @@ class Scale extends Element {
         if (area) (0, _helpersSegmentJs.$)(ctx);
     }
     drawTitle() {
-        const { ctx , options: { position , title , reverse  }  } = this;
+        const { ctx, options: { position, title, reverse } } = this;
         if (!title.display) return;
         const font = (0, _helpersSegmentJs.a0)(title.font);
         const padding = (0, _helpersSegmentJs.E)(title.padding);
@@ -5512,7 +5644,7 @@ class Scale extends Element {
             offset += padding.bottom;
             if ((0, _helpersSegmentJs.b)(title.text)) offset += font.lineHeight * (title.text.length - 1);
         } else offset += padding.top;
-        const { titleX , titleY , maxWidth , rotation  } = titleArgs(this, offset, position, align);
+        const { titleX, titleY, maxWidth, rotation } = titleArgs(this, offset, position, align);
         (0, _helpersSegmentJs.Z)(ctx, title.text, 0, 0, font, {
             color: title.color,
             maxWidth,
@@ -5580,66 +5712,22 @@ class Scale extends Element {
         }
         return result;
     }
-    _resolveTickFontOptions(index49) {
-        const opts = this.options.ticks.setContext(this.getContext(index49));
+    _resolveTickFontOptions(index) {
+        const opts = this.options.ticks.setContext(this.getContext(index));
         return (0, _helpersSegmentJs.a0)(opts.font);
     }
     _maxDigits() {
         const fontSize = this._resolveTickFontOptions(0).lineHeight;
         return (this.isHorizontal() ? this.width : this.height) / fontSize;
     }
-    constructor(cfg){
-        super();
-        this.id = cfg.id;
-        this.type = cfg.type;
-        this.options = undefined;
-        this.ctx = cfg.ctx;
-        this.chart = cfg.chart;
-        this.top = undefined;
-        this.bottom = undefined;
-        this.left = undefined;
-        this.right = undefined;
-        this.width = undefined;
-        this.height = undefined;
-        this._margins = {
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0
-        };
-        this.maxWidth = undefined;
-        this.maxHeight = undefined;
-        this.paddingTop = undefined;
-        this.paddingBottom = undefined;
-        this.paddingLeft = undefined;
-        this.paddingRight = undefined;
-        this.axis = undefined;
-        this.labelRotation = undefined;
-        this.min = undefined;
-        this.max = undefined;
-        this._range = undefined;
-        this.ticks = [];
-        this._gridLineItems = null;
-        this._labelItems = null;
-        this._labelSizes = null;
-        this._length = 0;
-        this._maxLength = 0;
-        this._longestTextCache = {};
-        this._startPixel = undefined;
-        this._endPixel = undefined;
-        this._reversePixels = false;
-        this._userMax = undefined;
-        this._userMin = undefined;
-        this._suggestedMax = undefined;
-        this._suggestedMin = undefined;
-        this._ticksLength = 0;
-        this._borderValue = 0;
-        this._cache = {};
-        this._dataLimitsCached = false;
-        this.$context = undefined;
-    }
 }
 class TypedRegistry {
+    constructor(type, scope, override){
+        this.type = type;
+        this.scope = scope;
+        this.override = override;
+        this.items = Object.create(null);
+    }
     isForType(type) {
         return Object.prototype.isPrototypeOf.call(this.type.prototype, type.prototype);
     }
@@ -5670,12 +5758,6 @@ class TypedRegistry {
             if (this.override) delete (0, _helpersSegmentJs.a3)[id];
         }
     }
-    constructor(type, scope, override){
-        this.type = type;
-        this.scope = scope;
-        this.override = override;
-        this.items = Object.create(null);
-    }
 }
 function registerDefaults(item, scope, parentScope) {
     const itemDefaults = (0, _helpersSegmentJs.a4)(Object.create(null), [
@@ -5704,6 +5786,17 @@ function isIChartComponent(proto) {
     return "id" in proto && "defaults" in proto;
 }
 class Registry {
+    constructor(){
+        this.controllers = new TypedRegistry(DatasetController, "datasets", true);
+        this.elements = new TypedRegistry(Element, "elements");
+        this.plugins = new TypedRegistry(Object, "plugins");
+        this.scales = new TypedRegistry(Scale, "scales");
+        this._typedRegistries = [
+            this.controllers,
+            this.scales,
+            this.elements
+        ];
+    }
     add(...args) {
         this._each("register", args);
     }
@@ -5758,10 +5851,10 @@ class Registry {
             });
         });
     }
-    _exec(method, registry1, component) {
+    _exec(method, registry, component) {
         const camelMethod = (0, _helpersSegmentJs.a5)(method);
         (0, _helpersSegmentJs.Q)(component["before" + camelMethod], [], component);
-        registry1[method](component);
+        registry[method](component);
         (0, _helpersSegmentJs.Q)(component["after" + camelMethod], [], component);
     }
     _getRegistryForType(type) {
@@ -5776,20 +5869,12 @@ class Registry {
         if (item === undefined) throw new Error('"' + id + '" is not a registered ' + type + ".");
         return item;
     }
-    constructor(){
-        this.controllers = new TypedRegistry(DatasetController, "datasets", true);
-        this.elements = new TypedRegistry(Element, "elements");
-        this.plugins = new TypedRegistry(Object, "plugins");
-        this.scales = new TypedRegistry(Scale, "scales");
-        this._typedRegistries = [
-            this.controllers,
-            this.scales,
-            this.elements
-        ];
-    }
 }
 var registry = /* #__PURE__ */ new Registry();
 class PluginService {
+    constructor(){
+        this._init = [];
+    }
     notify(chart, hook, args, filter) {
         if (hook === "beforeInit") {
             this._init = this._createDescriptors(chart, true);
@@ -5832,8 +5917,8 @@ class PluginService {
     _createDescriptors(chart, all) {
         const config = chart && chart.config;
         const options = (0, _helpersSegmentJs.v)(config.options && config.options.plugins, {});
-        const plugins1 = allPlugins(config);
-        return options === false && !all ? [] : createDescriptors(chart, plugins1, options, all);
+        const plugins = allPlugins(config);
+        return options === false && !all ? [] : createDescriptors(chart, plugins, options, all);
     }
     _notifyStateChanges(chart) {
         const previousDescriptors = this._oldCache || [];
@@ -5842,25 +5927,22 @@ class PluginService {
         this._notify(diff(previousDescriptors, descriptors), chart, "stop");
         this._notify(diff(descriptors, previousDescriptors), chart, "start");
     }
-    constructor(){
-        this._init = [];
-    }
 }
 function allPlugins(config) {
     const localIds = {};
-    const plugins2 = [];
+    const plugins = [];
     const keys = Object.keys(registry.plugins.items);
-    for(let i = 0; i < keys.length; i++)plugins2.push(registry.getPlugin(keys[i]));
+    for(let i = 0; i < keys.length; i++)plugins.push(registry.getPlugin(keys[i]));
     const local = config.plugins || [];
-    for(let i3 = 0; i3 < local.length; i3++){
-        const plugin = local[i3];
-        if (plugins2.indexOf(plugin) === -1) {
-            plugins2.push(plugin);
+    for(let i = 0; i < local.length; i++){
+        const plugin = local[i];
+        if (plugins.indexOf(plugin) === -1) {
+            plugins.push(plugin);
             localIds[plugin.id] = true;
         }
     }
     return {
-        plugins: plugins2,
+        plugins,
         localIds
     };
 }
@@ -5869,10 +5951,10 @@ function getOpts(options, all) {
     if (options === true) return {};
     return options;
 }
-function createDescriptors(chart, { plugins: plugins3 , localIds  }, options, all) {
+function createDescriptors(chart, { plugins, localIds }, options, all) {
     const result = [];
     const context = chart.getContext();
-    for (const plugin of plugins3){
+    for (const plugin of plugins){
         const id = plugin.id;
         const opts = getOpts(options[id], all);
         if (opts === null) continue;
@@ -5886,7 +5968,7 @@ function createDescriptors(chart, { plugins: plugins3 , localIds  }, options, al
     }
     return result;
 }
-function pluginOpts(config, { plugin , local  }, opts, context) {
+function pluginOpts(config, { plugin, local }, opts, context) {
     const keys = config.pluginScopeKeys(plugin);
     const scopes = config.getOptionScopes(opts, keys);
     if (local && plugin.defaults) scopes.push(plugin.defaults);
@@ -5945,7 +6027,7 @@ function mergeScaleConfig(config, options) {
     };
     const configScales = options.scales || {};
     const chartIndexAxis = getIndexAxis(config.type, options);
-    const scales3 = Object.create(null);
+    const scales = Object.create(null);
     Object.keys(configScales).forEach((id)=>{
         const scaleConf = configScales[id];
         if (!(0, _helpersSegmentJs.i)(scaleConf)) return console.error(`Invalid scale configuration for scale: ${id}`);
@@ -5953,7 +6035,7 @@ function mergeScaleConfig(config, options) {
         const axis = determineAxis(id, scaleConf, retrieveAxisFromDatasets(id, config), (0, _helpersSegmentJs.d).scales[scaleConf.type]);
         const defaultId = getDefaultScaleIDFromAxis(axis, chartIndexAxis);
         const defaultScaleOptions = chartDefaults.scales || {};
-        scales3[id] = (0, _helpersSegmentJs.ab)(Object.create(null), [
+        scales[id] = (0, _helpersSegmentJs.ab)(Object.create(null), [
             {
                 axis
             },
@@ -5970,8 +6052,8 @@ function mergeScaleConfig(config, options) {
         Object.keys(defaultScaleOptions).forEach((defaultID)=>{
             const axis = getAxisFromDefaultScaleID(defaultID, indexAxis);
             const id = dataset[axis + "AxisID"] || axis;
-            scales3[id] = scales3[id] || Object.create(null);
-            (0, _helpersSegmentJs.ab)(scales3[id], [
+            scales[id] = scales[id] || Object.create(null);
+            (0, _helpersSegmentJs.ab)(scales[id], [
                 {
                     axis
                 },
@@ -5980,14 +6062,14 @@ function mergeScaleConfig(config, options) {
             ]);
         });
     });
-    Object.keys(scales3).forEach((key)=>{
-        const scale = scales3[key];
+    Object.keys(scales).forEach((key)=>{
+        const scale = scales[key];
         (0, _helpersSegmentJs.ab)(scale, [
             (0, _helpersSegmentJs.d).scales[scale.type],
             (0, _helpersSegmentJs.d).scale
         ]);
     });
-    return scales3;
+    return scales;
 }
 function initOptions(config) {
     const options = config.options || (config.options = {});
@@ -6022,6 +6104,11 @@ const addIfFound = (set, obj, key)=>{
     if (opts !== undefined) set.add(opts);
 };
 class Config {
+    constructor(config){
+        this._config = initConfig(config);
+        this._scopeCache = new Map();
+        this._resolverCache = new Map();
+    }
     get platform() {
         return this._config.platform;
     }
@@ -6105,7 +6192,7 @@ class Config {
         return cache;
     }
     getOptionScopes(mainScope, keyLists, resetCache) {
-        const { options , type  } = this;
+        const { options, type } = this;
         const cache = this._cachedScopes(mainScope, resetCache);
         const cached = cache.get(keyLists);
         if (cached) return cached;
@@ -6126,7 +6213,7 @@ class Config {
         return array;
     }
     chartOptionScopes() {
-        const { options , type  } = this;
+        const { options, type } = this;
         return [
             options,
             (0, _helpersSegmentJs.a3)[type] || {},
@@ -6144,7 +6231,7 @@ class Config {
         const result = {
             $shared: true
         };
-        const { resolver , subPrefixes  } = getResolver(this._resolverCache, scopes, prefixes);
+        const { resolver, subPrefixes } = getResolver(this._resolverCache, scopes, prefixes);
         let options = resolver;
         if (needContext(resolver, names)) {
             result.$shared = false;
@@ -6158,13 +6245,8 @@ class Config {
     createResolver(scopes, context, prefixes = [
         ""
     ], descriptorDefaults) {
-        const { resolver  } = getResolver(this._resolverCache, scopes, prefixes);
+        const { resolver } = getResolver(this._resolverCache, scopes, prefixes);
         return (0, _helpersSegmentJs.i)(context) ? (0, _helpersSegmentJs.a8)(resolver, context, undefined, descriptorDefaults) : resolver;
-    }
-    constructor(config){
-        this._config = initConfig(config);
-        this._scopeCache = new Map();
-        this._resolverCache = new Map();
     }
 }
 function getResolver(resolverCache, scopes, prefixes) {
@@ -6187,7 +6269,7 @@ function getResolver(resolverCache, scopes, prefixes) {
 }
 const hasFunction = (value)=>(0, _helpersSegmentJs.i)(value) && Object.getOwnPropertyNames(value).reduce((acc, key)=>acc || (0, _helpersSegmentJs.a7)(value[key]), false);
 function needContext(proxy, names) {
-    const { isScriptable , isIndexable  } = (0, _helpersSegmentJs.aa)(proxy);
+    const { isScriptable, isIndexable } = (0, _helpersSegmentJs.aa)(proxy);
     for (const prop of names){
         const scriptable = isScriptable(prop);
         const indexable = isIndexable(prop);
@@ -6196,7 +6278,7 @@ function needContext(proxy, names) {
     }
     return false;
 }
-var version = "4.3.0";
+var version = "4.3.2";
 const KNOWN_POSITIONS = [
     "top",
     "bottom",
@@ -6255,7 +6337,7 @@ function determineLastEvent(e, lastEvent, inChartArea, isClick) {
     return e;
 }
 function getDatasetArea(meta) {
-    const { xScale , yScale  } = meta;
+    const { xScale, yScale } = meta;
     if (xScale && yScale) return {
         left: xScale.left,
         right: xScale.right,
@@ -6264,6 +6346,12 @@ function getDatasetArea(meta) {
     };
 }
 class Chart {
+    static defaults = (0, _helpersSegmentJs.d);
+    static instances = instances;
+    static overrides = (0, _helpersSegmentJs.a3);
+    static registry = registry;
+    static version = version;
+    static getChart = getChart;
     static register(...items) {
         registry.add(...items);
         invalidatePlugins();
@@ -6272,8 +6360,57 @@ class Chart {
         registry.remove(...items);
         invalidatePlugins();
     }
+    constructor(item, userConfig){
+        const config = this.config = new Config(userConfig);
+        const initialCanvas = getCanvas(item);
+        const existingChart = getChart(initialCanvas);
+        if (existingChart) throw new Error("Canvas is already in use. Chart with ID '" + existingChart.id + "'" + " must be destroyed before the canvas with ID '" + existingChart.canvas.id + "' can be reused.");
+        const options = config.createResolver(config.chartOptionScopes(), this.getContext());
+        this.platform = new (config.platform || _detectPlatform(initialCanvas))();
+        this.platform.updateConfig(config);
+        const context = this.platform.acquireContext(initialCanvas, options.aspectRatio);
+        const canvas = context && context.canvas;
+        const height = canvas && canvas.height;
+        const width = canvas && canvas.width;
+        this.id = (0, _helpersSegmentJs.ac)();
+        this.ctx = context;
+        this.canvas = canvas;
+        this.width = width;
+        this.height = height;
+        this._options = options;
+        this._aspectRatio = this.aspectRatio;
+        this._layers = [];
+        this._metasets = [];
+        this._stacks = undefined;
+        this.boxes = [];
+        this.currentDevicePixelRatio = undefined;
+        this.chartArea = undefined;
+        this._active = [];
+        this._lastEvent = undefined;
+        this._listeners = {};
+        this._responsiveListeners = undefined;
+        this._sortedMetasets = [];
+        this.scales = {};
+        this._plugins = new PluginService();
+        this.$proxies = {};
+        this._hiddenIndices = {};
+        this.attached = false;
+        this._animationsDisabled = undefined;
+        this.$context = undefined;
+        this._doResize = (0, _helpersSegmentJs.ad)((mode)=>this.update(mode), options.resizeDelay || 0);
+        this._dataChanges = [];
+        instances[this.id] = this;
+        if (!context || !canvas) {
+            console.error("Failed to create chart: can't acquire context from the given item");
+            return;
+        }
+        animator.listen(this, "complete", onAnimationsComplete);
+        animator.listen(this, "progress", onAnimationProgress);
+        this._initialize();
+        if (this.attached) this.update();
+    }
     get aspectRatio() {
-        const { options: { aspectRatio , maintainAspectRatio  } , width , height , _aspectRatio  } = this;
+        const { options: { aspectRatio, maintainAspectRatio }, width, height, _aspectRatio } = this;
         if (!(0, _helpersSegmentJs.k)(aspectRatio)) return aspectRatio;
         if (maintainAspectRatio && _aspectRatio) return _aspectRatio;
         return height ? width / height : null;
@@ -6348,8 +6485,8 @@ class Chart {
     buildOrUpdateScales() {
         const options = this.options;
         const scaleOpts = options.scales;
-        const scales4 = this.scales;
-        const updated = Object.keys(scales4).reduce((obj, id)=>{
+        const scales = this.scales;
+        const updated = Object.keys(scales).reduce((obj, id)=>{
             obj[id] = false;
             return obj;
         }, {});
@@ -6373,7 +6510,7 @@ class Chart {
             if (scaleOptions.position === undefined || positionIsHorizontal(scaleOptions.position, axis) !== positionIsHorizontal(item.dposition)) scaleOptions.position = item.dposition;
             updated[id] = true;
             let scale = null;
-            if (id in scales4 && scales4[id].type === scaleType) scale = scales4[id];
+            if (id in scales && scales[id].type === scaleType) scale = scales[id];
             else {
                 const scaleClass = registry.getScale(scaleType);
                 scale = new scaleClass({
@@ -6382,14 +6519,14 @@ class Chart {
                     ctx: this.ctx,
                     chart: this
                 });
-                scales4[scale.id] = scale;
+                scales[scale.id] = scale;
             }
             scale.init(scaleOptions, options);
         });
         (0, _helpersSegmentJs.F)(updated, (hasUpdated, id)=>{
-            if (!hasUpdated) delete scales4[id];
+            if (!hasUpdated) delete scales[id];
         });
-        (0, _helpersSegmentJs.F)(scales4, (scale)=>{
+        (0, _helpersSegmentJs.F)(scales, (scale)=>{
             layouts.configure(this, scale, scale.options);
             layouts.addBox(this, scale);
         });
@@ -6406,10 +6543,10 @@ class Chart {
         this._sortedMetasets = metasets.slice(0).sort(compare2Level("order", "index"));
     }
     _removeUnreferencedMetasets() {
-        const { _metasets: metasets , data: { datasets  }  } = this;
+        const { _metasets: metasets, data: { datasets } } = this;
         if (metasets.length > datasets.length) delete this._stacks;
-        metasets.forEach((meta, index50)=>{
-            if (datasets.filter((x)=>x === meta._dataset).length === 0) this._destroyDatasetMeta(index50);
+        metasets.forEach((meta, index)=>{
+            if (datasets.filter((x)=>x === meta._dataset).length === 0) this._destroyDatasetMeta(index);
         });
     }
     buildOrUpdateControllers() {
@@ -6436,7 +6573,7 @@ class Chart {
                 meta.controller.linkScales();
             } else {
                 const ControllerClass = registry.getController(type);
-                const { datasetElementType , dataElementType  } = (0, _helpersSegmentJs.d).datasets[type];
+                const { datasetElementType, dataElementType } = (0, _helpersSegmentJs.d).datasets[type];
                 Object.assign(ControllerClass, {
                     dataElementType: registry.getElement(dataElementType),
                     datasetElementType: datasetElementType && registry.getElement(datasetElementType)
@@ -6474,7 +6611,7 @@ class Chart {
         this.notifyPlugins("beforeElementsUpdate");
         let minPadding = 0;
         for(let i = 0, ilen = this.data.datasets.length; i < ilen; i++){
-            const { controller  } = this.getDatasetMeta(i);
+            const { controller } = this.getDatasetMeta(i);
             const reset = !animsDisabled && newControllers.indexOf(controller) === -1;
             controller.buildOrUpdateElements(reset);
             minPadding = Math.max(+controller.getMaxOverflow(), minPadding);
@@ -6489,7 +6626,7 @@ class Chart {
             mode
         });
         this._layers.sort(compare2Level("z", "_idx"));
-        const { _active , _lastEvent  } = this;
+        const { _active, _lastEvent } = this;
         if (_lastEvent) this._eventHandler(_lastEvent, true);
         else if (_active.length) this._updateHoverStyles(_active, _active, true);
         this.render();
@@ -6511,9 +6648,9 @@ class Chart {
         }
     }
     _updateHiddenIndices() {
-        const { _hiddenIndices  } = this;
+        const { _hiddenIndices } = this;
         const changes = this._getUniformDataChanges() || [];
-        for (const { method , start , count  } of changes){
+        for (const { method, start, count } of changes){
             const move = method === "_removeElements" ? -count : count;
             moveNumericKeys(_hiddenIndices, start, move);
         }
@@ -6525,8 +6662,8 @@ class Chart {
         const datasetCount = this.data.datasets.length;
         const makeSet = (idx)=>new Set(_dataChanges.filter((c)=>c[0] === idx).map((c, i)=>i + "," + c.splice(1).join(",")));
         const changeSet = makeSet(0);
-        for(let i4 = 1; i4 < datasetCount; i4++){
-            if (!(0, _helpersSegmentJs.ag)(changeSet, makeSet(i4))) return;
+        for(let i = 1; i < datasetCount; i++){
+            if (!(0, _helpersSegmentJs.ag)(changeSet, makeSet(i))) return;
         }
         return Array.from(changeSet).map((c)=>c.split(",")).map((a)=>({
                 method: a[1],
@@ -6547,8 +6684,8 @@ class Chart {
             if (box.configure) box.configure();
             this._layers.push(...box._layers());
         }, this);
-        this._layers.forEach((item, index51)=>{
-            item._idx = index51;
+        this._layers.forEach((item, index)=>{
+            item._idx = index;
         });
         this.notifyPlugins("afterLayout");
     }
@@ -6558,18 +6695,18 @@ class Chart {
             cancelable: true
         }) === false) return;
         for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i)this.getDatasetMeta(i).controller.configure();
-        for(let i5 = 0, ilen1 = this.data.datasets.length; i5 < ilen1; ++i5)this._updateDataset(i5, (0, _helpersSegmentJs.a7)(mode) ? mode({
-            datasetIndex: i5
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i)this._updateDataset(i, (0, _helpersSegmentJs.a7)(mode) ? mode({
+            datasetIndex: i
         }) : mode);
         this.notifyPlugins("afterDatasetsUpdate", {
             mode
         });
     }
-    _updateDataset(index52, mode) {
-        const meta = this.getDatasetMeta(index52);
+    _updateDataset(index, mode) {
+        const meta = this.getDatasetMeta(index);
         const args = {
             meta,
-            index: index52,
+            index,
             mode,
             cancelable: true
         };
@@ -6594,7 +6731,7 @@ class Chart {
     draw() {
         let i;
         if (this._resizeBeforeDraw) {
-            const { width , height  } = this._resizeBeforeDraw;
+            const { width, height } = this._resizeBeforeDraw;
             this._resize(width, height);
             this._resizeBeforeDraw = null;
         }
@@ -6702,11 +6839,11 @@ class Chart {
         const meta = this.getDatasetMeta(datasetIndex);
         meta.hidden = !visible;
     }
-    toggleDataVisibility(index53) {
-        this._hiddenIndices[index53] = !this._hiddenIndices[index53];
+    toggleDataVisibility(index) {
+        this._hiddenIndices[index] = !this._hiddenIndices[index];
     }
-    getDataVisibility(index54) {
-        return !this._hiddenIndices[index54];
+    getDataVisibility(index) {
+        return !this._hiddenIndices[index];
     }
     _updateVisibility(datasetIndex, dataIndex, visible) {
         const mode = visible ? "show" : "hide";
@@ -6742,7 +6879,7 @@ class Chart {
     }
     destroy() {
         this.notifyPlugins("beforeDestroy");
-        const { canvas , ctx  } = this;
+        const { canvas, ctx } = this;
         this._stop();
         this.config.clearCache();
         if (canvas) {
@@ -6770,12 +6907,12 @@ class Chart {
             platform.addEventListener(this, type, listener);
             listeners[type] = listener;
         };
-        const listener1 = (e, x, y)=>{
+        const listener = (e, x, y)=>{
             e.offsetX = x;
             e.offsetY = y;
             this._eventHandler(e);
         };
-        (0, _helpersSegmentJs.F)(this.options.events, (type)=>_add(type, listener1));
+        (0, _helpersSegmentJs.F)(this.options.events, (type)=>_add(type, listener));
     }
     bindResponsiveEvents() {
         if (!this._responsiveListeners) this._responsiveListeners = {};
@@ -6791,7 +6928,7 @@ class Chart {
                 delete listeners[type];
             }
         };
-        const listener2 = (width, height)=>{
+        const listener = (width, height)=>{
             if (this.canvas) this.resize(width, height);
         };
         let detached;
@@ -6799,12 +6936,12 @@ class Chart {
             _remove("attach", attached);
             this.attached = true;
             this.resize();
-            _add("resize", listener2);
+            _add("resize", listener);
             _add("detach", detached);
         };
         detached = ()=>{
             this.attached = false;
-            _remove("resize", listener2);
+            _remove("resize", listener);
             this._stop();
             this._resize(0, 0);
             _add("attach", attached);
@@ -6840,13 +6977,13 @@ class Chart {
     }
     setActiveElements(activeElements) {
         const lastActive = this._active || [];
-        const active = activeElements.map(({ datasetIndex , index: index55  })=>{
+        const active = activeElements.map(({ datasetIndex, index })=>{
             const meta = this.getDatasetMeta(datasetIndex);
             if (!meta) throw new Error("No dataset found at index " + datasetIndex);
             return {
                 datasetIndex,
-                element: meta.data[index55],
-                index: index55
+                element: meta.data[index],
+                index
             };
         });
         const changed = !(0, _helpersSegmentJs.ah)(active, lastActive);
@@ -6886,7 +7023,7 @@ class Chart {
         return this;
     }
     _handleEvent(e, replay, inChartArea) {
-        const { _active: lastActive = [] , options  } = this;
+        const { _active: lastActive = [], options } = this;
         const useFinalPosition = replay;
         const active = this._getActiveElements(e, lastActive, inChartArea, useFinalPosition);
         const isClick = (0, _helpersSegmentJs.ai)(e);
@@ -6918,67 +7055,12 @@ class Chart {
         const hoverOptions = this.options.hover;
         return this.getElementsAtEventForMode(e, hoverOptions.mode, hoverOptions, useFinalPosition);
     }
-    constructor(item, userConfig){
-        const config = this.config = new Config(userConfig);
-        const initialCanvas = getCanvas(item);
-        const existingChart = getChart(initialCanvas);
-        if (existingChart) throw new Error("Canvas is already in use. Chart with ID '" + existingChart.id + "'" + " must be destroyed before the canvas with ID '" + existingChart.canvas.id + "' can be reused.");
-        const options = config.createResolver(config.chartOptionScopes(), this.getContext());
-        this.platform = new (config.platform || _detectPlatform(initialCanvas))();
-        this.platform.updateConfig(config);
-        const context = this.platform.acquireContext(initialCanvas, options.aspectRatio);
-        const canvas = context && context.canvas;
-        const height = canvas && canvas.height;
-        const width = canvas && canvas.width;
-        this.id = (0, _helpersSegmentJs.ac)();
-        this.ctx = context;
-        this.canvas = canvas;
-        this.width = width;
-        this.height = height;
-        this._options = options;
-        this._aspectRatio = this.aspectRatio;
-        this._layers = [];
-        this._metasets = [];
-        this._stacks = undefined;
-        this.boxes = [];
-        this.currentDevicePixelRatio = undefined;
-        this.chartArea = undefined;
-        this._active = [];
-        this._lastEvent = undefined;
-        this._listeners = {};
-        this._responsiveListeners = undefined;
-        this._sortedMetasets = [];
-        this.scales = {};
-        this._plugins = new PluginService();
-        this.$proxies = {};
-        this._hiddenIndices = {};
-        this.attached = false;
-        this._animationsDisabled = undefined;
-        this.$context = undefined;
-        this._doResize = (0, _helpersSegmentJs.ad)((mode)=>this.update(mode), options.resizeDelay || 0);
-        this._dataChanges = [];
-        instances[this.id] = this;
-        if (!context || !canvas) {
-            console.error("Failed to create chart: can't acquire context from the given item");
-            return;
-        }
-        animator.listen(this, "complete", onAnimationsComplete);
-        animator.listen(this, "progress", onAnimationProgress);
-        this._initialize();
-        if (this.attached) this.update();
-    }
 }
-(0, _definePropertyMjsDefault.default)(Chart, "defaults", (0, _helpersSegmentJs.d));
-(0, _definePropertyMjsDefault.default)(Chart, "instances", instances);
-(0, _definePropertyMjsDefault.default)(Chart, "overrides", (0, _helpersSegmentJs.a3));
-(0, _definePropertyMjsDefault.default)(Chart, "registry", registry);
-(0, _definePropertyMjsDefault.default)(Chart, "version", version);
-(0, _definePropertyMjsDefault.default)(Chart, "getChart", getChart);
 function invalidatePlugins() {
     return (0, _helpersSegmentJs.F)(Chart.instances, (chart)=>chart._plugins.invalidate());
 }
 function clipArc(ctx, element, endAngle) {
-    const { startAngle , pixelMargin , x , y , outerRadius , innerRadius  } = element;
+    const { startAngle, pixelMargin, x, y, outerRadius, innerRadius } = element;
     let angleMargin = pixelMargin / outerRadius;
     // Draw an inner border by clipping the arc and drawing a double-width border
     // Enlarge the clipping arc by 0.33 pixels to eliminate glitches between borders
@@ -7045,7 +7127,7 @@ function toRadiusCorners(value) {
  *   \           /
  *    6<---b<---5    Inner
  */ function pathArc(ctx, element, offset, spacing, end, circular) {
-    const { x , y , startAngle: start , pixelMargin , innerRadius: innerR  } = element;
+    const { x, y, startAngle: start, pixelMargin, innerRadius: innerR } = element;
     const outerRadius = Math.max(element.outerRadius + spacing + offset - pixelMargin, 0);
     const innerRadius = innerR > 0 ? innerR + spacing + offset + pixelMargin : 0;
     let spacingOffset = 0;
@@ -7064,7 +7146,7 @@ function toRadiusCorners(value) {
     const angleOffset = (alpha - beta) / 2;
     const startAngle = start + angleOffset + spacingOffset;
     const endAngle = end - angleOffset - spacingOffset;
-    const { outerStart , outerEnd , innerStart , innerEnd  } = parseBorderRadius$1(element, innerRadius, outerRadius, endAngle - startAngle);
+    const { outerStart, outerEnd, innerStart, innerEnd } = parseBorderRadius$1(element, innerRadius, outerRadius, endAngle - startAngle);
     const outerStartAdjustedRadius = outerRadius - outerStart;
     const outerEndAdjustedRadius = outerRadius - outerEnd;
     const outerStartAdjustedAngle = startAngle + outerStart / outerStartAdjustedRadius;
@@ -7121,7 +7203,7 @@ function toRadiusCorners(value) {
     ctx.closePath();
 }
 function drawArc(ctx, element, offset, spacing, circular) {
-    const { fullCircles , startAngle , circumference  } = element;
+    const { fullCircles, startAngle, circumference } = element;
     let endAngle = element.endAngle;
     if (fullCircles) {
         pathArc(ctx, element, offset, spacing, endAngle, circular);
@@ -7133,8 +7215,8 @@ function drawArc(ctx, element, offset, spacing, circular) {
     return endAngle;
 }
 function drawBorder(ctx, element, offset, spacing, circular) {
-    const { fullCircles , startAngle , circumference , options  } = element;
-    const { borderWidth , borderJoinStyle , borderDash , borderDashOffset  } = options;
+    const { fullCircles, startAngle, circumference, options } = element;
+    const { borderWidth, borderJoinStyle, borderDash, borderDashOffset } = options;
     const inner = options.borderAlign === "inner";
     if (!borderWidth) return;
     ctx.setLineDash(borderDash || []);
@@ -7159,16 +7241,56 @@ function drawBorder(ctx, element, offset, spacing, circular) {
     }
 }
 class ArcElement extends Element {
+    static id = "arc";
+    static defaults = {
+        borderAlign: "center",
+        borderColor: "#fff",
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: undefined,
+        borderRadius: 0,
+        borderWidth: 2,
+        offset: 0,
+        spacing: 0,
+        angle: undefined,
+        circular: true
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor"
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== "borderDash"
+    };
+    circumference;
+    endAngle;
+    fullCircles;
+    innerRadius;
+    outerRadius;
+    pixelMargin;
+    startAngle;
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.circumference = undefined;
+        this.startAngle = undefined;
+        this.endAngle = undefined;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.pixelMargin = 0;
+        this.fullCircles = 0;
+        if (cfg) Object.assign(this, cfg);
+    }
     inRange(chartX, chartY, useFinalPosition) {
         const point = this.getProps([
             "x",
             "y"
         ], useFinalPosition);
-        const { angle , distance  } = (0, _helpersSegmentJs.D)(point, {
+        const { angle, distance } = (0, _helpersSegmentJs.D)(point, {
             x: chartX,
             y: chartY
         });
-        const { startAngle , endAngle , innerRadius , outerRadius , circumference  } = this.getProps([
+        const { startAngle, endAngle, innerRadius, outerRadius, circumference } = this.getProps([
             "startAngle",
             "endAngle",
             "innerRadius",
@@ -7182,7 +7304,7 @@ class ArcElement extends Element {
         return betweenAngles && withinRadius;
     }
     getCenterPoint(useFinalPosition) {
-        const { x , y , startAngle , endAngle , innerRadius , outerRadius  } = this.getProps([
+        const { x, y, startAngle, endAngle, innerRadius, outerRadius } = this.getProps([
             "x",
             "y",
             "startAngle",
@@ -7190,7 +7312,7 @@ class ArcElement extends Element {
             "innerRadius",
             "outerRadius"
         ], useFinalPosition);
-        const { offset , spacing  } = this.options;
+        const { offset, spacing } = this.options;
         const halfAngle = (startAngle + endAngle) / 2;
         const halfRadius = (innerRadius + outerRadius + spacing + offset) / 2;
         return {
@@ -7202,7 +7324,7 @@ class ArcElement extends Element {
         return this.getCenterPoint(useFinalPosition);
     }
     draw(ctx) {
-        const { options , circumference  } = this;
+        const { options, circumference } = this;
         const offset = (options.offset || 0) / 4;
         const spacing = (options.spacing || 0) / 2;
         const circular = options.circular;
@@ -7220,47 +7342,7 @@ class ArcElement extends Element {
         drawBorder(ctx, this, radiusOffset, spacing, circular);
         ctx.restore();
     }
-    constructor(cfg){
-        super();
-        (0, _definePropertyMjsDefault.default)(this, "circumference", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "endAngle", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "fullCircles", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "innerRadius", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "outerRadius", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "pixelMargin", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "startAngle", void 0);
-        this.options = undefined;
-        this.circumference = undefined;
-        this.startAngle = undefined;
-        this.endAngle = undefined;
-        this.innerRadius = undefined;
-        this.outerRadius = undefined;
-        this.pixelMargin = 0;
-        this.fullCircles = 0;
-        if (cfg) Object.assign(this, cfg);
-    }
 }
-(0, _definePropertyMjsDefault.default)(ArcElement, "id", "arc");
-(0, _definePropertyMjsDefault.default)(ArcElement, "defaults", {
-    borderAlign: "center",
-    borderColor: "#fff",
-    borderDash: [],
-    borderDashOffset: 0,
-    borderJoinStyle: undefined,
-    borderRadius: 0,
-    borderWidth: 2,
-    offset: 0,
-    spacing: 0,
-    angle: undefined,
-    circular: true
-});
-(0, _definePropertyMjsDefault.default)(ArcElement, "defaultRoutes", {
-    backgroundColor: "backgroundColor"
-});
-(0, _definePropertyMjsDefault.default)(ArcElement, "descriptors", {
-    _scriptable: true,
-    _indexable: (name)=>name !== "borderDash"
-});
 function setStyle(ctx, options, style = options) {
     ctx.lineCap = (0, _helpersSegmentJs.v)(style.borderCapStyle, options.borderCapStyle);
     ctx.setLineDash((0, _helpersSegmentJs.v)(style.borderDash, options.borderDash));
@@ -7279,8 +7361,8 @@ function getLineMethod(options) {
 }
 function pathVars(points, segment, params = {}) {
     const count = points.length;
-    const { start: paramsStart = 0 , end: paramsEnd = count - 1  } = params;
-    const { start: segmentStart , end: segmentEnd  } = segment;
+    const { start: paramsStart = 0, end: paramsEnd = count - 1 } = params;
+    const { start: segmentStart, end: segmentEnd } = segment;
     const start = Math.max(paramsStart, segmentStart);
     const end = Math.min(paramsEnd, segmentEnd);
     const outside = paramsStart < segmentStart && paramsEnd < segmentStart || paramsStart > segmentEnd && paramsEnd > segmentEnd;
@@ -7292,10 +7374,10 @@ function pathVars(points, segment, params = {}) {
     };
 }
 function pathSegment(ctx, line, segment, params) {
-    const { points , options  } = line;
-    const { count , start , loop , ilen  } = pathVars(points, segment, params);
+    const { points, options } = line;
+    const { count, start, loop, ilen } = pathVars(points, segment, params);
     const lineMethod = getLineMethod(options);
-    let { move =true , reverse  } = params || {};
+    let { move = true, reverse } = params || {};
     let i, point, prev;
     for(i = 0; i <= ilen; ++i){
         point = points[(start + (reverse ? ilen - i : i)) % count];
@@ -7314,12 +7396,12 @@ function pathSegment(ctx, line, segment, params) {
 }
 function fastPathSegment(ctx, line, segment, params) {
     const points = line.points;
-    const { count , start , ilen  } = pathVars(points, segment, params);
-    const { move =true , reverse  } = params || {};
+    const { count, start, ilen } = pathVars(points, segment, params);
+    const { move = true, reverse } = params || {};
     let avgX = 0;
     let countX = 0;
     let i, point, prevX, minY, maxY, lastY;
-    const pointIndex = (index56)=>(start + (reverse ? ilen - index56 : index56)) % count;
+    const pointIndex = (index)=>(start + (reverse ? ilen - index : index)) % count;
     const drawX = ()=>{
         if (minY !== maxY) {
             ctx.lineTo(avgX, maxY);
@@ -7373,7 +7455,7 @@ function strokePathWithCache(ctx, line, start, count) {
     ctx.stroke(path);
 }
 function strokePathDirect(ctx, line, start, count) {
-    const { segments , options  } = line;
+    const { segments, options } = line;
     const segmentMethod = _getSegmentMethod(line);
     for (const segment of segments){
         setStyle(ctx, options, segment.style);
@@ -7391,6 +7473,43 @@ function draw(ctx, line, start, count) {
     else strokePathDirect(ctx, line, start, count);
 }
 class LineElement extends Element {
+    static id = "line";
+    static defaults = {
+        borderCapStyle: "butt",
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: "miter",
+        borderWidth: 3,
+        capBezierPoints: true,
+        cubicInterpolationMode: "default",
+        fill: false,
+        spanGaps: false,
+        stepped: false,
+        tension: 0
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== "borderDash" && name !== "fill"
+    };
+    constructor(cfg){
+        super();
+        this.animated = true;
+        this.options = undefined;
+        this._chart = undefined;
+        this._loop = undefined;
+        this._fullLoop = undefined;
+        this._path = undefined;
+        this._points = undefined;
+        this._segments = undefined;
+        this._decimated = false;
+        this._pointsUpdated = false;
+        this._datasetIndex = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
     updateControlPoints(chartArea, indexAxis) {
         const options = this.options;
         if ((options.tension || options.cubicInterpolationMode === "monotone") && !options.stepped && !this._pointsUpdated) {
@@ -7436,7 +7555,7 @@ class LineElement extends Element {
         const _interpolate = _getInterpolationMethod(options);
         let i, ilen;
         for(i = 0, ilen = segments.length; i < ilen; ++i){
-            const { start , end  } = segments[i];
+            const { start, end } = segments[i];
             const p1 = points[start];
             const p2 = points[end];
             if (p1 === p2) {
@@ -7479,55 +7598,47 @@ class LineElement extends Element {
             this._path = undefined;
         }
     }
-    constructor(cfg){
-        super();
-        this.animated = true;
-        this.options = undefined;
-        this._chart = undefined;
-        this._loop = undefined;
-        this._fullLoop = undefined;
-        this._path = undefined;
-        this._points = undefined;
-        this._segments = undefined;
-        this._decimated = false;
-        this._pointsUpdated = false;
-        this._datasetIndex = undefined;
-        if (cfg) Object.assign(this, cfg);
-    }
 }
-(0, _definePropertyMjsDefault.default)(LineElement, "id", "line");
-(0, _definePropertyMjsDefault.default)(LineElement, "defaults", {
-    borderCapStyle: "butt",
-    borderDash: [],
-    borderDashOffset: 0,
-    borderJoinStyle: "miter",
-    borderWidth: 3,
-    capBezierPoints: true,
-    cubicInterpolationMode: "default",
-    fill: false,
-    spanGaps: false,
-    stepped: false,
-    tension: 0
-});
-(0, _definePropertyMjsDefault.default)(LineElement, "defaultRoutes", {
-    backgroundColor: "backgroundColor",
-    borderColor: "borderColor"
-});
-(0, _definePropertyMjsDefault.default)(LineElement, "descriptors", {
-    _scriptable: true,
-    _indexable: (name)=>name !== "borderDash" && name !== "fill"
-});
 function inRange$1(el, pos, axis, useFinalPosition) {
     const options = el.options;
-    const { [axis]: value  } = el.getProps([
+    const { [axis]: value } = el.getProps([
         axis
     ], useFinalPosition);
     return Math.abs(pos - value) < options.radius + options.hitRadius;
 }
 class PointElement extends Element {
+    static id = "point";
+    parsed;
+    skip;
+    stop;
+    /**
+   * @type {any}
+   */ static defaults = {
+        borderWidth: 1,
+        hitRadius: 1,
+        hoverBorderWidth: 1,
+        hoverRadius: 4,
+        pointStyle: "circle",
+        radius: 3,
+        rotation: 0
+    };
+    /**
+   * @type {any}
+   */ static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.parsed = undefined;
+        this.skip = undefined;
+        this.stop = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
     inRange(mouseX, mouseY, useFinalPosition) {
         const options = this.options;
-        const { x , y  } = this.getProps([
+        const { x, y } = this.getProps([
             "x",
             "y"
         ], useFinalPosition);
@@ -7540,7 +7651,7 @@ class PointElement extends Element {
         return inRange$1(this, mouseY, "y", useFinalPosition);
     }
     getCenterPoint(useFinalPosition) {
-        const { x , y  } = this.getProps([
+        const { x, y } = this.getProps([
             "x",
             "y"
         ], useFinalPosition);
@@ -7569,38 +7680,9 @@ class PointElement extends Element {
         // @ts-expect-error Fallbacks should never be hit in practice
         return options.radius + options.hitRadius;
     }
-    constructor(cfg){
-        super();
-        (0, _definePropertyMjsDefault.default)(this, "parsed", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "skip", void 0);
-        (0, _definePropertyMjsDefault.default)(this, "stop", void 0);
-        this.options = undefined;
-        this.parsed = undefined;
-        this.skip = undefined;
-        this.stop = undefined;
-        if (cfg) Object.assign(this, cfg);
-    }
 }
-(0, _definePropertyMjsDefault.default)(PointElement, "id", "point");
-/**
-   * @type {any}
-   */ (0, _definePropertyMjsDefault.default)(PointElement, "defaults", {
-    borderWidth: 1,
-    hitRadius: 1,
-    hoverBorderWidth: 1,
-    hoverRadius: 4,
-    pointStyle: "circle",
-    radius: 3,
-    rotation: 0
-});
-/**
-   * @type {any}
-   */ (0, _definePropertyMjsDefault.default)(PointElement, "defaultRoutes", {
-    backgroundColor: "backgroundColor",
-    borderColor: "borderColor"
-});
 function getBarBounds(bar, useFinalPosition) {
-    const { x , y , base , width , height  } = bar.getProps([
+    const { x, y, base, width, height } = bar.getProps([
         "x",
         "y",
         "base",
@@ -7628,34 +7710,34 @@ function getBarBounds(bar, useFinalPosition) {
         bottom
     };
 }
-function skipOrLimit(skip1, value, min, max) {
-    return skip1 ? 0 : (0, _helpersSegmentJs.S)(value, min, max);
+function skipOrLimit(skip, value, min, max) {
+    return skip ? 0 : (0, _helpersSegmentJs.S)(value, min, max);
 }
 function parseBorderWidth(bar, maxW, maxH) {
     const value = bar.options.borderWidth;
-    const skip2 = bar.borderSkipped;
+    const skip = bar.borderSkipped;
     const o = (0, _helpersSegmentJs.av)(value);
     return {
-        t: skipOrLimit(skip2.top, o.top, 0, maxH),
-        r: skipOrLimit(skip2.right, o.right, 0, maxW),
-        b: skipOrLimit(skip2.bottom, o.bottom, 0, maxH),
-        l: skipOrLimit(skip2.left, o.left, 0, maxW)
+        t: skipOrLimit(skip.top, o.top, 0, maxH),
+        r: skipOrLimit(skip.right, o.right, 0, maxW),
+        b: skipOrLimit(skip.bottom, o.bottom, 0, maxH),
+        l: skipOrLimit(skip.left, o.left, 0, maxW)
     };
 }
 function parseBorderRadius(bar, maxW, maxH) {
-    const { enableBorderRadius  } = bar.getProps([
+    const { enableBorderRadius } = bar.getProps([
         "enableBorderRadius"
     ]);
     const value = bar.options.borderRadius;
     const o = (0, _helpersSegmentJs.aw)(value);
     const maxR = Math.min(maxW, maxH);
-    const skip3 = bar.borderSkipped;
+    const skip = bar.borderSkipped;
     const enableBorder = enableBorderRadius || (0, _helpersSegmentJs.i)(value);
     return {
-        topLeft: skipOrLimit(!enableBorder || skip3.top || skip3.left, o.topLeft, 0, maxR),
-        topRight: skipOrLimit(!enableBorder || skip3.top || skip3.right, o.topRight, 0, maxR),
-        bottomLeft: skipOrLimit(!enableBorder || skip3.bottom || skip3.left, o.bottomLeft, 0, maxR),
-        bottomRight: skipOrLimit(!enableBorder || skip3.bottom || skip3.right, o.bottomRight, 0, maxR)
+        topLeft: skipOrLimit(!enableBorder || skip.top || skip.left, o.topLeft, 0, maxR),
+        topRight: skipOrLimit(!enableBorder || skip.top || skip.right, o.topRight, 0, maxR),
+        bottomLeft: skipOrLimit(!enableBorder || skip.bottom || skip.left, o.bottomLeft, 0, maxR),
+        bottomRight: skipOrLimit(!enableBorder || skip.bottom || skip.right, o.bottomRight, 0, maxR)
     };
 }
 function boundingRects(bar) {
@@ -7713,9 +7795,31 @@ function inflateRect(rect, amount, refRect = {}) {
     };
 }
 class BarElement extends Element {
+    static id = "bar";
+    static defaults = {
+        borderSkipped: "start",
+        borderWidth: 0,
+        borderRadius: 0,
+        inflateAmount: "auto",
+        pointStyle: undefined
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.horizontal = undefined;
+        this.base = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.inflateAmount = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
     draw(ctx) {
-        const { inflateAmount , options: { borderColor , backgroundColor  }  } = this;
-        const { inner , outer  } = boundingRects(this);
+        const { inflateAmount, options: { borderColor, backgroundColor } } = this;
+        const { inner, outer } = boundingRects(this);
         const addRectPath = hasRadius(outer.radius) ? (0, _helpersSegmentJs.au) : addNormalRectPath;
         ctx.save();
         if (outer.w !== inner.w || outer.h !== inner.h) {
@@ -7742,7 +7846,7 @@ class BarElement extends Element {
         return inRange(this, null, mouseY, useFinalPosition);
     }
     getCenterPoint(useFinalPosition) {
-        const { x , y , base , horizontal  } = this.getProps([
+        const { x, y, base, horizontal } = this.getProps([
             "x",
             "y",
             "base",
@@ -7756,29 +7860,7 @@ class BarElement extends Element {
     getRange(axis) {
         return axis === "x" ? this.width / 2 : this.height / 2;
     }
-    constructor(cfg){
-        super();
-        this.options = undefined;
-        this.horizontal = undefined;
-        this.base = undefined;
-        this.width = undefined;
-        this.height = undefined;
-        this.inflateAmount = undefined;
-        if (cfg) Object.assign(this, cfg);
-    }
 }
-(0, _definePropertyMjsDefault.default)(BarElement, "id", "bar");
-(0, _definePropertyMjsDefault.default)(BarElement, "defaults", {
-    borderSkipped: "start",
-    borderWidth: 0,
-    borderRadius: 0,
-    inflateAmount: "auto",
-    pointStyle: undefined
-});
-(0, _definePropertyMjsDefault.default)(BarElement, "defaultRoutes", {
-    backgroundColor: "backgroundColor",
-    borderColor: "borderColor"
-});
 var elements = /*#__PURE__*/ Object.freeze({
     __proto__: null,
     ArcElement: ArcElement,
@@ -7843,9 +7925,9 @@ var plugin_colors = {
     },
     beforeLayout (chart, _args, options) {
         if (!options.enabled) return;
-        const { data: { datasets  } , options: chartOptions  } = chart.config;
-        const { elements: elements4  } = chartOptions;
-        if (!options.forceOverride && (containsColorsDefinitions(datasets) || containsColorsDefinition(chartOptions) || elements4 && containsColorsDefinitions(elements4))) return;
+        const { data: { datasets }, options: chartOptions } = chart.config;
+        const { elements } = chartOptions;
+        if (!options.forceOverride && (containsColorsDefinitions(datasets) || containsColorsDefinition(chartOptions) || elements && containsColorsDefinitions(elements))) return;
         const colorizer = getColorizer(chart);
         datasets.forEach(colorizer);
     }
@@ -7875,7 +7957,7 @@ function lttbDecimation(data, start, count, availableWidth, options) {
         avgY /= avgRangeLength;
         const rangeOffs = Math.floor(i * bucketWidth) + 1 + start;
         const rangeTo = Math.min(Math.floor((i + 1) * bucketWidth) + 1, count) + start;
-        const { x: pointAx , y: pointAy  } = data[a];
+        const { x: pointAx, y: pointAy } = data[a];
         maxArea = area = -1;
         for(j = rangeOffs; j < rangeTo; j++){
             area = 0.5 * Math.abs((pointAx - avgX) * (data[j].y - pointAy) - (pointAx - data[j].x) * (avgY - pointAy));
@@ -7960,8 +8042,8 @@ function getStartAndCountOfVisiblePointsSimplified(meta, points) {
     const pointCount = points.length;
     let start = 0;
     let count;
-    const { iScale  } = meta;
-    const { min , max , minDefined , maxDefined  } = iScale.getUserBounds();
+    const { iScale } = meta;
+    const { min, max, minDefined, maxDefined } = iScale.getUserBounds();
     if (minDefined) start = (0, _helpersSegmentJs.S)((0, _helpersSegmentJs.B)(points, iScale.axis, min).lo, 0, pointCount - 1);
     if (maxDefined) count = (0, _helpersSegmentJs.S)((0, _helpersSegmentJs.B)(points, iScale.axis, max).hi + 1, start, pointCount) - start;
     else count = pointCount - start;
@@ -7983,7 +8065,7 @@ var plugin_decimation = {
         }
         const availableWidth = chart.width;
         chart.data.datasets.forEach((dataset, datasetIndex)=>{
-            const { _data , indexAxis  } = dataset;
+            const { _data, indexAxis } = dataset;
             const meta = chart.getDatasetMeta(datasetIndex);
             const data = _data || dataset.data;
             if ((0, _helpersSegmentJs.a)([
@@ -7994,7 +8076,7 @@ var plugin_decimation = {
             const xAxis = chart.scales[meta.xAxisID];
             if (xAxis.type !== "linear" && xAxis.type !== "time") return;
             if (chart.options.parsing) return;
-            let { start , count  } = getStartAndCountOfVisiblePointsSimplified(meta, data);
+            let { start, count } = getStartAndCountOfVisiblePointsSimplified(meta, data);
             const threshold = options.threshold || 4 * availableWidth;
             if (count <= threshold) {
                 cleanDecimatedDataset(dataset);
@@ -8038,7 +8120,7 @@ function _segments(line, target, property) {
     const tpoints = target.points;
     const parts = [];
     for (const segment of segments){
-        let { start , end  } = segment;
+        let { start, end } = segment;
         end = _findSegmentEnd(start, end, points);
         const bounds = _getBounds(property, points[start], points[end], segment.loop);
         if (!target.segments) {
@@ -8083,10 +8165,10 @@ function _getBounds(property, first, last, loop) {
     };
 }
 function _pointsFromSegments(boundary, line) {
-    const { x =null , y =null  } = boundary || {};
+    const { x = null, y = null } = boundary || {};
     const linePoints = line.points;
     const points = [];
-    line.segments.forEach(({ start , end  })=>{
+    line.segments.forEach(({ start, end })=>{
         end = _findSegmentEnd(start, end, linePoints);
         const first = linePoints[start];
         const last = linePoints[end];
@@ -8142,73 +8224,73 @@ function _createBoundaryLine(boundary, line) {
 function _shouldApplyFill(source) {
     return source && source.fill !== false;
 }
-function _resolveTarget(sources, index57, propagate) {
-    const source = sources[index57];
-    let fill1 = source.fill;
+function _resolveTarget(sources, index, propagate) {
+    const source = sources[index];
+    let fill = source.fill;
     const visited = [
-        index57
+        index
     ];
     let target;
-    if (!propagate) return fill1;
-    while(fill1 !== false && visited.indexOf(fill1) === -1){
-        if (!(0, _helpersSegmentJs.g)(fill1)) return fill1;
-        target = sources[fill1];
+    if (!propagate) return fill;
+    while(fill !== false && visited.indexOf(fill) === -1){
+        if (!(0, _helpersSegmentJs.g)(fill)) return fill;
+        target = sources[fill];
         if (!target) return false;
-        if (target.visible) return fill1;
-        visited.push(fill1);
-        fill1 = target.fill;
+        if (target.visible) return fill;
+        visited.push(fill);
+        fill = target.fill;
     }
     return false;
 }
-function _decodeFill(line, index58, count) {
-    const fill2 = parseFillOption(line);
-    if ((0, _helpersSegmentJs.i)(fill2)) return isNaN(fill2.value) ? false : fill2;
-    let target = parseFloat(fill2);
-    if ((0, _helpersSegmentJs.g)(target) && Math.floor(target) === target) return decodeTargetIndex(fill2[0], index58, target, count);
+function _decodeFill(line, index, count) {
+    const fill = parseFillOption(line);
+    if ((0, _helpersSegmentJs.i)(fill)) return isNaN(fill.value) ? false : fill;
+    let target = parseFloat(fill);
+    if ((0, _helpersSegmentJs.g)(target) && Math.floor(target) === target) return decodeTargetIndex(fill[0], index, target, count);
     return [
         "origin",
         "start",
         "end",
         "stack",
         "shape"
-    ].indexOf(fill2) >= 0 && fill2;
+    ].indexOf(fill) >= 0 && fill;
 }
-function decodeTargetIndex(firstCh, index59, target, count) {
-    if (firstCh === "-" || firstCh === "+") target = index59 + target;
-    if (target === index59 || target < 0 || target >= count) return false;
+function decodeTargetIndex(firstCh, index, target, count) {
+    if (firstCh === "-" || firstCh === "+") target = index + target;
+    if (target === index || target < 0 || target >= count) return false;
     return target;
 }
-function _getTargetPixel(fill3, scale) {
+function _getTargetPixel(fill, scale) {
     let pixel = null;
-    if (fill3 === "start") pixel = scale.bottom;
-    else if (fill3 === "end") pixel = scale.top;
-    else if ((0, _helpersSegmentJs.i)(fill3)) pixel = scale.getPixelForValue(fill3.value);
+    if (fill === "start") pixel = scale.bottom;
+    else if (fill === "end") pixel = scale.top;
+    else if ((0, _helpersSegmentJs.i)(fill)) pixel = scale.getPixelForValue(fill.value);
     else if (scale.getBasePixel) pixel = scale.getBasePixel();
     return pixel;
 }
-function _getTargetValue(fill4, scale, startValue) {
+function _getTargetValue(fill, scale, startValue) {
     let value;
-    if (fill4 === "start") value = startValue;
-    else if (fill4 === "end") value = scale.options.reverse ? scale.min : scale.max;
-    else if ((0, _helpersSegmentJs.i)(fill4)) value = fill4.value;
+    if (fill === "start") value = startValue;
+    else if (fill === "end") value = scale.options.reverse ? scale.min : scale.max;
+    else if ((0, _helpersSegmentJs.i)(fill)) value = fill.value;
     else value = scale.getBaseValue();
     return value;
 }
 function parseFillOption(line) {
     const options = line.options;
     const fillOption = options.fill;
-    let fill5 = (0, _helpersSegmentJs.v)(fillOption && fillOption.target, fillOption);
-    if (fill5 === undefined) fill5 = !!options.backgroundColor;
-    if (fill5 === false || fill5 === null) return false;
-    if (fill5 === true) return "origin";
-    return fill5;
+    let fill = (0, _helpersSegmentJs.v)(fillOption && fillOption.target, fillOption);
+    if (fill === undefined) fill = !!options.backgroundColor;
+    if (fill === false || fill === null) return false;
+    if (fill === true) return "origin";
+    return fill;
 }
 function _buildStackLine(source) {
-    const { scale , index: index60 , line  } = source;
+    const { scale, index, line } = source;
     const points = [];
     const segments = line.segments;
     const sourcePoints = line.points;
-    const linesBelow = getLinesBelow(scale, index60);
+    const linesBelow = getLinesBelow(scale, index);
     linesBelow.push(_createBoundaryLine({
         x: null,
         y: scale.bottom
@@ -8222,12 +8304,12 @@ function _buildStackLine(source) {
         options: {}
     });
 }
-function getLinesBelow(scale, index61) {
+function getLinesBelow(scale, index) {
     const below = [];
     const metas = scale.getMatchingVisibleMetas("line");
     for(let i = 0; i < metas.length; i++){
         const meta = metas[i];
-        if (meta.index === index61) break;
+        if (meta.index === index) break;
         if (!meta.hidden) below.unshift(meta.dataset);
     }
     return below;
@@ -8236,7 +8318,7 @@ function addPointsBelow(points, sourcePoint, linesBelow) {
     const postponed = [];
     for(let j = 0; j < linesBelow.length; j++){
         const line = linesBelow[j];
-        const { first , last , point  } = findPoint(line, sourcePoint, "x");
+        const { first, last, point } = findPoint(line, sourcePoint, "x");
         if (!point || first && last) continue;
         if (first) postponed.unshift(point);
         else {
@@ -8271,8 +8353,13 @@ function findPoint(line, sourcePoint, property) {
     };
 }
 class simpleArc {
+    constructor(opts){
+        this.x = opts.x;
+        this.y = opts.y;
+        this.radius = opts.radius;
+    }
     pathSegment(ctx, bounds, opts) {
-        const { x , y , radius  } = this;
+        const { x, y, radius } = this;
         bounds = bounds || {
             start: 0,
             end: (0, _helpersSegmentJs.T)
@@ -8281,7 +8368,7 @@ class simpleArc {
         return !opts.bounds;
     }
     interpolate(point) {
-        const { x , y , radius  } = this;
+        const { x, y, radius } = this;
         const angle = point.angle;
         return {
             x: x + Math.cos(angle) * radius,
@@ -8289,24 +8376,19 @@ class simpleArc {
             angle
         };
     }
-    constructor(opts){
-        this.x = opts.x;
-        this.y = opts.y;
-        this.radius = opts.radius;
-    }
 }
 function _getTarget(source) {
-    const { chart , fill: fill6 , line  } = source;
-    if ((0, _helpersSegmentJs.g)(fill6)) return getLineByIndex(chart, fill6);
-    if (fill6 === "stack") return _buildStackLine(source);
-    if (fill6 === "shape") return true;
+    const { chart, fill, line } = source;
+    if ((0, _helpersSegmentJs.g)(fill)) return getLineByIndex(chart, fill);
+    if (fill === "stack") return _buildStackLine(source);
+    if (fill === "shape") return true;
     const boundary = computeBoundary(source);
     if (boundary instanceof simpleArc) return boundary;
     return _createBoundaryLine(boundary, line);
 }
-function getLineByIndex(chart, index62) {
-    const meta = chart.getDatasetMeta(index62);
-    const visible = meta && chart.isDatasetVisible(index62);
+function getLineByIndex(chart, index) {
+    const meta = chart.getDatasetMeta(index);
+    const visible = meta && chart.isDatasetVisible(index);
     return visible ? meta.dataset : null;
 }
 function computeBoundary(source) {
@@ -8315,8 +8397,8 @@ function computeBoundary(source) {
     return computeLinearBoundary(source);
 }
 function computeLinearBoundary(source) {
-    const { scale ={} , fill: fill7  } = source;
-    const pixel = _getTargetPixel(fill7, scale);
+    const { scale = {}, fill } = source;
+    const pixel = _getTargetPixel(fill, scale);
     if ((0, _helpersSegmentJs.g)(pixel)) {
         const horizontal = scale.isHorizontal();
         return {
@@ -8327,11 +8409,11 @@ function computeLinearBoundary(source) {
     return null;
 }
 function computeCircularBoundary(source) {
-    const { scale , fill: fill8  } = source;
+    const { scale, fill } = source;
     const options = scale.options;
     const length = scale.getLabels().length;
     const start = options.reverse ? scale.max : scale.min;
-    const value = _getTargetValue(fill8, scale, start);
+    const value = _getTargetValue(fill, scale, start);
     const target = [];
     if (options.grid.circular) {
         const center = scale.getPointPositionForValue(0, start);
@@ -8346,11 +8428,11 @@ function computeCircularBoundary(source) {
 }
 function _drawfill(ctx, source, area) {
     const target = _getTarget(source);
-    const { line , scale , axis  } = source;
+    const { line, scale, axis } = source;
     const lineOpts = line.options;
     const fillOption = lineOpts.fill;
     const color = lineOpts.backgroundColor;
-    const { above =color , below =color  } = fillOption || {};
+    const { above = color, below = color } = fillOption || {};
     if (target && line.points.length) {
         (0, _helpersSegmentJs.Y)(ctx, area);
         doFill(ctx, {
@@ -8366,7 +8448,7 @@ function _drawfill(ctx, source, area) {
     }
 }
 function doFill(ctx, cfg) {
-    const { line , target , above , below , area , scale  } = cfg;
+    const { line, target, above, below, area, scale } = cfg;
     const property = line._loop ? "angle" : cfg.axis;
     ctx.save();
     if (property === "x" && below !== above) {
@@ -8392,12 +8474,12 @@ function doFill(ctx, cfg) {
     ctx.restore();
 }
 function clipVertical(ctx, target, clipY) {
-    const { segments , points  } = target;
+    const { segments, points } = target;
     let first = true;
     let lineLoop = false;
     ctx.beginPath();
     for (const segment of segments){
-        const { start , end  } = segment;
+        const { start, end } = segment;
         const firstPoint = points[start];
         const lastPoint = points[_findSegmentEnd(start, end, points)];
         if (first) {
@@ -8418,10 +8500,10 @@ function clipVertical(ctx, target, clipY) {
     ctx.clip();
 }
 function fill(ctx, cfg) {
-    const { line , target , property , color , scale  } = cfg;
+    const { line, target, property, color, scale } = cfg;
     const segments = _segments(line, target, property);
-    for (const { source: src , target: tgt , start , end  } of segments){
-        const { style: { backgroundColor =color  } = {}  } = src;
+    for (const { source: src, target: tgt, start, end } of segments){
+        const { style: { backgroundColor = color } = {} } = src;
         const notShape = target !== true;
         ctx.save();
         ctx.fillStyle = backgroundColor;
@@ -8445,8 +8527,8 @@ function fill(ctx, cfg) {
     }
 }
 function clipBounds(ctx, scale, bounds) {
-    const { top , bottom  } = scale.chart.chartArea;
-    const { property , start , end  } = bounds || {};
+    const { top, bottom } = scale.chart.chartArea;
+    const { property, start, end } = bounds || {};
     if (property === "x") {
         ctx.beginPath();
         ctx.rect(start, top, end - start, bottom - top);
@@ -8486,14 +8568,14 @@ var index = {
         }
     },
     beforeDraw (chart, _args, options) {
-        const draw2 = options.drawTime === "beforeDraw";
+        const draw = options.drawTime === "beforeDraw";
         const metasets = chart.getSortedVisibleDatasetMetas();
         const area = chart.chartArea;
         for(let i = metasets.length - 1; i >= 0; --i){
             const source = metasets[i].$filler;
             if (!source) continue;
             source.line.updateControlPoints(area, source.axis);
-            if (draw2 && source.fill) _drawfill(chart.ctx, source, area);
+            if (draw && source.fill) _drawfill(chart.ctx, source, area);
         }
     },
     beforeDatasetsDraw (chart, _args, options) {
@@ -8515,7 +8597,7 @@ var index = {
     }
 };
 const getBoxSize = (labelOpts, fontSize)=>{
-    let { boxHeight =fontSize , boxWidth =fontSize  } = labelOpts;
+    let { boxHeight = fontSize, boxWidth = fontSize } = labelOpts;
     if (labelOpts.usePointStyle) {
         boxHeight = Math.min(boxHeight, fontSize);
         boxWidth = labelOpts.pointStyleWidth || Math.min(boxWidth, fontSize);
@@ -8528,6 +8610,31 @@ const getBoxSize = (labelOpts, fontSize)=>{
 };
 const itemsEqual = (a, b)=>a !== null && b !== null && a.datasetIndex === b.datasetIndex && a.index === b.index;
 class Legend extends Element {
+    constructor(config){
+        super();
+        this._added = false;
+        this.legendHitBoxes = [];
+        this._hoveredItem = null;
+        this.doughnutMode = false;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this.legendItems = undefined;
+        this.columnSizes = undefined;
+        this.lineWidths = undefined;
+        this.maxHeight = undefined;
+        this.maxWidth = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this._margins = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
     update(maxWidth, maxHeight, margins) {
         this.maxWidth = maxWidth;
         this.maxHeight = maxHeight;
@@ -8558,7 +8665,7 @@ class Legend extends Element {
         this.legendItems = legendItems;
     }
     fit() {
-        const { options , ctx  } = this;
+        const { options, ctx } = this;
         if (!options.display) {
             this.width = this.height = 0;
             return;
@@ -8567,7 +8674,7 @@ class Legend extends Element {
         const labelFont = (0, _helpersSegmentJs.a0)(labelOpts.font);
         const fontSize = labelFont.size;
         const titleHeight = this._computeTitleHeight();
-        const { boxWidth , itemHeight  } = getBoxSize(labelOpts, fontSize);
+        const { boxWidth, itemHeight } = getBoxSize(labelOpts, fontSize);
         let width, height;
         ctx.font = labelFont.string;
         if (this.isHorizontal()) {
@@ -8581,7 +8688,7 @@ class Legend extends Element {
         this.height = Math.min(height, options.maxHeight || this.maxHeight);
     }
     _fitRows(titleHeight, fontSize, boxWidth, itemHeight) {
-        const { ctx , maxWidth , options: { labels: { padding  }  }  } = this;
+        const { ctx, maxWidth, options: { labels: { padding } } } = this;
         const hitboxes = this.legendHitBoxes = [];
         const lineWidths = this.lineWidths = [
             0
@@ -8612,7 +8719,7 @@ class Legend extends Element {
         return totalHeight;
     }
     _fitCols(titleHeight, labelFont, boxWidth, _itemHeight) {
-        const { ctx , maxHeight , options: { labels: { padding  }  }  } = this;
+        const { ctx, maxHeight, options: { labels: { padding } } } = this;
         const hitboxes = this.legendHitBoxes = [];
         const columnSizes = this.columnSizes = [];
         const heightLimit = maxHeight - titleHeight;
@@ -8622,7 +8729,7 @@ class Legend extends Element {
         let left = 0;
         let col = 0;
         this.legendItems.forEach((legendItem, i)=>{
-            const { itemWidth , itemHeight  } = calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight);
+            const { itemWidth, itemHeight } = calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight);
             if (i > 0 && currentColHeight + itemHeight + 2 * padding > heightLimit) {
                 totalWidth += currentColWidth + padding;
                 columnSizes.push({
@@ -8653,7 +8760,7 @@ class Legend extends Element {
     adjustHitBoxes() {
         if (!this.options.display) return;
         const titleHeight = this._computeTitleHeight();
-        const { legendHitBoxes: hitboxes , options: { align , labels: { padding  } , rtl  }  } = this;
+        const { legendHitBoxes: hitboxes, options: { align, labels: { padding }, rtl } } = this;
         const rtlHelper = (0, _helpersSegmentJs.az)(rtl, this.left, this.width);
         if (this.isHorizontal()) {
             let row = 0;
@@ -8694,12 +8801,12 @@ class Legend extends Element {
         }
     }
     _draw() {
-        const { options: opts , columnSizes , lineWidths , ctx  } = this;
-        const { align , labels: labelOpts  } = opts;
+        const { options: opts, columnSizes, lineWidths, ctx } = this;
+        const { align, labels: labelOpts } = opts;
         const defaultColor = (0, _helpersSegmentJs.d).color;
         const rtlHelper = (0, _helpersSegmentJs.az)(opts.rtl, this.left, this.width);
         const labelFont = (0, _helpersSegmentJs.a0)(labelOpts.font);
-        const { padding  } = labelOpts;
+        const { padding } = labelOpts;
         const fontSize = labelFont.size;
         const halfFontSize = fontSize / 2;
         let cursor;
@@ -8708,7 +8815,7 @@ class Legend extends Element {
         ctx.textBaseline = "middle";
         ctx.lineWidth = 0.5;
         ctx.font = labelFont.string;
-        const { boxWidth , boxHeight , itemHeight  } = getBoxSize(labelOpts, fontSize);
+        const { boxWidth, boxHeight, itemHeight } = getBoxSize(labelOpts, fontSize);
         const drawLegendBox = function(x, y, legendItem) {
             if (isNaN(boxWidth) || boxWidth <= 0 || isNaN(boxHeight) || boxHeight < 0) return;
             ctx.save();
@@ -8795,7 +8902,7 @@ class Legend extends Element {
             if (isHorizontal) cursor.x += width + padding;
             else if (typeof legendItem.text !== "string") {
                 const fontLineHeight = labelFont.lineHeight;
-                cursor.y += calculateLegendItemHeight(legendItem, fontLineHeight);
+                cursor.y += calculateLegendItemHeight(legendItem, fontLineHeight) + padding;
             } else cursor.y += lineHeight;
         });
         (0, _helpersSegmentJs.aC)(this.ctx, opts.textDirection);
@@ -8871,31 +8978,6 @@ class Legend extends Element {
             this
         ], this);
     }
-    constructor(config){
-        super();
-        this._added = false;
-        this.legendHitBoxes = [];
-        this._hoveredItem = null;
-        this.doughnutMode = false;
-        this.chart = config.chart;
-        this.options = config.options;
-        this.ctx = config.ctx;
-        this.legendItems = undefined;
-        this.columnSizes = undefined;
-        this.lineWidths = undefined;
-        this.maxHeight = undefined;
-        this.maxWidth = undefined;
-        this.top = undefined;
-        this.bottom = undefined;
-        this.left = undefined;
-        this.right = undefined;
-        this.height = undefined;
-        this.width = undefined;
-        this._margins = undefined;
-        this.position = undefined;
-        this.weight = undefined;
-        this.fullSize = undefined;
-    }
 }
 function calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight) {
     const itemWidth = calculateItemWidth(legendItem, boxWidth, labelFont, ctx);
@@ -8916,7 +8998,7 @@ function calculateItemHeight(_itemHeight, legendItem, fontLineHeight) {
     return itemHeight;
 }
 function calculateLegendItemHeight(legendItem, fontLineHeight) {
-    const labelHeight = legendItem.text ? legendItem.text.length + 0.5 : 0;
+    const labelHeight = legendItem.text ? legendItem.text.length : 0;
     return fontLineHeight * labelHeight;
 }
 function isListened(type, opts) {
@@ -8961,13 +9043,13 @@ var plugin_legend = {
         reverse: false,
         weight: 1000,
         onClick (e, legendItem, legend) {
-            const index63 = legendItem.datasetIndex;
+            const index = legendItem.datasetIndex;
             const ci = legend.chart;
-            if (ci.isDatasetVisible(index63)) {
-                ci.hide(index63);
+            if (ci.isDatasetVisible(index)) {
+                ci.hide(index);
                 legendItem.hidden = true;
             } else {
-                ci.show(index63);
+                ci.show(index);
                 legendItem.hidden = false;
             }
         },
@@ -8979,7 +9061,7 @@ var plugin_legend = {
             padding: 10,
             generateLabels (chart) {
                 const datasets = chart.data.datasets;
-                const { labels: { usePointStyle , pointStyle , textAlign , color , useBorderRadius , borderRadius  }  } = chart.legend.options;
+                const { labels: { usePointStyle, pointStyle, textAlign, color, useBorderRadius, borderRadius } } = chart.legend.options;
                 return chart._getSortedDatasetMetas().map((meta)=>{
                     const style = meta.controller.getStyle(usePointStyle ? 0 : undefined);
                     const borderWidth = (0, _helpersSegmentJs.E)(style.borderWidth);
@@ -9022,6 +9104,22 @@ var plugin_legend = {
     }
 };
 class Title extends Element {
+    constructor(config){
+        super();
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this._padding = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
     update(maxWidth, maxHeight) {
         const opts = this.options;
         this.left = 0;
@@ -9043,7 +9141,7 @@ class Title extends Element {
         return pos === "top" || pos === "bottom";
     }
     _drawArgs(offset) {
-        const { top , left , bottom , right , options  } = this;
+        const { top, left, bottom, right, options } = this;
         const align = options.align;
         let rotation = 0;
         let maxWidth, titleX, titleY;
@@ -9077,7 +9175,7 @@ class Title extends Element {
         const fontOpts = (0, _helpersSegmentJs.a0)(opts.font);
         const lineHeight = fontOpts.lineHeight;
         const offset = lineHeight / 2 + this._padding.top;
-        const { titleX , titleY , maxWidth , rotation  } = this._drawArgs(offset);
+        const { titleX, titleY, maxWidth, rotation } = this._drawArgs(offset);
         (0, _helpersSegmentJs.Z)(ctx, opts.text, 0, 0, fontOpts, {
             color: opts.color,
             maxWidth,
@@ -9089,22 +9187,6 @@ class Title extends Element {
                 titleY
             ]
         });
-    }
-    constructor(config){
-        super();
-        this.chart = config.chart;
-        this.options = config.options;
-        this.ctx = config.ctx;
-        this._padding = undefined;
-        this.top = undefined;
-        this.bottom = undefined;
-        this.left = undefined;
-        this.right = undefined;
-        this.width = undefined;
-        this.height = undefined;
-        this.position = undefined;
-        this.weight = undefined;
-        this.fullSize = undefined;
     }
 }
 function createTitle(chart, titleOpts) {
@@ -9256,25 +9338,25 @@ function splitNewlines(str) {
     return str;
 }
 function createTooltipItem(chart, item) {
-    const { element , datasetIndex , index: index64  } = item;
+    const { element, datasetIndex, index } = item;
     const controller = chart.getDatasetMeta(datasetIndex).controller;
-    const { label , value  } = controller.getLabelAndValue(index64);
+    const { label, value } = controller.getLabelAndValue(index);
     return {
         chart,
         label,
-        parsed: controller.getParsed(index64),
-        raw: chart.data.datasets[datasetIndex].data[index64],
+        parsed: controller.getParsed(index),
+        raw: chart.data.datasets[datasetIndex].data[index],
         formattedValue: value,
         dataset: controller.getDataset(),
-        dataIndex: index64,
+        dataIndex: index,
         datasetIndex,
         element
     };
 }
 function getTooltipSize(tooltip, options) {
     const ctx = tooltip.chart.ctx;
-    const { body , footer , title  } = tooltip;
-    const { boxWidth , boxHeight  } = options;
+    const { body, footer, title } = tooltip;
+    const { boxWidth, boxHeight } = options;
     const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
     const titleFont = (0, _helpersSegmentJs.a0)(options.titleFont);
     const footerFont = (0, _helpersSegmentJs.a0)(options.footerFont);
@@ -9318,20 +9400,20 @@ function getTooltipSize(tooltip, options) {
     };
 }
 function determineYAlign(chart, size) {
-    const { y , height  } = size;
+    const { y, height } = size;
     if (y < height / 2) return "top";
     else if (y > chart.height - height / 2) return "bottom";
     return "center";
 }
 function doesNotFitWithAlign(xAlign, chart, options, size) {
-    const { x , width  } = size;
+    const { x, width } = size;
     const caret = options.caretSize + options.caretPadding;
     if (xAlign === "left" && x + width + caret > chart.width) return true;
     if (xAlign === "right" && x - width - caret < 0) return true;
 }
 function determineXAlign(chart, options, size, yAlign) {
-    const { x , width  } = size;
-    const { width: chartWidth , chartArea: { left , right  }  } = chart;
+    const { x, width } = size;
+    const { width: chartWidth, chartArea: { left, right } } = chart;
     let xAlign = "center";
     if (yAlign === "center") xAlign = x <= (left + right) / 2 ? "left" : "right";
     else if (x <= width / 2) xAlign = "left";
@@ -9347,23 +9429,23 @@ function determineAlignment(chart, options, size) {
     };
 }
 function alignX(size, xAlign) {
-    let { x , width  } = size;
+    let { x, width } = size;
     if (xAlign === "right") x -= width;
     else if (xAlign === "center") x -= width / 2;
     return x;
 }
 function alignY(size, yAlign, paddingAndSize) {
-    let { y , height  } = size;
+    let { y, height } = size;
     if (yAlign === "top") y += paddingAndSize;
     else if (yAlign === "bottom") y -= height + paddingAndSize;
     else y -= height / 2;
     return y;
 }
 function getBackgroundPoint(options, size, alignment, chart) {
-    const { caretSize , caretPadding , cornerRadius  } = options;
-    const { xAlign , yAlign  } = alignment;
+    const { caretSize, caretPadding, cornerRadius } = options;
+    const { xAlign, yAlign } = alignment;
     const paddingAndSize = caretSize + caretPadding;
-    const { topLeft , topRight , bottomLeft , bottomRight  } = (0, _helpersSegmentJs.aw)(cornerRadius);
+    const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(cornerRadius);
     let x = alignX(size, xAlign);
     const y = alignY(size, yAlign, paddingAndSize);
     if (yAlign === "center") {
@@ -9453,6 +9535,37 @@ function invokeCallbackWithFallback(callbacks, name, ctx, arg) {
     return result;
 }
 class Tooltip extends Element {
+    static positioners = positioners;
+    constructor(config){
+        super();
+        this.opacity = 0;
+        this._active = [];
+        this._eventPosition = undefined;
+        this._size = undefined;
+        this._cachedAnimations = undefined;
+        this._tooltipItems = [];
+        this.$animations = undefined;
+        this.$context = undefined;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.dataPoints = undefined;
+        this.title = undefined;
+        this.beforeBody = undefined;
+        this.body = undefined;
+        this.afterBody = undefined;
+        this.footer = undefined;
+        this.xAlign = undefined;
+        this.yAlign = undefined;
+        this.x = undefined;
+        this.y = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this.caretX = undefined;
+        this.caretY = undefined;
+        this.labelColors = undefined;
+        this.labelPointStyles = undefined;
+        this.labelTextColors = undefined;
+    }
     initialize(options) {
         this.options = options;
         this._cachedAnimations = undefined;
@@ -9472,7 +9585,7 @@ class Tooltip extends Element {
         return this.$context || (this.$context = createTooltipContext(this.chart.getContext(), this, this._tooltipItems));
     }
     getTitle(context, options) {
-        const { callbacks  } = options;
+        const { callbacks } = options;
         const beforeTitle = invokeCallbackWithFallback(callbacks, "beforeTitle", this, context);
         const title = invokeCallbackWithFallback(callbacks, "title", this, context);
         const afterTitle = invokeCallbackWithFallback(callbacks, "afterTitle", this, context);
@@ -9486,7 +9599,7 @@ class Tooltip extends Element {
         return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, "beforeBody", this, tooltipItems));
     }
     getBody(tooltipItems, options) {
-        const { callbacks  } = options;
+        const { callbacks } = options;
         const bodyItems = [];
         (0, _helpersSegmentJs.F)(tooltipItems, (context)=>{
             const bodyItem = {
@@ -9506,7 +9619,7 @@ class Tooltip extends Element {
         return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, "afterBody", this, tooltipItems));
     }
     getFooter(tooltipItems, options) {
-        const { callbacks  } = options;
+        const { callbacks } = options;
         const beforeFooter = invokeCallbackWithFallback(callbacks, "beforeFooter", this, tooltipItems);
         const footer = invokeCallbackWithFallback(callbacks, "footer", this, tooltipItems);
         const afterFooter = invokeCallbackWithFallback(callbacks, "afterFooter", this, tooltipItems);
@@ -9525,7 +9638,7 @@ class Tooltip extends Element {
         let tooltipItems = [];
         let i, len;
         for(i = 0, len = active.length; i < len; ++i)tooltipItems.push(createTooltipItem(this.chart, active[i]));
-        if (options.filter) tooltipItems = tooltipItems.filter((element, index65, array)=>options.filter(element, index65, array, data));
+        if (options.filter) tooltipItems = tooltipItems.filter((element, index, array)=>options.filter(element, index, array, data));
         if (options.itemSort) tooltipItems = tooltipItems.sort((a, b)=>options.itemSort(a, b, data));
         (0, _helpersSegmentJs.F)(tooltipItems, (context)=>{
             const scoped = overrideCallbacks(options.callbacks, context);
@@ -9588,11 +9701,11 @@ class Tooltip extends Element {
         ctx.lineTo(caretPosition.x3, caretPosition.y3);
     }
     getCaretPosition(tooltipPoint, size, options) {
-        const { xAlign , yAlign  } = this;
-        const { caretSize , cornerRadius  } = options;
-        const { topLeft , topRight , bottomLeft , bottomRight  } = (0, _helpersSegmentJs.aw)(cornerRadius);
-        const { x: ptX , y: ptY  } = tooltipPoint;
-        const { width , height  } = size;
+        const { xAlign, yAlign } = this;
+        const { caretSize, cornerRadius } = options;
+        const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(cornerRadius);
+        const { x: ptX, y: ptY } = tooltipPoint;
+        const { width, height } = size;
         let x1, x2, x3, y1, y2, y3;
         if (yAlign === "center") {
             y2 = ptY + height / 2;
@@ -9657,7 +9770,7 @@ class Tooltip extends Element {
     _drawColorBox(ctx, pt, i, rtlHelper, options) {
         const labelColor = this.labelColors[i];
         const labelPointStyle = this.labelPointStyles[i];
-        const { boxHeight , boxWidth  } = options;
+        const { boxHeight, boxWidth } = options;
         const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
         const colorX = getAlignedX(this, "left", options);
         const rtlColorX = rtlHelper.x(colorX);
@@ -9719,8 +9832,8 @@ class Tooltip extends Element {
         ctx.fillStyle = this.labelTextColors[i];
     }
     drawBody(pt, ctx, options) {
-        const { body  } = this;
-        const { bodySpacing , bodyAlign , displayColors , boxHeight , boxWidth , boxPadding  } = options;
+        const { body } = this;
+        const { bodySpacing, bodyAlign, displayColors, boxHeight, boxWidth, boxPadding } = options;
         const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
         let bodyLineHeight = bodyFont.lineHeight;
         let xLinePadding = 0;
@@ -9779,10 +9892,10 @@ class Tooltip extends Element {
         }
     }
     drawBackground(pt, ctx, tooltipSize, options) {
-        const { xAlign , yAlign  } = this;
-        const { x , y  } = pt;
-        const { width , height  } = tooltipSize;
-        const { topLeft , topRight , bottomLeft , bottomRight  } = (0, _helpersSegmentJs.aw)(options.cornerRadius);
+        const { xAlign, yAlign } = this;
+        const { x, y } = pt;
+        const { width, height } = tooltipSize;
+        const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(options.cornerRadius);
         ctx.fillStyle = options.backgroundColor;
         ctx.strokeStyle = options.borderColor;
         ctx.lineWidth = options.borderWidth;
@@ -9864,13 +9977,13 @@ class Tooltip extends Element {
     }
     setActiveElements(activeElements, eventPosition) {
         const lastActive = this._active;
-        const active = activeElements.map(({ datasetIndex , index: index66  })=>{
+        const active = activeElements.map(({ datasetIndex, index })=>{
             const meta = this.chart.getDatasetMeta(datasetIndex);
             if (!meta) throw new Error("Cannot find a dataset at index " + datasetIndex);
             return {
                 datasetIndex,
-                element: meta.data[index66],
-                index: index66
+                element: meta.data[index],
+                index
             };
         });
         const changed = !(0, _helpersSegmentJs.ah)(lastActive, active);
@@ -9911,42 +10024,11 @@ class Tooltip extends Element {
         return active;
     }
     _positionChanged(active, e) {
-        const { caretX , caretY , options  } = this;
+        const { caretX, caretY, options } = this;
         const position = positioners[options.position].call(this, active, e);
         return position !== false && (caretX !== position.x || caretY !== position.y);
     }
-    constructor(config){
-        super();
-        this.opacity = 0;
-        this._active = [];
-        this._eventPosition = undefined;
-        this._size = undefined;
-        this._cachedAnimations = undefined;
-        this._tooltipItems = [];
-        this.$animations = undefined;
-        this.$context = undefined;
-        this.chart = config.chart;
-        this.options = config.options;
-        this.dataPoints = undefined;
-        this.title = undefined;
-        this.beforeBody = undefined;
-        this.body = undefined;
-        this.afterBody = undefined;
-        this.footer = undefined;
-        this.xAlign = undefined;
-        this.yAlign = undefined;
-        this.x = undefined;
-        this.y = undefined;
-        this.height = undefined;
-        this.width = undefined;
-        this.caretX = undefined;
-        this.caretY = undefined;
-        this.labelColors = undefined;
-        this.labelPointStyles = undefined;
-        this.labelTextColors = undefined;
-    }
 }
-(0, _definePropertyMjsDefault.default)(Tooltip, "positioners", positioners);
 var plugin_tooltip = {
     id: "tooltip",
     _element: Tooltip,
@@ -10073,47 +10155,59 @@ var plugins = /*#__PURE__*/ Object.freeze({
     Title: plugin_title,
     Tooltip: plugin_tooltip
 });
-const addIfString = (labels, raw, index67, addedLabels)=>{
+const addIfString = (labels, raw, index, addedLabels)=>{
     if (typeof raw === "string") {
-        index67 = labels.push(raw) - 1;
+        index = labels.push(raw) - 1;
         addedLabels.unshift({
-            index: index67,
+            index,
             label: raw
         });
-    } else if (isNaN(raw)) index67 = null;
-    return index67;
+    } else if (isNaN(raw)) index = null;
+    return index;
 };
-function findOrAddLabel(labels, raw, index68, addedLabels) {
+function findOrAddLabel(labels, raw, index, addedLabels) {
     const first = labels.indexOf(raw);
-    if (first === -1) return addIfString(labels, raw, index68, addedLabels);
+    if (first === -1) return addIfString(labels, raw, index, addedLabels);
     const last = labels.lastIndexOf(raw);
-    return first !== last ? index68 : first;
+    return first !== last ? index : first;
 }
-const validIndex = (index69, max)=>index69 === null ? null : (0, _helpersSegmentJs.S)(Math.round(index69), 0, max);
+const validIndex = (index, max)=>index === null ? null : (0, _helpersSegmentJs.S)(Math.round(index), 0, max);
 function _getLabelForValue(value) {
     const labels = this.getLabels();
     if (value >= 0 && value < labels.length) return labels[value];
     return value;
 }
 class CategoryScale extends Scale {
+    static id = "category";
+    static defaults = {
+        ticks: {
+            callback: _getLabelForValue
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this._startValue = undefined;
+        this._valueRange = 0;
+        this._addedLabels = [];
+    }
     init(scaleOptions) {
         const added = this._addedLabels;
         if (added.length) {
             const labels = this.getLabels();
-            for (const { index: index70 , label  } of added)if (labels[index70] === label) labels.splice(index70, 1);
+            for (const { index, label } of added)if (labels[index] === label) labels.splice(index, 1);
             this._addedLabels = [];
         }
         super.init(scaleOptions);
     }
-    parse(raw, index71) {
+    parse(raw, index) {
         if ((0, _helpersSegmentJs.k)(raw)) return null;
         const labels = this.getLabels();
-        index71 = isFinite(index71) && labels[index71] === raw ? index71 : findOrAddLabel(labels, raw, (0, _helpersSegmentJs.v)(index71, raw), this._addedLabels);
-        return validIndex(index71, labels.length - 1);
+        index = isFinite(index) && labels[index] === raw ? index : findOrAddLabel(labels, raw, (0, _helpersSegmentJs.v)(index, raw), this._addedLabels);
+        return validIndex(index, labels.length - 1);
     }
     determineDataLimits() {
-        const { minDefined , maxDefined  } = this.getUserBounds();
-        let { min , max  } = this.getMinMax(true);
+        const { minDefined, maxDefined } = this.getUserBounds();
+        let { min, max } = this.getMinMax(true);
         if (this.options.bounds === "ticks") {
             if (!minDefined) min = 0;
             if (!maxDefined) max = this.getLabels().length - 1;
@@ -10146,10 +10240,10 @@ class CategoryScale extends Scale {
         if (typeof value !== "number") value = this.parse(value);
         return value === null ? NaN : this.getPixelForDecimal((value - this._startValue) / this._valueRange);
     }
-    getPixelForTick(index72) {
+    getPixelForTick(index) {
         const ticks = this.ticks;
-        if (index72 < 0 || index72 > ticks.length - 1) return null;
-        return this.getPixelForValue(ticks[index72].value);
+        if (index < 0 || index > ticks.length - 1) return null;
+        return this.getPixelForValue(ticks[index].value);
     }
     getValueForPixel(pixel) {
         return Math.round(this._startValue + this.getDecimalForPixel(pixel) * this._valueRange);
@@ -10157,26 +10251,14 @@ class CategoryScale extends Scale {
     getBasePixel() {
         return this.bottom;
     }
-    constructor(cfg){
-        super(cfg);
-        this._startValue = undefined;
-        this._valueRange = 0;
-        this._addedLabels = [];
-    }
 }
-(0, _definePropertyMjsDefault.default)(CategoryScale, "id", "category");
-(0, _definePropertyMjsDefault.default)(CategoryScale, "defaults", {
-    ticks: {
-        callback: _getLabelForValue
-    }
-});
 function generateTicks$1(generationOptions, dataRange) {
     const ticks = [];
     const MIN_SPACING = 1e-14;
-    const { bounds , step , min , max , precision , count , maxTicks , maxDigits , includeBounds  } = generationOptions;
+    const { bounds, step, min, max, precision, count, maxTicks, maxDigits, includeBounds } = generationOptions;
     const unit = step || 1;
     const maxSpaces = maxTicks - 1;
-    const { min: rmin , max: rmax  } = dataRange;
+    const { min: rmin, max: rmax } = dataRange;
     const minDefined = !(0, _helpersSegmentJs.k)(min);
     const maxDefined = !(0, _helpersSegmentJs.k)(max);
     const countDefined = !(0, _helpersSegmentJs.k)(count);
@@ -10250,22 +10332,30 @@ function generateTicks$1(generationOptions, dataRange) {
     });
     return ticks;
 }
-function relativeLabelSize(value, minSpacing, { horizontal , minRotation  }) {
+function relativeLabelSize(value, minSpacing, { horizontal, minRotation }) {
     const rad = (0, _helpersSegmentJs.t)(minRotation);
     const ratio = (horizontal ? Math.sin(rad) : Math.cos(rad)) || 0.001;
     const length = 0.75 * minSpacing * ("" + value).length;
     return Math.min(minSpacing / ratio, length);
 }
 class LinearScaleBase extends Scale {
+    constructor(cfg){
+        super(cfg);
+        this.start = undefined;
+        this.end = undefined;
+        this._startValue = undefined;
+        this._endValue = undefined;
+        this._valueRange = 0;
+    }
     parse(raw, index) {
         if ((0, _helpersSegmentJs.k)(raw)) return null;
         if ((typeof raw === "number" || raw instanceof Number) && !isFinite(+raw)) return null;
         return +raw;
     }
     handleTickRangeOptions() {
-        const { beginAtZero  } = this.options;
-        const { minDefined , maxDefined  } = this.getUserBounds();
-        let { min , max  } = this;
+        const { beginAtZero } = this.options;
+        const { minDefined, maxDefined } = this.getUserBounds();
+        let { min, max } = this;
         const setMin = (v)=>min = minDefined ? min : v;
         const setMax = (v)=>max = maxDefined ? max : v;
         if (beginAtZero) {
@@ -10284,7 +10374,7 @@ class LinearScaleBase extends Scale {
     }
     getTickLimit() {
         const tickOpts = this.options.ticks;
-        let { maxTicksLimit , stepSize  } = tickOpts;
+        let { maxTicksLimit, stepSize } = tickOpts;
         let maxTicks;
         if (stepSize) {
             maxTicks = Math.ceil(this.max / stepSize) - Math.floor(this.min / stepSize) + 1;
@@ -10350,18 +10440,16 @@ class LinearScaleBase extends Scale {
     getLabelForValue(value) {
         return (0, _helpersSegmentJs.o)(value, this.chart.options.locale, this.options.ticks.format);
     }
-    constructor(cfg){
-        super(cfg);
-        this.start = undefined;
-        this.end = undefined;
-        this._startValue = undefined;
-        this._endValue = undefined;
-        this._valueRange = 0;
-    }
 }
 class LinearScale extends LinearScaleBase {
+    static id = "linear";
+    static defaults = {
+        ticks: {
+            callback: (0, _helpersSegmentJs.aL).formatters.numeric
+        }
+    };
     determineDataLimits() {
-        const { min , max  } = this.getMinMax(true);
+        const { min, max } = this.getMinMax(true);
         this.min = (0, _helpersSegmentJs.g)(min) ? min : 0;
         this.max = (0, _helpersSegmentJs.g)(max) ? max : 1;
         this.handleTickRangeOptions();
@@ -10381,12 +10469,6 @@ class LinearScale extends LinearScaleBase {
         return this._startValue + this.getDecimalForPixel(pixel) * this._valueRange;
     }
 }
-(0, _definePropertyMjsDefault.default)(LinearScale, "id", "linear");
-(0, _definePropertyMjsDefault.default)(LinearScale, "defaults", {
-    ticks: {
-        callback: (0, _helpersSegmentJs.aL).formatters.numeric
-    }
-});
 const log10Floor = (v)=>Math.floor((0, _helpersSegmentJs.aM)(v));
 const changeExponent = (v, m)=>Math.pow(10, log10Floor(v) + m);
 function isMajor(tickVal) {
@@ -10406,7 +10488,7 @@ function startExp(min, max) {
     while(steps(min, max, rangeExp) < 10)rangeExp--;
     return Math.min(rangeExp, log10Floor(min));
 }
-function generateTicks(generationOptions, { min , max  }) {
+function generateTicks(generationOptions, { min, max }) {
     min = (0, _helpersSegmentJs.O)(generationOptions.min, min);
     const ticks = [];
     const minExp = log10Floor(min);
@@ -10442,10 +10524,26 @@ function generateTicks(generationOptions, { min , max  }) {
     return ticks;
 }
 class LogarithmicScale extends Scale {
-    parse(raw, index73) {
+    static id = "logarithmic";
+    static defaults = {
+        ticks: {
+            callback: (0, _helpersSegmentJs.aL).formatters.logarithmic,
+            major: {
+                enabled: true
+            }
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this.start = undefined;
+        this.end = undefined;
+        this._startValue = undefined;
+        this._valueRange = 0;
+    }
+    parse(raw, index) {
         const value = LinearScaleBase.prototype.parse.apply(this, [
             raw,
-            index73
+            index
         ]);
         if (value === 0) {
             this._zero = true;
@@ -10454,7 +10552,7 @@ class LogarithmicScale extends Scale {
         return (0, _helpersSegmentJs.g)(value) && value > 0 ? value : null;
     }
     determineDataLimits() {
-        const { min , max  } = this.getMinMax(true);
+        const { min, max } = this.getMinMax(true);
         this.min = (0, _helpersSegmentJs.g)(min) ? Math.max(0, min) : null;
         this.max = (0, _helpersSegmentJs.g)(max) ? Math.max(0, max) : null;
         if (this.options.beginAtZero) this._zero = true;
@@ -10462,7 +10560,7 @@ class LogarithmicScale extends Scale {
         this.handleTickRangeOptions();
     }
     handleTickRangeOptions() {
-        const { minDefined , maxDefined  } = this.getUserBounds();
+        const { minDefined, maxDefined } = this.getUserBounds();
         let min = this.min;
         let max = this.max;
         const setMin = (v)=>min = minDefined ? min : v;
@@ -10517,23 +10615,7 @@ class LogarithmicScale extends Scale {
         const decimal = this.getDecimalForPixel(pixel);
         return Math.pow(10, this._startValue + decimal * this._valueRange);
     }
-    constructor(cfg){
-        super(cfg);
-        this.start = undefined;
-        this.end = undefined;
-        this._startValue = undefined;
-        this._valueRange = 0;
-    }
 }
-(0, _definePropertyMjsDefault.default)(LogarithmicScale, "id", "logarithmic");
-(0, _definePropertyMjsDefault.default)(LogarithmicScale, "defaults", {
-    ticks: {
-        callback: (0, _helpersSegmentJs.aL).formatters.logarithmic,
-        major: {
-            enabled: true
-        }
-    }
-});
 function getTickBackdropHeight(opts) {
     const tickOpts = opts.ticks;
     if (tickOpts.display && opts.display) {
@@ -10614,10 +10696,10 @@ function updateLimits(limits, orig, angle, hLimits, vLimits) {
         limits.b = Math.max(limits.b, orig.b + y);
     }
 }
-function createPointLabelItem(scale, index74, itemOpts) {
+function createPointLabelItem(scale, index, itemOpts) {
     const outerDistance = scale.drawingArea;
-    const { extra , additionalAngle , padding , size  } = itemOpts;
-    const pointLabelPosition = scale.getPointPosition(index74, outerDistance + extra + padding, additionalAngle);
+    const { extra, additionalAngle, padding, size } = itemOpts;
+    const pointLabelPosition = scale.getPointPosition(index, outerDistance + extra + padding, additionalAngle);
     const angle = Math.round((0, _helpersSegmentJs.U)((0, _helpersSegmentJs.ay)(pointLabelPosition.angle + (0, _helpersSegmentJs.H))));
     const y = yForAngle(pointLabelPosition.y, size.h, angle);
     const textAlign = getTextAlignForAngle(angle);
@@ -10635,7 +10717,7 @@ function createPointLabelItem(scale, index74, itemOpts) {
 }
 function isNotOverlapped(item, area) {
     if (!area) return true;
-    const { left , top , right , bottom  } = item;
+    const { left, top, right, bottom } = item;
     const apexesInArea = (0, _helpersSegmentJs.C)({
         x: left,
         y: top
@@ -10655,7 +10737,7 @@ function buildPointLabelItems(scale, labelSizes, padding) {
     const items = [];
     const valueCount = scale._pointLabels.length;
     const opts = scale.options;
-    const { centerPointLabels , display  } = opts.pointLabels;
+    const { centerPointLabels, display } = opts.pointLabels;
     const itemOpts = {
         extra: getTickBackdropHeight(opts) / 2,
         additionalAngle: centerPointLabels ? (0, _helpersSegmentJs.P) / valueCount : 0
@@ -10689,8 +10771,8 @@ function yForAngle(y, h, angle) {
     return y;
 }
 function drawPointLabelBox(ctx, opts, item) {
-    const { left , top , right , bottom  } = item;
-    const { backdropColor  } = opts;
+    const { left, top, right, bottom } = item;
+    const { backdropColor } = opts;
     if (!(0, _helpersSegmentJs.k)(backdropColor)) {
         const borderRadius = (0, _helpersSegmentJs.aw)(opts.borderRadius);
         const padding = (0, _helpersSegmentJs.E)(opts.backdropPadding);
@@ -10713,14 +10795,14 @@ function drawPointLabelBox(ctx, opts, item) {
     }
 }
 function drawPointLabels(scale, labelCount) {
-    const { ctx , options: { pointLabels  }  } = scale;
+    const { ctx, options: { pointLabels } } = scale;
     for(let i = labelCount - 1; i >= 0; i--){
         const item = scale._pointLabelItems[i];
         if (!item.visible) continue;
         const optsAtIndex = pointLabels.setContext(scale.getPointLabelContext(i));
         drawPointLabelBox(ctx, optsAtIndex, item);
         const plFont = (0, _helpersSegmentJs.a0)(optsAtIndex.font);
-        const { x , y , textAlign  } = item;
+        const { x, y, textAlign } = item;
         (0, _helpersSegmentJs.Z)(ctx, scale._pointLabels[i], x, y + plFont.lineHeight / 2, plFont, {
             color: optsAtIndex.color,
             textAlign: textAlign,
@@ -10729,7 +10811,7 @@ function drawPointLabels(scale, labelCount) {
     }
 }
 function pathRadiusLine(scale, radius, circular, labelCount) {
-    const { ctx  } = scale;
+    const { ctx } = scale;
     if (circular) ctx.arc(scale.xCenter, scale.yCenter, radius, 0, (0, _helpersSegmentJs.T));
     else {
         let pointPosition = scale.getPointPosition(0, radius);
@@ -10743,7 +10825,7 @@ function pathRadiusLine(scale, radius, circular, labelCount) {
 function drawRadiusLine(scale, gridLineOpts, radius, labelCount, borderOpts) {
     const ctx = scale.ctx;
     const circular = gridLineOpts.circular;
-    const { color , lineWidth  } = gridLineOpts;
+    const { color, lineWidth } = gridLineOpts;
     if (!circular && !labelCount || !color || !lineWidth || radius < 0) return;
     ctx.save();
     ctx.strokeStyle = color;
@@ -10756,14 +10838,65 @@ function drawRadiusLine(scale, gridLineOpts, radius, labelCount, borderOpts) {
     ctx.stroke();
     ctx.restore();
 }
-function createPointLabelContext(parent, index75, label) {
+function createPointLabelContext(parent, index, label) {
     return (0, _helpersSegmentJs.j)(parent, {
         label,
-        index: index75,
+        index,
         type: "pointLabel"
     });
 }
 class RadialLinearScale extends LinearScaleBase {
+    static id = "radialLinear";
+    static defaults = {
+        display: true,
+        animate: true,
+        position: "chartArea",
+        angleLines: {
+            display: true,
+            lineWidth: 1,
+            borderDash: [],
+            borderDashOffset: 0.0
+        },
+        grid: {
+            circular: false
+        },
+        startAngle: 0,
+        ticks: {
+            showLabelBackdrop: true,
+            callback: (0, _helpersSegmentJs.aL).formatters.numeric
+        },
+        pointLabels: {
+            backdropColor: undefined,
+            backdropPadding: 2,
+            display: true,
+            font: {
+                size: 10
+            },
+            callback (label) {
+                return label;
+            },
+            padding: 5,
+            centerPointLabels: false
+        }
+    };
+    static defaultRoutes = {
+        "angleLines.color": "borderColor",
+        "pointLabels.color": "color",
+        "ticks.color": "color"
+    };
+    static descriptors = {
+        angleLines: {
+            _fallback: "grid"
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this.xCenter = undefined;
+        this.yCenter = undefined;
+        this.drawingArea = undefined;
+        this._pointLabels = [];
+        this._pointLabelItems = [];
+    }
     setDimensions() {
         const padding = this._padding = (0, _helpersSegmentJs.E)(getTickBackdropHeight(this.options) / 2);
         const w = this.width = this.maxWidth - padding.width;
@@ -10773,7 +10906,7 @@ class RadialLinearScale extends LinearScaleBase {
         this.drawingArea = Math.floor(Math.min(w, h) / 2);
     }
     determineDataLimits() {
-        const { min , max  } = this.getMinMax(false);
+        const { min, max } = this.getMinMax(false);
         this.min = (0, _helpersSegmentJs.g)(min) && !isNaN(min) ? min : 0;
         this.max = (0, _helpersSegmentJs.g)(max) && !isNaN(max) ? max : 0;
         this.handleTickRangeOptions();
@@ -10783,10 +10916,10 @@ class RadialLinearScale extends LinearScaleBase {
     }
     generateTickLabels(ticks) {
         LinearScaleBase.prototype.generateTickLabels.call(this, ticks);
-        this._pointLabels = this.getLabels().map((value, index76)=>{
+        this._pointLabels = this.getLabels().map((value, index)=>{
             const label = (0, _helpersSegmentJs.Q)(this.options.pointLabels.callback, [
                 value,
-                index76
+                index
             ], this);
             return label || label === 0 ? label : "";
         }).filter((v, i)=>this.chart.getDataVisibility(i));
@@ -10801,10 +10934,10 @@ class RadialLinearScale extends LinearScaleBase {
         this.yCenter += Math.floor((topMovement - bottomMovement) / 2);
         this.drawingArea -= Math.min(this.drawingArea / 2, Math.max(leftMovement, rightMovement, topMovement, bottomMovement));
     }
-    getIndexAngle(index77) {
+    getIndexAngle(index) {
         const angleMultiplier = (0, _helpersSegmentJs.T) / (this._pointLabels.length || 1);
         const startAngle = this.options.startAngle || 0;
-        return (0, _helpersSegmentJs.ay)(index77 * angleMultiplier + (0, _helpersSegmentJs.t)(startAngle));
+        return (0, _helpersSegmentJs.ay)(index * angleMultiplier + (0, _helpersSegmentJs.t)(startAngle));
     }
     getDistanceFromCenterForValue(value) {
         if ((0, _helpersSegmentJs.k)(value)) return NaN;
@@ -10817,29 +10950,29 @@ class RadialLinearScale extends LinearScaleBase {
         const scaledDistance = distance / (this.drawingArea / (this.max - this.min));
         return this.options.reverse ? this.max - scaledDistance : this.min + scaledDistance;
     }
-    getPointLabelContext(index78) {
+    getPointLabelContext(index) {
         const pointLabels = this._pointLabels || [];
-        if (index78 >= 0 && index78 < pointLabels.length) {
-            const pointLabel = pointLabels[index78];
-            return createPointLabelContext(this.getContext(), index78, pointLabel);
+        if (index >= 0 && index < pointLabels.length) {
+            const pointLabel = pointLabels[index];
+            return createPointLabelContext(this.getContext(), index, pointLabel);
         }
     }
-    getPointPosition(index79, distanceFromCenter, additionalAngle = 0) {
-        const angle = this.getIndexAngle(index79) - (0, _helpersSegmentJs.H) + additionalAngle;
+    getPointPosition(index, distanceFromCenter, additionalAngle = 0) {
+        const angle = this.getIndexAngle(index) - (0, _helpersSegmentJs.H) + additionalAngle;
         return {
             x: Math.cos(angle) * distanceFromCenter + this.xCenter,
             y: Math.sin(angle) * distanceFromCenter + this.yCenter,
             angle
         };
     }
-    getPointPositionForValue(index80, value) {
-        return this.getPointPosition(index80, this.getDistanceFromCenterForValue(value));
+    getPointPositionForValue(index, value) {
+        return this.getPointPosition(index, this.getDistanceFromCenterForValue(value));
     }
-    getBasePosition(index81) {
-        return this.getPointPositionForValue(index81 || 0, this.getBaseValue());
+    getBasePosition(index) {
+        return this.getPointPositionForValue(index || 0, this.getBaseValue());
     }
-    getPointLabelPosition(index82) {
-        const { left , top , right , bottom  } = this._pointLabelItems[index82];
+    getPointLabelPosition(index) {
+        const { left, top, right, bottom } = this._pointLabelItems[index];
         return {
             left,
             top,
@@ -10848,7 +10981,7 @@ class RadialLinearScale extends LinearScaleBase {
         };
     }
     drawBackground() {
-        const { backgroundColor , grid: { circular  }  } = this.options;
+        const { backgroundColor, grid: { circular } } = this.options;
         if (backgroundColor) {
             const ctx = this.ctx;
             ctx.save();
@@ -10863,14 +10996,14 @@ class RadialLinearScale extends LinearScaleBase {
     drawGrid() {
         const ctx = this.ctx;
         const opts = this.options;
-        const { angleLines , grid , border  } = opts;
+        const { angleLines, grid, border } = opts;
         const labelCount = this._pointLabels.length;
         let i, offset, position;
         if (opts.pointLabels.display) drawPointLabels(this, labelCount);
-        if (grid.display) this.ticks.forEach((tick, index83)=>{
-            if (index83 !== 0) {
+        if (grid.display) this.ticks.forEach((tick, index)=>{
+            if (index !== 0) {
                 offset = this.getDistanceFromCenterForValue(tick.value);
-                const context = this.getContext(index83);
+                const context = this.getContext(index);
                 const optsAtIndex = grid.setContext(context);
                 const optsAtIndexBorder = border.setContext(context);
                 drawRadiusLine(this, optsAtIndex, offset, labelCount, optsAtIndexBorder);
@@ -10880,7 +11013,7 @@ class RadialLinearScale extends LinearScaleBase {
             ctx.save();
             for(i = labelCount - 1; i >= 0; i--){
                 const optsAtIndex = angleLines.setContext(this.getPointLabelContext(i));
-                const { color , lineWidth  } = optsAtIndex;
+                const { color, lineWidth } = optsAtIndex;
                 if (!lineWidth || !color) continue;
                 ctx.lineWidth = lineWidth;
                 ctx.strokeStyle = color;
@@ -10909,11 +11042,11 @@ class RadialLinearScale extends LinearScaleBase {
         ctx.rotate(startAngle);
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        this.ticks.forEach((tick, index84)=>{
-            if (index84 === 0 && !opts.reverse) return;
-            const optsAtIndex = tickOpts.setContext(this.getContext(index84));
+        this.ticks.forEach((tick, index)=>{
+            if (index === 0 && !opts.reverse) return;
+            const optsAtIndex = tickOpts.setContext(this.getContext(index));
             const tickFont = (0, _helpersSegmentJs.a0)(optsAtIndex.font);
-            offset = this.getDistanceFromCenterForValue(this.ticks[index84].value);
+            offset = this.getDistanceFromCenterForValue(this.ticks[index].value);
             if (optsAtIndex.showLabelBackdrop) {
                 ctx.font = tickFont.string;
                 width = ctx.measureText(tick.label).width;
@@ -10922,64 +11055,15 @@ class RadialLinearScale extends LinearScaleBase {
                 ctx.fillRect(-width / 2 - padding.left, -offset - tickFont.size / 2 - padding.top, width + padding.width, tickFont.size + padding.height);
             }
             (0, _helpersSegmentJs.Z)(ctx, tick.label, 0, -offset, tickFont, {
-                color: optsAtIndex.color
+                color: optsAtIndex.color,
+                strokeColor: optsAtIndex.textStrokeColor,
+                strokeWidth: optsAtIndex.textStrokeWidth
             });
         });
         ctx.restore();
     }
     drawTitle() {}
-    constructor(cfg){
-        super(cfg);
-        this.xCenter = undefined;
-        this.yCenter = undefined;
-        this.drawingArea = undefined;
-        this._pointLabels = [];
-        this._pointLabelItems = [];
-    }
 }
-(0, _definePropertyMjsDefault.default)(RadialLinearScale, "id", "radialLinear");
-(0, _definePropertyMjsDefault.default)(RadialLinearScale, "defaults", {
-    display: true,
-    animate: true,
-    position: "chartArea",
-    angleLines: {
-        display: true,
-        lineWidth: 1,
-        borderDash: [],
-        borderDashOffset: 0.0
-    },
-    grid: {
-        circular: false
-    },
-    startAngle: 0,
-    ticks: {
-        showLabelBackdrop: true,
-        callback: (0, _helpersSegmentJs.aL).formatters.numeric
-    },
-    pointLabels: {
-        backdropColor: undefined,
-        backdropPadding: 2,
-        display: true,
-        font: {
-            size: 10
-        },
-        callback (label) {
-            return label;
-        },
-        padding: 5,
-        centerPointLabels: false
-    }
-});
-(0, _definePropertyMjsDefault.default)(RadialLinearScale, "defaultRoutes", {
-    "angleLines.color": "borderColor",
-    "pointLabels.color": "color",
-    "ticks.color": "color"
-});
-(0, _definePropertyMjsDefault.default)(RadialLinearScale, "descriptors", {
-    angleLines: {
-        _fallback: "grid"
-    }
-});
 const INTERVALS = {
     millisecond: {
         common: true,
@@ -11033,7 +11117,7 @@ function sorter(a, b) {
 function parse(scale, input) {
     if ((0, _helpersSegmentJs.k)(input)) return null;
     const adapter = scale._adapter;
-    const { parser , round , isoWeekday  } = scale._parseOpts;
+    const { parser, round, isoWeekday } = scale._parseOpts;
     let value = input;
     if (typeof parser === "function") value = parser(value);
     if (!(0, _helpersSegmentJs.g)(value)) value = typeof parser === "string" ? adapter.parse(value, parser) : adapter.parse(value);
@@ -11065,38 +11149,71 @@ function determineMajorUnit(unit) {
 function addTick(ticks, time, timestamps) {
     if (!timestamps) ticks[time] = true;
     else if (timestamps.length) {
-        const { lo , hi  } = (0, _helpersSegmentJs.aP)(timestamps, time);
+        const { lo, hi } = (0, _helpersSegmentJs.aP)(timestamps, time);
         const timestamp = timestamps[lo] >= time ? timestamps[lo] : timestamps[hi];
         ticks[timestamp] = true;
     }
 }
-function setMajorTicks(scale, ticks, map1, majorUnit) {
+function setMajorTicks(scale, ticks, map, majorUnit) {
     const adapter = scale._adapter;
     const first = +adapter.startOf(ticks[0].value, majorUnit);
     const last = ticks[ticks.length - 1].value;
-    let major, index85;
+    let major, index;
     for(major = first; major <= last; major = +adapter.add(major, 1, majorUnit)){
-        index85 = map1[major];
-        if (index85 >= 0) ticks[index85].major = true;
+        index = map[major];
+        if (index >= 0) ticks[index].major = true;
     }
     return ticks;
 }
 function ticksFromTimestamps(scale, values, majorUnit) {
     const ticks = [];
-    const map2 = {};
+    const map = {};
     const ilen = values.length;
     let i, value;
     for(i = 0; i < ilen; ++i){
         value = values[i];
-        map2[value] = i;
+        map[value] = i;
         ticks.push({
             value,
             major: false
         });
     }
-    return ilen === 0 || !majorUnit ? ticks : setMajorTicks(scale, ticks, map2, majorUnit);
+    return ilen === 0 || !majorUnit ? ticks : setMajorTicks(scale, ticks, map, majorUnit);
 }
 class TimeScale extends Scale {
+    static id = "time";
+    static defaults = {
+        bounds: "data",
+        adapters: {},
+        time: {
+            parser: false,
+            unit: false,
+            round: false,
+            isoWeekday: false,
+            minUnit: "millisecond",
+            displayFormats: {}
+        },
+        ticks: {
+            source: "auto",
+            callback: false,
+            major: {
+                enabled: false
+            }
+        }
+    };
+    constructor(props){
+        super(props);
+        this._cache = {
+            data: [],
+            labels: [],
+            all: []
+        };
+        this._unit = "day";
+        this._majorUnit = undefined;
+        this._offsets = {};
+        this._normalized = false;
+        this._parseOpts = undefined;
+    }
     init(scaleOpts, opts = {}) {
         const time = scaleOpts.time || (scaleOpts.time = {});
         const adapter = this._adapter = new adapters._date(scaleOpts.adapters.date);
@@ -11126,7 +11243,7 @@ class TimeScale extends Scale {
         const options = this.options;
         const adapter = this._adapter;
         const unit = options.time.unit || "day";
-        let { min , max , minDefined , maxDefined  } = this.getUserBounds();
+        let { min, max, minDefined, maxDefined } = this.getUserBounds();
         function _applyBounds(bounds) {
             if (!minDefined && !isNaN(bounds.min)) min = Math.min(min, bounds.min);
             if (!maxDefined && !isNaN(bounds.max)) max = Math.max(max, bounds.max);
@@ -11214,7 +11331,7 @@ class TimeScale extends Scale {
         const timestamps = options.ticks.source === "data" && this.getDataTimestamps();
         for(time = first, count = 0; time < max; time = +adapter.add(time, stepSize, minor), count++)addTick(ticks, time, timestamps);
         if (time === max || options.bounds === "ticks" || count === 1) addTick(ticks, time, timestamps);
-        return Object.keys(ticks).sort((a, b)=>a - b).map((x)=>+x);
+        return Object.keys(ticks).sort(sorter).map((x)=>+x);
     }
     getLabelForValue(value) {
         const adapter = this._adapter;
@@ -11229,12 +11346,12 @@ class TimeScale extends Scale {
         const fmt = format || formats[unit];
         return this._adapter.format(value, fmt);
     }
-    _tickFormatFunction(time, index86, ticks, format) {
+    _tickFormatFunction(time, index, ticks, format) {
         const options = this.options;
         const formatter = options.ticks.callback;
         if (formatter) return (0, _helpersSegmentJs.Q)(formatter, [
             time,
-            index86,
+            index,
             ticks
         ], this);
         const formats = options.time.displayFormats;
@@ -11242,7 +11359,7 @@ class TimeScale extends Scale {
         const majorUnit = this._majorUnit;
         const minorFormat = unit && formats[unit];
         const majorFormat = majorUnit && formats[majorUnit];
-        const tick = ticks[index86];
+        const tick = ticks[index];
         const major = majorUnit && majorFormat && tick && tick.major;
         return this._adapter.format(time, format || (major ? majorFormat : minorFormat));
     }
@@ -11309,57 +11426,32 @@ class TimeScale extends Scale {
     normalize(values) {
         return (0, _helpersSegmentJs._)(values.sort(sorter));
     }
-    constructor(props){
-        super(props);
-        this._cache = {
-            data: [],
-            labels: [],
-            all: []
-        };
-        this._unit = "day";
-        this._majorUnit = undefined;
-        this._offsets = {};
-        this._normalized = false;
-        this._parseOpts = undefined;
-    }
 }
-(0, _definePropertyMjsDefault.default)(TimeScale, "id", "time");
-(0, _definePropertyMjsDefault.default)(TimeScale, "defaults", {
-    bounds: "data",
-    adapters: {},
-    time: {
-        parser: false,
-        unit: false,
-        round: false,
-        isoWeekday: false,
-        minUnit: "millisecond",
-        displayFormats: {}
-    },
-    ticks: {
-        source: "auto",
-        callback: false,
-        major: {
-            enabled: false
-        }
-    }
-});
 function interpolate(table, val, reverse) {
     let lo = 0;
     let hi = table.length - 1;
     let prevSource, nextSource, prevTarget, nextTarget;
     if (reverse) {
-        if (val >= table[lo].pos && val <= table[hi].pos) ({ lo , hi  } = (0, _helpersSegmentJs.B)(table, "pos", val));
-        ({ pos: prevSource , time: prevTarget  } = table[lo]);
-        ({ pos: nextSource , time: nextTarget  } = table[hi]);
+        if (val >= table[lo].pos && val <= table[hi].pos) ({ lo, hi } = (0, _helpersSegmentJs.B)(table, "pos", val));
+        ({ pos: prevSource, time: prevTarget } = table[lo]);
+        ({ pos: nextSource, time: nextTarget } = table[hi]);
     } else {
-        if (val >= table[lo].time && val <= table[hi].time) ({ lo , hi  } = (0, _helpersSegmentJs.B)(table, "time", val));
-        ({ time: prevSource , pos: prevTarget  } = table[lo]);
-        ({ time: nextSource , pos: nextTarget  } = table[hi]);
+        if (val >= table[lo].time && val <= table[hi].time) ({ lo, hi } = (0, _helpersSegmentJs.B)(table, "time", val));
+        ({ time: prevSource, pos: prevTarget } = table[lo]);
+        ({ time: nextSource, pos: nextTarget } = table[hi]);
     }
     const span = nextSource - prevSource;
     return span ? prevTarget + (nextTarget - prevTarget) * (val - prevSource) / span : prevTarget;
 }
 class TimeSeriesScale extends TimeScale {
+    static id = "timeseries";
+    static defaults = TimeScale.defaults;
+    constructor(props){
+        super(props);
+        this._table = [];
+        this._minPos = undefined;
+        this._tableRange = undefined;
+    }
     initOffsets() {
         const timestamps = this._getTimestampsForTable();
         const table = this._table = this.buildLookupTable(timestamps);
@@ -11368,7 +11460,7 @@ class TimeSeriesScale extends TimeScale {
         super.initOffsets(timestamps);
     }
     buildLookupTable(timestamps) {
-        const { min , max  } = this;
+        const { min, max } = this;
         const items = [];
         const table = [];
         let i, ilen, prev, curr, next;
@@ -11397,6 +11489,14 @@ class TimeSeriesScale extends TimeScale {
         }
         return table;
     }
+    _generate() {
+        const min = this.min;
+        const max = this.max;
+        let timestamps = super.getDataTimestamps();
+        if (!timestamps.includes(min) || !timestamps.length) timestamps.splice(0, 0, min);
+        if (!timestamps.includes(max) || timestamps.length === 1) timestamps.push(max);
+        return timestamps.sort((a, b)=>a - b);
+    }
     _getTimestampsForTable() {
         let timestamps = this._cache.all || [];
         if (timestamps.length) return timestamps;
@@ -11415,15 +11515,7 @@ class TimeSeriesScale extends TimeScale {
         const decimal = this.getDecimalForPixel(pixel) / offsets.factor - offsets.end;
         return interpolate(this._table, decimal * this._tableRange + this._minPos, true);
     }
-    constructor(props){
-        super(props);
-        this._table = [];
-        this._minPos = undefined;
-        this._tableRange = undefined;
-    }
 }
-(0, _definePropertyMjsDefault.default)(TimeSeriesScale, "id", "timeseries");
-(0, _definePropertyMjsDefault.default)(TimeSeriesScale, "defaults", TimeScale.defaults);
 var scales = /*#__PURE__*/ Object.freeze({
     __proto__: null,
     CategoryScale: CategoryScale,
@@ -11440,23 +11532,13 @@ const registerables = [
     scales
 ];
 
-},{"@swc/helpers/src/_define_property.mjs":"2NxdC","./chunks/helpers.segment.js":"6YpJw","@kurkle/color":"jJiT4","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"2NxdC":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-function _defineProperty(obj, key, value) {
-    if (key in obj) Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-    });
-    else obj[key] = value;
-    return obj;
-}
-exports.default = _defineProperty;
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"6YpJw":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+},{"./chunks/helpers.segment.js":"6YpJw","@kurkle/color":"jJiT4","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"6YpJw":[function(require,module,exports) {
+/*!
+ * Chart.js v4.3.2
+ * https://www.chartjs.org
+ * (c) 2023 Chart.js Contributors
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "$", ()=>unclipArea);
 parcelHelpers.export(exports, "A", ()=>_rlookupByKey);
@@ -11583,12 +11665,7 @@ parcelHelpers.export(exports, "w", ()=>_scaleRangesChanged);
 parcelHelpers.export(exports, "x", ()=>isNumber);
 parcelHelpers.export(exports, "y", ()=>_parseObjectDataRadialScale);
 parcelHelpers.export(exports, "z", ()=>getRelativePosition);
-/*!
- * Chart.js v4.3.0
- * https://www.chartjs.org
- * (c) 2023 Chart.js Contributors
- * Released under the MIT License
- */ var _color = require("@kurkle/color");
+var _color = require("@kurkle/color");
 /**
  * @namespace Chart.helpers
  */ /**
@@ -12057,9 +12134,9 @@ function unlistenArrayEvents(array, listener) {
 /**
  * @param items
  */ function _arrayUnique(items) {
-    const set1 = new Set(items);
-    if (set1.size === items.length) return items;
-    return Array.from(set1);
+    const set = new Set(items);
+    if (set.size === items.length) return items;
+    return Array.from(set);
 }
 function fontString(pixelSize, fontStyle, fontFamily) {
     return fontStyle + " " + pixelSize + "px " + fontFamily;
@@ -12067,8 +12144,8 @@ function fontString(pixelSize, fontStyle, fontFamily) {
 /**
 * Request animation polyfill
 */ const requestAnimFrame = function() {
-    if (typeof window === "undefined") return function(callback1) {
-        return callback1();
+    if (typeof window === "undefined") return function(callback) {
+        return callback();
     };
     return window.requestAnimationFrame;
 }();
@@ -12125,10 +12202,10 @@ function fontString(pixelSize, fontStyle, fontFamily) {
     let start = 0;
     let count = pointCount;
     if (meta._sorted) {
-        const { iScale , _parsed  } = meta;
+        const { iScale, _parsed } = meta;
         const axis = iScale.axis;
-        const { min , max , minDefined , maxDefined  } = iScale.getUserBounds();
-        if (minDefined) start = _limitValue(Math.min(_lookupByKey(_parsed, iScale.axis, min).lo, animationsDisabled ? pointCount : _lookupByKey(points, axis, iScale.getPixelForValue(min)).lo), 0, pointCount - 1);
+        const { min, max, minDefined, maxDefined } = iScale.getUserBounds();
+        if (minDefined) start = _limitValue(Math.min(_lookupByKey(_parsed, axis, min).lo, animationsDisabled ? pointCount : _lookupByKey(points, axis, iScale.getPixelForValue(min)).lo), 0, pointCount - 1);
         if (maxDefined) count = _limitValue(Math.max(_lookupByKey(_parsed, iScale.axis, max, true).hi + 1, animationsDisabled ? 0 : _lookupByKey(points, axis, iScale.getPixelForValue(max), true).hi + 1), start, pointCount) - start;
         else count = pointCount - start;
     }
@@ -12143,7 +12220,7 @@ function fontString(pixelSize, fontStyle, fontFamily) {
  * @returns {boolean}
  * @private
  */ function _scaleRangesChanged(meta) {
-    const { xScale , yScale , _scaleRanges  } = meta;
+    const { xScale, yScale, _scaleRanges } = meta;
     const newRanges = {
         xmin: xScale.min,
         xmax: xScale.max,
@@ -12244,8 +12321,8 @@ const colors = [
     "borderColor",
     "backgroundColor"
 ];
-function applyAnimationsDefaults(defaults1) {
-    defaults1.set("animation", {
+function applyAnimationsDefaults(defaults) {
+    defaults.set("animation", {
         delay: undefined,
         duration: 1000,
         easing: "easeOutQuart",
@@ -12255,12 +12332,12 @@ function applyAnimationsDefaults(defaults1) {
         to: undefined,
         type: undefined
     });
-    defaults1.describe("animation", {
+    defaults.describe("animation", {
         _fallback: false,
         _indexable: false,
         _scriptable: (name)=>name !== "onProgress" && name !== "onComplete" && name !== "fn"
     });
-    defaults1.set("animations", {
+    defaults.set("animations", {
         colors: {
             type: "color",
             properties: colors
@@ -12270,10 +12347,10 @@ function applyAnimationsDefaults(defaults1) {
             properties: numbers
         }
     });
-    defaults1.describe("animations", {
+    defaults.describe("animations", {
         _fallback: "animation"
     });
-    defaults1.set("transitions", {
+    defaults.set("transitions", {
         active: {
             animation: {
                 duration: 400
@@ -12309,8 +12386,8 @@ function applyAnimationsDefaults(defaults1) {
         }
     });
 }
-function applyLayoutsDefaults(defaults2) {
-    defaults2.set("layout", {
+function applyLayoutsDefaults(defaults) {
+    defaults.set("layout", {
         autoPadding: true,
         padding: {
             top: 0,
@@ -12380,8 +12457,8 @@ function calculateDelta(tickValue, ticks) {
 var Ticks = {
     formatters
 };
-function applyScaleDefaults(defaults3) {
-    defaults3.set("scale", {
+function applyScaleDefaults(defaults) {
+    defaults.set("scale", {
         display: true,
         offset: false,
         reverse: false,
@@ -12433,19 +12510,19 @@ function applyScaleDefaults(defaults3) {
             backdropPadding: 2
         }
     });
-    defaults3.route("scale.ticks", "color", "", "color");
-    defaults3.route("scale.grid", "color", "", "borderColor");
-    defaults3.route("scale.border", "color", "", "borderColor");
-    defaults3.route("scale.title", "color", "", "color");
-    defaults3.describe("scale", {
+    defaults.route("scale.ticks", "color", "", "color");
+    defaults.route("scale.grid", "color", "", "borderColor");
+    defaults.route("scale.border", "color", "", "borderColor");
+    defaults.route("scale.title", "color", "", "color");
+    defaults.describe("scale", {
         _fallback: false,
         _scriptable: (name)=>!name.startsWith("before") && !name.startsWith("after") && name !== "callback" && name !== "parser",
         _indexable: (name)=>name !== "borderDash" && name !== "tickBorderDash" && name !== "dash"
     });
-    defaults3.describe("scales", {
+    defaults.describe("scales", {
         _fallback: "scale"
     });
-    defaults3.describe("scale.ticks", {
+    defaults.describe("scale.ticks", {
         _scriptable: (name)=>name !== "backdropPadding" && name !== "callback",
         _indexable: (name)=>name !== "backdropPadding"
     });
@@ -12466,45 +12543,7 @@ function set(root, scope, values) {
     return merge(getScope$1(root, ""), scope);
 }
 class Defaults {
-    set(scope, values) {
-        return set(this, scope, values);
-    }
-    get(scope) {
-        return getScope$1(this, scope);
-    }
-    describe(scope, values) {
-        return set(descriptors, scope, values);
-    }
-    override(scope, values) {
-        return set(overrides, scope, values);
-    }
-    route(scope, name, targetScope, targetName) {
-        const scopeObject = getScope$1(this, scope);
-        const targetScopeObject = getScope$1(this, targetScope);
-        const privateName = "_" + name;
-        Object.defineProperties(scopeObject, {
-            [privateName]: {
-                value: scopeObject[name],
-                writable: true
-            },
-            [name]: {
-                enumerable: true,
-                get () {
-                    const local = this[privateName];
-                    const target = targetScopeObject[targetName];
-                    if (isObject(local)) return Object.assign({}, target, local);
-                    return valueOrDefault(local, target);
-                },
-                set (value) {
-                    this[privateName] = value;
-                }
-            }
-        });
-    }
-    apply(appliers) {
-        appliers.forEach((apply)=>apply(this));
-    }
-    constructor(_descriptors1, _appliers){
+    constructor(_descriptors, _appliers){
         this.animation = undefined;
         this.backgroundColor = "rgba(0,0,0,0.1)";
         this.borderColor = "rgba(0,0,0,0.1)";
@@ -12546,8 +12585,46 @@ class Defaults {
         this.scales = {};
         this.showLine = true;
         this.drawActiveElementsOnTop = true;
-        this.describe(_descriptors1);
+        this.describe(_descriptors);
         this.apply(_appliers);
+    }
+    set(scope, values) {
+        return set(this, scope, values);
+    }
+    get(scope) {
+        return getScope$1(this, scope);
+    }
+    describe(scope, values) {
+        return set(descriptors, scope, values);
+    }
+    override(scope, values) {
+        return set(overrides, scope, values);
+    }
+    route(scope, name, targetScope, targetName) {
+        const scopeObject = getScope$1(this, scope);
+        const targetScopeObject = getScope$1(this, targetScope);
+        const privateName = "_" + name;
+        Object.defineProperties(scopeObject, {
+            [privateName]: {
+                value: scopeObject[name],
+                writable: true
+            },
+            [name]: {
+                enumerable: true,
+                get () {
+                    const local = this[privateName];
+                    const target = targetScopeObject[targetName];
+                    if (isObject(local)) return Object.assign({}, target, local);
+                    return valueOrDefault(local, target);
+                },
+                set (value) {
+                    this[privateName] = value;
+                }
+            }
+        });
+    }
+    apply(appliers) {
+        appliers.forEach((apply)=>apply(this));
     }
 }
 var defaults = /* #__PURE__ */ new Defaults({
@@ -12874,7 +12951,7 @@ function drawBackdrop(ctx, opts) {
  * @param ctx - Context
  * @param rect - Bounding rect
  */ function addRoundedRectPath(ctx, rect) {
-    const { x , y , w , h , radius  } = rect;
+    const { x, y, w, h, radius } = rect;
     // top left arc
     ctx.arc(x + radius.topLeft, y + radius.topLeft, radius.topLeft, -HALF_PI, PI, true);
     // line from top left to bottom left
@@ -12923,7 +13000,7 @@ function _readValueToProps(value, props) {
     const objProps = isObject(props);
     const keys = objProps ? Object.keys(props) : props;
     const read = isObject(value) ? objProps ? (prop)=>valueOrDefault(value[prop], value[props[prop]]) : (prop)=>value[prop] : ()=>value;
-    for (const prop1 of keys)ret[prop1] = numberOrZero(read(prop1));
+    for (const prop of keys)ret[prop] = numberOrZero(read(prop));
     return ret;
 }
 /**
@@ -13031,7 +13108,7 @@ function _readValueToProps(value, props) {
  * @param beginAtZero
  * @private
  */ function _addGrace(minmax, grace, beginAtZero) {
-    const { min , max  } = minmax;
+    const { min, max } = minmax;
     const change = toDimension(grace, (max - min) / 2);
     const keepZero = (value, add)=>beginAtZero && value === 0 ? 0 : value + add;
     return {
@@ -13179,11 +13256,11 @@ function createContext(parentContext, context) {
 }
 /**
  * @private
- */ function _descriptors(proxy, defaults4 = {
+ */ function _descriptors(proxy, defaults = {
     scriptable: true,
     indexable: true
 }) {
-    const { _scriptable =defaults4.scriptable , _indexable =defaults4.indexable , _allKeys =defaults4.allKeys  } = proxy;
+    const { _scriptable = defaults.scriptable, _indexable = defaults.indexable, _allKeys = defaults.allKeys } = proxy;
     return {
         allKeys: _allKeys,
         scriptable: _scriptable,
@@ -13194,25 +13271,25 @@ function createContext(parentContext, context) {
 }
 const readKey = (prefix, name)=>prefix ? prefix + _capitalize(name) : name;
 const needsSubResolver = (prop, value)=>isObject(value) && prop !== "adapters" && (Object.getPrototypeOf(value) === null || value.constructor === Object);
-function _cached(target, prop, resolve1) {
+function _cached(target, prop, resolve) {
     if (Object.prototype.hasOwnProperty.call(target, prop)) return target[prop];
-    const value = resolve1();
+    const value = resolve();
     // cache the resolved value
     target[prop] = value;
     return value;
 }
 function _resolveWithContext(target, prop, receiver) {
-    const { _proxy , _context , _subProxy , _descriptors: descriptors1  } = target;
+    const { _proxy, _context, _subProxy, _descriptors: descriptors } = target;
     let value = _proxy[prop]; // resolve from proxy
     // resolve with context
-    if (isFunction(value) && descriptors1.isScriptable(prop)) value = _resolveScriptable(prop, value, target, receiver);
-    if (isArray(value) && value.length) value = _resolveArray(prop, value, target, descriptors1.isIndexable);
+    if (isFunction(value) && descriptors.isScriptable(prop)) value = _resolveScriptable(prop, value, target, receiver);
+    if (isArray(value) && value.length) value = _resolveArray(prop, value, target, descriptors.isIndexable);
     if (needsSubResolver(prop, value)) // if the resolved value is an object, create a sub resolver for it
-    value = _attachContext(value, _context, _subProxy && _subProxy[prop], descriptors1);
+    value = _attachContext(value, _context, _subProxy && _subProxy[prop], descriptors);
     return value;
 }
 function _resolveScriptable(prop, getValue, target, receiver) {
-    const { _proxy , _context , _subProxy , _stack  } = target;
+    const { _proxy, _context, _subProxy, _stack } = target;
     if (_stack.has(prop)) throw new Error("Recursion detected: " + Array.from(_stack).join("->") + "->" + prop);
     _stack.add(prop);
     let value = getValue(_context, _subProxy || receiver);
@@ -13222,7 +13299,7 @@ function _resolveScriptable(prop, getValue, target, receiver) {
     return value;
 }
 function _resolveArray(prop, value, target, isIndexable) {
-    const { _proxy , _context , _subProxy , _descriptors: descriptors2  } = target;
+    const { _proxy, _context, _subProxy, _descriptors: descriptors } = target;
     if (typeof _context.index !== "undefined" && isIndexable(prop)) return value[_context.index % value.length];
     else if (isObject(value[0])) {
         // Array of objects, return array or resolvers
@@ -13231,7 +13308,7 @@ function _resolveArray(prop, value, target, isIndexable) {
         value = [];
         for (const item of arr){
             const resolver = createSubResolver(scopes, _proxy, prop, item);
-            value.push(_attachContext(resolver, _context, _subProxy && _subProxy[prop], descriptors2));
+            value.push(_attachContext(resolver, _context, _subProxy && _subProxy[prop], descriptors));
         }
     }
     return value;
@@ -13240,11 +13317,11 @@ function resolveFallback(fallback, prop, value) {
     return isFunction(fallback) ? fallback(prop, value) : fallback;
 }
 const getScope = (key, parent)=>key === true ? parent : typeof key === "string" ? resolveObjectKey(parent, key) : undefined;
-function addScopes(set2, parentScopes, key, parentFallback, value) {
+function addScopes(set, parentScopes, key, parentFallback, value) {
     for (const parent of parentScopes){
         const scope = getScope(key, parent);
         if (scope) {
-            set2.add(scope);
+            set.add(scope);
             const fallback = resolveFallback(scope._fallback, key, value);
             if (typeof fallback !== "undefined" && fallback !== key && fallback !== parentFallback) // When we reach the descriptor that defines a new _fallback, return that.
             // The fallback will resume to that new scope.
@@ -13262,20 +13339,20 @@ function createSubResolver(parentScopes, resolver, prop, value) {
         ...parentScopes,
         ...rootScopes
     ];
-    const set3 = new Set();
-    set3.add(value);
-    let key = addScopesFromKey(set3, allScopes, prop, fallback || prop, value);
+    const set = new Set();
+    set.add(value);
+    let key = addScopesFromKey(set, allScopes, prop, fallback || prop, value);
     if (key === null) return false;
     if (typeof fallback !== "undefined" && fallback !== prop) {
-        key = addScopesFromKey(set3, allScopes, fallback, key, value);
+        key = addScopesFromKey(set, allScopes, fallback, key, value);
         if (key === null) return false;
     }
-    return _createResolver(Array.from(set3), [
+    return _createResolver(Array.from(set), [
         ""
     ], rootScopes, fallback, ()=>subGetTarget(resolver, prop, value));
 }
-function addScopesFromKey(set4, allScopes, key, fallback, item) {
-    while(key)key = addScopes(set4, allScopes, key, fallback, item);
+function addScopesFromKey(set, allScopes, key, fallback, item) {
+    while(key)key = addScopes(set, allScopes, key, fallback, item);
     return key;
 }
 function subGetTarget(resolver, prop, value) {
@@ -13306,13 +13383,13 @@ function getKeysFromAllScopes(target) {
     return keys;
 }
 function resolveKeysFromAllScopes(scopes) {
-    const set5 = new Set();
-    for (const scope of scopes)for (const key of Object.keys(scope).filter((k)=>!k.startsWith("_")))set5.add(key);
-    return Array.from(set5);
+    const set = new Set();
+    for (const scope of scopes)for (const key of Object.keys(scope).filter((k)=>!k.startsWith("_")))set.add(key);
+    return Array.from(set);
 }
 function _parseObjectDataRadialScale(meta, data, start, count) {
-    const { iScale  } = meta;
-    const { key ="r"  } = this._parsing;
+    const { iScale } = meta;
+    const { key = "r" } = this._parsing;
     const parsed = new Array(count);
     let i, ilen, index, item;
     for(i = 0, ilen = count; i < ilen; ++i){
@@ -13531,7 +13608,7 @@ const useOffsetPos = (x, y, target)=>(x > 0 || y > 0) && (!target || !target.sha
  */ function getCanvasPosition(e, canvas) {
     const touches = e.touches;
     const source = touches && touches.length ? touches[0] : e;
-    const { offsetX , offsetY  } = source;
+    const { offsetX, offsetY } = source;
     let box = false;
     let x, y;
     if (useOffsetPos(offsetX, offsetY, e.target)) {
@@ -13556,15 +13633,15 @@ const useOffsetPos = (x, y, target)=>(x > 0 || y > 0) && (!target || !target.sha
  * @returns x and y coordinates of the event
  */ function getRelativePosition(event, chart) {
     if ("native" in event) return event;
-    const { canvas , currentDevicePixelRatio  } = chart;
+    const { canvas, currentDevicePixelRatio } = chart;
     const style = getComputedStyle(canvas);
     const borderBox = style.boxSizing === "border-box";
     const paddings = getPositionedStyle(style, "padding");
     const borders = getPositionedStyle(style, "border", "width");
-    const { x , y , box  } = getCanvasPosition(event, canvas);
+    const { x, y, box } = getCanvasPosition(event, canvas);
     const xOffset = paddings.left + (box && borders.left);
     const yOffset = paddings.top + (box && borders.top);
-    let { width , height  } = chart;
+    let { width, height } = chart;
     if (borderBox) {
         width -= paddings.width + borders.width;
         height -= paddings.height + borders.height;
@@ -13607,7 +13684,7 @@ function getMaximumSize(canvas, bbWidth, bbHeight, aspectRatio) {
     const maxWidth = parseMaxStyle(style.maxWidth, canvas, "clientWidth") || INFINITY;
     const maxHeight = parseMaxStyle(style.maxHeight, canvas, "clientHeight") || INFINITY;
     const containerSize = getContainerSize(canvas, bbWidth, bbHeight);
-    let { width , height  } = containerSize;
+    let { width, height } = containerSize;
     if (style.boxSizing === "content-box") {
         const borders = getPositionedStyle(style, "border", "width");
         const paddings = getPositionedStyle(style, "padding");
@@ -13796,7 +13873,7 @@ function propertyFn(property) {
         normalize: (x)=>x
     };
 }
-function normalizeSegment({ start , end , count , loop , style  }) {
+function normalizeSegment({ start, end, count, loop, style }) {
     return {
         start: start % count,
         end: end % count,
@@ -13805,10 +13882,10 @@ function normalizeSegment({ start , end , count , loop , style  }) {
     };
 }
 function getSegment(segment, points, bounds) {
-    const { property , start: startBound , end: endBound  } = bounds;
-    const { between , normalize  } = propertyFn(property);
+    const { property, start: startBound, end: endBound } = bounds;
+    const { between, normalize } = propertyFn(property);
     const count = points.length;
-    let { start , end , loop  } = segment;
+    let { start, end, loop } = segment;
     let i, ilen;
     if (loop) {
         start += count;
@@ -13833,10 +13910,10 @@ function _boundSegment(segment, points, bounds) {
     if (!bounds) return [
         segment
     ];
-    const { property , start: startBound , end: endBound  } = bounds;
+    const { property, start: startBound, end: endBound } = bounds;
     const count = points.length;
-    const { compare , between , normalize  } = propertyFn(property);
-    const { start , end , loop , style  } = getSegment(segment, points, bounds);
+    const { compare, between, normalize } = propertyFn(property);
+    const { start, end, loop, style } = getSegment(segment, points, bounds);
     const result = [];
     let inside = false;
     let subStart = null;
@@ -13934,7 +14011,7 @@ function _computeSegments(line, segmentOptions) {
     const count = points.length;
     if (!count) return [];
     const loop = !!line._loop;
-    const { start , end  } = findStartAndEnd(points, count, loop, spanGaps);
+    const { start, end } = findStartAndEnd(points, count, loop, spanGaps);
     if (spanGaps === true) return splitByStyles(line, [
         {
             start,
@@ -13953,7 +14030,7 @@ function splitByStyles(line, segments, points, segmentOptions) {
 function doSplitByStyles(line, segments, points, segmentOptions) {
     const chartContext = line._chart.getContext();
     const baseStyle = readStyle(line.options);
-    const { _datasetIndex: datasetIndex , options: { spanGaps  }  } = line;
+    const { _datasetIndex: datasetIndex, options: { spanGaps } } = line;
     const count = points.length;
     const result = [];
     let prevStyle = baseStyle;
@@ -14021,7 +14098,12 @@ function styleChanged(style, prevStyle) {
 }
 
 },{"@kurkle/color":"jJiT4","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"jJiT4":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+/*!
+ * @kurkle/color v0.3.2
+ * https://github.com/kurkle/color#readme
+ * (c) 2023 Jukka Kurkela
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Color", ()=>Color);
 parcelHelpers.export(exports, "b2n", ()=>b2n);
@@ -14044,12 +14126,7 @@ parcelHelpers.export(exports, "rgbParse", ()=>rgbParse);
 parcelHelpers.export(exports, "rgbString", ()=>rgbString);
 parcelHelpers.export(exports, "rotate", ()=>rotate);
 parcelHelpers.export(exports, "round", ()=>round);
-/*!
- * @kurkle/color v0.3.2
- * https://github.com/kurkle/color#readme
- * (c) 2023 Jukka Kurkela
- * Released under the MIT License
- */ function round(v) {
+function round(v) {
     return v + 0.5 | 0;
 }
 const lim = (v, l, h)=>Math.max(Math.min(v, h), l);
@@ -14534,6 +14611,15 @@ function functionParse(str) {
     return hueParse(str);
 }
 class Color {
+    constructor(input){
+        if (input instanceof Color) return input;
+        const type = typeof input;
+        let v;
+        if (type === "object") v = fromObject(input);
+        else if (type === "string") v = hexParse(input) || nameParse(input) || functionParse(input);
+        this._rgb = v;
+        this._valid = !!v;
+    }
     get valid() {
         return this._valid;
     }
@@ -14625,15 +14711,6 @@ class Color {
     rotate(deg) {
         rotate(this._rgb, deg);
         return this;
-    }
-    constructor(input){
-        if (input instanceof Color) return input;
-        const type = typeof input;
-        let v;
-        if (type === "object") v = fromObject(input);
-        else if (type === "string") v = hexParse(input) || nameParse(input) || functionParse(input);
-        this._rgb = v;
-        this._valid = !!v;
     }
 }
 function index_esm(input) {
@@ -15095,7 +15172,7 @@ const positionSettings = [
             passing: ratios.low,
             heading: ratios.low
         }
-    }, 
+    }
 ];
 const ratingSettings = {
     low: 300,
@@ -15146,9 +15223,9 @@ const viewPlayerProfile = ()=>{
    */ const abilityBox = document.createElement("div");
     abilityBox.classList.add("player-profile");
     abilityBox.classList.add("player-profile--ability");
-    const position1 = document.createElement("div");
-    position1.classList.add("ability__position");
-    position1.textContent = bestPosition.position;
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
     const allPositions = document.createElement("div");
     allPositions.classList.add("ability__positions");
     let positionList = ``;
@@ -15156,7 +15233,7 @@ const viewPlayerProfile = ()=>{
         positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
     });
     allPositions.innerHTML = positionList;
-    abilityBox.appendChild(position1);
+    abilityBox.appendChild(position);
     const abilityDescription = document.createElement("div");
     abilityDescription.classList.add("ability__text");
     const abilityValue = document.createElement("div");
@@ -15329,9 +15406,9 @@ const viewLineupChange = ()=>{
                 const playerData = findPlayer(playerId);
                 const playerSkills = (0, _calculationsJs.calculatePositionsSkills)(playerData, (0, _settings.positionSettings));
                 const captionEl = player.querySelector(".lineup_spot_caption");
-                const skill1 = (0, _calculationsJs.calculateSkillWithExp)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
+                const skill = (0, _calculationsJs.calculateSkillWithExp)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
                 if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
-                captionEl.appendChild((0, _renderJs.renderComparison)(skill1, (0, _settings.ratingSettings)));
+                captionEl.appendChild((0, _renderJs.renderComparison)(skill, (0, _settings.ratingSettings)));
             }
         });
     };
@@ -15347,8 +15424,8 @@ const viewLineupChange = ()=>{
         showFormationRankings();
         observer.observe(fieldEl, config);
     };
-    const observer1 = new MutationObserver(callback);
-    observer1.observe(fieldEl, config);
+    const observer = new MutationObserver(callback);
+    observer.observe(fieldEl, config);
 };
 exports.default = viewLineupChange;
 
@@ -15485,6 +15562,6 @@ const viewTraining = ()=>{
 };
 exports.default = viewTraining;
 
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}]},["9naZM","fZBAS"], "fZBAS", "parcelRequire94c2")
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}]},["dr3gM","fZBAS"], "fZBAS", "parcelRequire94c2")
 
 //# sourceMappingURL=main.js.map
