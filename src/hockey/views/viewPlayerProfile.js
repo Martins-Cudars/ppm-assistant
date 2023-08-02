@@ -140,6 +140,16 @@ const viewPlayerProfile = () => {
   potentialBox.appendChild(allPotentials);
 
   contentColumn.appendChild(potentialBox);
+
+  /**
+   * Add chart
+   */
+
+  const chartBox = document.createElement("div");
+  chartBox.classList.add("player-chart");
+  chartBox.innerText = "Chart";
+
+  document.querySelector(".profile_player_center").appendChild(chartBox);
 };
 
 export default viewPlayerProfile;
