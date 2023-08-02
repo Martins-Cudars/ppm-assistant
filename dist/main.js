@@ -1212,11 +1212,11 @@ const renderPotentialChart = (data, el, seasonDay = 1)=>{
                 {
                     label: "This player",
                     data: playerSkillArr,
-                    backgroundColor: "rgba(255, 0, 4, 0.5)",
-                    pointBackgroundColor: "rgba(255, 0, 4, 0.5)",
+                    backgroundColor: "rgba(255, 0, 4, 0.35)",
+                    pointBackgroundColor: "rgba(255, 0, 4, 0.35)",
                     pointStyle: "circle",
-                    borderColor: "rgba(255, 0, 4, 0.5)",
-                    pointRadius: 10
+                    borderColor: "rgba(255, 0, 4, 0.35)",
+                    pointRadius: 8
                 },
                 {
                     label: "This player With Exp",
@@ -1225,7 +1225,7 @@ const renderPotentialChart = (data, el, seasonDay = 1)=>{
                     pointBackgroundColor: "rgba(255, 0, 4, 0.9)",
                     pointStyle: "circle",
                     borderColor: "rgba(255, 0, 4, 0.9)",
-                    pointRadius: 10
+                    pointRadius: 8
                 }, 
             ]
         }
