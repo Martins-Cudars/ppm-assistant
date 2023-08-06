@@ -108,7 +108,7 @@ const renderPotentialChart = (data, el) => {
   const chartConfig = {
     type: "line",
     options: {
-      responsive: true,
+      responsive: false,
       scales: {
         x: {
           type: "linear",
@@ -166,7 +166,8 @@ const renderPotentialChart = (data, el) => {
     },
   };
 
-  return new Chart(el, chartConfig);
+  const chart = new Chart(el, chartConfig);
+  chart.resize(590, 300);
 };
 
 export { renderPotentialChart };
