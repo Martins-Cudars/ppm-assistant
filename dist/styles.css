@@ -189,7 +189,6 @@
   background-position: left center;
 }
 
-
 .lineup_spot_caption {
   display: flex;
   flex-direction: column;
@@ -212,4 +211,13 @@
   height: 15px;
   background-size: 8px;
   padding: 0;
+}
+
+.player-chart {
+  width: 590px;
+  height: 300px;
+}
+
+.player-chart__canvas {
+  width: 100%;
 }
