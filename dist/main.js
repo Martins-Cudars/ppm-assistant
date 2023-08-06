@@ -1314,6 +1314,7 @@ const renderPotentialChart = (data, el)=>{
     };
     const chart = new (0, _autoDefault.default)(el, chartConfig);
     chart.resize(590, 300);
+    return chart;
 };
 
 },{"chart.js/auto":"fPqP2","~/src/hockey/settings.js":"aAEvc","~/src/calculations.js":"6mg5U","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"fPqP2":[function(require,module,exports) {

@@ -168,6 +168,8 @@ const renderPotentialChart = (data, el) => {
 
   const chart = new Chart(el, chartConfig);
   chart.resize(590, 300);
+
+  return chart;
 };
 
 export { renderPotentialChart };
