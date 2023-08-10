@@ -126,7 +126,9 @@ const viewPlayerProfile = () => {
   potentialBox.classList.add("player-profile--potential");
 
   const potentials = calculatePositionsQualities(player, positionSettings);
-  const bestPotential = calculateBestPotential(potentials);
+  const bestPotential = potentials.find(
+    (el) => el.position === bestPosition.position
+  );
 
   const potentialBadge = renderPotentialBadge(bestPotential.potential);
   potentialBox.appendChild(potentialBadge);
