@@ -1,3 +1,5 @@
+import routes from "./routes";
+
 import viewPlayerList from "./views/viewPlayerList";
 import viewPlayerProfile from "./views/viewPlayerProfile";
 import viewLineup from "./views/viewLineup";
@@ -11,13 +13,29 @@ import viewTrainingCamp from "./views/viewTrainingCamp";
  */
 
 const initHockey = () => {
-  if (window.location.href.includes("speletaju-parskats")) viewPlayerList();
-  if (window.location.href.includes("speletajs")) viewPlayerProfile();
-  if (window.location.href.includes("mainas")) viewLineup();
-  if (window.location.href.includes("speletaju-trenini")) viewTraining();
-  if (window.location.href.includes("rediget-mainu")) viewLineupChange();
-  if (window.location.href.includes("/lv/tirgus")) viewMarket();
-  if (window.location.href.includes("treninnometne")) viewTrainingCamp();
+  const urlRegex =
+    /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
+
+  const getRoute = (inputUrl) => {
+    const match = inputUrl.match(urlRegex);
+    return match[1];
+  };
+
+  // check if we are on player list page
+  // if yes, run viewPlayerList function
+
+  const url = window.location.href;
+
+  if (routes.playersOverview.includes(getRoute(url))) viewPlayerList();
+  if (routes.playerProfile.includes(getRoute(url))) viewPlayerProfile();
+  if (routes.playerTraining.includes(getRoute(url))) viewTraining();
+  if (routes.lines.includes(getRoute(url))) viewLineup();
+  if (routes.editLine.includes(getRoute(url))) viewLineupChange();
+  if (routes.market.includes(getRoute(url))) viewMarket();
+  if (routes.trainingCamp.includes(getRoute(url))) viewTrainingCamp();
+
+  // TODO: Create next game view
+  // if (routes.nextGame.includes(getRoute(url))) viewNextGame();
 };
 
 export default initHockey;
