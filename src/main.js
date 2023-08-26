@@ -1,4 +1,4 @@
-import initHockey from "~/src/hockey/hockey.js";
+import initHockey from "~/src/hockey/hockey.ts";
 import initSoccer from "~/src/soccer/soccer.js";
 
 if (window.location.href.includes("hockey.powerplaymanager.com")) initHockey();

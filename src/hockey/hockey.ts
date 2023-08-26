@@ -16,8 +16,10 @@ const initHockey = () => {
   const urlRegex =
     /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
 
-  const getRoute = (inputUrl) => {
+  const getRoute = (inputUrl: string) => {
     const match = inputUrl.match(urlRegex);
+    if (!match || !match[1]) throw new Error("Invalid URL");
+
     return match[1];
   };
 
