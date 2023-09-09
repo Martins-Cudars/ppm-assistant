@@ -1,4 +1,15777 @@
-!function(){let t,e;var i=multilangRoutes={playersOverview:["/en/overview-of-players","/lv/speletaju-parskats"],playerProfile:["/en/player","/lv/speletajs"],playerTraining:["/en/players-practice","/lv/speletaju-trenini"],lines:["/en/lines","/lv/mainas"],editLine:["/en/edit-line","/lv/rediget-mainu"],nextGame:["/en/next-game","/lv/nakosa-spele"],market:["/en/market","/lv/tirgus"],trainingCamp:["/en/training-camp","/lv/treninnometne"]};let s=[{name:"G",ratios:{goalie:1,technical:.5,passing:.5}},{name:"D",ratios:{defence:1,passing:.5,aggression:.5},bonus:{technical:.5}},{name:"W",ratios:{offence:1,technical:.5,aggression:.5},bonus:{shooting:.75}},{name:"C",ratios:{offence:1,technical:.5,passing:.5},bonus:{shooting:.5}}],n={low:500,medium:1e3,high:1500},a=[{age:15,skill:90,exp:0},{age:16,skill:175,exp:6},{age:17,skill:250,exp:12},{age:18,skill:315,exp:18},{age:19,skill:370,exp:26},{age:20,skill:415,exp:34},{age:21,skill:450,exp:45},{age:22,skill:480,exp:56},{age:23,skill:505,exp:67},{age:24,skill:525,exp:78},{age:25,skill:540,exp:89},{age:26,skill:552,exp:100},{age:27,skill:561,exp:111},{age:28,skill:568,exp:122},{age:29,skill:573,exp:135},{age:30,skill:576,exp:148},{age:31,skill:576,exp:161},{age:32,skill:576,exp:174},{age:33,skill:576,exp:187},{age:34,skill:573,exp:200},{age:35,skill:565,exp:213},{age:36,skill:552,exp:226},{age:37,skill:533,exp:239},{age:38,skill:508,exp:252},{age:39,skill:477,exp:265},{age:40,skill:440,exp:278}],r=(t,e)=>{let i=[];return e.forEach(e=>{let s=[];for(let[i,n]of Object.entries(e.ratios))s.push(parseInt(t.skills[i])/n);i.push({position:e.name,level:Math.round(Math.min(...s))})}),i},o=t=>t.sort((t,e)=>e.level-t.level)[0],l=(t,e)=>Math.round(t*(1+e/500)),h=(t,e)=>{let i=[];return e.forEach(e=>{let s=0,n=0;for(let[i,a]of Object.entries(e.ratios))s+=t.qualities[i]*a,n+=a;if(e.bonus)for(let[i,a]of Object.entries(e.bonus))s+=t.qualities[i]*a,n+=a;i.push({position:e.name,potential:Math.round(Math.min(s/n))})}),i},d=t=>t.sort((t,e)=>e.potential-t.potential)[0],c=t=>t&&null!==t?t>=95?{label:"A+",class:"a-plus"}:t>=90?{label:"A",class:"a"}:t>=85?{label:"B+",class:"b-plus"}:t>=80?{label:"B",class:"b"}:t>=75?{label:"C+",class:"c-plus"}:t>=70?{label:"C",class:"c"}:t>=60?{label:"D+",class:"d-plus"}:t>=50?{label:"D",class:"d"}:t<50?{label:"F",class:"f"}:void 0:{label:"?",class:"unknown"},u=(t,e)=>{let i=document.createElement("td");return i.classList.add(e),i.textContent=t,i},p=(t,e)=>{let i;let s=document.createElement("div"),n=document.createElement("div");return s.classList.add("rating"),n.classList.add("rating__inner"),t<e.low?(s.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-empty.svg")})`,n.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-silver.svg")})`,i=Math.min(t/e.low*100,100)):t<e.medium?(s.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-silver.svg")})`,n.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-gold.svg")})`,i=Math.min((t-e.low)/(e.medium-e.low)*100,100)):t>=e.medium&&(s.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-gold.svg")})`,n.style.backgroundImage=`url(${chrome.runtime.getURL("icons/star-diamond.svg")})`,i=Math.min((t-e.medium)/(e.high-e.medium)*100,100)),n.style.width=`${i}%`,s.appendChild(n),s},g=t=>{let e=document.createElement("div");return e.classList.add("potential__text"),e.textContent=`Best potential position is ${t.position} with ${Math.round(t.potential)}`,e},f=(t,e)=>{let i=document.createElement("div");i.classList.add("potential__badge"),e&&i.classList.add(`potential__badge--${e}`);let s=c(t);return i.classList.add(`potential__badge--${s.class}`),i.textContent=s.label,i},m=t=>{let e=document.createElement("button");return e.innerText=t,e};var x=()=>{let t=document.getElementsByClassName("main_content"),e=document.getElementById("table-1").querySelectorAll("thead"),i=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");e.forEach(t=>{t.querySelector("tr").appendChild(u("POS","th1")),t.querySelector("tr").appendChild(u("SK","th2")),t.querySelector("tr").appendChild(u("RATING","th1"))}),i.forEach((t,e)=>{let i=t.querySelectorAll("td");t.classList.add("player-row");let a={name:i[0].textContent,age:i[2].textContent,careerLongitivity:Array.from(i[5].textContent)[0],skills:{goalie:i[6].textContent,defence:i[7].textContent,offence:i[8].textContent,shooting:i[9].textContent,passing:i[10].textContent,technical:i[11].textContent,aggression:i[12].textContent},experience:parseInt(i[13].textContent),overall:i[14].textContent},h=e%2==0?"tr1":"tr0",d=r(a,s),c=o(d);t.classList.add(`position-${c.position.toLowerCase()}`);let g=l(c.level,a.experience);t.appendChild(u(c.position,`${h}td1`)),t.appendChild(u(g,`${h}td2`));let f=document.createElement("td");f.classList.add(`${h}td1`),f.appendChild(p(g,n)),t.appendChild(f)});let a=t=>{if("All"===t){document.querySelectorAll(".player-row").forEach(t=>{t.style.display="table-row"});return}document.querySelectorAll(".player-row").forEach(t=>{t.style.display="none"}),document.querySelectorAll(`.position-${t.toLowerCase()}`).forEach(t=>{t.style.display="table-row"})},h=document.createElement("div");h.classList.add("position-filter"),h.classList.add("white_box");let d=m(`All (${i.length})`);h.append(d),s.forEach(t=>{let e=m(`${t.name} (${document.querySelectorAll(`.position-${t.name.toLowerCase()}`).length})`);e.addEventListener("click",()=>a(t.name)),h.append(e)}),t[0].prepend(h)};function b(t){return t+.5|0}let y=(t,e,i)=>Math.max(Math.min(t,i),e);function _(t){return y(b(2.55*t),0,255)}function v(t){return y(b(255*t),0,255)}function k(t){return y(b(t/2.55)/100,0,1)}function w(t){return y(b(100*t),0,100)}let M={0:0,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,A:10,B:11,C:12,D:13,E:14,F:15,a:10,b:11,c:12,d:13,e:14,f:15},C=[..."0123456789ABCDEF"],S=t=>C[15&t],P=t=>C[(240&t)>>4]+C[15&t],A=t=>(240&t)>>4==(15&t),D=t=>A(t.r)&&A(t.g)&&A(t.b)&&A(t.a),L=(t,e)=>t<255?e(t):"",E=/^(hsla?|hwb|hsv)\(\s*([-+.e\d]+)(?:deg)?[\s,]+([-+.e\d]+)%[\s,]+([-+.e\d]+)%(?:[\s,]+([-+.e\d]+)(%)?)?\s*\)$/;function I(t,e,i){let s=e*Math.min(i,1-i),n=(e,n=(e+t/30)%12)=>i-s*Math.max(Math.min(n-3,9-n,1),-1);return[n(0),n(8),n(4)]}function O(t,e,i){let s=(s,n=(s+t/60)%6)=>i-i*e*Math.max(Math.min(n,4-n,1),0);return[s(5),s(3),s(1)]}function T(t,e,i){let s;let n=I(t,1,.5);for(e+i>1&&(s=1/(e+i),e*=s,i*=s),s=0;s<3;s++)n[s]*=1-e-i,n[s]+=e;return n}function R(t){let e,i,s;let n=t.r/255,a=t.g/255,r=t.b/255,o=Math.max(n,a,r),l=Math.min(n,a,r),h=(o+l)/2;return o!==l&&(s=o-l,i=h>.5?s/(2-o-l):s/(o+l),e=60*(e=n===o?(a-r)/s+(a<r?6:0):a===o?(r-n)/s+2:(n-a)/s+4)+.5),[0|e,i||0,h]}function z(t,e,i,s){return(Array.isArray(e)?t(e[0],e[1],e[2]):t(e,i,s)).map(v)}function F(t){return(t%360+360)%360}let B={x:"dark",Z:"light",Y:"re",X:"blu",W:"gr",V:"medium",U:"slate",A:"ee",T:"ol",S:"or",B:"ra",C:"lateg",D:"ights",R:"in",Q:"turquois",E:"hi",P:"ro",O:"al",N:"le",M:"de",L:"yello",F:"en",K:"ch",G:"arks",H:"ea",I:"ightg",J:"wh"},V={OiceXe:"f0f8ff",antiquewEte:"faebd7",aqua:"ffff",aquamarRe:"7fffd4",azuY:"f0ffff",beige:"f5f5dc",bisque:"ffe4c4",black:"0",blanKedOmond:"ffebcd",Xe:"ff",XeviTet:"8a2be2",bPwn:"a52a2a",burlywood:"deb887",caMtXe:"5f9ea0",KartYuse:"7fff00",KocTate:"d2691e",cSO:"ff7f50",cSnflowerXe:"6495ed",cSnsilk:"fff8dc",crimson:"dc143c",cyan:"ffff",xXe:"8b",xcyan:"8b8b",xgTMnPd:"b8860b",xWay:"a9a9a9",xgYF:"6400",xgYy:"a9a9a9",xkhaki:"bdb76b",xmagFta:"8b008b",xTivegYF:"556b2f",xSange:"ff8c00",xScEd:"9932cc",xYd:"8b0000",xsOmon:"e9967a",xsHgYF:"8fbc8f",xUXe:"483d8b",xUWay:"2f4f4f",xUgYy:"2f4f4f",xQe:"ced1",xviTet:"9400d3",dAppRk:"ff1493",dApskyXe:"bfff",dimWay:"696969",dimgYy:"696969",dodgerXe:"1e90ff",fiYbrick:"b22222",flSOwEte:"fffaf0",foYstWAn:"228b22",fuKsia:"ff00ff",gaRsbSo:"dcdcdc",ghostwEte:"f8f8ff",gTd:"ffd700",gTMnPd:"daa520",Way:"808080",gYF:"8000",gYFLw:"adff2f",gYy:"808080",honeyMw:"f0fff0",hotpRk:"ff69b4",RdianYd:"cd5c5c",Rdigo:"4b0082",ivSy:"fffff0",khaki:"f0e68c",lavFMr:"e6e6fa",lavFMrXsh:"fff0f5",lawngYF:"7cfc00",NmoncEffon:"fffacd",ZXe:"add8e6",ZcSO:"f08080",Zcyan:"e0ffff",ZgTMnPdLw:"fafad2",ZWay:"d3d3d3",ZgYF:"90ee90",ZgYy:"d3d3d3",ZpRk:"ffb6c1",ZsOmon:"ffa07a",ZsHgYF:"20b2aa",ZskyXe:"87cefa",ZUWay:"778899",ZUgYy:"778899",ZstAlXe:"b0c4de",ZLw:"ffffe0",lime:"ff00",limegYF:"32cd32",lRF:"faf0e6",magFta:"ff00ff",maPon:"800000",VaquamarRe:"66cdaa",VXe:"cd",VScEd:"ba55d3",VpurpN:"9370db",VsHgYF:"3cb371",VUXe:"7b68ee",VsprRggYF:"fa9a",VQe:"48d1cc",VviTetYd:"c71585",midnightXe:"191970",mRtcYam:"f5fffa",mistyPse:"ffe4e1",moccasR:"ffe4b5",navajowEte:"ffdead",navy:"80",Tdlace:"fdf5e6",Tive:"808000",TivedBb:"6b8e23",Sange:"ffa500",SangeYd:"ff4500",ScEd:"da70d6",pOegTMnPd:"eee8aa",pOegYF:"98fb98",pOeQe:"afeeee",pOeviTetYd:"db7093",papayawEp:"ffefd5",pHKpuff:"ffdab9",peru:"cd853f",pRk:"ffc0cb",plum:"dda0dd",powMrXe:"b0e0e6",purpN:"800080",YbeccapurpN:"663399",Yd:"ff0000",Psybrown:"bc8f8f",PyOXe:"4169e1",saddNbPwn:"8b4513",sOmon:"fa8072",sandybPwn:"f4a460",sHgYF:"2e8b57",sHshell:"fff5ee",siFna:"a0522d",silver:"c0c0c0",skyXe:"87ceeb",UXe:"6a5acd",UWay:"708090",UgYy:"708090",snow:"fffafa",sprRggYF:"ff7f",stAlXe:"4682b4",tan:"d2b48c",teO:"8080",tEstN:"d8bfd8",tomato:"ff6347",Qe:"40e0d0",viTet:"ee82ee",JHt:"f5deb3",wEte:"ffffff",wEtesmoke:"f5f5f5",Lw:"ffff00",LwgYF:"9acd32"},W=/^rgba?\(\s*([-+.\d]+)(%)?[\s,]+([-+.e\d]+)(%)?[\s,]+([-+.e\d]+)(%)?(?:[\s,/]+([-+.e\d]+)(%)?)?\s*\)$/,N=t=>t<=.0031308?12.92*t:1.055*Math.pow(t,1/2.4)-.055,q=t=>t<=.04045?t/12.92:Math.pow((t+.055)/1.055,2.4);function H(t,e,i){if(t){let s=R(t);s[e]=Math.max(0,Math.min(s[e]+s[e]*i,0===e?360:1)),s=z(I,s,void 0,void 0),t.r=s[0],t.g=s[1],t.b=s[2]}}function $(t,e){return t?Object.assign(e||{},t):t}function j(t){var e={r:0,g:0,b:0,a:255};return Array.isArray(t)?t.length>=3&&(e={r:t[0],g:t[1],b:t[2],a:255},t.length>3&&(e.a=v(t[3]))):(e=$(t,{r:0,g:0,b:0,a:1})).a=v(e.a),e}class Y{constructor(e){let i;if(e instanceof Y)return e;let s=typeof e;if("object"===s)i=j(e);else if("string"===s){var n,a;a=e.length,"#"===e[0]&&(4===a||5===a?n={r:255&17*M[e[1]],g:255&17*M[e[2]],b:255&17*M[e[3]],a:5===a?17*M[e[4]]:255}:(7===a||9===a)&&(n={r:M[e[1]]<<4|M[e[2]],g:M[e[3]]<<4|M[e[4]],b:M[e[5]]<<4|M[e[6]],a:9===a?M[e[7]]<<4|M[e[8]]:255})),i=n||function(e){t||((t=function(){let t,e,i,s,n;let a={},r=Object.keys(V),o=Object.keys(B);for(t=0;t<r.length;t++){for(e=0,s=n=r[t];e<o.length;e++)i=o[e],n=n.replace(i,B[i]);i=parseInt(V[s],16),a[n]=[i>>16&255,i>>8&255,255&i]}return a}()).transparent=[0,0,0,0]);let i=t[e.toLowerCase()];return i&&{r:i[0],g:i[1],b:i[2],a:4===i.length?i[3]:255}}(e)||("r"===e.charAt(0)?function(t){let e,i,s;let n=W.exec(t),a=255;if(n){if(n[7]!==e){let t=+n[7];a=n[8]?_(t):y(255*t,0,255)}return e=+n[1],i=+n[3],s=+n[5],{r:e=255&(n[2]?_(e):y(e,0,255)),g:i=255&(n[4]?_(i):y(i,0,255)),b:s=255&(n[6]?_(s):y(s,0,255)),a:a}}}(e):function(t){let e;let i=E.exec(t),s=255;if(!i)return;i[5]!==e&&(s=i[6]?_(+i[5]):v(+i[5]));let n=F(+i[2]),a=+i[3]/100,r=+i[4]/100;return{r:(e="hwb"===i[1]?z(T,n,a,r):"hsv"===i[1]?z(O,n,a,r):z(I,n,a,r))[0],g:e[1],b:e[2],a:s}}(e))}this._rgb=i,this._valid=!!i}get valid(){return this._valid}get rgb(){var t=$(this._rgb);return t&&(t.a=k(t.a)),t}set rgb(t){this._rgb=j(t)}rgbString(){var t;return this._valid?(t=this._rgb)&&(t.a<255?`rgba(${t.r}, ${t.g}, ${t.b}, ${k(t.a)})`:`rgb(${t.r}, ${t.g}, ${t.b})`):void 0}hexString(){var t,e;return this._valid?(e=D(t=this._rgb)?S:P,t?"#"+e(t.r)+e(t.g)+e(t.b)+L(t.a,e):void 0):void 0}hslString(){return this._valid?function(t){if(!t)return;let e=R(t),i=e[0],s=w(e[1]),n=w(e[2]);return t.a<255?`hsla(${i}, ${s}%, ${n}%, ${k(t.a)})`:`hsl(${i}, ${s}%, ${n}%)`}(this._rgb):void 0}mix(t,e){if(t){let i;let s=this.rgb,n=t.rgb,a=e===i?.5:e,r=2*a-1,o=s.a-n.a,l=((r*o==-1?r:(r+o)/(1+r*o))+1)/2;i=1-l,s.r=255&l*s.r+i*n.r+.5,s.g=255&l*s.g+i*n.g+.5,s.b=255&l*s.b+i*n.b+.5,s.a=a*s.a+(1-a)*n.a,this.rgb=s}return this}interpolate(t,e){return t&&(this._rgb=function(t,e,i){let s=q(k(t.r)),n=q(k(t.g)),a=q(k(t.b));return{r:v(N(s+i*(q(k(e.r))-s))),g:v(N(n+i*(q(k(e.g))-n))),b:v(N(a+i*(q(k(e.b))-a))),a:t.a+i*(e.a-t.a)}}(this._rgb,t._rgb,e)),this}clone(){return new Y(this.rgb)}alpha(t){return this._rgb.a=v(t),this}clearer(t){let e=this._rgb;return e.a*=1-t,this}greyscale(){let t=this._rgb,e=b(.3*t.r+.59*t.g+.11*t.b);return t.r=t.g=t.b=e,this}opaquer(t){let e=this._rgb;return e.a*=1+t,this}negate(){let t=this._rgb;return t.r=255-t.r,t.g=255-t.g,t.b=255-t.b,this}lighten(t){return H(this._rgb,2,t),this}darken(t){return H(this._rgb,2,-t),this}saturate(t){return H(this._rgb,1,t),this}desaturate(t){return H(this._rgb,1,-t),this}rotate(t){var e,i;return(i=R(e=this._rgb))[0]=F(i[0]+t),i=z(I,i,void 0,void 0),e.r=i[0],e.g=i[1],e.b=i[2],this}}function U(){}let X=(e=0,()=>e++);function G(t){return null==t}function K(t){if(Array.isArray&&Array.isArray(t))return!0;let e=Object.prototype.toString.call(t);return"[object"===e.slice(0,7)&&"Array]"===e.slice(-6)}function Z(t){return null!==t&&"[object Object]"===Object.prototype.toString.call(t)}function J(t){return("number"==typeof t||t instanceof Number)&&isFinite(+t)}function Q(t,e){return J(t)?t:e}function tt(t,e){return void 0===t?e:t}let te=(t,e)=>"string"==typeof t&&t.endsWith("%")?parseFloat(t)/100:+t/e,ti=(t,e)=>"string"==typeof t&&t.endsWith("%")?parseFloat(t)/100*e:+t;function ts(t,e,i){if(t&&"function"==typeof t.call)return t.apply(i,e)}function tn(t,e,i,s){let n,a,r;if(K(t)){if(a=t.length,s)for(n=a-1;n>=0;n--)e.call(i,t[n],n);else for(n=0;n<a;n++)e.call(i,t[n],n)}else if(Z(t))for(n=0,a=(r=Object.keys(t)).length;n<a;n++)e.call(i,t[r[n]],r[n])}function ta(t,e){let i,s,n,a;if(!t||!e||t.length!==e.length)return!1;for(i=0,s=t.length;i<s;++i)if(n=t[i],a=e[i],n.datasetIndex!==a.datasetIndex||n.index!==a.index)return!1;return!0}function tr(t){if(K(t))return t.map(tr);if(Z(t)){let e=Object.create(null),i=Object.keys(t),s=i.length,n=0;for(;n<s;++n)e[i[n]]=tr(t[i[n]]);return e}return t}function to(t){return -1===["__proto__","prototype","constructor"].indexOf(t)}function tl(t,e,i,s){if(!to(t))return;let n=e[t],a=i[t];Z(n)&&Z(a)?th(n,a,s):e[t]=tr(a)}function th(t,e,i){let s;let n=K(e)?e:[e],a=n.length;if(!Z(t))return t;i=i||{};let r=i.merger||tl;for(let e=0;e<a;++e){if(!Z(s=n[e]))continue;let a=Object.keys(s);for(let e=0,n=a.length;e<n;++e)r(a[e],t,s,i)}return t}function td(t,e){return th(t,e,{merger:tc})}function tc(t,e,i){if(!to(t))return;let s=e[t],n=i[t];Z(s)&&Z(n)?td(s,n):Object.prototype.hasOwnProperty.call(e,t)||(e[t]=tr(n))}let tu={"":t=>t,x:t=>t.x,y:t=>t.y};function tp(t,e){let i=tu[e]||(tu[e]=function(t){let e=function(t){let e=t.split("."),i=[],s="";for(let t of e)(s+=t).endsWith("\\")?s=s.slice(0,-1)+".":(i.push(s),s="");return i}(t);return t=>{for(let i of e){if(""===i)break;t=t&&t[i]}return t}}(e));return i(t)}function tg(t){return t.charAt(0).toUpperCase()+t.slice(1)}let tf=t=>void 0!==t,tm=t=>"function"==typeof t,tx=(t,e)=>{if(t.size!==e.size)return!1;for(let i of t)if(!e.has(i))return!1;return!0},tb=Math.PI,ty=2*tb,t_=ty+tb,tv=Number.POSITIVE_INFINITY,tk=tb/180,tw=tb/2,tM=tb/4,tC=2*tb/3,tS=Math.log10,tP=Math.sign;function tA(t,e,i){return Math.abs(t-e)<i}function tD(t){let e=Math.round(t);t=tA(t,e,t/1e3)?e:t;let i=Math.pow(10,Math.floor(tS(t))),s=t/i;return(s<=1?1:s<=2?2:s<=5?5:10)*i}function tL(t){return!isNaN(parseFloat(t))&&isFinite(t)}function tE(t,e,i){let s,n,a;for(s=0,n=t.length;s<n;s++)isNaN(a=t[s][i])||(e.min=Math.min(e.min,a),e.max=Math.max(e.max,a))}function tI(t){return t*(tb/180)}function tO(t){if(!J(t))return;let e=1,i=0;for(;Math.round(t*e)/e!==t;)e*=10,i++;return i}function tT(t,e){let i=e.x-t.x,s=e.y-t.y,n=Math.atan2(s,i);return n<-.5*tb&&(n+=ty),{angle:n,distance:Math.sqrt(i*i+s*s)}}function tR(t,e){return Math.sqrt(Math.pow(e.x-t.x,2)+Math.pow(e.y-t.y,2))}function tz(t,e){return(t-e+t_)%ty-tb}function tF(t){return(t%ty+ty)%ty}function tB(t,e,i,s){let n=tF(t),a=tF(e),r=tF(i),o=tF(a-n),l=tF(r-n),h=tF(n-a),d=tF(n-r);return n===a||n===r||s&&a===r||o>l&&h<d}function tV(t,e,i){return Math.max(e,Math.min(i,t))}function tW(t,e,i,s=1e-6){return t>=Math.min(e,i)-s&&t<=Math.max(e,i)+s}function tN(t,e,i){let s;i=i||(i=>t[i]<e);let n=t.length-1,a=0;for(;n-a>1;)i(s=a+n>>1)?a=s:n=s;return{lo:a,hi:n}}let tq=(t,e,i,s)=>tN(t,i,s?s=>{let n=t[s][e];return n<i||n===i&&t[s+1][e]===i}:s=>t[s][e]<i),tH=(t,e,i)=>tN(t,i,s=>t[s][e]>=i),t$=["push","pop","shift","splice","unshift"];function tj(t,e){let i=t._chartjs;if(!i)return;let s=i.listeners,n=s.indexOf(e);-1!==n&&s.splice(n,1),s.length>0||(t$.forEach(e=>{delete t[e]}),delete t._chartjs)}function tY(t){let e=new Set(t);return e.size===t.length?t:Array.from(e)}let tU="undefined"==typeof window?function(t){return t()}:window.requestAnimationFrame;function tX(t,e){let i=[],s=!1;return function(...n){i=n,s||(s=!0,tU.call(window,()=>{s=!1,t.apply(e,i)}))}}let tG=t=>"start"===t?"left":"end"===t?"right":"center",tK=(t,e,i)=>"start"===t?e:"end"===t?i:(e+i)/2,tZ=(t,e,i,s)=>t===(s?"left":"right")?i:"center"===t?(e+i)/2:e;function tJ(t,e,i){let s=e.length,n=0,a=s;if(t._sorted){let{iScale:r,_parsed:o}=t,l=r.axis,{min:h,max:d,minDefined:c,maxDefined:u}=r.getUserBounds();c&&(n=tV(Math.min(tq(o,l,h).lo,i?s:tq(e,l,r.getPixelForValue(h)).lo),0,s-1)),a=u?tV(Math.max(tq(o,r.axis,d,!0).hi+1,i?0:tq(e,l,r.getPixelForValue(d),!0).hi+1),n,s)-n:s-n}return{start:n,count:a}}function tQ(t){let{xScale:e,yScale:i,_scaleRanges:s}=t,n={xmin:e.min,xmax:e.max,ymin:i.min,ymax:i.max};if(!s)return t._scaleRanges=n,!0;let a=s.xmin!==e.min||s.xmax!==e.max||s.ymin!==i.min||s.ymax!==i.max;return Object.assign(s,n),a}let t0=t=>0===t||1===t,t1=(t,e,i)=>-(Math.pow(2,10*(t-=1))*Math.sin((t-e)*ty/i)),t2=(t,e,i)=>Math.pow(2,-10*t)*Math.sin((t-e)*ty/i)+1,t5={linear:t=>t,easeInQuad:t=>t*t,easeOutQuad:t=>-t*(t-2),easeInOutQuad:t=>(t/=.5)<1?.5*t*t:-.5*(--t*(t-2)-1),easeInCubic:t=>t*t*t,easeOutCubic:t=>(t-=1)*t*t+1,easeInOutCubic:t=>(t/=.5)<1?.5*t*t*t:.5*((t-=2)*t*t+2),easeInQuart:t=>t*t*t*t,easeOutQuart:t=>-((t-=1)*t*t*t-1),easeInOutQuart:t=>(t/=.5)<1?.5*t*t*t*t:-.5*((t-=2)*t*t*t-2),easeInQuint:t=>t*t*t*t*t,easeOutQuint:t=>(t-=1)*t*t*t*t+1,easeInOutQuint:t=>(t/=.5)<1?.5*t*t*t*t*t:.5*((t-=2)*t*t*t*t+2),easeInSine:t=>-Math.cos(t*tw)+1,easeOutSine:t=>Math.sin(t*tw),easeInOutSine:t=>-.5*(Math.cos(tb*t)-1),easeInExpo:t=>0===t?0:Math.pow(2,10*(t-1)),easeOutExpo:t=>1===t?1:-Math.pow(2,-10*t)+1,easeInOutExpo:t=>t0(t)?t:t<.5?.5*Math.pow(2,10*(2*t-1)):.5*(-Math.pow(2,-10*(2*t-1))+2),easeInCirc:t=>t>=1?t:-(Math.sqrt(1-t*t)-1),easeOutCirc:t=>Math.sqrt(1-(t-=1)*t),easeInOutCirc:t=>(t/=.5)<1?-.5*(Math.sqrt(1-t*t)-1):.5*(Math.sqrt(1-(t-=2)*t)+1),easeInElastic:t=>t0(t)?t:t1(t,.075,.3),easeOutElastic:t=>t0(t)?t:t2(t,.075,.3),easeInOutElastic:t=>t0(t)?t:t<.5?.5*t1(2*t,.1125,.45):.5+.5*t2(2*t-1,.1125,.45),easeInBack:t=>t*t*(2.70158*t-1.70158),easeOutBack:t=>(t-=1)*t*(2.70158*t+1.70158)+1,easeInOutBack(t){let e=1.70158;return(t/=.5)<1?.5*(t*t*(((e*=1.525)+1)*t-e)):.5*((t-=2)*t*(((e*=1.525)+1)*t+e)+2)},easeInBounce:t=>1-t5.easeOutBounce(1-t),easeOutBounce:t=>t<.36363636363636365?7.5625*t*t:t<.7272727272727273?7.5625*(t-=.5454545454545454)*t+.75:t<.9090909090909091?7.5625*(t-=.8181818181818182)*t+.9375:7.5625*(t-=.9545454545454546)*t+.984375,easeInOutBounce:t=>t<.5?.5*t5.easeInBounce(2*t):.5*t5.easeOutBounce(2*t-1)+.5};function t3(t){if(t&&"object"==typeof t){let e=t.toString();return"[object CanvasPattern]"===e||"[object CanvasGradient]"===e}return!1}function t4(t){return t3(t)?t:new Y(t)}function t6(t){return t3(t)?t:new Y(t).saturate(.5).darken(.1).hexString()}let t8=["x","y","borderWidth","radius","tension"],t7=["color","borderColor","backgroundColor"],t9=new Map;function et(t,e,i){return(function(t,e){e=e||{};let i=t+JSON.stringify(e),s=t9.get(i);return s||(s=new Intl.NumberFormat(t,e),t9.set(i,s)),s})(e,i).format(t)}let ee={values:t=>K(t)?t:""+t,numeric(t,e,i){let s;if(0===t)return"0";let n=this.chart.options.locale,a=t;if(i.length>1){let e;let n=Math.max(Math.abs(i[0].value),Math.abs(i[i.length-1].value));(n<1e-4||n>1e15)&&(s="scientific"),Math.abs(e=i.length>3?i[2].value-i[1].value:i[1].value-i[0].value)>=1&&t!==Math.floor(t)&&(e=t-Math.floor(t)),a=e}let r=tS(Math.abs(a)),o=isNaN(r)?1:Math.max(Math.min(-1*Math.floor(r),20),0),l={notation:s,minimumFractionDigits:o,maximumFractionDigits:o};return Object.assign(l,this.options.ticks.format),et(t,n,l)},logarithmic(t,e,i){if(0===t)return"0";let s=i[e].significand||t/Math.pow(10,Math.floor(tS(t)));return[1,2,3,5,10,15].includes(s)||e>.8*i.length?ee.numeric.call(this,t,e,i):""}};var ei={formatters:ee};let es=Object.create(null),en=Object.create(null);function ea(t,e){if(!e)return t;let i=e.split(".");for(let e=0,s=i.length;e<s;++e){let s=i[e];t=t[s]||(t[s]=Object.create(null))}return t}function er(t,e,i){return"string"==typeof e?th(ea(t,e),i):th(ea(t,""),e)}var eo=new class{constructor(t,e){this.animation=void 0,this.backgroundColor="rgba(0,0,0,0.1)",this.borderColor="rgba(0,0,0,0.1)",this.color="#666",this.datasets={},this.devicePixelRatio=t=>t.chart.platform.getDevicePixelRatio(),this.elements={},this.events=["mousemove","mouseout","click","touchstart","touchmove"],this.font={family:"'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",size:12,style:"normal",lineHeight:1.2,weight:null},this.hover={},this.hoverBackgroundColor=(t,e)=>t6(e.backgroundColor),this.hoverBorderColor=(t,e)=>t6(e.borderColor),this.hoverColor=(t,e)=>t6(e.color),this.indexAxis="x",this.interaction={mode:"nearest",intersect:!0,includeInvisible:!1},this.maintainAspectRatio=!0,this.onHover=null,this.onClick=null,this.parsing=!0,this.plugins={},this.responsive=!0,this.scale=void 0,this.scales={},this.showLine=!0,this.drawActiveElementsOnTop=!0,this.describe(t),this.apply(e)}set(t,e){return er(this,t,e)}get(t){return ea(this,t)}describe(t,e){return er(en,t,e)}override(t,e){return er(es,t,e)}route(t,e,i,s){let n=ea(this,t),a=ea(this,i),r="_"+e;Object.defineProperties(n,{[r]:{value:n[e],writable:!0},[e]:{enumerable:!0,get(){let t=this[r],e=a[s];return Z(t)?Object.assign({},e,t):tt(t,e)},set(t){this[r]=t}}})}apply(t){t.forEach(t=>t(this))}}({_scriptable:t=>!t.startsWith("on"),_indexable:t=>"events"!==t,hover:{_fallback:"interaction"},interaction:{_scriptable:!1,_indexable:!1}},[function(t){t.set("animation",{delay:void 0,duration:1e3,easing:"easeOutQuart",fn:void 0,from:void 0,loop:void 0,to:void 0,type:void 0}),t.describe("animation",{_fallback:!1,_indexable:!1,_scriptable:t=>"onProgress"!==t&&"onComplete"!==t&&"fn"!==t}),t.set("animations",{colors:{type:"color",properties:t7},numbers:{type:"number",properties:t8}}),t.describe("animations",{_fallback:"animation"}),t.set("transitions",{active:{animation:{duration:400}},resize:{animation:{duration:0}},show:{animations:{colors:{from:"transparent"},visible:{type:"boolean",duration:0}}},hide:{animations:{colors:{to:"transparent"},visible:{type:"boolean",easing:"linear",fn:t=>0|t}}}})},function(t){t.set("layout",{autoPadding:!0,padding:{top:0,right:0,bottom:0,left:0}})},function(t){t.set("scale",{display:!0,offset:!1,reverse:!1,beginAtZero:!1,bounds:"ticks",grace:0,grid:{display:!0,lineWidth:1,drawOnChartArea:!0,drawTicks:!0,tickLength:8,tickWidth:(t,e)=>e.lineWidth,tickColor:(t,e)=>e.color,offset:!1},border:{display:!0,dash:[],dashOffset:0,width:1},title:{display:!1,text:"",padding:{top:4,bottom:4}},ticks:{minRotation:0,maxRotation:50,mirror:!1,textStrokeWidth:0,textStrokeColor:"",padding:3,display:!0,autoSkip:!0,autoSkipPadding:3,labelOffset:0,callback:ei.formatters.values,minor:{},major:{},align:"center",crossAlign:"near",showLabelBackdrop:!1,backdropColor:"rgba(255, 255, 255, 0.75)",backdropPadding:2}}),t.route("scale.ticks","color","","color"),t.route("scale.grid","color","","borderColor"),t.route("scale.border","color","","borderColor"),t.route("scale.title","color","","color"),t.describe("scale",{_fallback:!1,_scriptable:t=>!t.startsWith("before")&&!t.startsWith("after")&&"callback"!==t&&"parser"!==t,_indexable:t=>"borderDash"!==t&&"tickBorderDash"!==t&&"dash"!==t}),t.describe("scales",{_fallback:"scale"}),t.describe("scale.ticks",{_scriptable:t=>"backdropPadding"!==t&&"callback"!==t,_indexable:t=>"backdropPadding"!==t})}]);function el(t,e,i,s,n){let a=e[n];return a||(a=e[n]=t.measureText(n).width,i.push(n)),a>s&&(s=a),s}function eh(t,e,i){let s=t.currentDevicePixelRatio,n=0!==i?Math.max(i/2,.5):0;return Math.round((e-n)*s)/s+n}function ed(t,e){(e=e||t.getContext("2d")).save(),e.resetTransform(),e.clearRect(0,0,t.width,t.height),e.restore()}function ec(t,e,i,s){eu(t,e,i,s,null)}function eu(t,e,i,s,n){let a,r,o,l,h,d,c,u;let p=e.pointStyle,g=e.rotation,f=e.radius,m=(g||0)*tk;if(p&&"object"==typeof p&&("[object HTMLImageElement]"===(a=p.toString())||"[object HTMLCanvasElement]"===a)){t.save(),t.translate(i,s),t.rotate(m),t.drawImage(p,-p.width/2,-p.height/2,p.width,p.height),t.restore();return}if(!isNaN(f)&&!(f<=0)){switch(t.beginPath(),p){default:n?t.ellipse(i,s,n/2,f,0,0,ty):t.arc(i,s,f,0,ty),t.closePath();break;case"triangle":d=n?n/2:f,t.moveTo(i+Math.sin(m)*d,s-Math.cos(m)*f),m+=tC,t.lineTo(i+Math.sin(m)*d,s-Math.cos(m)*f),m+=tC,t.lineTo(i+Math.sin(m)*d,s-Math.cos(m)*f),t.closePath();break;case"rectRounded":h=.516*f,r=Math.cos(m+tM)*(l=f-h),c=Math.cos(m+tM)*(n?n/2-h:l),o=Math.sin(m+tM)*l,u=Math.sin(m+tM)*(n?n/2-h:l),t.arc(i-c,s-o,h,m-tb,m-tw),t.arc(i+u,s-r,h,m-tw,m),t.arc(i+c,s+o,h,m,m+tw),t.arc(i-u,s+r,h,m+tw,m+tb),t.closePath();break;case"rect":if(!g){l=Math.SQRT1_2*f,d=n?n/2:l,t.rect(i-d,s-l,2*d,2*l);break}m+=tM;case"rectRot":c=Math.cos(m)*(n?n/2:f),r=Math.cos(m)*f,o=Math.sin(m)*f,u=Math.sin(m)*(n?n/2:f),t.moveTo(i-c,s-o),t.lineTo(i+u,s-r),t.lineTo(i+c,s+o),t.lineTo(i-u,s+r),t.closePath();break;case"crossRot":m+=tM;case"cross":c=Math.cos(m)*(n?n/2:f),r=Math.cos(m)*f,o=Math.sin(m)*f,u=Math.sin(m)*(n?n/2:f),t.moveTo(i-c,s-o),t.lineTo(i+c,s+o),t.moveTo(i+u,s-r),t.lineTo(i-u,s+r);break;case"star":c=Math.cos(m)*(n?n/2:f),r=Math.cos(m)*f,o=Math.sin(m)*f,u=Math.sin(m)*(n?n/2:f),t.moveTo(i-c,s-o),t.lineTo(i+c,s+o),t.moveTo(i+u,s-r),t.lineTo(i-u,s+r),m+=tM,c=Math.cos(m)*(n?n/2:f),r=Math.cos(m)*f,o=Math.sin(m)*f,u=Math.sin(m)*(n?n/2:f),t.moveTo(i-c,s-o),t.lineTo(i+c,s+o),t.moveTo(i+u,s-r),t.lineTo(i-u,s+r);break;case"line":r=n?n/2:Math.cos(m)*f,o=Math.sin(m)*f,t.moveTo(i-r,s-o),t.lineTo(i+r,s+o);break;case"dash":t.moveTo(i,s),t.lineTo(i+Math.cos(m)*(n?n/2:f),s+Math.sin(m)*f);break;case!1:t.closePath()}t.fill(),e.borderWidth>0&&t.stroke()}}function ep(t,e,i){return i=i||.5,!e||t&&t.x>e.left-i&&t.x<e.right+i&&t.y>e.top-i&&t.y<e.bottom+i}function eg(t,e){t.save(),t.beginPath(),t.rect(e.left,e.top,e.right-e.left,e.bottom-e.top),t.clip()}function ef(t){t.restore()}function em(t,e,i,s,n){if(!e)return t.lineTo(i.x,i.y);if("middle"===n){let s=(e.x+i.x)/2;t.lineTo(s,e.y),t.lineTo(s,i.y)}else"after"===n!=!!s?t.lineTo(e.x,i.y):t.lineTo(i.x,e.y);t.lineTo(i.x,i.y)}function ex(t,e,i,s){if(!e)return t.lineTo(i.x,i.y);t.bezierCurveTo(s?e.cp1x:e.cp2x,s?e.cp1y:e.cp2y,s?i.cp2x:i.cp1x,s?i.cp2y:i.cp1y,i.x,i.y)}function eb(t,e,i,s,n,a={}){let r,o;let l=K(e)?e:[e],h=a.strokeWidth>0&&""!==a.strokeColor;for(t.save(),t.font=n.string,a.translation&&t.translate(a.translation[0],a.translation[1]),G(a.rotation)||t.rotate(a.rotation),a.color&&(t.fillStyle=a.color),a.textAlign&&(t.textAlign=a.textAlign),a.textBaseline&&(t.textBaseline=a.textBaseline),r=0;r<l.length;++r)o=l[r],a.backdrop&&function(t,e){let i=t.fillStyle;t.fillStyle=e.color,t.fillRect(e.left,e.top,e.width,e.height),t.fillStyle=i}(t,a.backdrop),h&&(a.strokeColor&&(t.strokeStyle=a.strokeColor),G(a.strokeWidth)||(t.lineWidth=a.strokeWidth),t.strokeText(o,i,s,a.maxWidth)),t.fillText(o,i,s,a.maxWidth),function(t,e,i,s,n){if(n.strikethrough||n.underline){let a=t.measureText(s),r=e-a.actualBoundingBoxLeft,o=e+a.actualBoundingBoxRight,l=i-a.actualBoundingBoxAscent,h=i+a.actualBoundingBoxDescent,d=n.strikethrough?(l+h)/2:h;t.strokeStyle=t.fillStyle,t.beginPath(),t.lineWidth=n.decorationWidth||2,t.moveTo(r,d),t.lineTo(o,d),t.stroke()}}(t,i,s,o,a),s+=Number(n.lineHeight);t.restore()}function ey(t,e){let{x:i,y:s,w:n,h:a,radius:r}=e;t.arc(i+r.topLeft,s+r.topLeft,r.topLeft,-tw,tb,!0),t.lineTo(i,s+a-r.bottomLeft),t.arc(i+r.bottomLeft,s+a-r.bottomLeft,r.bottomLeft,tb,tw,!0),t.lineTo(i+n-r.bottomRight,s+a),t.arc(i+n-r.bottomRight,s+a-r.bottomRight,r.bottomRight,tw,0,!0),t.lineTo(i+n,s+r.topRight),t.arc(i+n-r.topRight,s+r.topRight,r.topRight,0,-tw,!0),t.lineTo(i+r.topLeft,s)}let e_=/^(normal|(\d+(?:\.\d+)?)(px|em|%)?)$/,ev=/^(normal|italic|initial|inherit|unset|(oblique( -?[0-9]?[0-9]deg)?))$/,ek=t=>+t||0;function ew(t,e){let i={},s=Z(e),n=s?Object.keys(e):e,a=Z(t)?s?i=>tt(t[i],t[e[i]]):e=>t[e]:()=>t;for(let t of n)i[t]=ek(a(t));return i}function eM(t){return ew(t,{top:"y",right:"x",bottom:"y",left:"x"})}function eC(t){return ew(t,["topLeft","topRight","bottomLeft","bottomRight"])}function eS(t){let e=eM(t);return e.width=e.left+e.right,e.height=e.top+e.bottom,e}function eP(t,e){t=t||{},e=e||eo.font;let i=tt(t.size,e.size);"string"==typeof i&&(i=parseInt(i,10));let s=tt(t.style,e.style);s&&!(""+s).match(ev)&&(console.warn('Invalid font style specified: "'+s+'"'),s=void 0);let n={family:tt(t.family,e.family),lineHeight:function(t,e){let i=(""+t).match(e_);if(!i||"normal"===i[1])return 1.2*e;switch(t=+i[2],i[3]){case"px":return t;case"%":t/=100}return e*t}(tt(t.lineHeight,e.lineHeight),i),size:i,style:s,weight:tt(t.weight,e.weight),string:""};return n.string=!n||G(n.size)||G(n.family)?null:(n.style?n.style+" ":"")+(n.weight?n.weight+" ":"")+n.size+"px "+n.family,n}function eA(t,e,i,s){let n,a,r,o=!0;for(n=0,a=t.length;n<a;++n)if(void 0!==(r=t[n])&&(void 0!==e&&"function"==typeof r&&(r=r(e),o=!1),void 0!==i&&K(r)&&(r=r[i%r.length],o=!1),void 0!==r))return s&&!o&&(s.cacheable=!1),r}function eD(t,e){return Object.assign(Object.create(t),e)}function eL(t,e=[""],i,s,n=()=>t[0]){let a=i||t;void 0===s&&(s=eV("_fallback",t));let r={[Symbol.toStringTag]:"Object",_cacheable:!0,_scopes:t,_rootScopes:a,_fallback:s,_getTarget:n,override:i=>eL([i,...t],e,a,s)};return new Proxy(r,{deleteProperty:(e,i)=>(delete e[i],delete e._keys,delete t[0][i],!0),get:(i,s)=>eR(i,s,()=>(function(t,e,i,s){let n;for(let a of e)if(void 0!==(n=eV(eO(a,t),i)))return eT(t,n)?eF(i,s,t,n):n})(s,e,t,i)),getOwnPropertyDescriptor:(t,e)=>Reflect.getOwnPropertyDescriptor(t._scopes[0],e),getPrototypeOf:()=>Reflect.getPrototypeOf(t[0]),has:(t,e)=>eW(t).includes(e),ownKeys:t=>eW(t),set(t,e,i){let s=t._storage||(t._storage=n());return t[e]=s[e]=i,delete t._keys,!0}})}function eE(t,e,i,s){let n={_cacheable:!1,_proxy:t,_context:e,_subProxy:i,_stack:new Set,_descriptors:eI(t,s),setContext:e=>eE(t,e,i,s),override:n=>eE(t.override(n),e,i,s)};return new Proxy(n,{deleteProperty:(e,i)=>(delete e[i],delete t[i],!0),get:(t,e,i)=>eR(t,e,()=>(function(t,e,i){let{_proxy:s,_context:n,_subProxy:a,_descriptors:r}=t,o=s[e];return tm(o)&&r.isScriptable(e)&&(o=function(t,e,i,s){let{_proxy:n,_context:a,_subProxy:r,_stack:o}=i;if(o.has(t))throw Error("Recursion detected: "+Array.from(o).join("->")+"->"+t);o.add(t);let l=e(a,r||s);return o.delete(t),eT(t,l)&&(l=eF(n._scopes,n,t,l)),l}(e,o,t,i)),K(o)&&o.length&&(o=function(t,e,i,s){let{_proxy:n,_context:a,_subProxy:r,_descriptors:o}=i;if(void 0!==a.index&&s(t))return e[a.index%e.length];if(Z(e[0])){let i=e,s=n._scopes.filter(t=>t!==i);for(let l of(e=[],i)){let i=eF(s,n,t,l);e.push(eE(i,a,r&&r[t],o))}}return e}(e,o,t,r.isIndexable)),eT(e,o)&&(o=eE(o,n,a&&a[e],r)),o})(t,e,i)),getOwnPropertyDescriptor:(e,i)=>e._descriptors.allKeys?Reflect.has(t,i)?{enumerable:!0,configurable:!0}:void 0:Reflect.getOwnPropertyDescriptor(t,i),getPrototypeOf:()=>Reflect.getPrototypeOf(t),has:(e,i)=>Reflect.has(t,i),ownKeys:()=>Reflect.ownKeys(t),set:(e,i,s)=>(t[i]=s,delete e[i],!0)})}function eI(t,e={scriptable:!0,indexable:!0}){let{_scriptable:i=e.scriptable,_indexable:s=e.indexable,_allKeys:n=e.allKeys}=t;return{allKeys:n,scriptable:i,indexable:s,isScriptable:tm(i)?i:()=>i,isIndexable:tm(s)?s:()=>s}}let eO=(t,e)=>t?t+tg(e):e,eT=(t,e)=>Z(e)&&"adapters"!==t&&(null===Object.getPrototypeOf(e)||e.constructor===Object);function eR(t,e,i){if(Object.prototype.hasOwnProperty.call(t,e))return t[e];let s=i();return t[e]=s,s}let ez=(t,e)=>!0===t?e:"string"==typeof t?tp(e,t):void 0;function eF(t,e,i,s){var n;let a=e._rootScopes,r=tm(n=e._fallback)?n(i,s):n,o=[...t,...a],l=new Set;l.add(s);let h=eB(l,o,i,r||i,s);return null!==h&&(void 0===r||r===i||null!==(h=eB(l,o,r,h,s)))&&eL(Array.from(l),[""],a,r,()=>(function(t,e,i){let s=t._getTarget();e in s||(s[e]={});let n=s[e];return K(n)&&Z(i)?i:n||{}})(e,i,s))}function eB(t,e,i,s,n){for(;i;)i=function(t,e,i,s,n){for(let r of e){let e=ez(i,r);if(e){var a;t.add(e);let r=tm(a=e._fallback)?a(i,n):a;if(void 0!==r&&r!==i&&r!==s)return r}else if(!1===e&&void 0!==s&&i!==s)return null}return!1}(t,e,i,s,n);return i}function eV(t,e){for(let i of e){if(!i)continue;let e=i[t];if(void 0!==e)return e}}function eW(t){let e=t._keys;return e||(e=t._keys=function(t){let e=new Set;for(let i of t)for(let t of Object.keys(i).filter(t=>!t.startsWith("_")))e.add(t);return Array.from(e)}(t._scopes)),e}function eN(t,e,i,s){let n,a,r;let{iScale:o}=t,{key:l="r"}=this._parsing,h=Array(s);for(n=0;n<s;++n)r=e[a=n+i],h[n]={r:o.parse(tp(r,l),a)};return h}let eq=Number.EPSILON||1e-14,eH=(t,e)=>e<t.length&&!t[e].skip&&t[e],e$=t=>"x"===t?"y":"x";function ej(t,e,i){return Math.max(Math.min(t,i),e)}function eY(){return"undefined"!=typeof window&&"undefined"!=typeof document}function eU(t){let e=t.parentNode;return e&&"[object ShadowRoot]"===e.toString()&&(e=e.host),e}function eX(t,e,i){let s;return"string"==typeof t?(s=parseInt(t,10),-1!==t.indexOf("%")&&(s=s/100*e.parentNode[i])):s=t,s}let eG=t=>t.ownerDocument.defaultView.getComputedStyle(t,null),eK=["top","right","bottom","left"];function eZ(t,e,i){let s={};i=i?"-"+i:"";for(let n=0;n<4;n++){let a=eK[n];s[a]=parseFloat(t[e+"-"+a+i])||0}return s.width=s.left+s.right,s.height=s.top+s.bottom,s}let eJ=(t,e,i)=>(t>0||e>0)&&(!i||!i.shadowRoot);function eQ(t,e){if("native"in t)return t;let{canvas:i,currentDevicePixelRatio:s}=e,n=eG(i),a="border-box"===n.boxSizing,r=eZ(n,"padding"),o=eZ(n,"border","width"),{x:l,y:h,box:d}=function(t,e){let i,s;let n=t.touches,a=n&&n.length?n[0]:t,{offsetX:r,offsetY:o}=a,l=!1;if(eJ(r,o,t.target))i=r,s=o;else{let t=e.getBoundingClientRect();i=a.clientX-t.left,s=a.clientY-t.top,l=!0}return{x:i,y:s,box:l}}(t,i),c=r.left+(d&&o.left),u=r.top+(d&&o.top),{width:p,height:g}=e;return a&&(p-=r.width+o.width,g-=r.height+o.height),{x:Math.round((l-c)/p*i.width/s),y:Math.round((h-u)/g*i.height/s)}}let e0=t=>Math.round(10*t)/10;function e1(t,e,i){let s=e||1,n=Math.floor(t.height*s),a=Math.floor(t.width*s);t.height=Math.floor(t.height),t.width=Math.floor(t.width);let r=t.canvas;return r.style&&(i||!r.style.height&&!r.style.width)&&(r.style.height=`${t.height}px`,r.style.width=`${t.width}px`),(t.currentDevicePixelRatio!==s||r.height!==n||r.width!==a)&&(t.currentDevicePixelRatio=s,r.height=n,r.width=a,t.ctx.setTransform(s,0,0,s,0,0),!0)}let e2=function(){let t=!1;try{let e={get passive(){return t=!0,!1}};window.addEventListener("test",null,e),window.removeEventListener("test",null,e)}catch(t){}return t}();function e5(t,e){let i=eG(t).getPropertyValue(e),s=i&&i.match(/^(\d+)(\.\d+)?px$/);return s?+s[1]:void 0}function e3(t,e,i,s){return{x:t.x+i*(e.x-t.x),y:t.y+i*(e.y-t.y)}}function e4(t,e,i,s){return{x:t.x+i*(e.x-t.x),y:"middle"===s?i<.5?t.y:e.y:"after"===s?i<1?t.y:e.y:i>0?e.y:t.y}}function e6(t,e,i,s){let n={x:t.cp2x,y:t.cp2y},a={x:e.cp1x,y:e.cp1y},r=e3(t,n,i),o=e3(n,a,i),l=e3(a,e,i),h=e3(r,o,i),d=e3(o,l,i);return e3(h,d,i)}function e8(t,e,i){var s;return t?(s=i,{x:t=>e+e+s-t,setWidth(t){s=t},textAlign:t=>"center"===t?t:"right"===t?"left":"right",xPlus:(t,e)=>t-e,leftForLtr:(t,e)=>t-e}):{x:t=>t,setWidth(t){},textAlign:t=>t,xPlus:(t,e)=>t+e,leftForLtr:(t,e)=>t}}function e7(t,e){let i,s;("ltr"===e||"rtl"===e)&&(s=[(i=t.canvas.style).getPropertyValue("direction"),i.getPropertyPriority("direction")],i.setProperty("direction",e,"important"),t.prevTextDirection=s)}function e9(t,e){void 0!==e&&(delete t.prevTextDirection,t.canvas.style.setProperty("direction",e[0],e[1]))}function it(t){return"angle"===t?{between:tB,compare:tz,normalize:tF}:{between:tW,compare:(t,e)=>t-e,normalize:t=>t}}function ie({start:t,end:e,count:i,loop:s,style:n}){return{start:t%i,end:e%i,loop:s&&(e-t+1)%i==0,style:n}}function ii(t,e,i){let s,n,a;if(!i)return[t];let{property:r,start:o,end:l}=i,h=e.length,{compare:d,between:c,normalize:u}=it(r),{start:p,end:g,loop:f,style:m}=function(t,e,i){let s;let{property:n,start:a,end:r}=i,{between:o,normalize:l}=it(n),h=e.length,{start:d,end:c,loop:u}=t;if(u){for(d+=h,c+=h,s=0;s<h&&o(l(e[d%h][n]),a,r);++s)d--,c--;d%=h,c%=h}return c<d&&(c+=h),{start:d,end:c,loop:u,style:t.style}}(t,e,i),x=[],b=!1,y=null,_=()=>c(o,a,s)&&0!==d(o,a),v=()=>0===d(l,s)||c(l,a,s),k=()=>b||_(),w=()=>!b||v();for(let t=p,i=p;t<=g;++t)(n=e[t%h]).skip||(s=u(n[r]))===a||(b=c(s,o,l),null===y&&k()&&(y=0===d(s,o)?t:i),null!==y&&w()&&(x.push(ie({start:y,end:t,loop:f,count:h,style:m})),y=null),i=t,a=s);return null!==y&&x.push(ie({start:y,end:g,loop:f,count:h,style:m})),x}function is(t,e){let i=[],s=t.segments;for(let n=0;n<s.length;n++){let a=ii(s[n],t.points,e);a.length&&i.push(...a)}return i}function ia(t,e,i,s){return s&&s.setContext&&i?function(t,e,i,s){let n=t._chart.getContext(),a=ir(t.options),{_datasetIndex:r,options:{spanGaps:o}}=t,l=i.length,h=[],d=a,c=e[0].start,u=c;function p(t,e,s,n){let a=o?-1:1;if(t!==e){for(t+=l;i[t%l].skip;)t-=a;for(;i[e%l].skip;)e+=a;t%l!=e%l&&(h.push({start:t%l,end:e%l,loop:s,style:n}),d=n,c=e%l)}}for(let t of e){let e;let a=i[(c=o?c:t.start)%l];for(u=c+1;u<=t.end;u++){let o=i[u%l];(function(t,e){if(!e)return!1;let i=[],s=function(t,e){return t3(e)?(i.includes(e)||i.push(e),i.indexOf(e)):e};return JSON.stringify(t,s)!==JSON.stringify(e,s)})(e=ir(s.setContext(eD(n,{type:"segment",p0:a,p1:o,p0DataIndex:(u-1)%l,p1DataIndex:u%l,datasetIndex:r}))),d)&&p(c,u-1,t.loop,d),a=o,d=e}c<u-1&&p(c,u-1,t.loop,d)}return h}(t,e,i,s):e}function ir(t){return{backgroundColor:t.backgroundColor,borderCapStyle:t.borderCapStyle,borderDash:t.borderDash,borderDashOffset:t.borderDashOffset,borderJoinStyle:t.borderJoinStyle,borderWidth:t.borderWidth,borderColor:t.borderColor}}var io=new class{constructor(){this._request=null,this._charts=new Map,this._running=!1,this._lastDate=void 0}_notify(t,e,i,s){let n=e.listeners[s],a=e.duration;n.forEach(s=>s({chart:t,initial:e.initial,numSteps:a,currentStep:Math.min(i-e.start,a)}))}_refresh(){this._request||(this._running=!0,this._request=tU.call(window,()=>{this._update(),this._request=null,this._running&&this._refresh()}))}_update(t=Date.now()){let e=0;this._charts.forEach((i,s)=>{let n;if(!i.running||!i.items.length)return;let a=i.items,r=a.length-1,o=!1;for(;r>=0;--r)(n=a[r])._active?(n._total>i.duration&&(i.duration=n._total),n.tick(t),o=!0):(a[r]=a[a.length-1],a.pop());o&&(s.draw(),this._notify(s,i,t,"progress")),a.length||(i.running=!1,this._notify(s,i,t,"complete"),i.initial=!1),e+=a.length}),this._lastDate=t,0===e&&(this._running=!1)}_getAnims(t){let e=this._charts,i=e.get(t);return i||(i={running:!1,initial:!0,items:[],listeners:{complete:[],progress:[]}},e.set(t,i)),i}listen(t,e,i){this._getAnims(t).listeners[e].push(i)}add(t,e){e&&e.length&&this._getAnims(t).items.push(...e)}has(t){return this._getAnims(t).items.length>0}start(t){let e=this._charts.get(t);e&&(e.running=!0,e.start=Date.now(),e.duration=e.items.reduce((t,e)=>Math.max(t,e._duration),0),this._refresh())}running(t){if(!this._running)return!1;let e=this._charts.get(t);return!!e&&!!e.running&&!!e.items.length}stop(t){let e=this._charts.get(t);if(!e||!e.items.length)return;let i=e.items,s=i.length-1;for(;s>=0;--s)i[s].cancel();e.items=[],this._notify(t,e,Date.now(),"complete")}remove(t){return this._charts.delete(t)}};let il="transparent",ih={boolean:(t,e,i)=>i>.5?e:t,color(t,e,i){let s=t4(t||il),n=s.valid&&t4(e||il);return n&&n.valid?n.mix(s,i).hexString():e},number:(t,e,i)=>t+(e-t)*i};class id{constructor(t,e,i,s){let n=e[i];s=eA([t.to,s,n,t.from]);let a=eA([t.from,n,s]);this._active=!0,this._fn=t.fn||ih[t.type||typeof a],this._easing=t5[t.easing]||t5.linear,this._start=Math.floor(Date.now()+(t.delay||0)),this._duration=this._total=Math.floor(t.duration),this._loop=!!t.loop,this._target=e,this._prop=i,this._from=a,this._to=s,this._promises=void 0}active(){return this._active}update(t,e,i){if(this._active){this._notify(!1);let s=this._target[this._prop],n=i-this._start,a=this._duration-n;this._start=i,this._duration=Math.floor(Math.max(a,t.duration)),this._total+=n,this._loop=!!t.loop,this._to=eA([t.to,e,s,t.from]),this._from=eA([t.from,s,e])}}cancel(){this._active&&(this.tick(Date.now()),this._active=!1,this._notify(!1))}tick(t){let e;let i=t-this._start,s=this._duration,n=this._prop,a=this._from,r=this._loop,o=this._to;if(this._active=a!==o&&(r||i<s),!this._active){this._target[n]=o,this._notify(!0);return}if(i<0){this._target[n]=a;return}e=i/s%2,e=r&&e>1?2-e:e,e=this._easing(Math.min(1,Math.max(0,e))),this._target[n]=this._fn(a,o,e)}wait(){let t=this._promises||(this._promises=[]);return new Promise((e,i)=>{t.push({res:e,rej:i})})}_notify(t){let e=t?"res":"rej",i=this._promises||[];for(let t=0;t<i.length;t++)i[t][e]()}}class ic{constructor(t,e){this._chart=t,this._properties=new Map,this.configure(e)}configure(t){if(!Z(t))return;let e=Object.keys(eo.animation),i=this._properties;Object.getOwnPropertyNames(t).forEach(s=>{let n=t[s];if(!Z(n))return;let a={};for(let t of e)a[t]=n[t];(K(n.properties)&&n.properties||[s]).forEach(t=>{t!==s&&i.has(t)||i.set(t,a)})})}_animateOptions(t,e){let i=e.options,s=function(t,e){if(!e)return;let i=t.options;if(!i){t.options=e;return}return i.$shared&&(t.options=i=Object.assign({},i,{$shared:!1,$animations:{}})),i}(t,i);if(!s)return[];let n=this._createAnimations(s,i);return i.$shared&&(function(t,e){let i=[],s=Object.keys(e);for(let e=0;e<s.length;e++){let n=t[s[e]];n&&n.active()&&i.push(n.wait())}return Promise.all(i)})(t.options.$animations,i).then(()=>{t.options=i},()=>{}),n}_createAnimations(t,e){let i;let s=this._properties,n=[],a=t.$animations||(t.$animations={}),r=Object.keys(e),o=Date.now();for(i=r.length-1;i>=0;--i){let l=r[i];if("$"===l.charAt(0))continue;if("options"===l){n.push(...this._animateOptions(t,e));continue}let h=e[l],d=a[l],c=s.get(l);if(d){if(c&&d.active()){d.update(c,h,o);continue}d.cancel()}if(!c||!c.duration){t[l]=h;continue}a[l]=d=new id(c,t,l,h),n.push(d)}return n}update(t,e){if(0===this._properties.size){Object.assign(t,e);return}let i=this._createAnimations(t,e);if(i.length)return io.add(this._chart,i),!0}}function iu(t,e){let i=t&&t.options||{},s=i.reverse,n=void 0===i.min?e:0,a=void 0===i.max?e:0;return{start:s?a:n,end:s?n:a}}function ip(t,e){let i,s;let n=[],a=t._getSortedDatasetMetas(e);for(i=0,s=a.length;i<s;++i)n.push(a[i].index);return n}function ig(t,e,i,s={}){let n,a,r,o;let l=t.keys,h="single"===s.mode;if(null!==e){for(n=0,a=l.length;n<a;++n){if((r=+l[n])===i){if(s.all)continue;break}J(o=t.values[r])&&(h||0===e||tP(e)===tP(o))&&(e+=o)}return e}}function im(t,e){let i=t&&t.options.stacked;return i||void 0===i&&void 0!==e.stack}function ix(t,e,i,s){for(let n of e.getMatchingVisibleMetas(s).reverse()){let e=t[n.index];if(i&&e>0||!i&&e<0)return n.index}return null}function ib(t,e){let i;let{chart:s,_cachedMeta:n}=t,a=s._stacks||(s._stacks={}),{iScale:r,vScale:o,index:l}=n,h=r.axis,d=o.axis,c=`${r.id}.${o.id}.${n.stack||n.type}`,u=e.length;for(let t=0;t<u;++t){let s=e[t],{[h]:r,[d]:u}=s,p=s._stacks||(s._stacks={});(i=p[d]=function(t,e,i){let s=t[e]||(t[e]={});return s[i]||(s[i]={})}(a,c,r))[l]=u,i._top=ix(i,o,!0,n.type),i._bottom=ix(i,o,!1,n.type);let g=i._visualValues||(i._visualValues={});g[l]=u}}function iy(t,e){let i=t.scales;return Object.keys(i).filter(t=>i[t].axis===e).shift()}function i_(t,e){let i=t.controller.index,s=t.vScale&&t.vScale.axis;if(s)for(let n of e=e||t._parsed){let t=n._stacks;if(!t||void 0===t[s]||void 0===t[s][i])return;delete t[s][i],void 0!==t[s]._visualValues&&void 0!==t[s]._visualValues[i]&&delete t[s]._visualValues[i]}}let iv=t=>"reset"===t||"none"===t,ik=(t,e)=>e?t:Object.assign({},t),iw=(t,e,i)=>t&&!e.hidden&&e._stacked&&{keys:ip(i,!0),values:null};class iM{static defaults={};static datasetElementType=null;static dataElementType=null;constructor(t,e){this.chart=t,this._ctx=t.ctx,this.index=e,this._cachedDataOpts={},this._cachedMeta=this.getMeta(),this._type=this._cachedMeta.type,this.options=void 0,this._parsing=!1,this._data=void 0,this._objectData=void 0,this._sharedOptions=void 0,this._drawStart=void 0,this._drawCount=void 0,this.enableOptionSharing=!1,this.supportsDecimation=!1,this.$context=void 0,this._syncList=[],this.datasetElementType=new.target.datasetElementType,this.dataElementType=new.target.dataElementType,this.initialize()}initialize(){let t=this._cachedMeta;this.configure(),this.linkScales(),t._stacked=im(t.vScale,t),this.addElements(),this.options.fill&&!this.chart.isPluginEnabled("filler")&&console.warn("Tried to use the 'fill' option without the 'Filler' plugin enabled. Please import and register the 'Filler' plugin and make sure it is not disabled in the options")}updateIndex(t){this.index!==t&&i_(this._cachedMeta),this.index=t}linkScales(){let t=this.chart,e=this._cachedMeta,i=this.getDataset(),s=(t,e,i,s)=>"x"===t?e:"r"===t?s:i,n=e.xAxisID=tt(i.xAxisID,iy(t,"x")),a=e.yAxisID=tt(i.yAxisID,iy(t,"y")),r=e.rAxisID=tt(i.rAxisID,iy(t,"r")),o=e.indexAxis,l=e.iAxisID=s(o,n,a,r),h=e.vAxisID=s(o,a,n,r);e.xScale=this.getScaleForId(n),e.yScale=this.getScaleForId(a),e.rScale=this.getScaleForId(r),e.iScale=this.getScaleForId(l),e.vScale=this.getScaleForId(h)}getDataset(){return this.chart.data.datasets[this.index]}getMeta(){return this.chart.getDatasetMeta(this.index)}getScaleForId(t){return this.chart.scales[t]}_getOtherScale(t){let e=this._cachedMeta;return t===e.iScale?e.vScale:e.iScale}reset(){this._update("reset")}_destroy(){let t=this._cachedMeta;this._data&&tj(this._data,this),t._stacked&&i_(t)}_dataCheck(){let t=this.getDataset(),e=t.data||(t.data=[]),i=this._data;if(Z(e))this._data=function(t){let e,i,s;let n=Object.keys(t),a=Array(n.length);for(e=0,i=n.length;e<i;++e)s=n[e],a[e]={x:s,y:t[s]};return a}(e);else if(i!==e){if(i){tj(i,this);let t=this._cachedMeta;i_(t),t._parsed=[]}e&&Object.isExtensible(e)&&function(t,e){if(t._chartjs){t._chartjs.listeners.push(e);return}Object.defineProperty(t,"_chartjs",{configurable:!0,enumerable:!1,value:{listeners:[e]}}),t$.forEach(e=>{let i="_onData"+tg(e),s=t[e];Object.defineProperty(t,e,{configurable:!0,enumerable:!1,value(...e){let n=s.apply(this,e);return t._chartjs.listeners.forEach(t=>{"function"==typeof t[i]&&t[i](...e)}),n}})})}(e,this),this._syncList=[],this._data=e}}addElements(){let t=this._cachedMeta;this._dataCheck(),this.datasetElementType&&(t.dataset=new this.datasetElementType)}buildOrUpdateElements(t){let e=this._cachedMeta,i=this.getDataset(),s=!1;this._dataCheck();let n=e._stacked;e._stacked=im(e.vScale,e),e.stack!==i.stack&&(s=!0,i_(e),e.stack=i.stack),this._resyncElements(t),(s||n!==e._stacked)&&ib(this,e._parsed)}configure(){let t=this.chart.config,e=t.datasetScopeKeys(this._type),i=t.getOptionScopes(this.getDataset(),e,!0);this.options=t.createResolver(i,this.getContext()),this._parsing=this.options.parsing,this._cachedDataOpts={}}parse(t,e){let i,s,n;let{_cachedMeta:a,_data:r}=this,{iScale:o,_stacked:l}=a,h=o.axis,d=0===t&&e===r.length||a._sorted,c=t>0&&a._parsed[t-1];if(!1===this._parsing)a._parsed=r,a._sorted=!0,n=r;else{n=K(r[t])?this.parseArrayData(a,r,t,e):Z(r[t])?this.parseObjectData(a,r,t,e):this.parsePrimitiveData(a,r,t,e);let o=()=>null===s[h]||c&&s[h]<c[h];for(i=0;i<e;++i)a._parsed[i+t]=s=n[i],d&&(o()&&(d=!1),c=s);a._sorted=d}l&&ib(this,n)}parsePrimitiveData(t,e,i,s){let n,a;let{iScale:r,vScale:o}=t,l=r.axis,h=o.axis,d=r.getLabels(),c=r===o,u=Array(s);for(n=0;n<s;++n)a=n+i,u[n]={[l]:c||r.parse(d[a],a),[h]:o.parse(e[a],a)};return u}parseArrayData(t,e,i,s){let n,a,r;let{xScale:o,yScale:l}=t,h=Array(s);for(n=0;n<s;++n)r=e[a=n+i],h[n]={x:o.parse(r[0],a),y:l.parse(r[1],a)};return h}parseObjectData(t,e,i,s){let n,a,r;let{xScale:o,yScale:l}=t,{xAxisKey:h="x",yAxisKey:d="y"}=this._parsing,c=Array(s);for(n=0;n<s;++n)r=e[a=n+i],c[n]={x:o.parse(tp(r,h),a),y:l.parse(tp(r,d),a)};return c}getParsed(t){return this._cachedMeta._parsed[t]}getDataElement(t){return this._cachedMeta.data[t]}applyStack(t,e,i){let s=this.chart,n=this._cachedMeta,a=e[t.axis],r={keys:ip(s,!0),values:e._stacks[t.axis]._visualValues};return ig(r,a,n.index,{mode:i})}updateRangeFromParsed(t,e,i,s){let n=i[e.axis],a=null===n?NaN:n,r=s&&i._stacks[e.axis];s&&r&&(s.values=r,a=ig(s,n,this._cachedMeta.index)),t.min=Math.min(t.min,a),t.max=Math.max(t.max,a)}getMinMax(t,e){let i,s;let n=this._cachedMeta,a=n._parsed,r=n._sorted&&t===n.iScale,o=a.length,l=this._getOtherScale(t),h=iw(e,n,this.chart),d={min:Number.POSITIVE_INFINITY,max:Number.NEGATIVE_INFINITY},{min:c,max:u}=function(t){let{min:e,max:i,minDefined:s,maxDefined:n}=t.getUserBounds();return{min:s?e:Number.NEGATIVE_INFINITY,max:n?i:Number.POSITIVE_INFINITY}}(l);function p(){s=a[i];let e=s[l.axis];return!J(s[t.axis])||c>e||u<e}for(i=0;i<o&&(p()||(this.updateRangeFromParsed(d,t,s,h),!r));++i);if(r){for(i=o-1;i>=0;--i)if(!p()){this.updateRangeFromParsed(d,t,s,h);break}}return d}getAllParsedValues(t){let e,i,s;let n=this._cachedMeta._parsed,a=[];for(e=0,i=n.length;e<i;++e)J(s=n[e][t.axis])&&a.push(s);return a}getMaxOverflow(){return!1}getLabelAndValue(t){let e=this._cachedMeta,i=e.iScale,s=e.vScale,n=this.getParsed(t);return{label:i?""+i.getLabelForValue(n[i.axis]):"",value:s?""+s.getLabelForValue(n[s.axis]):""}}_update(t){var e;let i,s,n,a;let r=this._cachedMeta;this.update(t||"default"),r._clip=(Z(e=tt(this.options.clip,function(t,e,i){if(!1===i)return!1;let s=iu(t,i),n=iu(e,i);return{top:n.end,right:s.end,bottom:n.start,left:s.start}}(r.xScale,r.yScale,this.getMaxOverflow())))?(i=e.top,s=e.right,n=e.bottom,a=e.left):i=s=n=a=e,{top:i,right:s,bottom:n,left:a,disabled:!1===e})}update(t){}draw(){let t;let e=this._ctx,i=this.chart,s=this._cachedMeta,n=s.data||[],a=i.chartArea,r=[],o=this._drawStart||0,l=this._drawCount||n.length-o,h=this.options.drawActiveElementsOnTop;for(s.dataset&&s.dataset.draw(e,a,o,l),t=o;t<o+l;++t){let i=n[t];i.hidden||(i.active&&h?r.push(i):i.draw(e,a))}for(t=0;t<r.length;++t)r[t].draw(e,a)}getStyle(t,e){let i=e?"active":"default";return void 0===t&&this._cachedMeta.dataset?this.resolveDatasetElementOptions(i):this.resolveDataElementOptions(t||0,i)}getContext(t,e,i){var s;let n;let a=this.getDataset();if(t>=0&&t<this._cachedMeta.data.length){let e=this._cachedMeta.data[t];(n=e.$context||(e.$context=eD(this.getContext(),{active:!1,dataIndex:t,parsed:void 0,raw:void 0,element:e,index:t,mode:"default",type:"data"}))).parsed=this.getParsed(t),n.raw=a.data[t],n.index=n.dataIndex=t}else(n=this.$context||(this.$context=eD(this.chart.getContext(),{active:!1,dataset:void 0,datasetIndex:s=this.index,index:s,mode:"default",type:"dataset"}))).dataset=a,n.index=n.datasetIndex=this.index;return n.active=!!e,n.mode=i,n}resolveDatasetElementOptions(t){return this._resolveElementOptions(this.datasetElementType.id,t)}resolveDataElementOptions(t,e){return this._resolveElementOptions(this.dataElementType.id,e,t)}_resolveElementOptions(t,e="default",i){let s="active"===e,n=this._cachedDataOpts,a=t+"-"+e,r=n[a],o=this.enableOptionSharing&&tf(i);if(r)return ik(r,o);let l=this.chart.config,h=l.datasetElementScopeKeys(this._type,t),d=s?[`${t}Hover`,"hover",t,""]:[t,""],c=l.getOptionScopes(this.getDataset(),h),u=Object.keys(eo.elements[t]),p=l.resolveNamedOptions(c,u,()=>this.getContext(i,s,e),d);return p.$shared&&(p.$shared=o,n[a]=Object.freeze(ik(p,o))),p}_resolveAnimations(t,e,i){let s;let n=this.chart,a=this._cachedDataOpts,r=`animation-${e}`,o=a[r];if(o)return o;if(!1!==n.options.animation){let n=this.chart.config,a=n.datasetAnimationScopeKeys(this._type,e),r=n.getOptionScopes(this.getDataset(),a);s=n.createResolver(r,this.getContext(t,i,e))}let l=new ic(n,s&&s.animations);return s&&s._cacheable&&(a[r]=Object.freeze(l)),l}getSharedOptions(t){if(t.$shared)return this._sharedOptions||(this._sharedOptions=Object.assign({},t))}includeOptions(t,e){return!e||iv(t)||this.chart._animationsDisabled}_getSharedOptions(t,e){let i=this.resolveDataElementOptions(t,e),s=this._sharedOptions,n=this.getSharedOptions(i),a=this.includeOptions(e,n)||n!==s;return this.updateSharedOptions(n,e,i),{sharedOptions:n,includeOptions:a}}updateElement(t,e,i,s){iv(s)?Object.assign(t,i):this._resolveAnimations(e,s).update(t,i)}updateSharedOptions(t,e,i){t&&!iv(e)&&this._resolveAnimations(void 0,e).update(t,i)}_setStyle(t,e,i,s){t.active=s;let n=this.getStyle(e,s);this._resolveAnimations(e,i,s).update(t,{options:!s&&this.getSharedOptions(n)||n})}removeHoverStyle(t,e,i){this._setStyle(t,i,"active",!1)}setHoverStyle(t,e,i){this._setStyle(t,i,"active",!0)}_removeDatasetHoverStyle(){let t=this._cachedMeta.dataset;t&&this._setStyle(t,void 0,"active",!1)}_setDatasetHoverStyle(){let t=this._cachedMeta.dataset;t&&this._setStyle(t,void 0,"active",!0)}_resyncElements(t){let e=this._data,i=this._cachedMeta.data;for(let[t,e,i]of this._syncList)this[t](e,i);this._syncList=[];let s=i.length,n=e.length,a=Math.min(n,s);a&&this.parse(0,a),n>s?this._insertElements(s,n-s,t):n<s&&this._removeElements(n,s-n)}_insertElements(t,e,i=!0){let s;let n=this._cachedMeta,a=n.data,r=t+e,o=t=>{for(t.length+=e,s=t.length-1;s>=r;s--)t[s]=t[s-e]};for(o(a),s=t;s<r;++s)a[s]=new this.dataElementType;this._parsing&&o(n._parsed),this.parse(t,e),i&&this.updateElements(a,t,e,"reset")}updateElements(t,e,i,s){}_removeElements(t,e){let i=this._cachedMeta;if(this._parsing){let s=i._parsed.splice(t,e);i._stacked&&i_(i,s)}i.data.splice(t,e)}_sync(t){if(this._parsing)this._syncList.push(t);else{let[e,i,s]=t;this[e](i,s)}this.chart._dataChanges.push([this.index,...t])}_onDataPush(){let t=arguments.length;this._sync(["_insertElements",this.getDataset().data.length-t,t])}_onDataPop(){this._sync(["_removeElements",this._cachedMeta.data.length-1,1])}_onDataShift(){this._sync(["_removeElements",0,1])}_onDataSplice(t,e){e&&this._sync(["_removeElements",t,e]);let i=arguments.length-2;i&&this._sync(["_insertElements",t,i])}_onDataUnshift(){this._sync(["_insertElements",0,arguments.length])}}function iC(t,e,i,s){return K(t)?function(t,e,i,s){let n=i.parse(t[0],s),a=i.parse(t[1],s),r=Math.min(n,a),o=Math.max(n,a),l=r,h=o;Math.abs(r)>Math.abs(o)&&(l=o,h=r),e[i.axis]=h,e._custom={barStart:l,barEnd:h,start:n,end:a,min:r,max:o}}(t,e,i,s):e[i.axis]=i.parse(t,s),e}function iS(t,e,i,s){let n,a,r,o;let l=t.iScale,h=t.vScale,d=l.getLabels(),c=l===h,u=[];for(n=i,a=i+s;n<a;++n)o=e[n],(r={})[l.axis]=c||l.parse(d[n],n),u.push(iC(o,r,h,n));return u}function iP(t){return t&&void 0!==t.barStart&&void 0!==t.barEnd}function iA(t,e,i,s){var n;return t=s?iD(t=(n=t)===e?i:n===i?e:n,i,e):iD(t,e,i)}function iD(t,e,i){return"start"===t?e:"end"===t?i:t}class iL extends iM{static id="doughnut";static defaults={datasetElementType:!1,dataElementType:"arc",animation:{animateRotate:!0,animateScale:!1},animations:{numbers:{type:"number",properties:["circumference","endAngle","innerRadius","outerRadius","startAngle","x","y","offset","borderWidth","spacing"]}},cutout:"50%",rotation:0,circumference:360,radius:"100%",spacing:0,indexAxis:"r"};static descriptors={_scriptable:t=>"spacing"!==t,_indexable:t=>"spacing"!==t&&!t.startsWith("borderDash")&&!t.startsWith("hoverBorderDash")};static overrides={aspectRatio:1,plugins:{legend:{labels:{generateLabels(t){let e=t.data;if(e.labels.length&&e.datasets.length){let{labels:{pointStyle:i,color:s}}=t.legend.options;return e.labels.map((e,n)=>{let a=t.getDatasetMeta(0),r=a.controller.getStyle(n);return{text:e,fillStyle:r.backgroundColor,strokeStyle:r.borderColor,fontColor:s,lineWidth:r.borderWidth,pointStyle:i,hidden:!t.getDataVisibility(n),index:n}})}return[]}},onClick(t,e,i){i.chart.toggleDataVisibility(e.index),i.chart.update()}}}};constructor(t,e){super(t,e),this.enableOptionSharing=!0,this.innerRadius=void 0,this.outerRadius=void 0,this.offsetX=void 0,this.offsetY=void 0}linkScales(){}parse(t,e){let i=this.getDataset().data,s=this._cachedMeta;if(!1===this._parsing)s._parsed=i;else{let n,a,r=t=>+i[t];if(Z(i[t])){let{key:t="value"}=this._parsing;r=e=>+tp(i[e],t)}for(n=t,a=t+e;n<a;++n)s._parsed[n]=r(n)}}_getRotation(){return tI(this.options.rotation-90)}_getCircumference(){return tI(this.options.circumference)}_getRotationExtents(){let t=ty,e=-ty;for(let i=0;i<this.chart.data.datasets.length;++i)if(this.chart.isDatasetVisible(i)&&this.chart.getDatasetMeta(i).type===this._type){let s=this.chart.getDatasetMeta(i).controller,n=s._getRotation(),a=s._getCircumference();t=Math.min(t,n),e=Math.max(e,n+a)}return{rotation:t,circumference:e-t}}update(t){let e=this.chart,{chartArea:i}=e,s=this._cachedMeta,n=s.data,a=this.getMaxBorderWidth()+this.getMaxOffset(n)+this.options.spacing,r=Math.max((Math.min(i.width,i.height)-a)/2,0),o=Math.min(te(this.options.cutout,r),1),l=this._getRingWeight(this.index),{circumference:h,rotation:d}=this._getRotationExtents(),{ratioX:c,ratioY:u,offsetX:p,offsetY:g}=function(t,e,i){let s=1,n=1,a=0,r=0;if(e<ty){let o=t+e,l=Math.cos(t),h=Math.sin(t),d=Math.cos(o),c=Math.sin(o),u=(e,s,n)=>tB(e,t,o,!0)?1:Math.max(s,s*i,n,n*i),p=(e,s,n)=>tB(e,t,o,!0)?-1:Math.min(s,s*i,n,n*i),g=u(0,l,d),f=u(tw,h,c),m=p(tb,l,d),x=p(tb+tw,h,c);s=(g-m)/2,n=(f-x)/2,a=-(g+m)/2,r=-(f+x)/2}return{ratioX:s,ratioY:n,offsetX:a,offsetY:r}}(d,h,o),f=(i.width-a)/c,m=(i.height-a)/u,x=ti(this.options.radius,Math.max(Math.min(f,m)/2,0)),b=Math.max(x*o,0),y=(x-b)/this._getVisibleDatasetWeightTotal();this.offsetX=p*x,this.offsetY=g*x,s.total=this.calculateTotal(),this.outerRadius=x-y*this._getRingWeightOffset(this.index),this.innerRadius=Math.max(this.outerRadius-y*l,0),this.updateElements(n,0,n.length,t)}_circumference(t,e){let i=this.options,s=this._cachedMeta,n=this._getCircumference();return e&&i.animation.animateRotate||!this.chart.getDataVisibility(t)||null===s._parsed[t]||s.data[t].hidden?0:this.calculateCircumference(s._parsed[t]*n/ty)}updateElements(t,e,i,s){let n;let a="reset"===s,r=this.chart,o=r.chartArea,l=r.options,h=l.animation,d=(o.left+o.right)/2,c=(o.top+o.bottom)/2,u=a&&h.animateScale,p=u?0:this.innerRadius,g=u?0:this.outerRadius,{sharedOptions:f,includeOptions:m}=this._getSharedOptions(e,s),x=this._getRotation();for(n=0;n<e;++n)x+=this._circumference(n,a);for(n=e;n<e+i;++n){let e=this._circumference(n,a),i=t[n],r={x:d+this.offsetX,y:c+this.offsetY,startAngle:x,endAngle:x+e,circumference:e,outerRadius:g,innerRadius:p};m&&(r.options=f||this.resolveDataElementOptions(n,i.active?"active":s)),x+=e,this.updateElement(i,n,r,s)}}calculateTotal(){let t;let e=this._cachedMeta,i=e.data,s=0;for(t=0;t<i.length;t++){let n=e._parsed[t];null!==n&&!isNaN(n)&&this.chart.getDataVisibility(t)&&!i[t].hidden&&(s+=Math.abs(n))}return s}calculateCircumference(t){let e=this._cachedMeta.total;return e>0&&!isNaN(t)?ty*(Math.abs(t)/e):0}getLabelAndValue(t){let e=this._cachedMeta,i=this.chart,s=i.data.labels||[],n=et(e._parsed[t],i.options.locale);return{label:s[t]||"",value:n}}getMaxBorderWidth(t){let e,i,s,n,a,r=0,o=this.chart;if(!t){for(e=0,i=o.data.datasets.length;e<i;++e)if(o.isDatasetVisible(e)){t=(s=o.getDatasetMeta(e)).data,n=s.controller;break}}if(!t)return 0;for(e=0,i=t.length;e<i;++e)"inner"!==(a=n.resolveDataElementOptions(e)).borderAlign&&(r=Math.max(r,a.borderWidth||0,a.hoverBorderWidth||0));return r}getMaxOffset(t){let e=0;for(let i=0,s=t.length;i<s;++i){let t=this.resolveDataElementOptions(i);e=Math.max(e,t.offset||0,t.hoverOffset||0)}return e}_getRingWeightOffset(t){let e=0;for(let i=0;i<t;++i)this.chart.isDatasetVisible(i)&&(e+=this._getRingWeight(i));return e}_getRingWeight(t){return Math.max(tt(this.chart.data.datasets[t].weight,1),0)}_getVisibleDatasetWeightTotal(){return this._getRingWeightOffset(this.chart.data.datasets.length)||1}}class iE extends iM{static id="polarArea";static defaults={dataElementType:"arc",animation:{animateRotate:!0,animateScale:!0},animations:{numbers:{type:"number",properties:["x","y","startAngle","endAngle","innerRadius","outerRadius"]}},indexAxis:"r",startAngle:0};static overrides={aspectRatio:1,plugins:{legend:{labels:{generateLabels(t){let e=t.data;if(e.labels.length&&e.datasets.length){let{labels:{pointStyle:i,color:s}}=t.legend.options;return e.labels.map((e,n)=>{let a=t.getDatasetMeta(0),r=a.controller.getStyle(n);return{text:e,fillStyle:r.backgroundColor,strokeStyle:r.borderColor,fontColor:s,lineWidth:r.borderWidth,pointStyle:i,hidden:!t.getDataVisibility(n),index:n}})}return[]}},onClick(t,e,i){i.chart.toggleDataVisibility(e.index),i.chart.update()}}},scales:{r:{type:"radialLinear",angleLines:{display:!1},beginAtZero:!0,grid:{circular:!0},pointLabels:{display:!1},startAngle:0}}};constructor(t,e){super(t,e),this.innerRadius=void 0,this.outerRadius=void 0}getLabelAndValue(t){let e=this._cachedMeta,i=this.chart,s=i.data.labels||[],n=et(e._parsed[t].r,i.options.locale);return{label:s[t]||"",value:n}}parseObjectData(t,e,i,s){return eN.bind(this)(t,e,i,s)}update(t){let e=this._cachedMeta.data;this._updateRadius(),this.updateElements(e,0,e.length,t)}getMinMax(){let t=this._cachedMeta,e={min:Number.POSITIVE_INFINITY,max:Number.NEGATIVE_INFINITY};return t.data.forEach((t,i)=>{let s=this.getParsed(i).r;!isNaN(s)&&this.chart.getDataVisibility(i)&&(s<e.min&&(e.min=s),s>e.max&&(e.max=s))}),e}_updateRadius(){let t=this.chart,e=t.chartArea,i=t.options,s=Math.min(e.right-e.left,e.bottom-e.top),n=Math.max(s/2,0),a=Math.max(i.cutoutPercentage?n/100*i.cutoutPercentage:1,0),r=(n-a)/t.getVisibleDatasetCount();this.outerRadius=n-r*this.index,this.innerRadius=this.outerRadius-r}updateElements(t,e,i,s){let n;let a="reset"===s,r=this.chart,o=r.options,l=o.animation,h=this._cachedMeta.rScale,d=h.xCenter,c=h.yCenter,u=h.getIndexAngle(0)-.5*tb,p=u,g=360/this.countVisibleElements();for(n=0;n<e;++n)p+=this._computeAngle(n,s,g);for(n=e;n<e+i;n++){let e=t[n],i=p,o=p+this._computeAngle(n,s,g),f=r.getDataVisibility(n)?h.getDistanceFromCenterForValue(this.getParsed(n).r):0;p=o,a&&(l.animateScale&&(f=0),l.animateRotate&&(i=o=u));let m={x:d,y:c,innerRadius:0,outerRadius:f,startAngle:i,endAngle:o,options:this.resolveDataElementOptions(n,e.active?"active":s)};this.updateElement(e,n,m,s)}}countVisibleElements(){let t=this._cachedMeta,e=0;return t.data.forEach((t,i)=>{!isNaN(this.getParsed(i).r)&&this.chart.getDataVisibility(i)&&e++}),e}_computeAngle(t,e,i){return this.chart.getDataVisibility(t)?tI(this.resolveDataElementOptions(t,e).angle||i):0}}var iI=Object.freeze({__proto__:null,BarController:class extends iM{static id="bar";static defaults={datasetElementType:!1,dataElementType:"bar",categoryPercentage:.8,barPercentage:.9,grouped:!0,animations:{numbers:{type:"number",properties:["x","y","base","width","height"]}}};static overrides={scales:{_index_:{type:"category",offset:!0,grid:{offset:!0}},_value_:{type:"linear",beginAtZero:!0}}};parsePrimitiveData(t,e,i,s){return iS(t,e,i,s)}parseArrayData(t,e,i,s){return iS(t,e,i,s)}parseObjectData(t,e,i,s){let n,a,r,o;let{iScale:l,vScale:h}=t,{xAxisKey:d="x",yAxisKey:c="y"}=this._parsing,u="x"===l.axis?d:c,p="x"===h.axis?d:c,g=[];for(n=i,a=i+s;n<a;++n)o=e[n],(r={})[l.axis]=l.parse(tp(o,u),n),g.push(iC(tp(o,p),r,h,n));return g}updateRangeFromParsed(t,e,i,s){super.updateRangeFromParsed(t,e,i,s);let n=i._custom;n&&e===this._cachedMeta.vScale&&(t.min=Math.min(t.min,n.min),t.max=Math.max(t.max,n.max))}getMaxOverflow(){return 0}getLabelAndValue(t){let e=this._cachedMeta,{iScale:i,vScale:s}=e,n=this.getParsed(t),a=n._custom,r=iP(a)?"["+a.start+", "+a.end+"]":""+s.getLabelForValue(n[s.axis]);return{label:""+i.getLabelForValue(n[i.axis]),value:r}}initialize(){this.enableOptionSharing=!0,super.initialize();let t=this._cachedMeta;t.stack=this.getDataset().stack}update(t){let e=this._cachedMeta;this.updateElements(e.data,0,e.data.length,t)}updateElements(t,e,i,s){let n="reset"===s,{index:a,_cachedMeta:{vScale:r}}=this,o=r.getBasePixel(),l=r.isHorizontal(),h=this._getRuler(),{sharedOptions:d,includeOptions:c}=this._getSharedOptions(e,s);for(let u=e;u<e+i;u++){let e=this.getParsed(u),i=n||G(e[r.axis])?{base:o,head:o}:this._calculateBarValuePixels(u),p=this._calculateBarIndexPixels(u,h),g=(e._stacks||{})[r.axis],f={horizontal:l,base:i.base,enableBorderRadius:!g||iP(e._custom)||a===g._top||a===g._bottom,x:l?i.head:p.center,y:l?p.center:i.head,height:l?p.size:Math.abs(i.size),width:l?Math.abs(i.size):p.size};c&&(f.options=d||this.resolveDataElementOptions(u,t[u].active?"active":s));let m=f.options||t[u].options;!function(t,e,i,s){let n,a,r,o,l,h=e.borderSkipped,d={};if(!h){t.borderSkipped=d;return}if(!0===h){t.borderSkipped={top:!0,right:!0,bottom:!0,left:!0};return}let{start:c,end:u,reverse:p,top:g,bottom:f}=(t.horizontal?(n=t.base>t.x,a="left",r="right"):(n=t.base<t.y,a="bottom",r="top"),n?(o="end",l="start"):(o="start",l="end"),{start:a,end:r,reverse:n,top:o,bottom:l});"middle"===h&&i&&(t.enableBorderRadius=!0,(i._top||0)===s?h=g:(i._bottom||0)===s?h=f:(d[iA(f,c,u,p)]=!0,h=g)),d[iA(h,c,u,p)]=!0,t.borderSkipped=d}(f,m,g,a),function(t,{inflateAmount:e},i){t.inflateAmount="auto"===e?1===i?.33:0:e}(f,m,h.ratio),this.updateElement(t[u],u,f,s)}}_getStacks(t,e){let{iScale:i}=this._cachedMeta,s=i.getMatchingVisibleMetas(this._type).filter(t=>t.controller.options.grouped),n=i.options.stacked,a=[],r=t=>{let i=t.controller.getParsed(e),s=i&&i[t.vScale.axis];if(G(s)||isNaN(s))return!0};for(let i of s)if(!(void 0!==e&&r(i))&&((!1===n||-1===a.indexOf(i.stack)||void 0===n&&void 0===i.stack)&&a.push(i.stack),i.index===t))break;return a.length||a.push(void 0),a}_getStackCount(t){return this._getStacks(void 0,t).length}_getStackIndex(t,e,i){let s=this._getStacks(t,i),n=void 0!==e?s.indexOf(e):-1;return -1===n?s.length-1:n}_getRuler(){let t,e;let i=this.options,s=this._cachedMeta,n=s.iScale,a=[];for(t=0,e=s.data.length;t<e;++t)a.push(n.getPixelForValue(this.getParsed(t)[n.axis],t));let r=i.barThickness,o=r||function(t){let e,i,s,n;let a=t.iScale,r=function(t,e){if(!t._cache.$bar){let i=t.getMatchingVisibleMetas(e),s=[];for(let e=0,n=i.length;e<n;e++)s=s.concat(i[e].controller.getAllParsedValues(t));t._cache.$bar=tY(s.sort((t,e)=>t-e))}return t._cache.$bar}(a,t.type),o=a._length,l=()=>{32767!==s&&-32768!==s&&(tf(n)&&(o=Math.min(o,Math.abs(s-n)||o)),n=s)};for(e=0,i=r.length;e<i;++e)s=a.getPixelForValue(r[e]),l();for(e=0,n=void 0,i=a.ticks.length;e<i;++e)s=a.getPixelForTick(e),l();return o}(s);return{min:o,pixels:a,start:n._startPixel,end:n._endPixel,stackCount:this._getStackCount(),scale:n,grouped:i.grouped,ratio:r?1:i.categoryPercentage*i.barPercentage}}_calculateBarValuePixels(t){let e,i;let{_cachedMeta:{vScale:s,_stacked:n,index:a},options:{base:r,minBarLength:o}}=this,l=r||0,h=this.getParsed(t),d=h._custom,c=iP(d),u=h[s.axis],p=0,g=n?this.applyStack(s,h,n):u;g!==u&&(p=g-u,g=u),c&&(u=d.barStart,g=d.barEnd-d.barStart,0!==u&&tP(u)!==tP(d.barEnd)&&(p=0),p+=u);let f=G(r)||c?p:r,m=s.getPixelForValue(f);if(Math.abs(i=(e=this.chart.getDataVisibility(t)?s.getPixelForValue(p+g):m)-m)<o){var x;i=(0!==(x=i)?tP(x):(s.isHorizontal()?1:-1)*(s.min>=l?1:-1))*o,u===l&&(m-=i/2);let t=s.getPixelForDecimal(0),r=s.getPixelForDecimal(1);e=(m=Math.max(Math.min(m,Math.max(t,r)),Math.min(t,r)))+i,n&&!c&&(h._stacks[s.axis]._visualValues[a]=s.getValueForPixel(e)-s.getValueForPixel(m))}if(m===s.getPixelForValue(l)){let t=tP(i)*s.getLineWidthForValue(l)/2;m+=t,i-=t}return{size:i,base:m,head:e,center:e+i/2}}_calculateBarIndexPixels(t,e){let i,s;let n=e.scale,a=this.options,r=a.skipNull,o=tt(a.maxBarThickness,1/0);if(e.grouped){let n=r?this._getStackCount(t):e.stackCount,l="flex"===a.barThickness?function(t,e,i,s){let n=e.pixels,a=n[t],r=t>0?n[t-1]:null,o=t<n.length-1?n[t+1]:null,l=i.categoryPercentage;null===r&&(r=a-(null===o?e.end-e.start:o-a)),null===o&&(o=a+a-r);let h=a-(a-Math.min(r,o))/2*l,d=Math.abs(o-r)/2*l;return{chunk:d/s,ratio:i.barPercentage,start:h}}(t,e,a,n):function(t,e,i,s){let n,a;let r=i.barThickness;return G(r)?(n=e.min*i.categoryPercentage,a=i.barPercentage):(n=r*s,a=1),{chunk:n/s,ratio:a,start:e.pixels[t]-n/2}}(t,e,a,n),h=this._getStackIndex(this.index,this._cachedMeta.stack,r?t:void 0);i=l.start+l.chunk*h+l.chunk/2,s=Math.min(o,l.chunk*l.ratio)}else i=n.getPixelForValue(this.getParsed(t)[n.axis],t),s=Math.min(o,e.min*e.ratio);return{base:i-s/2,head:i+s/2,center:i,size:s}}draw(){let t=this._cachedMeta,e=t.vScale,i=t.data,s=i.length,n=0;for(;n<s;++n)null!==this.getParsed(n)[e.axis]&&i[n].draw(this._ctx)}},BubbleController:class extends iM{static id="bubble";static defaults={datasetElementType:!1,dataElementType:"point",animations:{numbers:{type:"number",properties:["x","y","borderWidth","radius"]}}};static overrides={scales:{x:{type:"linear"},y:{type:"linear"}}};initialize(){this.enableOptionSharing=!0,super.initialize()}parsePrimitiveData(t,e,i,s){let n=super.parsePrimitiveData(t,e,i,s);for(let t=0;t<n.length;t++)n[t]._custom=this.resolveDataElementOptions(t+i).radius;return n}parseArrayData(t,e,i,s){let n=super.parseArrayData(t,e,i,s);for(let t=0;t<n.length;t++){let s=e[i+t];n[t]._custom=tt(s[2],this.resolveDataElementOptions(t+i).radius)}return n}parseObjectData(t,e,i,s){let n=super.parseObjectData(t,e,i,s);for(let t=0;t<n.length;t++){let s=e[i+t];n[t]._custom=tt(s&&s.r&&+s.r,this.resolveDataElementOptions(t+i).radius)}return n}getMaxOverflow(){let t=this._cachedMeta.data,e=0;for(let i=t.length-1;i>=0;--i)e=Math.max(e,t[i].size(this.resolveDataElementOptions(i))/2);return e>0&&e}getLabelAndValue(t){let e=this._cachedMeta,i=this.chart.data.labels||[],{xScale:s,yScale:n}=e,a=this.getParsed(t),r=s.getLabelForValue(a.x),o=n.getLabelForValue(a.y),l=a._custom;return{label:i[t]||"",value:"("+r+", "+o+(l?", "+l:"")+")"}}update(t){let e=this._cachedMeta.data;this.updateElements(e,0,e.length,t)}updateElements(t,e,i,s){let n="reset"===s,{iScale:a,vScale:r}=this._cachedMeta,{sharedOptions:o,includeOptions:l}=this._getSharedOptions(e,s),h=a.axis,d=r.axis;for(let c=e;c<e+i;c++){let e=t[c],i=!n&&this.getParsed(c),u={},p=u[h]=n?a.getPixelForDecimal(.5):a.getPixelForValue(i[h]),g=u[d]=n?r.getBasePixel():r.getPixelForValue(i[d]);u.skip=isNaN(p)||isNaN(g),l&&(u.options=o||this.resolveDataElementOptions(c,e.active?"active":s),n&&(u.options.radius=0)),this.updateElement(e,c,u,s)}}resolveDataElementOptions(t,e){let i=this.getParsed(t),s=super.resolveDataElementOptions(t,e);s.$shared&&(s=Object.assign({},s,{$shared:!1}));let n=s.radius;return"active"!==e&&(s.radius=0),s.radius+=tt(i&&i._custom,n),s}},DoughnutController:iL,LineController:class extends iM{static id="line";static defaults={datasetElementType:"line",dataElementType:"point",showLine:!0,spanGaps:!1};static overrides={scales:{_index_:{type:"category"},_value_:{type:"linear"}}};initialize(){this.enableOptionSharing=!0,this.supportsDecimation=!0,super.initialize()}update(t){let e=this._cachedMeta,{dataset:i,data:s=[],_dataset:n}=e,a=this.chart._animationsDisabled,{start:r,count:o}=tJ(e,s,a);this._drawStart=r,this._drawCount=o,tQ(e)&&(r=0,o=s.length),i._chart=this.chart,i._datasetIndex=this.index,i._decimated=!!n._decimated,i.points=s.slice(Math.max(this._drawStart-1,0),this._drawStart+this._drawCount);let l=this.resolveDatasetElementOptions(t);this.options.showLine||(l.borderWidth=0),l.segment=this.options.segment,this.updateElement(i,void 0,{animated:!a,options:l},t),this.updateElements(s,r,o,t)}updateElements(t,e,i,s){let n="reset"===s,{iScale:a,vScale:r,_stacked:o,_dataset:l}=this._cachedMeta,{sharedOptions:h,includeOptions:d}=this._getSharedOptions(e,s),c=a.axis,u=r.axis,{spanGaps:p,segment:g}=this.options,f=tL(p)?p:Number.POSITIVE_INFINITY,m=this.chart._animationsDisabled||n||"none"===s,x=e+i,b=t.length,y=e>0&&this.getParsed(e-1);for(let i=0;i<b;++i){let p=t[i],b=m?p:{};if(i<e||i>=x){b.skip=!0;continue}let _=this.getParsed(i),v=G(_[u]),k=b[c]=a.getPixelForValue(_[c],i),w=b[u]=n||v?r.getBasePixel():r.getPixelForValue(o?this.applyStack(r,_,o):_[u],i);b.skip=isNaN(k)||isNaN(w)||v,b.stop=i>0&&Math.abs(_[c]-y[c])>f,g&&(b.parsed=_,b.raw=l.data[i]),d&&(b.options=h||this.resolveDataElementOptions(i,p.active?"active":s)),m||this.updateElement(p,i,b,s),y=_}}getMaxOverflow(){let t=this._cachedMeta,e=t.dataset,i=e.options&&e.options.borderWidth||0,s=t.data||[];if(!s.length)return i;let n=s[0].size(this.resolveDataElementOptions(0)),a=s[s.length-1].size(this.resolveDataElementOptions(s.length-1));return Math.max(i,n,a)/2}draw(){let t=this._cachedMeta;t.dataset.updateControlPoints(this.chart.chartArea,t.iScale.axis),super.draw()}},PieController:class extends iL{static id="pie";static defaults={cutout:0,rotation:0,circumference:360,radius:"100%"}},PolarAreaController:iE,RadarController:class extends iM{static id="radar";static defaults={datasetElementType:"line",dataElementType:"point",indexAxis:"r",showLine:!0,elements:{line:{fill:"start"}}};static overrides={aspectRatio:1,scales:{r:{type:"radialLinear"}}};getLabelAndValue(t){let e=this._cachedMeta.vScale,i=this.getParsed(t);return{label:e.getLabels()[t],value:""+e.getLabelForValue(i[e.axis])}}parseObjectData(t,e,i,s){return eN.bind(this)(t,e,i,s)}update(t){let e=this._cachedMeta,i=e.dataset,s=e.data||[],n=e.iScale.getLabels();if(i.points=s,"resize"!==t){let e=this.resolveDatasetElementOptions(t);this.options.showLine||(e.borderWidth=0);let a={_loop:!0,_fullLoop:n.length===s.length,options:e};this.updateElement(i,void 0,a,t)}this.updateElements(s,0,s.length,t)}updateElements(t,e,i,s){let n=this._cachedMeta.rScale,a="reset"===s;for(let r=e;r<e+i;r++){let e=t[r],i=this.resolveDataElementOptions(r,e.active?"active":s),o=n.getPointPositionForValue(r,this.getParsed(r).r),l=a?n.xCenter:o.x,h=a?n.yCenter:o.y,d={x:l,y:h,angle:o.angle,skip:isNaN(l)||isNaN(h),options:i};this.updateElement(e,r,d,s)}}},ScatterController:class extends iM{static id="scatter";static defaults={datasetElementType:!1,dataElementType:"point",showLine:!1,fill:!1};static overrides={interaction:{mode:"point"},scales:{x:{type:"linear"},y:{type:"linear"}}};getLabelAndValue(t){let e=this._cachedMeta,i=this.chart.data.labels||[],{xScale:s,yScale:n}=e,a=this.getParsed(t),r=s.getLabelForValue(a.x),o=n.getLabelForValue(a.y);return{label:i[t]||"",value:"("+r+", "+o+")"}}update(t){let e=this._cachedMeta,{data:i=[]}=e,s=this.chart._animationsDisabled,{start:n,count:a}=tJ(e,i,s);if(this._drawStart=n,this._drawCount=a,tQ(e)&&(n=0,a=i.length),this.options.showLine){this.datasetElementType||this.addElements();let{dataset:n,_dataset:a}=e;n._chart=this.chart,n._datasetIndex=this.index,n._decimated=!!a._decimated,n.points=i;let r=this.resolveDatasetElementOptions(t);r.segment=this.options.segment,this.updateElement(n,void 0,{animated:!s,options:r},t)}else this.datasetElementType&&(delete e.dataset,this.datasetElementType=!1);this.updateElements(i,n,a,t)}addElements(){let{showLine:t}=this.options;!this.datasetElementType&&t&&(this.datasetElementType=this.chart.registry.getElement("line")),super.addElements()}updateElements(t,e,i,s){let n="reset"===s,{iScale:a,vScale:r,_stacked:o,_dataset:l}=this._cachedMeta,h=this.resolveDataElementOptions(e,s),d=this.getSharedOptions(h),c=this.includeOptions(s,d),u=a.axis,p=r.axis,{spanGaps:g,segment:f}=this.options,m=tL(g)?g:Number.POSITIVE_INFINITY,x=this.chart._animationsDisabled||n||"none"===s,b=e>0&&this.getParsed(e-1);for(let h=e;h<e+i;++h){let e=t[h],i=this.getParsed(h),g=x?e:{},y=G(i[p]),_=g[u]=a.getPixelForValue(i[u],h),v=g[p]=n||y?r.getBasePixel():r.getPixelForValue(o?this.applyStack(r,i,o):i[p],h);g.skip=isNaN(_)||isNaN(v)||y,g.stop=h>0&&Math.abs(i[u]-b[u])>m,f&&(g.parsed=i,g.raw=l.data[h]),c&&(g.options=d||this.resolveDataElementOptions(h,e.active?"active":s)),x||this.updateElement(e,h,g,s),b=i}this.updateSharedOptions(d,s,h)}getMaxOverflow(){let t=this._cachedMeta,e=t.data||[];if(!this.options.showLine){let t=0;for(let i=e.length-1;i>=0;--i)t=Math.max(t,e[i].size(this.resolveDataElementOptions(i))/2);return t>0&&t}let i=t.dataset,s=i.options&&i.options.borderWidth||0;if(!e.length)return s;let n=e[0].size(this.resolveDataElementOptions(0)),a=e[e.length-1].size(this.resolveDataElementOptions(e.length-1));return Math.max(s,n,a)/2}}});function iO(){throw Error("This method is not implemented: Check that a complete date adapter is provided.")}class iT{static override(t){Object.assign(iT.prototype,t)}options;constructor(t){this.options=t||{}}init(){}formats(){return iO()}parse(){return iO()}format(){return iO()}add(){return iO()}diff(){return iO()}startOf(){return iO()}endOf(){return iO()}}var iR={_date:iT};function iz(t,e,i,s,n){let a=t.getSortedVisibleDatasetMetas(),r=i[e];for(let t=0,i=a.length;t<i;++t){let{index:i,data:o}=a[t],{lo:l,hi:h}=function(t,e,i,s){let{controller:n,data:a,_sorted:r}=t,o=n._cachedMeta.iScale;if(o&&e===o.axis&&"r"!==e&&r&&a.length){let t=o._reversePixels?tH:tq;if(!s)return t(a,e,i);if(n._sharedOptions){let s=a[0],n="function"==typeof s.getRange&&s.getRange(e);if(n){let s=t(a,e,i-n),r=t(a,e,i+n);return{lo:s.lo,hi:r.hi}}}}return{lo:0,hi:a.length-1}}(a[t],e,r,n);for(let t=l;t<=h;++t){let e=o[t];e.skip||s(e,i,t)}}}function iF(t,e,i,s,n){let a=[];return(n||t.isPointInArea(e))&&iz(t,i,e,function(i,r,o){(n||ep(i,t.chartArea,0))&&i.inRange(e.x,e.y,s)&&a.push({element:i,datasetIndex:r,index:o})},!0),a}function iB(t,e,i,s,n,a){let r;return a||t.isPointInArea(e)?"r"!==i||s?function(t,e,i,s,n,a){let r=[],o=function(t){let e=-1!==t.indexOf("x"),i=-1!==t.indexOf("y");return function(t,s){let n=e?Math.abs(t.x-s.x):0,a=i?Math.abs(t.y-s.y):0;return Math.sqrt(Math.pow(n,2)+Math.pow(a,2))}}(i),l=Number.POSITIVE_INFINITY;return iz(t,i,e,function(i,h,d){let c=i.inRange(e.x,e.y,n);if(s&&!c)return;let u=i.getCenterPoint(n),p=!!a||t.isPointInArea(u);if(!p&&!c)return;let g=o(e,u);g<l?(r=[{element:i,datasetIndex:h,index:d}],l=g):g===l&&r.push({element:i,datasetIndex:h,index:d})}),r}(t,e,i,s,n,a):(r=[],iz(t,i,e,function(t,i,s){let{startAngle:a,endAngle:o}=t.getProps(["startAngle","endAngle"],n),{angle:l}=tT(t,{x:e.x,y:e.y});tB(l,a,o)&&r.push({element:t,datasetIndex:i,index:s})}),r):[]}function iV(t,e,i,s,n){let a=[],r="x"===i?"inXRange":"inYRange",o=!1;return(iz(t,i,e,(t,s,l)=>{t[r](e[i],n)&&(a.push({element:t,datasetIndex:s,index:l}),o=o||t.inRange(e.x,e.y,n))}),s&&!o)?[]:a}var iW={evaluateInteractionItems:iz,modes:{index(t,e,i,s){let n=eQ(e,t),a=i.axis||"x",r=i.includeInvisible||!1,o=i.intersect?iF(t,n,a,s,r):iB(t,n,a,!1,s,r),l=[];return o.length?(t.getSortedVisibleDatasetMetas().forEach(t=>{let e=o[0].index,i=t.data[e];i&&!i.skip&&l.push({element:i,datasetIndex:t.index,index:e})}),l):[]},dataset(t,e,i,s){let n=eQ(e,t),a=i.axis||"xy",r=i.includeInvisible||!1,o=i.intersect?iF(t,n,a,s,r):iB(t,n,a,!1,s,r);if(o.length>0){let e=o[0].datasetIndex,i=t.getDatasetMeta(e).data;o=[];for(let t=0;t<i.length;++t)o.push({element:i[t],datasetIndex:e,index:t})}return o},point(t,e,i,s){let n=eQ(e,t),a=i.axis||"xy",r=i.includeInvisible||!1;return iF(t,n,a,s,r)},nearest(t,e,i,s){let n=eQ(e,t),a=i.axis||"xy",r=i.includeInvisible||!1;return iB(t,n,a,i.intersect,s,r)},x(t,e,i,s){let n=eQ(e,t);return iV(t,n,"x",i.intersect,s)},y(t,e,i,s){let n=eQ(e,t);return iV(t,n,"y",i.intersect,s)}}};let iN=["left","top","right","bottom"];function iq(t,e){return t.filter(t=>t.pos===e)}function iH(t,e){return t.filter(t=>-1===iN.indexOf(t.pos)&&t.box.axis===e)}function i$(t,e){return t.sort((t,i)=>{let s=e?i:t,n=e?t:i;return s.weight===n.weight?s.index-n.index:s.weight-n.weight})}function ij(t,e,i,s){return Math.max(t[i],e[i])+Math.max(t[s],e[s])}function iY(t,e){t.top=Math.max(t.top,e.top),t.left=Math.max(t.left,e.left),t.bottom=Math.max(t.bottom,e.bottom),t.right=Math.max(t.right,e.right)}function iU(t,e,i,s){let n,a,r,o,l,h;let d=[];for(n=0,a=t.length,l=0;n<a;++n){(o=(r=t[n]).box).update(r.width||e.w,r.height||e.h,function(t,e){let i=e.maxPadding;return function(t){let s={left:0,top:0,right:0,bottom:0};return t.forEach(t=>{s[t]=Math.max(e[t],i[t])}),s}(t?["left","right"]:["top","bottom"])}(r.horizontal,e));let{same:a,other:c}=function(t,e,i,s){let{pos:n,box:a}=i,r=t.maxPadding;if(!Z(n)){i.size&&(t[n]-=i.size);let e=s[i.stack]||{size:0,count:1};e.size=Math.max(e.size,i.horizontal?a.height:a.width),i.size=e.size/e.count,t[n]+=i.size}a.getPadding&&iY(r,a.getPadding());let o=Math.max(0,e.outerWidth-ij(r,t,"left","right")),l=Math.max(0,e.outerHeight-ij(r,t,"top","bottom")),h=o!==t.w,d=l!==t.h;return t.w=o,t.h=l,i.horizontal?{same:h,other:d}:{same:d,other:h}}(e,i,r,s);l|=a&&d.length,h=h||c,o.fullSize||d.push(r)}return l&&iU(d,e,i,s)||h}function iX(t,e,i,s,n){t.top=i,t.left=e,t.right=e+s,t.bottom=i+n,t.width=s,t.height=n}function iG(t,e,i,s){let n=i.padding,{x:a,y:r}=e;for(let o of t){let t=o.box,l=s[o.stack]||{count:1,placed:0,weight:1},h=o.stackWeight/l.weight||1;if(o.horizontal){let s=e.w*h,a=l.size||t.height;tf(l.start)&&(r=l.start),t.fullSize?iX(t,n.left,r,i.outerWidth-n.right-n.left,a):iX(t,e.left+l.placed,r,s,a),l.start=r,l.placed+=s,r=t.bottom}else{let s=e.h*h,r=l.size||t.width;tf(l.start)&&(a=l.start),t.fullSize?iX(t,a,n.top,r,i.outerHeight-n.bottom-n.top):iX(t,a,e.top+l.placed,r,s),l.start=a,l.placed+=s,a=t.right}}e.x=a,e.y=r}var iK={addBox(t,e){t.boxes||(t.boxes=[]),e.fullSize=e.fullSize||!1,e.position=e.position||"top",e.weight=e.weight||0,e._layers=e._layers||function(){return[{z:0,draw(t){e.draw(t)}}]},t.boxes.push(e)},removeBox(t,e){let i=t.boxes?t.boxes.indexOf(e):-1;-1!==i&&t.boxes.splice(i,1)},configure(t,e,i){e.fullSize=i.fullSize,e.position=i.position,e.weight=i.weight},update(t,e,i,s){if(!t)return;let n=eS(t.options.layout.padding),a=Math.max(e-n.width,0),r=Math.max(i-n.height,0),o=function(t){let e=function(t){let e,i,s,n,a,r;let o=[];for(e=0,i=(t||[]).length;e<i;++e)s=t[e],({position:n,options:{stack:a,stackWeight:r=1}}=s),o.push({index:e,box:s,pos:n,horizontal:s.isHorizontal(),weight:s.weight,stack:a&&n+a,stackWeight:r});return o}(t),i=i$(e.filter(t=>t.box.fullSize),!0),s=i$(iq(e,"left"),!0),n=i$(iq(e,"right")),a=i$(iq(e,"top"),!0),r=i$(iq(e,"bottom")),o=iH(e,"x"),l=iH(e,"y");return{fullSize:i,leftAndTop:s.concat(a),rightAndBottom:n.concat(l).concat(r).concat(o),chartArea:iq(e,"chartArea"),vertical:s.concat(n).concat(l),horizontal:a.concat(r).concat(o)}}(t.boxes),l=o.vertical,h=o.horizontal;tn(t.boxes,t=>{"function"==typeof t.beforeLayout&&t.beforeLayout()});let d=l.reduce((t,e)=>e.box.options&&!1===e.box.options.display?t:t+1,0)||1,c=Object.freeze({outerWidth:e,outerHeight:i,padding:n,availableWidth:a,availableHeight:r,vBoxMaxWidth:a/2/d,hBoxMaxHeight:r/2}),u=Object.assign({},n);iY(u,eS(s));let p=Object.assign({maxPadding:u,w:a,h:r,x:n.left,y:n.top},n),g=function(t,e){let i,s,n;let a=function(t){let e={};for(let i of t){let{stack:t,pos:s,stackWeight:n}=i;if(!t||!iN.includes(s))continue;let a=e[t]||(e[t]={count:0,placed:0,weight:0,size:0});a.count++,a.weight+=n}return e}(t),{vBoxMaxWidth:r,hBoxMaxHeight:o}=e;for(i=0,s=t.length;i<s;++i){n=t[i];let{fullSize:s}=n.box,l=a[n.stack],h=l&&n.stackWeight/l.weight;n.horizontal?(n.width=h?h*r:s&&e.availableWidth,n.height=o):(n.width=r,n.height=h?h*o:s&&e.availableHeight)}return a}(l.concat(h),c);iU(o.fullSize,p,c,g),iU(l,p,c,g),iU(h,p,c,g)&&iU(l,p,c,g),function(t){let e=t.maxPadding;function i(i){let s=Math.max(e[i]-t[i],0);return t[i]+=s,s}t.y+=i("top"),t.x+=i("left"),i("right"),i("bottom")}(p),iG(o.leftAndTop,p,c,g),p.x+=p.w,p.y+=p.h,iG(o.rightAndBottom,p,c,g),t.chartArea={left:p.left,top:p.top,right:p.left+p.w,bottom:p.top+p.h,height:p.h,width:p.w},tn(o.chartArea,e=>{let i=e.box;Object.assign(i,t.chartArea),i.update(p.w,p.h,{left:0,top:0,right:0,bottom:0})})}};class iZ{acquireContext(t,e){}releaseContext(t){return!1}addEventListener(t,e,i){}removeEventListener(t,e,i){}getDevicePixelRatio(){return 1}getMaximumSize(t,e,i,s){return e=Math.max(0,e||t.width),i=i||t.height,{width:e,height:Math.max(0,s?Math.floor(e/s):i)}}isAttached(t){return!0}updateConfig(t){}}class iJ extends iZ{acquireContext(t){return t&&t.getContext&&t.getContext("2d")||null}updateConfig(t){t.options.animation=!1}}let iQ="$chartjs",i0={touchstart:"mousedown",touchmove:"mousemove",touchend:"mouseup",pointerenter:"mouseenter",pointerdown:"mousedown",pointermove:"mousemove",pointerup:"mouseup",pointerleave:"mouseout",pointerout:"mouseout"},i1=t=>null===t||""===t,i2=!!e2&&{passive:!0};function i5(t,e,i){t.canvas.removeEventListener(e,i,i2)}function i3(t,e){for(let i of t)if(i===e||i.contains(e))return!0}function i4(t,e,i){let s=t.canvas,n=new MutationObserver(t=>{let e=!1;for(let i of t)e=(e=e||i3(i.addedNodes,s))&&!i3(i.removedNodes,s);e&&i()});return n.observe(document,{childList:!0,subtree:!0}),n}function i6(t,e,i){let s=t.canvas,n=new MutationObserver(t=>{let e=!1;for(let i of t)e=(e=e||i3(i.removedNodes,s))&&!i3(i.addedNodes,s);e&&i()});return n.observe(document,{childList:!0,subtree:!0}),n}let i8=new Map,i7=0;function i9(){let t=window.devicePixelRatio;t!==i7&&(i7=t,i8.forEach((e,i)=>{i.currentDevicePixelRatio!==t&&e()}))}function st(t,e,i){let s=t.canvas,n=s&&eU(s);if(!n)return;let a=tX((t,e)=>{let s=n.clientWidth;i(t,e),s<n.clientWidth&&i()},window),r=new ResizeObserver(t=>{let e=t[0],i=e.contentRect.width,s=e.contentRect.height;(0!==i||0!==s)&&a(i,s)});return r.observe(n),i8.size||window.addEventListener("resize",i9),i8.set(t,a),r}function se(t,e,i){i&&i.disconnect(),"resize"===e&&(i8.delete(t),i8.size||window.removeEventListener("resize",i9))}function si(t,e,i){let s=t.canvas,n=tX(e=>{null!==t.ctx&&i(function(t,e){let i=i0[t.type]||t.type,{x:s,y:n}=eQ(t,e);return{type:i,chart:e,native:t,x:void 0!==s?s:null,y:void 0!==n?n:null}}(e,t))},t);return!function(t,e,i){t.addEventListener(e,i,i2)}(s,e,n),n}class ss extends iZ{acquireContext(t,e){let i=t&&t.getContext&&t.getContext("2d");return i&&i.canvas===t?(!function(t,e){let i=t.style,s=t.getAttribute("height"),n=t.getAttribute("width");if(t[iQ]={initial:{height:s,width:n,style:{display:i.display,height:i.height,width:i.width}}},i.display=i.display||"block",i.boxSizing=i.boxSizing||"border-box",i1(n)){let e=e5(t,"width");void 0!==e&&(t.width=e)}if(i1(s)){if(""===t.style.height)t.height=t.width/(e||2);else{let e=e5(t,"height");void 0!==e&&(t.height=e)}}}(t,e),i):null}releaseContext(t){let e=t.canvas;if(!e[iQ])return!1;let i=e[iQ].initial;["height","width"].forEach(t=>{let s=i[t];G(s)?e.removeAttribute(t):e.setAttribute(t,s)});let s=i.style||{};return Object.keys(s).forEach(t=>{e.style[t]=s[t]}),e.width=e.width,delete e[iQ],!0}addEventListener(t,e,i){this.removeEventListener(t,e);let s=t.$proxies||(t.$proxies={}),n={attach:i4,detach:i6,resize:st}[e]||si;s[e]=n(t,e,i)}removeEventListener(t,e){let i=t.$proxies||(t.$proxies={}),s=i[e];if(!s)return;let n={attach:se,detach:se,resize:se}[e]||i5;n(t,e,s),i[e]=void 0}getDevicePixelRatio(){return window.devicePixelRatio}getMaximumSize(t,e,i,s){return function(t,e,i,s){let n=eG(t),a=eZ(n,"margin"),r=eX(n.maxWidth,t,"clientWidth")||tv,o=eX(n.maxHeight,t,"clientHeight")||tv,l=function(t,e,i){let s,n;if(void 0===e||void 0===i){let a=eU(t);if(a){let t=a.getBoundingClientRect(),r=eG(a),o=eZ(r,"border","width"),l=eZ(r,"padding");e=t.width-l.width-o.width,i=t.height-l.height-o.height,s=eX(r.maxWidth,a,"clientWidth"),n=eX(r.maxHeight,a,"clientHeight")}else e=t.clientWidth,i=t.clientHeight}return{width:e,height:i,maxWidth:s||tv,maxHeight:n||tv}}(t,e,i),{width:h,height:d}=l;if("content-box"===n.boxSizing){let t=eZ(n,"border","width"),e=eZ(n,"padding");h-=e.width+t.width,d-=e.height+t.height}h=Math.max(0,h-a.width),d=Math.max(0,s?h/s:d-a.height),h=e0(Math.min(h,r,l.maxWidth)),d=e0(Math.min(d,o,l.maxHeight)),h&&!d&&(d=e0(h/2));let c=void 0!==e||void 0!==i;return c&&s&&l.height&&d>l.height&&(h=e0(Math.floor((d=l.height)*s))),{width:h,height:d}}(t,e,i,s)}isAttached(t){let e=eU(t);return!!(e&&e.isConnected)}}class sn{static defaults={};static defaultRoutes=void 0;x;y;active=!1;options;$animations;tooltipPosition(t){let{x:e,y:i}=this.getProps(["x","y"],t);return{x:e,y:i}}hasValue(){return tL(this.x)&&tL(this.y)}getProps(t,e){let i=this.$animations;if(!e||!i)return this;let s={};return t.forEach(t=>{s[t]=i[t]&&i[t].active()?i[t]._to:this[t]}),s}}function sa(t,e,i,s,n){let a,r,o;let l=tt(s,0),h=Math.min(tt(n,t.length),t.length),d=0;for(i=Math.ceil(i),n&&(i=(a=n-s)/Math.floor(a/i)),o=l;o<0;)o=Math.round(l+ ++d*i);for(r=Math.max(l,0);r<h;r++)r===o&&(e.push(t[r]),o=Math.round(l+ ++d*i))}let sr=t=>"left"===t?"right":"right"===t?"left":t,so=(t,e,i)=>"top"===e||"left"===e?t[e]+i:t[e]-i,sl=(t,e)=>Math.min(e||t,t);function sh(t,e){let i=[],s=t.length/e,n=t.length,a=0;for(;a<n;a+=s)i.push(t[Math.floor(a)]);return i}function sd(t){return t.drawTicks?t.tickLength:0}function sc(t,e){if(!t.display)return 0;let i=eP(t.font,e),s=eS(t.padding),n=K(t.text)?t.text.length:1;return n*i.lineHeight+s.height}class su extends sn{constructor(t){super(),this.id=t.id,this.type=t.type,this.options=void 0,this.ctx=t.ctx,this.chart=t.chart,this.top=void 0,this.bottom=void 0,this.left=void 0,this.right=void 0,this.width=void 0,this.height=void 0,this._margins={left:0,right:0,top:0,bottom:0},this.maxWidth=void 0,this.maxHeight=void 0,this.paddingTop=void 0,this.paddingBottom=void 0,this.paddingLeft=void 0,this.paddingRight=void 0,this.axis=void 0,this.labelRotation=void 0,this.min=void 0,this.max=void 0,this._range=void 0,this.ticks=[],this._gridLineItems=null,this._labelItems=null,this._labelSizes=null,this._length=0,this._maxLength=0,this._longestTextCache={},this._startPixel=void 0,this._endPixel=void 0,this._reversePixels=!1,this._userMax=void 0,this._userMin=void 0,this._suggestedMax=void 0,this._suggestedMin=void 0,this._ticksLength=0,this._borderValue=0,this._cache={},this._dataLimitsCached=!1,this.$context=void 0}init(t){this.options=t.setContext(this.getContext()),this.axis=t.axis,this._userMin=this.parse(t.min),this._userMax=this.parse(t.max),this._suggestedMin=this.parse(t.suggestedMin),this._suggestedMax=this.parse(t.suggestedMax)}parse(t,e){return t}getUserBounds(){let{_userMin:t,_userMax:e,_suggestedMin:i,_suggestedMax:s}=this;return t=Q(t,Number.POSITIVE_INFINITY),e=Q(e,Number.NEGATIVE_INFINITY),i=Q(i,Number.POSITIVE_INFINITY),s=Q(s,Number.NEGATIVE_INFINITY),{min:Q(t,i),max:Q(e,s),minDefined:J(t),maxDefined:J(e)}}getMinMax(t){let e,{min:i,max:s,minDefined:n,maxDefined:a}=this.getUserBounds();if(n&&a)return{min:i,max:s};let r=this.getMatchingVisibleMetas();for(let o=0,l=r.length;o<l;++o)e=r[o].controller.getMinMax(this,t),n||(i=Math.min(i,e.min)),a||(s=Math.max(s,e.max));return i=a&&i>s?s:i,s=n&&i>s?i:s,{min:Q(i,Q(s,i)),max:Q(s,Q(i,s))}}getPadding(){return{left:this.paddingLeft||0,top:this.paddingTop||0,right:this.paddingRight||0,bottom:this.paddingBottom||0}}getTicks(){return this.ticks}getLabels(){let t=this.chart.data;return this.options.labels||(this.isHorizontal()?t.xLabels:t.yLabels)||t.labels||[]}getLabelItems(t=this.chart.chartArea){let e=this._labelItems||(this._labelItems=this._computeLabelItems(t));return e}beforeLayout(){this._cache={},this._dataLimitsCached=!1}beforeUpdate(){ts(this.options.beforeUpdate,[this])}update(t,e,i){let{beginAtZero:s,grace:n,ticks:a}=this.options,r=a.sampleSize;this.beforeUpdate(),this.maxWidth=t,this.maxHeight=e,this._margins=i=Object.assign({left:0,right:0,top:0,bottom:0},i),this.ticks=null,this._labelSizes=null,this._gridLineItems=null,this._labelItems=null,this.beforeSetDimensions(),this.setDimensions(),this.afterSetDimensions(),this._maxLength=this.isHorizontal()?this.width+i.left+i.right:this.height+i.top+i.bottom,this._dataLimitsCached||(this.beforeDataLimits(),this.determineDataLimits(),this.afterDataLimits(),this._range=function(t,e,i){let{min:s,max:n}=t,a=ti(e,(n-s)/2),r=(t,e)=>i&&0===t?0:t+e;return{min:r(s,-Math.abs(a)),max:r(n,a)}}(this,n,s),this._dataLimitsCached=!0),this.beforeBuildTicks(),this.ticks=this.buildTicks()||[],this.afterBuildTicks();let o=r<this.ticks.length;this._convertTicksToLabels(o?sh(this.ticks,r):this.ticks),this.configure(),this.beforeCalculateLabelRotation(),this.calculateLabelRotation(),this.afterCalculateLabelRotation(),a.display&&(a.autoSkip||"auto"===a.source)&&(this.ticks=function(t,e){let i=t.options.ticks,s=function(t){let e=t.options.offset,i=t._tickSize(),s=t._length/i+(e?0:1),n=t._maxLength/i;return Math.floor(Math.min(s,n))}(t),n=Math.min(i.maxTicksLimit||s,s),a=i.major.enabled?function(t){let e,i;let s=[];for(e=0,i=t.length;e<i;e++)t[e].major&&s.push(e);return s}(e):[],r=a.length,o=a[0],l=a[r-1],h=[];if(r>n)return function(t,e,i,s){let n,a=0,r=i[0];for(n=0,s=Math.ceil(s);n<t.length;n++)n===r&&(e.push(t[n]),r=i[++a*s])}(e,h,a,r/n),h;let d=function(t,e,i){let s=function(t){let e,i;let s=t.length;if(s<2)return!1;for(i=t[0],e=1;e<s;++e)if(t[e]-t[e-1]!==i)return!1;return i}(t),n=e.length/i;if(!s)return Math.max(n,1);let a=function(t){let e;let i=[],s=Math.sqrt(t);for(e=1;e<s;e++)t%e==0&&(i.push(e),i.push(t/e));return s===(0|s)&&i.push(s),i.sort((t,e)=>t-e).pop(),i}(s);for(let t=0,e=a.length-1;t<e;t++){let e=a[t];if(e>n)return e}return Math.max(n,1)}(a,e,n);if(r>0){let t,i;let s=r>1?Math.round((l-o)/(r-1)):null;for(sa(e,h,d,G(s)?0:o-s,o),t=0,i=r-1;t<i;t++)sa(e,h,d,a[t],a[t+1]);return sa(e,h,d,l,G(s)?e.length:l+s),h}return sa(e,h,d),h}(this,this.ticks),this._labelSizes=null,this.afterAutoSkip()),o&&this._convertTicksToLabels(this.ticks),this.beforeFit(),this.fit(),this.afterFit(),this.afterUpdate()}configure(){let t,e,i=this.options.reverse;this.isHorizontal()?(t=this.left,e=this.right):(t=this.top,e=this.bottom,i=!i),this._startPixel=t,this._endPixel=e,this._reversePixels=i,this._length=e-t,this._alignToPixels=this.options.alignToPixels}afterUpdate(){ts(this.options.afterUpdate,[this])}beforeSetDimensions(){ts(this.options.beforeSetDimensions,[this])}setDimensions(){this.isHorizontal()?(this.width=this.maxWidth,this.left=0,this.right=this.width):(this.height=this.maxHeight,this.top=0,this.bottom=this.height),this.paddingLeft=0,this.paddingTop=0,this.paddingRight=0,this.paddingBottom=0}afterSetDimensions(){ts(this.options.afterSetDimensions,[this])}_callHooks(t){this.chart.notifyPlugins(t,this.getContext()),ts(this.options[t],[this])}beforeDataLimits(){this._callHooks("beforeDataLimits")}determineDataLimits(){}afterDataLimits(){this._callHooks("afterDataLimits")}beforeBuildTicks(){this._callHooks("beforeBuildTicks")}buildTicks(){return[]}afterBuildTicks(){this._callHooks("afterBuildTicks")}beforeTickToLabelConversion(){ts(this.options.beforeTickToLabelConversion,[this])}generateTickLabels(t){let e,i,s;let n=this.options.ticks;for(e=0,i=t.length;e<i;e++)(s=t[e]).label=ts(n.callback,[s.value,e,t],this)}afterTickToLabelConversion(){ts(this.options.afterTickToLabelConversion,[this])}beforeCalculateLabelRotation(){ts(this.options.beforeCalculateLabelRotation,[this])}calculateLabelRotation(){let t,e,i;let s=this.options,n=s.ticks,a=sl(this.ticks.length,s.ticks.maxTicksLimit),r=n.minRotation||0,o=n.maxRotation,l=r;if(!this._isVisible()||!n.display||r>=o||a<=1||!this.isHorizontal()){this.labelRotation=r;return}let h=this._getLabelSizes(),d=h.widest.width,c=h.highest.height,u=tV(this.chart.width-d,0,this.maxWidth);d+6>(t=s.offset?this.maxWidth/a:u/(a-1))&&(t=u/(a-(s.offset?.5:1)),e=this.maxHeight-sd(s.grid)-n.padding-sc(s.title,this.chart.options.font),i=Math.sqrt(d*d+c*c),l=Math.max(r,Math.min(o,l=Math.min(Math.asin(tV((h.highest.height+6)/t,-1,1)),Math.asin(tV(e/i,-1,1))-Math.asin(tV(c/i,-1,1)))*(180/tb)))),this.labelRotation=l}afterCalculateLabelRotation(){ts(this.options.afterCalculateLabelRotation,[this])}afterAutoSkip(){}beforeFit(){ts(this.options.beforeFit,[this])}fit(){let t={width:0,height:0},{chart:e,options:{ticks:i,title:s,grid:n}}=this,a=this._isVisible(),r=this.isHorizontal();if(a){let a=sc(s,e.options.font);if(r?(t.width=this.maxWidth,t.height=sd(n)+a):(t.height=this.maxHeight,t.width=sd(n)+a),i.display&&this.ticks.length){let{first:e,last:s,widest:n,highest:a}=this._getLabelSizes(),o=2*i.padding,l=tI(this.labelRotation),h=Math.cos(l),d=Math.sin(l);if(r){let e=i.mirror?0:d*n.width+h*a.height;t.height=Math.min(this.maxHeight,t.height+e+o)}else{let e=i.mirror?0:h*n.width+d*a.height;t.width=Math.min(this.maxWidth,t.width+e+o)}this._calculatePadding(e,s,d,h)}}this._handleMargins(),r?(this.width=this._length=e.width-this._margins.left-this._margins.right,this.height=t.height):(this.width=t.width,this.height=this._length=e.height-this._margins.top-this._margins.bottom)}_calculatePadding(t,e,i,s){let{ticks:{align:n,padding:a},position:r}=this.options,o=0!==this.labelRotation,l="top"!==r&&"x"===this.axis;if(this.isHorizontal()){let r=this.getPixelForTick(0)-this.left,h=this.right-this.getPixelForTick(this.ticks.length-1),d=0,c=0;o?l?(d=s*t.width,c=i*e.height):(d=i*t.height,c=s*e.width):"start"===n?c=e.width:"end"===n?d=t.width:"inner"!==n&&(d=t.width/2,c=e.width/2),this.paddingLeft=Math.max((d-r+a)*this.width/(this.width-r),0),this.paddingRight=Math.max((c-h+a)*this.width/(this.width-h),0)}else{let i=e.height/2,s=t.height/2;"start"===n?(i=0,s=t.height):"end"===n&&(i=e.height,s=0),this.paddingTop=i+a,this.paddingBottom=s+a}}_handleMargins(){this._margins&&(this._margins.left=Math.max(this.paddingLeft,this._margins.left),this._margins.top=Math.max(this.paddingTop,this._margins.top),this._margins.right=Math.max(this.paddingRight,this._margins.right),this._margins.bottom=Math.max(this.paddingBottom,this._margins.bottom))}afterFit(){ts(this.options.afterFit,[this])}isHorizontal(){let{axis:t,position:e}=this.options;return"top"===e||"bottom"===e||"x"===t}isFullSize(){return this.options.fullSize}_convertTicksToLabels(t){let e,i;for(this.beforeTickToLabelConversion(),this.generateTickLabels(t),e=0,i=t.length;e<i;e++)G(t[e].label)&&(t.splice(e,1),i--,e--);this.afterTickToLabelConversion()}_getLabelSizes(){let t=this._labelSizes;if(!t){let e=this.options.ticks.sampleSize,i=this.ticks;e<i.length&&(i=sh(i,e)),this._labelSizes=t=this._computeLabelSizes(i,i.length,this.options.ticks.maxTicksLimit)}return t}_computeLabelSizes(t,e,i){let s,n,a,r,o,l,h,d,c,u,p;let{ctx:g,_longestTextCache:f}=this,m=[],x=[],b=Math.floor(e/sl(e,i)),y=0,_=0;for(s=0;s<e;s+=b){if(r=t[s].label,o=this._resolveTickFontOptions(s),g.font=l=o.string,h=f[l]=f[l]||{data:{},gc:[]},d=o.lineHeight,c=u=0,G(r)||K(r)){if(K(r))for(n=0,a=r.length;n<a;++n)G(p=r[n])||K(p)||(c=el(g,h.data,h.gc,c,p),u+=d)}else c=el(g,h.data,h.gc,c,r),u=d;m.push(c),x.push(u),y=Math.max(c,y),_=Math.max(u,_)}tn(f,t=>{let i;let s=t.gc,n=s.length/2;if(n>e){for(i=0;i<n;++i)delete t.data[s[i]];s.splice(0,n)}});let v=m.indexOf(y),k=x.indexOf(_),w=t=>({width:m[t]||0,height:x[t]||0});return{first:w(0),last:w(e-1),widest:w(v),highest:w(k),widths:m,heights:x}}getLabelForValue(t){return t}getPixelForValue(t,e){return NaN}getValueForPixel(t){}getPixelForTick(t){let e=this.ticks;return t<0||t>e.length-1?null:this.getPixelForValue(e[t].value)}getPixelForDecimal(t){this._reversePixels&&(t=1-t);let e=this._startPixel+t*this._length;return tV(this._alignToPixels?eh(this.chart,e,0):e,-32768,32767)}getDecimalForPixel(t){let e=(t-this._startPixel)/this._length;return this._reversePixels?1-e:e}getBasePixel(){return this.getPixelForValue(this.getBaseValue())}getBaseValue(){let{min:t,max:e}=this;return t<0&&e<0?e:t>0&&e>0?t:0}getContext(t){let e=this.ticks||[];if(t>=0&&t<e.length){let i=e[t];return i.$context||(i.$context=eD(this.getContext(),{tick:i,index:t,type:"tick"}))}return this.$context||(this.$context=eD(this.chart.getContext(),{scale:this,type:"scale"}))}_tickSize(){let t=this.options.ticks,e=tI(this.labelRotation),i=Math.abs(Math.cos(e)),s=Math.abs(Math.sin(e)),n=this._getLabelSizes(),a=t.autoSkipPadding||0,r=n?n.widest.width+a:0,o=n?n.highest.height+a:0;return this.isHorizontal()?o*i>r*s?r/i:o/s:o*s<r*i?o/i:r/s}_isVisible(){let t=this.options.display;return"auto"!==t?!!t:this.getMatchingVisibleMetas().length>0}_computeGridLineItems(t){let e,i,s,n,a,r,o,l,h,d,c,u;let p=this.axis,g=this.chart,f=this.options,{grid:m,position:x,border:b}=f,y=m.offset,_=this.isHorizontal(),v=this.ticks,k=v.length+(y?1:0),w=sd(m),M=[],C=b.setContext(this.getContext()),S=C.display?C.width:0,P=S/2,A=function(t){return eh(g,t,S)};if("top"===x)e=A(this.bottom),r=this.bottom-w,l=e-P,d=A(t.top)+P,u=t.bottom;else if("bottom"===x)e=A(this.top),d=t.top,u=A(t.bottom)-P,r=e+P,l=this.top+w;else if("left"===x)e=A(this.right),a=this.right-w,o=e-P,h=A(t.left)+P,c=t.right;else if("right"===x)e=A(this.left),h=t.left,c=A(t.right)-P,a=e+P,o=this.left+w;else if("x"===p){if("center"===x)e=A((t.top+t.bottom)/2+.5);else if(Z(x)){let t=Object.keys(x)[0],i=x[t];e=A(this.chart.scales[t].getPixelForValue(i))}d=t.top,u=t.bottom,l=(r=e+P)+w}else if("y"===p){if("center"===x)e=A((t.left+t.right)/2);else if(Z(x)){let t=Object.keys(x)[0],i=x[t];e=A(this.chart.scales[t].getPixelForValue(i))}o=(a=e-P)-w,h=t.left,c=t.right}let D=tt(f.ticks.maxTicksLimit,k),L=Math.max(1,Math.ceil(k/D));for(i=0;i<k;i+=L){let t=this.getContext(i),e=m.setContext(t),p=b.setContext(t),f=e.lineWidth,x=e.color,v=p.dash||[],k=p.dashOffset,w=e.tickWidth,C=e.tickColor,S=e.tickBorderDash||[],P=e.tickBorderDashOffset;void 0!==(s=function(t,e,i){let s;let n=t.ticks.length,a=Math.min(e,n-1),r=t._startPixel,o=t._endPixel,l=t.getPixelForTick(a);if(!i||(s=1===n?Math.max(l-r,o-l):0===e?(t.getPixelForTick(1)-l)/2:(l-t.getPixelForTick(a-1))/2,!((l+=a<e?s:-s)<r-1e-6)&&!(l>o+1e-6)))return l}(this,i,y))&&(n=eh(g,s,f),_?a=o=h=c=n:r=l=d=u=n,M.push({tx1:a,ty1:r,tx2:o,ty2:l,x1:h,y1:d,x2:c,y2:u,width:f,color:x,borderDash:v,borderDashOffset:k,tickWidth:w,tickColor:C,tickBorderDash:S,tickBorderDashOffset:P}))}return this._ticksLength=k,this._borderValue=e,M}_computeLabelItems(t){let e,i,s,n,a,r,o,l,h,d,c;let u=this.axis,p=this.options,{position:g,ticks:f}=p,m=this.isHorizontal(),x=this.ticks,{align:b,crossAlign:y,padding:_,mirror:v}=f,k=sd(p.grid),w=k+_,M=v?-_:w,C=-tI(this.labelRotation),S=[],P="middle";if("top"===g)a=this.bottom-M,r=this._getXAxisLabelAlignment();else if("bottom"===g)a=this.top+M,r=this._getXAxisLabelAlignment();else if("left"===g){let t=this._getYAxisLabelAlignment(k);r=t.textAlign,n=t.x}else if("right"===g){let t=this._getYAxisLabelAlignment(k);r=t.textAlign,n=t.x}else if("x"===u){if("center"===g)a=(t.top+t.bottom)/2+w;else if(Z(g)){let t=Object.keys(g)[0],e=g[t];a=this.chart.scales[t].getPixelForValue(e)+w}r=this._getXAxisLabelAlignment()}else if("y"===u){if("center"===g)n=(t.left+t.right)/2-w;else if(Z(g)){let t=Object.keys(g)[0],e=g[t];n=this.chart.scales[t].getPixelForValue(e)}r=this._getYAxisLabelAlignment(k).textAlign}"y"===u&&("start"===b?P="top":"end"===b&&(P="bottom"));let A=this._getLabelSizes();for(e=0,i=x.length;e<i;++e){let t;s=x[e].label;let u=f.setContext(this.getContext(e));o=this.getPixelForTick(e)+f.labelOffset,h=(l=this._resolveTickFontOptions(e)).lineHeight,d=K(s)?s.length:1;let p=d/2,b=u.color,_=u.textStrokeColor,k=u.textStrokeWidth,w=r;if(m?(n=o,"inner"===r&&(w=e===i-1?this.options.reverse?"left":"right":0===e?this.options.reverse?"right":"left":"center"),c="top"===g?"near"===y||0!==C?-d*h+h/2:"center"===y?-A.highest.height/2-p*h+h:-A.highest.height+h/2:"near"===y||0!==C?h/2:"center"===y?A.highest.height/2-p*h:A.highest.height-d*h,v&&(c*=-1),0===C||u.showLabelBackdrop||(n+=h/2*Math.sin(C))):(a=o,c=(1-d)*h/2),u.showLabelBackdrop){let i=eS(u.backdropPadding),s=A.heights[e],n=A.widths[e],a=c-i.top,o=0-i.left;switch(P){case"middle":a-=s/2;break;case"bottom":a-=s}switch(r){case"center":o-=n/2;break;case"right":o-=n}t={left:o,top:a,width:n+i.width,height:s+i.height,color:u.backdropColor}}S.push({label:s,font:l,textOffset:c,options:{rotation:C,color:b,strokeColor:_,strokeWidth:k,textAlign:w,textBaseline:P,translation:[n,a],backdrop:t}})}return S}_getXAxisLabelAlignment(){let{position:t,ticks:e}=this.options,i=-tI(this.labelRotation);if(i)return"top"===t?"left":"right";let s="center";return"start"===e.align?s="left":"end"===e.align?s="right":"inner"===e.align&&(s="inner"),s}_getYAxisLabelAlignment(t){let e,i;let{position:s,ticks:{crossAlign:n,mirror:a,padding:r}}=this.options,o=this._getLabelSizes(),l=t+r,h=o.widest.width;return"left"===s?a?(i=this.right+r,"near"===n?e="left":"center"===n?(e="center",i+=h/2):(e="right",i+=h)):(i=this.right-l,"near"===n?e="right":"center"===n?(e="center",i-=h/2):(e="left",i=this.left)):"right"===s?a?(i=this.left+r,"near"===n?e="right":"center"===n?(e="center",i-=h/2):(e="left",i-=h)):(i=this.left+l,"near"===n?e="left":"center"===n?(e="center",i+=h/2):(e="right",i=this.right)):e="right",{textAlign:e,x:i}}_computeLabelArea(){if(this.options.ticks.mirror)return;let t=this.chart,e=this.options.position;return"left"===e||"right"===e?{top:0,left:this.left,bottom:t.height,right:this.right}:"top"===e||"bottom"===e?{top:this.top,left:0,bottom:this.bottom,right:t.width}:void 0}drawBackground(){let{ctx:t,options:{backgroundColor:e},left:i,top:s,width:n,height:a}=this;e&&(t.save(),t.fillStyle=e,t.fillRect(i,s,n,a),t.restore())}getLineWidthForValue(t){let e=this.options.grid;if(!this._isVisible()||!e.display)return 0;let i=this.ticks,s=i.findIndex(e=>e.value===t);if(s>=0){let t=e.setContext(this.getContext(s));return t.lineWidth}return 0}drawGrid(t){let e,i;let s=this.options.grid,n=this.ctx,a=this._gridLineItems||(this._gridLineItems=this._computeGridLineItems(t)),r=(t,e,i)=>{i.width&&i.color&&(n.save(),n.lineWidth=i.width,n.strokeStyle=i.color,n.setLineDash(i.borderDash||[]),n.lineDashOffset=i.borderDashOffset,n.beginPath(),n.moveTo(t.x,t.y),n.lineTo(e.x,e.y),n.stroke(),n.restore())};if(s.display)for(e=0,i=a.length;e<i;++e){let t=a[e];s.drawOnChartArea&&r({x:t.x1,y:t.y1},{x:t.x2,y:t.y2},t),s.drawTicks&&r({x:t.tx1,y:t.ty1},{x:t.tx2,y:t.ty2},{color:t.tickColor,width:t.tickWidth,borderDash:t.tickBorderDash,borderDashOffset:t.tickBorderDashOffset})}}drawBorder(){let t,e,i,s;let{chart:n,ctx:a,options:{border:r,grid:o}}=this,l=r.setContext(this.getContext()),h=r.display?l.width:0;if(!h)return;let d=o.setContext(this.getContext(0)).lineWidth,c=this._borderValue;this.isHorizontal()?(t=eh(n,this.left,h)-h/2,e=eh(n,this.right,d)+d/2,i=s=c):(i=eh(n,this.top,h)-h/2,s=eh(n,this.bottom,d)+d/2,t=e=c),a.save(),a.lineWidth=l.width,a.strokeStyle=l.color,a.beginPath(),a.moveTo(t,i),a.lineTo(e,s),a.stroke(),a.restore()}drawLabels(t){let e=this.options.ticks;if(!e.display)return;let i=this.ctx,s=this._computeLabelArea();s&&eg(i,s);let n=this.getLabelItems(t);for(let t of n){let e=t.options,s=t.font,n=t.label,a=t.textOffset;eb(i,n,0,a,s,e)}s&&ef(i)}drawTitle(){let t;let{ctx:e,options:{position:i,title:s,reverse:n}}=this;if(!s.display)return;let a=eP(s.font),r=eS(s.padding),o=s.align,l=a.lineHeight/2;"bottom"===i||"center"===i||Z(i)?(l+=r.bottom,K(s.text)&&(l+=a.lineHeight*(s.text.length-1))):l+=r.top;let{titleX:h,titleY:d,maxWidth:c,rotation:u}=function(t,e,i,s){let n,a,r;let{top:o,left:l,bottom:h,right:d,chart:c}=t,{chartArea:u,scales:p}=c,g=0,f=h-o,m=d-l;if(t.isHorizontal()){if(a=tK(s,l,d),Z(i)){let t=Object.keys(i)[0],s=i[t];r=p[t].getPixelForValue(s)+f-e}else r="center"===i?(u.bottom+u.top)/2+f-e:so(t,i,e);n=d-l}else{if(Z(i)){let t=Object.keys(i)[0],s=i[t];a=p[t].getPixelForValue(s)-m+e}else a="center"===i?(u.left+u.right)/2-m+e:so(t,i,e);r=tK(s,h,o),g="left"===i?-tw:tw}return{titleX:a,titleY:r,maxWidth:n,rotation:g}}(this,l,i,o);eb(e,s.text,0,0,a,{color:s.color,maxWidth:c,rotation:u,textAlign:(t=tG(o),(n&&"right"!==i||!n&&"right"===i)&&(t=sr(t)),t),textBaseline:"middle",translation:[h,d]})}draw(t){this._isVisible()&&(this.drawBackground(),this.drawGrid(t),this.drawBorder(),this.drawTitle(),this.drawLabels(t))}_layers(){let t=this.options,e=t.ticks&&t.ticks.z||0,i=tt(t.grid&&t.grid.z,-1),s=tt(t.border&&t.border.z,0);return this._isVisible()&&this.draw===su.prototype.draw?[{z:i,draw:t=>{this.drawBackground(),this.drawGrid(t),this.drawTitle()}},{z:s,draw:()=>{this.drawBorder()}},{z:e,draw:t=>{this.drawLabels(t)}}]:[{z:e,draw:t=>{this.draw(t)}}]}getMatchingVisibleMetas(t){let e,i;let s=this.chart.getSortedVisibleDatasetMetas(),n=this.axis+"AxisID",a=[];for(e=0,i=s.length;e<i;++e){let i=s[e];i[n]!==this.id||t&&i.type!==t||a.push(i)}return a}_resolveTickFontOptions(t){let e=this.options.ticks.setContext(this.getContext(t));return eP(e.font)}_maxDigits(){let t=this._resolveTickFontOptions(0).lineHeight;return(this.isHorizontal()?this.width:this.height)/t}}class sp{constructor(t,e,i){this.type=t,this.scope=e,this.override=i,this.items=Object.create(null)}isForType(t){return Object.prototype.isPrototypeOf.call(this.type.prototype,t.prototype)}register(t){let e;let i=Object.getPrototypeOf(t);"id"in i&&"defaults"in i&&(e=this.register(i));let s=this.items,n=t.id,a=this.scope+"."+n;if(!n)throw Error("class does not have id: "+t);return n in s||(s[n]=t,function(t,e,i){let s=th(Object.create(null),[i?eo.get(i):{},eo.get(e),t.defaults]);eo.set(e,s),t.defaultRoutes&&function(t,e){Object.keys(e).forEach(i=>{let s=i.split("."),n=s.pop(),a=[t].concat(s).join("."),r=e[i].split("."),o=r.pop(),l=r.join(".");eo.route(a,n,l,o)})}(e,t.defaultRoutes),t.descriptors&&eo.describe(e,t.descriptors)}(t,a,e),this.override&&eo.override(t.id,t.overrides)),a}get(t){return this.items[t]}unregister(t){let e=this.items,i=t.id,s=this.scope;i in e&&delete e[i],s&&i in eo[s]&&(delete eo[s][i],this.override&&delete es[i])}}var sg=new class{constructor(){this.controllers=new sp(iM,"datasets",!0),this.elements=new sp(sn,"elements"),this.plugins=new sp(Object,"plugins"),this.scales=new sp(su,"scales"),this._typedRegistries=[this.controllers,this.scales,this.elements]}add(...t){this._each("register",t)}remove(...t){this._each("unregister",t)}addControllers(...t){this._each("register",t,this.controllers)}addElements(...t){this._each("register",t,this.elements)}addPlugins(...t){this._each("register",t,this.plugins)}addScales(...t){this._each("register",t,this.scales)}getController(t){return this._get(t,this.controllers,"controller")}getElement(t){return this._get(t,this.elements,"element")}getPlugin(t){return this._get(t,this.plugins,"plugin")}getScale(t){return this._get(t,this.scales,"scale")}removeControllers(...t){this._each("unregister",t,this.controllers)}removeElements(...t){this._each("unregister",t,this.elements)}removePlugins(...t){this._each("unregister",t,this.plugins)}removeScales(...t){this._each("unregister",t,this.scales)}_each(t,e,i){[...e].forEach(e=>{let s=i||this._getRegistryForType(e);i||s.isForType(e)||s===this.plugins&&e.id?this._exec(t,s,e):tn(e,e=>{let s=i||this._getRegistryForType(e);this._exec(t,s,e)})})}_exec(t,e,i){let s=tg(t);ts(i["before"+s],[],i),e[t](i),ts(i["after"+s],[],i)}_getRegistryForType(t){for(let e=0;e<this._typedRegistries.length;e++){let i=this._typedRegistries[e];if(i.isForType(t))return i}return this.plugins}_get(t,e,i){let s=e.get(t);if(void 0===s)throw Error('"'+t+'" is not a registered '+i+".");return s}};class sf{constructor(){this._init=[]}notify(t,e,i,s){"beforeInit"===e&&(this._init=this._createDescriptors(t,!0),this._notify(this._init,t,"install"));let n=s?this._descriptors(t).filter(s):this._descriptors(t),a=this._notify(n,t,e,i);return"afterDestroy"===e&&(this._notify(n,t,"stop"),this._notify(this._init,t,"uninstall")),a}_notify(t,e,i,s){for(let n of(s=s||{},t)){let t=n.plugin,a=t[i],r=[e,s,n.options];if(!1===ts(a,r,t)&&s.cancelable)return!1}return!0}invalidate(){G(this._cache)||(this._oldCache=this._cache,this._cache=void 0)}_descriptors(t){if(this._cache)return this._cache;let e=this._cache=this._createDescriptors(t);return this._notifyStateChanges(t),e}_createDescriptors(t,e){let i=t&&t.config,s=tt(i.options&&i.options.plugins,{}),n=function(t){let e={},i=[],s=Object.keys(sg.plugins.items);for(let t=0;t<s.length;t++)i.push(sg.getPlugin(s[t]));let n=t.plugins||[];for(let t=0;t<n.length;t++){let s=n[t];-1===i.indexOf(s)&&(i.push(s),e[s.id]=!0)}return{plugins:i,localIds:e}}(i);return!1!==s||e?function(t,{plugins:e,localIds:i},s,n){let a=[],r=t.getContext();for(let l of e){var o;let e=l.id,h=(o=s[e],n||!1!==o?!0===o?{}:o:null);null!==h&&a.push({plugin:l,options:function(t,{plugin:e,local:i},s,n){let a=t.pluginScopeKeys(e),r=t.getOptionScopes(s,a);return i&&e.defaults&&r.push(e.defaults),t.createResolver(r,n,[""],{scriptable:!1,indexable:!1,allKeys:!0})}(t.config,{plugin:l,local:i[e]},h,r)})}return a}(t,n,s,e):[]}_notifyStateChanges(t){let e=this._oldCache||[],i=this._cache,s=(t,e)=>t.filter(t=>!e.some(e=>t.plugin.id===e.plugin.id));this._notify(s(e,i),t,"stop"),this._notify(s(i,e),t,"start")}}function sm(t,e){let i=eo.datasets[t]||{},s=(e.datasets||{})[t]||{};return s.indexAxis||e.indexAxis||i.indexAxis||"x"}function sx(t){if("x"===t||"y"===t||"r"===t)return t}function sb(t,...e){if(sx(t))return t;for(let s of e){var i;let e=s.axis||("top"===(i=s.position)||"bottom"===i?"x":"left"===i||"right"===i?"y":void 0)||t.length>1&&sx(t[0].toLowerCase());if(e)return e}throw Error(`Cannot determine type of '${t}' axis. Please provide 'axis' or 'position' option.`)}function sy(t,e,i){if(i[e+"AxisID"]===t)return{axis:e}}function s_(t){let e=t.options||(t.options={});e.plugins=tt(e.plugins,{}),e.scales=function(t,e){let i=es[t.type]||{scales:{}},s=e.scales||{},n=sm(t.type,e),a=Object.create(null);return Object.keys(s).forEach(e=>{let r=s[e];if(!Z(r))return console.error(`Invalid scale configuration for scale: ${e}`);if(r._proxy)return console.warn(`Ignoring resolver passed as options for scale: ${e}`);let o=sb(e,r,function(t,e){if(e.data&&e.data.datasets){let i=e.data.datasets.filter(e=>e.xAxisID===t||e.yAxisID===t);if(i.length)return sy(t,"x",i[0])||sy(t,"y",i[0])}return{}}(e,t),eo.scales[r.type]),l=o===n?"_index_":"_value_",h=i.scales||{};a[e]=td(Object.create(null),[{axis:o},r,h[o],h[l]])}),t.data.datasets.forEach(i=>{let n=i.type||t.type,r=i.indexAxis||sm(n,e),o=es[n]||{},l=o.scales||{};Object.keys(l).forEach(t=>{let e;let n=(e=t,"_index_"===t?e=r:"_value_"===t&&(e="x"===r?"y":"x"),e),o=i[n+"AxisID"]||n;a[o]=a[o]||Object.create(null),td(a[o],[{axis:n},s[o],l[t]])})}),Object.keys(a).forEach(t=>{let e=a[t];td(e,[eo.scales[e.type],eo.scale])}),a}(t,e)}function sv(t){return(t=t||{}).datasets=t.datasets||[],t.labels=t.labels||[],t}let sk=new Map,sw=new Set;function sM(t,e){let i=sk.get(t);return i||(i=e(),sk.set(t,i),sw.add(i)),i}let sC=(t,e,i)=>{let s=tp(e,i);void 0!==s&&t.add(s)};class sS{constructor(t){var e;this._config=((e=(e=t)||{}).data=sv(e.data),s_(e),e),this._scopeCache=new Map,this._resolverCache=new Map}get platform(){return this._config.platform}get type(){return this._config.type}set type(t){this._config.type=t}get data(){return this._config.data}set data(t){this._config.data=sv(t)}get options(){return this._config.options}set options(t){this._config.options=t}get plugins(){return this._config.plugins}update(){let t=this._config;this.clearCache(),s_(t)}clearCache(){this._scopeCache.clear(),this._resolverCache.clear()}datasetScopeKeys(t){return sM(t,()=>[[`datasets.${t}`,""]])}datasetAnimationScopeKeys(t,e){return sM(`${t}.transition.${e}`,()=>[[`datasets.${t}.transitions.${e}`,`transitions.${e}`],[`datasets.${t}`,""]])}datasetElementScopeKeys(t,e){return sM(`${t}-${e}`,()=>[[`datasets.${t}.elements.${e}`,`datasets.${t}`,`elements.${e}`,""]])}pluginScopeKeys(t){let e=t.id,i=this.type;return sM(`${i}-plugin-${e}`,()=>[[`plugins.${e}`,...t.additionalOptionScopes||[]]])}_cachedScopes(t,e){let i=this._scopeCache,s=i.get(t);return(!s||e)&&(s=new Map,i.set(t,s)),s}getOptionScopes(t,e,i){let{options:s,type:n}=this,a=this._cachedScopes(t,i),r=a.get(e);if(r)return r;let o=new Set;e.forEach(e=>{t&&(o.add(t),e.forEach(e=>sC(o,t,e))),e.forEach(t=>sC(o,s,t)),e.forEach(t=>sC(o,es[n]||{},t)),e.forEach(t=>sC(o,eo,t)),e.forEach(t=>sC(o,en,t))});let l=Array.from(o);return 0===l.length&&l.push(Object.create(null)),sw.has(e)&&a.set(e,l),l}chartOptionScopes(){let{options:t,type:e}=this;return[t,es[e]||{},eo.datasets[e]||{},{type:e},eo,en]}resolveNamedOptions(t,e,i,s=[""]){let n={$shared:!0},{resolver:a,subPrefixes:r}=sP(this._resolverCache,t,s),o=a;if(function(t,e){let{isScriptable:i,isIndexable:s}=eI(t);for(let n of e){let e=i(n),a=s(n),r=(a||e)&&t[n];if(e&&(tm(r)||sA(r))||a&&K(r))return!0}return!1}(a,e)){n.$shared=!1,i=tm(i)?i():i;let e=this.createResolver(t,i,r);o=eE(a,i,e)}for(let t of e)n[t]=o[t];return n}createResolver(t,e,i=[""],s){let{resolver:n}=sP(this._resolverCache,t,i);return Z(e)?eE(n,e,void 0,s):n}}function sP(t,e,i){let s=t.get(e);s||(s=new Map,t.set(e,s));let n=i.join(),a=s.get(n);if(!a){let t=eL(e,i);a={resolver:t,subPrefixes:i.filter(t=>!t.toLowerCase().includes("hover"))},s.set(n,a)}return a}let sA=t=>Z(t)&&Object.getOwnPropertyNames(t).reduce((e,i)=>e||tm(t[i]),!1),sD=["top","bottom","left","right","chartArea"];function sL(t,e){return"top"===t||"bottom"===t||-1===sD.indexOf(t)&&"x"===e}function sE(t,e){return function(i,s){return i[t]===s[t]?i[e]-s[e]:i[t]-s[t]}}function sI(t){let e=t.chart,i=e.options.animation;e.notifyPlugins("afterRender"),ts(i&&i.onComplete,[t],e)}function sO(t){let e=t.chart,i=e.options.animation;ts(i&&i.onProgress,[t],e)}function sT(t){return eY()&&"string"==typeof t?t=document.getElementById(t):t&&t.length&&(t=t[0]),t&&t.canvas&&(t=t.canvas),t}let sR={},sz=t=>{let e=sT(t);return Object.values(sR).filter(t=>t.canvas===e).pop()};class sF{static defaults=eo;static instances=sR;static overrides=es;static registry=sg;static version="4.3.2";static getChart=sz;static register(...t){sg.add(...t),sB()}static unregister(...t){sg.remove(...t),sB()}constructor(t,e){var i,s;let n;let a=this.config=new sS(e),r=sT(t),o=sz(r);if(o)throw Error("Canvas is already in use. Chart with ID '"+o.id+"' must be destroyed before the canvas with ID '"+o.canvas.id+"' can be reused.");let l=a.createResolver(a.chartOptionScopes(),this.getContext());this.platform=new(a.platform||(!eY()||"undefined"!=typeof OffscreenCanvas&&r instanceof OffscreenCanvas?iJ:ss)),this.platform.updateConfig(a);let h=this.platform.acquireContext(r,l.aspectRatio),d=h&&h.canvas,c=d&&d.height,u=d&&d.width;if(this.id=X(),this.ctx=h,this.canvas=d,this.width=u,this.height=c,this._options=l,this._aspectRatio=this.aspectRatio,this._layers=[],this._metasets=[],this._stacks=void 0,this.boxes=[],this.currentDevicePixelRatio=void 0,this.chartArea=void 0,this._active=[],this._lastEvent=void 0,this._listeners={},this._responsiveListeners=void 0,this._sortedMetasets=[],this.scales={},this._plugins=new sf,this.$proxies={},this._hiddenIndices={},this.attached=!1,this._animationsDisabled=void 0,this.$context=void 0,this._doResize=(i=t=>this.update(t),s=l.resizeDelay||0,function(...t){return s?(clearTimeout(n),n=setTimeout(i,s,t)):i.apply(this,t),s}),this._dataChanges=[],sR[this.id]=this,!h||!d){console.error("Failed to create chart: can't acquire context from the given item");return}io.listen(this,"complete",sI),io.listen(this,"progress",sO),this._initialize(),this.attached&&this.update()}get aspectRatio(){let{options:{aspectRatio:t,maintainAspectRatio:e},width:i,height:s,_aspectRatio:n}=this;return G(t)?e&&n?n:s?i/s:null:t}get data(){return this.config.data}set data(t){this.config.data=t}get options(){return this._options}set options(t){this.config.options=t}get registry(){return sg}_initialize(){return this.notifyPlugins("beforeInit"),this.options.responsive?this.resize():e1(this,this.options.devicePixelRatio),this.bindEvents(),this.notifyPlugins("afterInit"),this}clear(){return ed(this.canvas,this.ctx),this}stop(){return io.stop(this),this}resize(t,e){io.running(this)?this._resizeBeforeDraw={width:t,height:e}:this._resize(t,e)}_resize(t,e){let i=this.options,s=this.canvas,n=i.maintainAspectRatio&&this.aspectRatio,a=this.platform.getMaximumSize(s,t,e,n),r=i.devicePixelRatio||this.platform.getDevicePixelRatio(),o=this.width?"resize":"attach";this.width=a.width,this.height=a.height,this._aspectRatio=this.aspectRatio,e1(this,r,!0)&&(this.notifyPlugins("resize",{size:a}),ts(i.onResize,[this,a],this),this.attached&&this._doResize(o)&&this.render())}ensureScalesHaveIDs(){let t=this.options,e=t.scales||{};tn(e,(t,e)=>{t.id=e})}buildOrUpdateScales(){let t=this.options,e=t.scales,i=this.scales,s=Object.keys(i).reduce((t,e)=>(t[e]=!1,t),{}),n=[];e&&(n=n.concat(Object.keys(e).map(t=>{let i=e[t],s=sb(t,i),n="r"===s,a="x"===s;return{options:i,dposition:n?"chartArea":a?"bottom":"left",dtype:n?"radialLinear":a?"category":"linear"}}))),tn(n,e=>{let n=e.options,a=n.id,r=sb(a,n),o=tt(n.type,e.dtype);(void 0===n.position||sL(n.position,r)!==sL(e.dposition))&&(n.position=e.dposition),s[a]=!0;let l=null;if(a in i&&i[a].type===o)l=i[a];else{let t=sg.getScale(o);i[(l=new t({id:a,type:o,ctx:this.ctx,chart:this})).id]=l}l.init(n,t)}),tn(s,(t,e)=>{t||delete i[e]}),tn(i,t=>{iK.configure(this,t,t.options),iK.addBox(this,t)})}_updateMetasets(){let t=this._metasets,e=this.data.datasets.length,i=t.length;if(t.sort((t,e)=>t.index-e.index),i>e){for(let t=e;t<i;++t)this._destroyDatasetMeta(t);t.splice(e,i-e)}this._sortedMetasets=t.slice(0).sort(sE("order","index"))}_removeUnreferencedMetasets(){let{_metasets:t,data:{datasets:e}}=this;t.length>e.length&&delete this._stacks,t.forEach((t,i)=>{0===e.filter(e=>e===t._dataset).length&&this._destroyDatasetMeta(i)})}buildOrUpdateControllers(){let t,e;let i=[],s=this.data.datasets;for(this._removeUnreferencedMetasets(),t=0,e=s.length;t<e;t++){let e=s[t],n=this.getDatasetMeta(t),a=e.type||this.config.type;if(n.type&&n.type!==a&&(this._destroyDatasetMeta(t),n=this.getDatasetMeta(t)),n.type=a,n.indexAxis=e.indexAxis||sm(a,this.options),n.order=e.order||0,n.index=t,n.label=""+e.label,n.visible=this.isDatasetVisible(t),n.controller)n.controller.updateIndex(t),n.controller.linkScales();else{let e=sg.getController(a),{datasetElementType:s,dataElementType:r}=eo.datasets[a];Object.assign(e,{dataElementType:sg.getElement(r),datasetElementType:s&&sg.getElement(s)}),n.controller=new e(this,t),i.push(n.controller)}}return this._updateMetasets(),i}_resetElements(){tn(this.data.datasets,(t,e)=>{this.getDatasetMeta(e).controller.reset()},this)}reset(){this._resetElements(),this.notifyPlugins("reset")}update(t){let e=this.config;e.update();let i=this._options=e.createResolver(e.chartOptionScopes(),this.getContext()),s=this._animationsDisabled=!i.animation;if(this._updateScales(),this._checkEventBindings(),this._updateHiddenIndices(),this._plugins.invalidate(),!1===this.notifyPlugins("beforeUpdate",{mode:t,cancelable:!0}))return;let n=this.buildOrUpdateControllers();this.notifyPlugins("beforeElementsUpdate");let a=0;for(let t=0,e=this.data.datasets.length;t<e;t++){let{controller:e}=this.getDatasetMeta(t),i=!s&&-1===n.indexOf(e);e.buildOrUpdateElements(i),a=Math.max(+e.getMaxOverflow(),a)}a=this._minPadding=i.layout.autoPadding?a:0,this._updateLayout(a),s||tn(n,t=>{t.reset()}),this._updateDatasets(t),this.notifyPlugins("afterUpdate",{mode:t}),this._layers.sort(sE("z","_idx"));let{_active:r,_lastEvent:o}=this;o?this._eventHandler(o,!0):r.length&&this._updateHoverStyles(r,r,!0),this.render()}_updateScales(){tn(this.scales,t=>{iK.removeBox(this,t)}),this.ensureScalesHaveIDs(),this.buildOrUpdateScales()}_checkEventBindings(){let t=this.options,e=new Set(Object.keys(this._listeners)),i=new Set(t.events);tx(e,i)&&!!this._responsiveListeners===t.responsive||(this.unbindEvents(),this.bindEvents())}_updateHiddenIndices(){let{_hiddenIndices:t}=this,e=this._getUniformDataChanges()||[];for(let{method:i,start:s,count:n}of e){let e="_removeElements"===i?-n:n;!function(t,e,i){let s=Object.keys(t);for(let n of s){let s=+n;if(s>=e){let a=t[n];delete t[n],(i>0||s>e)&&(t[s+i]=a)}}}(t,s,e)}}_getUniformDataChanges(){let t=this._dataChanges;if(!t||!t.length)return;this._dataChanges=[];let e=this.data.datasets.length,i=e=>new Set(t.filter(t=>t[0]===e).map((t,e)=>e+","+t.splice(1).join(","))),s=i(0);for(let t=1;t<e;t++)if(!tx(s,i(t)))return;return Array.from(s).map(t=>t.split(",")).map(t=>({method:t[1],start:+t[2],count:+t[3]}))}_updateLayout(t){if(!1===this.notifyPlugins("beforeLayout",{cancelable:!0}))return;iK.update(this,this.width,this.height,t);let e=this.chartArea,i=e.width<=0||e.height<=0;this._layers=[],tn(this.boxes,t=>{i&&"chartArea"===t.position||(t.configure&&t.configure(),this._layers.push(...t._layers()))},this),this._layers.forEach((t,e)=>{t._idx=e}),this.notifyPlugins("afterLayout")}_updateDatasets(t){if(!1!==this.notifyPlugins("beforeDatasetsUpdate",{mode:t,cancelable:!0})){for(let t=0,e=this.data.datasets.length;t<e;++t)this.getDatasetMeta(t).controller.configure();for(let e=0,i=this.data.datasets.length;e<i;++e)this._updateDataset(e,tm(t)?t({datasetIndex:e}):t);this.notifyPlugins("afterDatasetsUpdate",{mode:t})}}_updateDataset(t,e){let i=this.getDatasetMeta(t),s={meta:i,index:t,mode:e,cancelable:!0};!1!==this.notifyPlugins("beforeDatasetUpdate",s)&&(i.controller._update(e),s.cancelable=!1,this.notifyPlugins("afterDatasetUpdate",s))}render(){!1!==this.notifyPlugins("beforeRender",{cancelable:!0})&&(io.has(this)?this.attached&&!io.running(this)&&io.start(this):(this.draw(),sI({chart:this})))}draw(){let t;if(this._resizeBeforeDraw){let{width:t,height:e}=this._resizeBeforeDraw;this._resize(t,e),this._resizeBeforeDraw=null}if(this.clear(),this.width<=0||this.height<=0||!1===this.notifyPlugins("beforeDraw",{cancelable:!0}))return;let e=this._layers;for(t=0;t<e.length&&e[t].z<=0;++t)e[t].draw(this.chartArea);for(this._drawDatasets();t<e.length;++t)e[t].draw(this.chartArea);this.notifyPlugins("afterDraw")}_getSortedDatasetMetas(t){let e,i;let s=this._sortedMetasets,n=[];for(e=0,i=s.length;e<i;++e){let i=s[e];(!t||i.visible)&&n.push(i)}return n}getSortedVisibleDatasetMetas(){return this._getSortedDatasetMetas(!0)}_drawDatasets(){if(!1===this.notifyPlugins("beforeDatasetsDraw",{cancelable:!0}))return;let t=this.getSortedVisibleDatasetMetas();for(let e=t.length-1;e>=0;--e)this._drawDataset(t[e]);this.notifyPlugins("afterDatasetsDraw")}_drawDataset(t){let e=this.ctx,i=t._clip,s=!i.disabled,n=function(t){let{xScale:e,yScale:i}=t;if(e&&i)return{left:e.left,right:e.right,top:i.top,bottom:i.bottom}}(t)||this.chartArea,a={meta:t,index:t.index,cancelable:!0};!1!==this.notifyPlugins("beforeDatasetDraw",a)&&(s&&eg(e,{left:!1===i.left?0:n.left-i.left,right:!1===i.right?this.width:n.right+i.right,top:!1===i.top?0:n.top-i.top,bottom:!1===i.bottom?this.height:n.bottom+i.bottom}),t.controller.draw(),s&&ef(e),a.cancelable=!1,this.notifyPlugins("afterDatasetDraw",a))}isPointInArea(t){return ep(t,this.chartArea,this._minPadding)}getElementsAtEventForMode(t,e,i,s){let n=iW.modes[e];return"function"==typeof n?n(this,t,i,s):[]}getDatasetMeta(t){let e=this.data.datasets[t],i=this._metasets,s=i.filter(t=>t&&t._dataset===e).pop();return s||(s={type:null,data:[],dataset:null,controller:null,hidden:null,xAxisID:null,yAxisID:null,order:e&&e.order||0,index:t,_dataset:e,_parsed:[],_sorted:!1},i.push(s)),s}getContext(){return this.$context||(this.$context=eD(null,{chart:this,type:"chart"}))}getVisibleDatasetCount(){return this.getSortedVisibleDatasetMetas().length}isDatasetVisible(t){let e=this.data.datasets[t];if(!e)return!1;let i=this.getDatasetMeta(t);return"boolean"==typeof i.hidden?!i.hidden:!e.hidden}setDatasetVisibility(t,e){let i=this.getDatasetMeta(t);i.hidden=!e}toggleDataVisibility(t){this._hiddenIndices[t]=!this._hiddenIndices[t]}getDataVisibility(t){return!this._hiddenIndices[t]}_updateVisibility(t,e,i){let s=i?"show":"hide",n=this.getDatasetMeta(t),a=n.controller._resolveAnimations(void 0,s);tf(e)?(n.data[e].hidden=!i,this.update()):(this.setDatasetVisibility(t,i),a.update(n,{visible:i}),this.update(e=>e.datasetIndex===t?s:void 0))}hide(t,e){this._updateVisibility(t,e,!1)}show(t,e){this._updateVisibility(t,e,!0)}_destroyDatasetMeta(t){let e=this._metasets[t];e&&e.controller&&e.controller._destroy(),delete this._metasets[t]}_stop(){let t,e;for(this.stop(),io.remove(this),t=0,e=this.data.datasets.length;t<e;++t)this._destroyDatasetMeta(t)}destroy(){this.notifyPlugins("beforeDestroy");let{canvas:t,ctx:e}=this;this._stop(),this.config.clearCache(),t&&(this.unbindEvents(),ed(t,e),this.platform.releaseContext(e),this.canvas=null,this.ctx=null),delete sR[this.id],this.notifyPlugins("afterDestroy")}toBase64Image(...t){return this.canvas.toDataURL(...t)}bindEvents(){this.bindUserEvents(),this.options.responsive?this.bindResponsiveEvents():this.attached=!0}bindUserEvents(){let t=this._listeners,e=this.platform,i=(i,s)=>{e.addEventListener(this,i,s),t[i]=s},s=(t,e,i)=>{t.offsetX=e,t.offsetY=i,this._eventHandler(t)};tn(this.options.events,t=>i(t,s))}bindResponsiveEvents(){let t;this._responsiveListeners||(this._responsiveListeners={});let e=this._responsiveListeners,i=this.platform,s=(t,s)=>{i.addEventListener(this,t,s),e[t]=s},n=(t,s)=>{e[t]&&(i.removeEventListener(this,t,s),delete e[t])},a=(t,e)=>{this.canvas&&this.resize(t,e)},r=()=>{n("attach",r),this.attached=!0,this.resize(),s("resize",a),s("detach",t)};t=()=>{this.attached=!1,n("resize",a),this._stop(),this._resize(0,0),s("attach",r)},i.isAttached(this.canvas)?r():t()}unbindEvents(){tn(this._listeners,(t,e)=>{this.platform.removeEventListener(this,e,t)}),this._listeners={},tn(this._responsiveListeners,(t,e)=>{this.platform.removeEventListener(this,e,t)}),this._responsiveListeners=void 0}updateHoverStyle(t,e,i){let s,n,a;let r=i?"set":"remove";for("dataset"===e&&this.getDatasetMeta(t[0].datasetIndex).controller["_"+r+"DatasetHoverStyle"](),n=0,a=t.length;n<a;++n){s=t[n];let e=s&&this.getDatasetMeta(s.datasetIndex).controller;e&&e[r+"HoverStyle"](s.element,s.datasetIndex,s.index)}}getActiveElements(){return this._active||[]}setActiveElements(t){let e=this._active||[],i=t.map(({datasetIndex:t,index:e})=>{let i=this.getDatasetMeta(t);if(!i)throw Error("No dataset found at index "+t);return{datasetIndex:t,element:i.data[e],index:e}}),s=!ta(i,e);s&&(this._active=i,this._lastEvent=null,this._updateHoverStyles(i,e))}notifyPlugins(t,e,i){return this._plugins.notify(this,t,e,i)}isPluginEnabled(t){return 1===this._plugins._cache.filter(e=>e.plugin.id===t).length}_updateHoverStyles(t,e,i){let s=this.options.hover,n=(t,e)=>t.filter(t=>!e.some(e=>t.datasetIndex===e.datasetIndex&&t.index===e.index)),a=n(e,t),r=i?t:n(t,e);a.length&&this.updateHoverStyle(a,s.mode,!1),r.length&&s.mode&&this.updateHoverStyle(r,s.mode,!0)}_eventHandler(t,e){let i={event:t,replay:e,cancelable:!0,inChartArea:this.isPointInArea(t)},s=e=>(e.options.events||this.options.events).includes(t.native.type);if(!1===this.notifyPlugins("beforeEvent",i,s))return;let n=this._handleEvent(t,e,i.inChartArea);return i.cancelable=!1,this.notifyPlugins("afterEvent",i,s),(n||i.changed)&&this.render(),this}_handleEvent(t,e,i){var s;let{_active:n=[],options:a}=this,r=this._getActiveElements(t,n,i,e),o="mouseup"===t.type||"click"===t.type||"contextmenu"===t.type,l=(s=this._lastEvent,i&&"mouseout"!==t.type?o?s:t:null);i&&(this._lastEvent=null,ts(a.onHover,[t,r,this],this),o&&ts(a.onClick,[t,r,this],this));let h=!ta(r,n);return(h||e)&&(this._active=r,this._updateHoverStyles(r,n,e)),this._lastEvent=l,h}_getActiveElements(t,e,i,s){if("mouseout"===t.type)return[];if(!i)return e;let n=this.options.hover;return this.getElementsAtEventForMode(t,n.mode,n,s)}}function sB(){return tn(sF.instances,t=>t._plugins.invalidate())}function sV(t,e,i,s){return{x:i+t*Math.cos(e),y:s+t*Math.sin(e)}}function sW(t,e,i,s,n,a){let{x:r,y:o,startAngle:l,pixelMargin:h,innerRadius:d}=e,c=Math.max(e.outerRadius+s+i-h,0),u=d>0?d+s+i+h:0,p=0,g=n-l;if(s){let t=c>0?c-s:0,e=((d>0?d-s:0)+t)/2;p=(g-(0!==e?g*e/(e+s):g))/2}let f=Math.max(.001,g*c-i/tb)/c,m=(g-f)/2,x=l+m+p,b=n-m-p,{outerStart:y,outerEnd:_,innerStart:v,innerEnd:k}=function(t,e,i,s){let n=ew(t.options.borderRadius,["outerStart","outerEnd","innerStart","innerEnd"]),a=(i-e)/2,r=Math.min(a,s*e/2),o=t=>{let e=(i-Math.min(a,t))*s/2;return tV(t,0,Math.min(a,e))};return{outerStart:o(n.outerStart),outerEnd:o(n.outerEnd),innerStart:tV(n.innerStart,0,r),innerEnd:tV(n.innerEnd,0,r)}}(e,u,c,b-x),w=c-y,M=c-_,C=x+y/w,S=b-_/M,P=u+v,A=u+k,D=x+v/P,L=b-k/A;if(t.beginPath(),a){let e=(C+S)/2;if(t.arc(r,o,c,C,e),t.arc(r,o,c,e,S),_>0){let e=sV(M,S,r,o);t.arc(e.x,e.y,_,S,b+tw)}let i=sV(A,b,r,o);if(t.lineTo(i.x,i.y),k>0){let e=sV(A,L,r,o);t.arc(e.x,e.y,k,b+tw,L+Math.PI)}let s=(b-k/u+(x+v/u))/2;if(t.arc(r,o,u,b-k/u,s,!0),t.arc(r,o,u,s,x+v/u,!0),v>0){let e=sV(P,D,r,o);t.arc(e.x,e.y,v,D+Math.PI,x-tw)}let n=sV(w,x,r,o);if(t.lineTo(n.x,n.y),y>0){let e=sV(w,C,r,o);t.arc(e.x,e.y,y,x-tw,C)}}else{t.moveTo(r,o);let e=Math.cos(C)*c+r,i=Math.sin(C)*c+o;t.lineTo(e,i);let s=Math.cos(S)*c+r,n=Math.sin(S)*c+o;t.lineTo(s,n)}t.closePath()}function sN(t,e,i=e){t.lineCap=tt(i.borderCapStyle,e.borderCapStyle),t.setLineDash(tt(i.borderDash,e.borderDash)),t.lineDashOffset=tt(i.borderDashOffset,e.borderDashOffset),t.lineJoin=tt(i.borderJoinStyle,e.borderJoinStyle),t.lineWidth=tt(i.borderWidth,e.borderWidth),t.strokeStyle=tt(i.borderColor,e.borderColor)}function sq(t,e,i){t.lineTo(i.x,i.y)}function sH(t,e,i={}){let s=t.length,{start:n=0,end:a=s-1}=i,{start:r,end:o}=e,l=Math.max(n,r),h=Math.min(a,o);return{count:s,start:l,loop:e.loop,ilen:h<l&&!(n<r&&a<r||n>o&&a>o)?s+h-l:h-l}}function s$(t,e,i,s){let n,a,r;let{points:o,options:l}=e,{count:h,start:d,loop:c,ilen:u}=sH(o,i,s),p=l.stepped?em:l.tension||"monotone"===l.cubicInterpolationMode?ex:sq,{move:g=!0,reverse:f}=s||{};for(n=0;n<=u;++n)(a=o[(d+(f?u-n:n))%h]).skip||(g?(t.moveTo(a.x,a.y),g=!1):p(t,r,a,f,l.stepped),r=a);return c&&p(t,r,a=o[(d+(f?u:0))%h],f,l.stepped),!!c}function sj(t,e,i,s){let n,a,r,o,l,h;let d=e.points,{count:c,start:u,ilen:p}=sH(d,i,s),{move:g=!0,reverse:f}=s||{},m=0,x=0,b=t=>(u+(f?p-t:t))%c,y=()=>{o!==l&&(t.lineTo(m,l),t.lineTo(m,o),t.lineTo(m,h))};for(g&&(a=d[b(0)],t.moveTo(a.x,a.y)),n=0;n<=p;++n){if((a=d[b(n)]).skip)continue;let e=a.x,i=a.y,s=0|e;s===r?(i<o?o=i:i>l&&(l=i),m=(x*m+e)/++x):(y(),t.lineTo(e,i),r=s,x=0,o=l=i),h=i}y()}function sY(t){let e=t.options,i=e.borderDash&&e.borderDash.length,s=!t._decimated&&!t._loop&&!e.tension&&"monotone"!==e.cubicInterpolationMode&&!e.stepped&&!i;return s?sj:s$}let sU="function"==typeof Path2D;class sX extends sn{static id="line";static defaults={borderCapStyle:"butt",borderDash:[],borderDashOffset:0,borderJoinStyle:"miter",borderWidth:3,capBezierPoints:!0,cubicInterpolationMode:"default",fill:!1,spanGaps:!1,stepped:!1,tension:0};static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};static descriptors={_scriptable:!0,_indexable:t=>"borderDash"!==t&&"fill"!==t};constructor(t){super(),this.animated=!0,this.options=void 0,this._chart=void 0,this._loop=void 0,this._fullLoop=void 0,this._path=void 0,this._points=void 0,this._segments=void 0,this._decimated=!1,this._pointsUpdated=!1,this._datasetIndex=void 0,t&&Object.assign(this,t)}updateControlPoints(t,e){let i=this.options;if((i.tension||"monotone"===i.cubicInterpolationMode)&&!i.stepped&&!this._pointsUpdated){let s=i.spanGaps?this._loop:this._fullLoop;(function(t,e,i,s,n){let a,r,o,l;if(e.spanGaps&&(t=t.filter(t=>!t.skip)),"monotone"===e.cubicInterpolationMode)!function(t,e="x"){let i,s,n;let a=e$(e),r=t.length,o=Array(r).fill(0),l=Array(r),h=eH(t,0);for(i=0;i<r;++i)if(s=n,n=h,h=eH(t,i+1),n){if(h){let t=h[e]-n[e];o[i]=0!==t?(h[a]-n[a])/t:0}l[i]=s?h?tP(o[i-1])!==tP(o[i])?0:(o[i-1]+o[i])/2:o[i-1]:o[i]}(function(t,e,i){let s,n,a,r,o;let l=t.length,h=eH(t,0);for(let d=0;d<l-1;++d)if(o=h,h=eH(t,d+1),o&&h){if(tA(e[d],0,eq)){i[d]=i[d+1]=0;continue}(r=Math.pow(s=i[d]/e[d],2)+Math.pow(n=i[d+1]/e[d],2))<=9||(a=3/Math.sqrt(r),i[d]=s*a*e[d],i[d+1]=n*a*e[d])}})(t,o,l),function(t,e,i="x"){let s,n,a;let r=e$(i),o=t.length,l=eH(t,0);for(let h=0;h<o;++h){if(n=a,a=l,l=eH(t,h+1),!a)continue;let o=a[i],d=a[r];n&&(s=(o-n[i])/3,a[`cp1${i}`]=o-s,a[`cp1${r}`]=d-s*e[h]),l&&(s=(l[i]-o)/3,a[`cp2${i}`]=o+s,a[`cp2${r}`]=d+s*e[h])}}(t,l,e)}(t,n);else{let i=s?t[t.length-1]:t[0];for(a=0,r=t.length;a<r;++a)l=function(t,e,i,s){let n=t.skip?e:t,a=i.skip?e:i,r=tR(e,n),o=tR(a,e),l=r/(r+o),h=o/(r+o);l=isNaN(l)?0:l,h=isNaN(h)?0:h;let d=s*l,c=s*h;return{previous:{x:e.x-d*(a.x-n.x),y:e.y-d*(a.y-n.y)},next:{x:e.x+c*(a.x-n.x),y:e.y+c*(a.y-n.y)}}}(i,o=t[a],t[Math.min(a+1,r-(s?0:1))%r],e.tension),o.cp1x=l.previous.x,o.cp1y=l.previous.y,o.cp2x=l.next.x,o.cp2y=l.next.y,i=o}e.capBezierPoints&&function(t,e){let i,s,n,a,r;let o=ep(t[0],e);for(i=0,s=t.length;i<s;++i)r=a,a=o,o=i<s-1&&ep(t[i+1],e),a&&(n=t[i],r&&(n.cp1x=ej(n.cp1x,e.left,e.right),n.cp1y=ej(n.cp1y,e.top,e.bottom)),o&&(n.cp2x=ej(n.cp2x,e.left,e.right),n.cp2y=ej(n.cp2y,e.top,e.bottom)))}(t,i)})(this._points,i,t,s,e),this._pointsUpdated=!0}}set points(t){this._points=t,delete this._segments,delete this._path,this._pointsUpdated=!1}get points(){return this._points}get segments(){return this._segments||(this._segments=function(t,e){let i=t.points,s=t.options.spanGaps,n=i.length;if(!n)return[];let a=!!t._loop,{start:r,end:o}=function(t,e,i,s){let n=0,a=e-1;if(i&&!s)for(;n<e&&!t[n].skip;)n++;for(;n<e&&t[n].skip;)n++;for(n%=e,i&&(a+=n);a>n&&t[a%e].skip;)a--;return{start:n,end:a%=e}}(i,n,a,s);if(!0===s)return ia(t,[{start:r,end:o,loop:a}],i,e);let l=o<r?o+n:o,h=!!t._fullLoop&&0===r&&o===n-1;return ia(t,function(t,e,i,s){let n;let a=t.length,r=[],o=e,l=t[e];for(n=e+1;n<=i;++n){let i=t[n%a];i.skip||i.stop?l.skip||(s=!1,r.push({start:e%a,end:(n-1)%a,loop:s}),e=o=i.stop?n:null):(o=n,l.skip&&(e=n)),l=i}return null!==o&&r.push({start:e%a,end:o%a,loop:s}),r}(i,r,l,h),i,e)}(this,this.options.segment))}first(){let t=this.segments,e=this.points;return t.length&&e[t[0].start]}last(){let t=this.segments,e=this.points,i=t.length;return i&&e[t[i-1].end]}interpolate(t,e){let i,s;let n=this.options,a=t[e],r=this.points,o=is(this,{property:e,start:a,end:a});if(!o.length)return;let l=[],h=n.stepped?e4:n.tension||"monotone"===n.cubicInterpolationMode?e6:e3;for(i=0,s=o.length;i<s;++i){let{start:s,end:d}=o[i],c=r[s],u=r[d];if(c===u){l.push(c);continue}let p=Math.abs((a-c[e])/(u[e]-c[e])),g=h(c,u,p,n.stepped);g[e]=t[e],l.push(g)}return 1===l.length?l[0]:l}pathSegment(t,e,i){let s=sY(this);return s(t,this,e,i)}path(t,e,i){let s=this.segments,n=sY(this),a=this._loop;for(let r of(e=e||0,i=i||this.points.length-e,s))a&=n(t,this,r,{start:e,end:e+i-1});return!!a}draw(t,e,i,s){let n=this.options||{},a=this.points||[];a.length&&n.borderWidth&&(t.save(),function(t,e,i,s){if(sU&&!e.options.segment){let n;(n=e._path)||(n=e._path=new Path2D,e.path(n,i,s)&&n.closePath()),sN(t,e.options),t.stroke(n)}else!function(t,e,i,s){let{segments:n,options:a}=e,r=sY(e);for(let o of n)sN(t,a,o.style),t.beginPath(),r(t,e,o,{start:i,end:i+s-1})&&t.closePath(),t.stroke()}(t,e,i,s)}(t,this,i,s),t.restore()),this.animated&&(this._pointsUpdated=!1,this._path=void 0)}}function sG(t,e,i,s){let n=t.options,{[i]:a}=t.getProps([i],s);return Math.abs(e-a)<n.radius+n.hitRadius}function sK(t,e){let i,s,n,a,r;let{x:o,y:l,base:h,width:d,height:c}=t.getProps(["x","y","base","width","height"],e);return t.horizontal?(r=c/2,i=Math.min(o,h),s=Math.max(o,h),n=l-r,a=l+r):(i=o-(r=d/2),s=o+r,n=Math.min(l,h),a=Math.max(l,h)),{left:i,top:n,right:s,bottom:a}}function sZ(t,e,i,s){return t?0:tV(e,i,s)}function sJ(t,e,i,s){let n=null===e,a=null===i,r=t&&!(n&&a)&&sK(t,s);return r&&(n||tW(e,r.left,r.right))&&(a||tW(i,r.top,r.bottom))}function sQ(t,e){t.rect(e.x,e.y,e.w,e.h)}function s0(t,e,i={}){let s=t.x!==i.x?-e:0,n=t.y!==i.y?-e:0,a=(t.x+t.w!==i.x+i.w?e:0)-s,r=(t.y+t.h!==i.y+i.h?e:0)-n;return{x:t.x+s,y:t.y+n,w:t.w+a,h:t.h+r,radius:t.radius}}var s1=Object.freeze({__proto__:null,ArcElement:class extends sn{static id="arc";static defaults={borderAlign:"center",borderColor:"#fff",borderDash:[],borderDashOffset:0,borderJoinStyle:void 0,borderRadius:0,borderWidth:2,offset:0,spacing:0,angle:void 0,circular:!0};static defaultRoutes={backgroundColor:"backgroundColor"};static descriptors={_scriptable:!0,_indexable:t=>"borderDash"!==t};circumference;endAngle;fullCircles;innerRadius;outerRadius;pixelMargin;startAngle;constructor(t){super(),this.options=void 0,this.circumference=void 0,this.startAngle=void 0,this.endAngle=void 0,this.innerRadius=void 0,this.outerRadius=void 0,this.pixelMargin=0,this.fullCircles=0,t&&Object.assign(this,t)}inRange(t,e,i){let s=this.getProps(["x","y"],i),{angle:n,distance:a}=tT(s,{x:t,y:e}),{startAngle:r,endAngle:o,innerRadius:l,outerRadius:h,circumference:d}=this.getProps(["startAngle","endAngle","innerRadius","outerRadius","circumference"],i),c=(this.options.spacing+this.options.borderWidth)/2,u=tt(d,o-r),p=u>=ty||tB(n,r,o),g=tW(a,l+c,h+c);return p&&g}getCenterPoint(t){let{x:e,y:i,startAngle:s,endAngle:n,innerRadius:a,outerRadius:r}=this.getProps(["x","y","startAngle","endAngle","innerRadius","outerRadius"],t),{offset:o,spacing:l}=this.options,h=(s+n)/2,d=(a+r+l+o)/2;return{x:e+Math.cos(h)*d,y:i+Math.sin(h)*d}}tooltipPosition(t){return this.getCenterPoint(t)}draw(t){let{options:e,circumference:i}=this,s=(e.offset||0)/4,n=(e.spacing||0)/2,a=e.circular;if(this.pixelMargin="inner"===e.borderAlign?.33:0,this.fullCircles=i>ty?Math.floor(i/ty):0,0===i||this.innerRadius<0||this.outerRadius<0)return;t.save();let r=(this.startAngle+this.endAngle)/2;t.translate(Math.cos(r)*s,Math.sin(r)*s);let o=1-Math.sin(Math.min(tb,i||0)),l=s*o;t.fillStyle=e.backgroundColor,t.strokeStyle=e.borderColor,function(t,e,i,s,n){let{fullCircles:a,startAngle:r,circumference:o}=e,l=e.endAngle;if(a){sW(t,e,i,s,l,n);for(let e=0;e<a;++e)t.fill();isNaN(o)||(l=r+(o%ty||ty))}sW(t,e,i,s,l,n),t.fill()}(t,this,l,n,a),function(t,e,i,s,n){let{fullCircles:a,startAngle:r,circumference:o,options:l}=e,{borderWidth:h,borderJoinStyle:d,borderDash:c,borderDashOffset:u}=l,p="inner"===l.borderAlign;if(!h)return;t.setLineDash(c||[]),t.lineDashOffset=u,p?(t.lineWidth=2*h,t.lineJoin=d||"round"):(t.lineWidth=h,t.lineJoin=d||"bevel");let g=e.endAngle;if(a){sW(t,e,i,s,g,n);for(let e=0;e<a;++e)t.stroke();isNaN(o)||(g=r+(o%ty||ty))}p&&function(t,e,i){let{startAngle:s,pixelMargin:n,x:a,y:r,outerRadius:o,innerRadius:l}=e,h=n/o;t.beginPath(),t.arc(a,r,o,s-h,i+h),l>n?(h=n/l,t.arc(a,r,l,i+h,s-h,!0)):t.arc(a,r,n,i+tw,s-tw),t.closePath(),t.clip()}(t,e,g),a||(sW(t,e,i,s,g,n),t.stroke())}(t,this,l,n,a),t.restore()}},BarElement:class extends sn{static id="bar";static defaults={borderSkipped:"start",borderWidth:0,borderRadius:0,inflateAmount:"auto",pointStyle:void 0};static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};constructor(t){super(),this.options=void 0,this.horizontal=void 0,this.base=void 0,this.width=void 0,this.height=void 0,this.inflateAmount=void 0,t&&Object.assign(this,t)}draw(t){var e;let{inflateAmount:i,options:{borderColor:s,backgroundColor:n}}=this,{inner:a,outer:r}=function(t){let e=sK(t),i=e.right-e.left,s=e.bottom-e.top,n=function(t,e,i){let s=t.options.borderWidth,n=t.borderSkipped,a=eM(s);return{t:sZ(n.top,a.top,0,i),r:sZ(n.right,a.right,0,e),b:sZ(n.bottom,a.bottom,0,i),l:sZ(n.left,a.left,0,e)}}(t,i/2,s/2),a=function(t,e,i){let{enableBorderRadius:s}=t.getProps(["enableBorderRadius"]),n=t.options.borderRadius,a=eC(n),r=Math.min(e,i),o=t.borderSkipped,l=s||Z(n);return{topLeft:sZ(!l||o.top||o.left,a.topLeft,0,r),topRight:sZ(!l||o.top||o.right,a.topRight,0,r),bottomLeft:sZ(!l||o.bottom||o.left,a.bottomLeft,0,r),bottomRight:sZ(!l||o.bottom||o.right,a.bottomRight,0,r)}}(t,i/2,s/2);return{outer:{x:e.left,y:e.top,w:i,h:s,radius:a},inner:{x:e.left+n.l,y:e.top+n.t,w:i-n.l-n.r,h:s-n.t-n.b,radius:{topLeft:Math.max(0,a.topLeft-Math.max(n.t,n.l)),topRight:Math.max(0,a.topRight-Math.max(n.t,n.r)),bottomLeft:Math.max(0,a.bottomLeft-Math.max(n.b,n.l)),bottomRight:Math.max(0,a.bottomRight-Math.max(n.b,n.r))}}}}(this),o=(e=r.radius).topLeft||e.topRight||e.bottomLeft||e.bottomRight?ey:sQ;t.save(),(r.w!==a.w||r.h!==a.h)&&(t.beginPath(),o(t,s0(r,i,a)),t.clip(),o(t,s0(a,-i,r)),t.fillStyle=s,t.fill("evenodd")),t.beginPath(),o(t,s0(a,i)),t.fillStyle=n,t.fill(),t.restore()}inRange(t,e,i){return sJ(this,t,e,i)}inXRange(t,e){return sJ(this,t,null,e)}inYRange(t,e){return sJ(this,null,t,e)}getCenterPoint(t){let{x:e,y:i,base:s,horizontal:n}=this.getProps(["x","y","base","horizontal"],t);return{x:n?(e+s)/2:e,y:n?i:(i+s)/2}}getRange(t){return"x"===t?this.width/2:this.height/2}},LineElement:sX,PointElement:class extends sn{static id="point";parsed;skip;stop;static defaults={borderWidth:1,hitRadius:1,hoverBorderWidth:1,hoverRadius:4,pointStyle:"circle",radius:3,rotation:0};static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};constructor(t){super(),this.options=void 0,this.parsed=void 0,this.skip=void 0,this.stop=void 0,t&&Object.assign(this,t)}inRange(t,e,i){let s=this.options,{x:n,y:a}=this.getProps(["x","y"],i);return Math.pow(t-n,2)+Math.pow(e-a,2)<Math.pow(s.hitRadius+s.radius,2)}inXRange(t,e){return sG(this,t,"x",e)}inYRange(t,e){return sG(this,t,"y",e)}getCenterPoint(t){let{x:e,y:i}=this.getProps(["x","y"],t);return{x:e,y:i}}size(t){let e=(t=t||this.options||{}).radius||0;e=Math.max(e,e&&t.hoverRadius||0);let i=e&&t.borderWidth||0;return(e+i)*2}draw(t,e){let i=this.options;!this.skip&&!(i.radius<.1)&&ep(this,e,this.size(i)/2)&&(t.strokeStyle=i.borderColor,t.lineWidth=i.borderWidth,t.fillStyle=i.backgroundColor,ec(t,i,this.x,this.y))}getRange(){let t=this.options||{};return t.radius+t.hitRadius}}});let s2=["rgb(54, 162, 235)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(153, 102, 255)","rgb(201, 203, 207)"],s5=s2.map(t=>t.replace("rgb(","rgba(").replace(")",", 0.5)"));function s3(t){return s2[t%s2.length]}function s4(t){return s5[t%s5.length]}function s6(t){let e;for(e in t)if(t[e].borderColor||t[e].backgroundColor)return!0;return!1}function s8(t){if(t._decimated){let e=t._data;delete t._decimated,delete t._data,Object.defineProperty(t,"data",{configurable:!0,enumerable:!0,writable:!0,value:e})}}function s7(t){t.data.datasets.forEach(t=>{s8(t)})}function s9(t,e,i,s){if(s)return;let n=e[t],a=i[t];return"angle"===t&&(n=tF(n),a=tF(a)),{property:t,start:n,end:a}}function nt(t,e,i){for(;e>t;e--){let t=i[e];if(!isNaN(t.x)&&!isNaN(t.y))break}return e}function ne(t,e,i,s){return t&&e?s(t[i],e[i]):t?t[i]:e?e[i]:0}function ni(t,e){let i=[],s=!1;return K(t)?(s=!0,i=t):i=function(t,e){let{x:i=null,y:s=null}=t||{},n=e.points,a=[];return e.segments.forEach(({start:t,end:e})=>{e=nt(t,e,n);let r=n[t],o=n[e];null!==s?(a.push({x:r.x,y:s}),a.push({x:o.x,y:s})):null!==i&&(a.push({x:i,y:r.y}),a.push({x:i,y:o.y}))}),a}(t,e),i.length?new sX({points:i,options:{tension:0},_loop:s,_fullLoop:s}):null}function ns(t){return t&&!1!==t.fill}class nn{constructor(t){this.x=t.x,this.y=t.y,this.radius=t.radius}pathSegment(t,e,i){let{x:s,y:n,radius:a}=this;return e=e||{start:0,end:ty},t.arc(s,n,a,e.end,e.start,!0),!i.bounds}interpolate(t){let{x:e,y:i,radius:s}=this,n=t.angle;return{x:e+Math.cos(n)*s,y:i+Math.sin(n)*s,angle:n}}}function na(t,e,i){let s=function(t){let{chart:e,fill:i,line:s}=t;if(J(i))return function(t,e){let i=t.getDatasetMeta(e),s=i&&t.isDatasetVisible(e);return s?i.dataset:null}(e,i);if("stack"===i)return function(t){let{scale:e,index:i,line:s}=t,n=[],a=s.segments,r=s.points,o=function(t,e){let i=[],s=t.getMatchingVisibleMetas("line");for(let t=0;t<s.length;t++){let n=s[t];if(n.index===e)break;n.hidden||i.unshift(n.dataset)}return i}(e,i);o.push(ni({x:null,y:e.bottom},s));for(let t=0;t<a.length;t++){let e=a[t];for(let t=e.start;t<=e.end;t++)!function(t,e,i){let s=[];for(let n=0;n<i.length;n++){let a=i[n],{first:r,last:o,point:l}=function(t,e,i){let s=t.interpolate(e,i);if(!s)return{};let n=s[i],a=t.segments,r=t.points,o=!1,l=!1;for(let t=0;t<a.length;t++){let e=a[t],s=r[e.start][i],h=r[e.end][i];if(tW(n,s,h)){o=n===s,l=n===h;break}}return{first:o,last:l,point:s}}(a,e,"x");if(l&&(!r||!o)){if(r)s.unshift(l);else if(t.push(l),!o)break}}t.push(...s)}(n,r[t],o)}return new sX({points:n,options:{}})}(t);if("shape"===i)return!0;let n=function(t){let e=t.scale||{};return e.getPointPositionForValue?function(t){let{scale:e,fill:i}=t,s=e.options,n=e.getLabels().length,a=s.reverse?e.max:e.min,r="start"===i?a:"end"===i?e.options.reverse?e.min:e.max:Z(i)?i.value:e.getBaseValue(),o=[];if(s.grid.circular){let t=e.getPointPositionForValue(0,a);return new nn({x:t.x,y:t.y,radius:e.getDistanceFromCenterForValue(r)})}for(let t=0;t<n;++t)o.push(e.getPointPositionForValue(t,r));return o}(t):function(t){let e;let{scale:i={},fill:s}=t,n=(e=null,"start"===s?e=i.bottom:"end"===s?e=i.top:Z(s)?e=i.getPixelForValue(s.value):i.getBasePixel&&(e=i.getBasePixel()),e);if(J(n)){let t=i.isHorizontal();return{x:t?n:null,y:t?null:n}}return null}(t)}(t);return n instanceof nn?n:ni(n,s)}(e),{line:n,scale:a,axis:r}=e,o=n.options,l=o.fill,h=o.backgroundColor,{above:d=h,below:c=h}=l||{};s&&n.points.length&&(eg(t,i),function(t,e){let{line:i,target:s,above:n,below:a,area:r,scale:o}=e,l=i._loop?"angle":e.axis;t.save(),"x"===l&&a!==n&&(nr(t,s,r.top),no(t,{line:i,target:s,color:n,scale:o,property:l}),t.restore(),t.save(),nr(t,s,r.bottom)),no(t,{line:i,target:s,color:a,scale:o,property:l}),t.restore()}(t,{line:n,target:s,above:d,below:c,area:i,scale:a,axis:r}),ef(t))}function nr(t,e,i){let{segments:s,points:n}=e,a=!0,r=!1;for(let o of(t.beginPath(),s)){let{start:s,end:l}=o,h=n[s],d=n[nt(s,l,n)];a?(t.moveTo(h.x,h.y),a=!1):(t.lineTo(h.x,i),t.lineTo(h.x,h.y)),(r=!!e.pathSegment(t,o,{move:r}))?t.closePath():t.lineTo(d.x,i)}t.lineTo(e.first().x,i),t.closePath(),t.clip()}function no(t,e){let{line:i,target:s,property:n,color:a,scale:r}=e,o=function(t,e,i){let s=t.segments,n=t.points,a=e.points,r=[];for(let t of s){let{start:s,end:o}=t;o=nt(s,o,n);let l=s9(i,n[s],n[o],t.loop);if(!e.segments){r.push({source:t,target:l,start:n[s],end:n[o]});continue}let h=is(e,l);for(let e of h){let s=s9(i,a[e.start],a[e.end],e.loop),o=ii(t,n,s);for(let t of o)r.push({source:t,target:e,start:{[i]:ne(l,s,"start",Math.max)},end:{[i]:ne(l,s,"end",Math.min)}})}}return r}(i,s,n);for(let{source:e,target:l,start:h,end:d}of o){let o;let{style:{backgroundColor:c=a}={}}=e,u=!0!==s;t.save(),t.fillStyle=c,function(t,e,i){let{top:s,bottom:n}=e.chart.chartArea,{property:a,start:r,end:o}=i||{};"x"===a&&(t.beginPath(),t.rect(r,s,o-r,n-s),t.clip())}(t,r,u&&s9(n,h,d)),t.beginPath();let p=!!i.pathSegment(t,e);if(u){p?t.closePath():nl(t,s,d,n);let e=!!s.pathSegment(t,l,{move:p,reverse:!0});(o=p&&e)||nl(t,s,h,n)}t.closePath(),t.fill(o?"evenodd":"nonzero"),t.restore()}}function nl(t,e,i,s){let n=e.interpolate(i,s);n&&t.lineTo(n.x,n.y)}let nh=(t,e)=>{let{boxHeight:i=e,boxWidth:s=e}=t;return t.usePointStyle&&(i=Math.min(i,e),s=t.pointStyleWidth||Math.min(s,e)),{boxWidth:s,boxHeight:i,itemHeight:Math.max(e,i)}},nd=(t,e)=>null!==t&&null!==e&&t.datasetIndex===e.datasetIndex&&t.index===e.index;class nc extends sn{constructor(t){super(),this._added=!1,this.legendHitBoxes=[],this._hoveredItem=null,this.doughnutMode=!1,this.chart=t.chart,this.options=t.options,this.ctx=t.ctx,this.legendItems=void 0,this.columnSizes=void 0,this.lineWidths=void 0,this.maxHeight=void 0,this.maxWidth=void 0,this.top=void 0,this.bottom=void 0,this.left=void 0,this.right=void 0,this.height=void 0,this.width=void 0,this._margins=void 0,this.position=void 0,this.weight=void 0,this.fullSize=void 0}update(t,e,i){this.maxWidth=t,this.maxHeight=e,this._margins=i,this.setDimensions(),this.buildLabels(),this.fit()}setDimensions(){this.isHorizontal()?(this.width=this.maxWidth,this.left=this._margins.left,this.right=this.width):(this.height=this.maxHeight,this.top=this._margins.top,this.bottom=this.height)}buildLabels(){let t=this.options.labels||{},e=ts(t.generateLabels,[this.chart],this)||[];t.filter&&(e=e.filter(e=>t.filter(e,this.chart.data))),t.sort&&(e=e.sort((e,i)=>t.sort(e,i,this.chart.data))),this.options.reverse&&e.reverse(),this.legendItems=e}fit(){let t,e;let{options:i,ctx:s}=this;if(!i.display){this.width=this.height=0;return}let n=i.labels,a=eP(n.font),r=a.size,o=this._computeTitleHeight(),{boxWidth:l,itemHeight:h}=nh(n,r);s.font=a.string,this.isHorizontal()?(t=this.maxWidth,e=this._fitRows(o,r,l,h)+10):(e=this.maxHeight,t=this._fitCols(o,a,l,h)+10),this.width=Math.min(t,i.maxWidth||this.maxWidth),this.height=Math.min(e,i.maxHeight||this.maxHeight)}_fitRows(t,e,i,s){let{ctx:n,maxWidth:a,options:{labels:{padding:r}}}=this,o=this.legendHitBoxes=[],l=this.lineWidths=[0],h=s+r,d=t;n.textAlign="left",n.textBaseline="middle";let c=-1,u=-h;return this.legendItems.forEach((t,p)=>{let g=i+e/2+n.measureText(t.text).width;(0===p||l[l.length-1]+g+2*r>a)&&(d+=h,l[l.length-(p>0?0:1)]=0,u+=h,c++),o[p]={left:0,top:u,row:c,width:g,height:s},l[l.length-1]+=g+r}),d}_fitCols(t,e,i,s){let{ctx:n,maxHeight:a,options:{labels:{padding:r}}}=this,o=this.legendHitBoxes=[],l=this.columnSizes=[],h=a-t,d=r,c=0,u=0,p=0,g=0;return this.legendItems.forEach((t,a)=>{let{itemWidth:f,itemHeight:m}=function(t,e,i,s,n){var a;let r,o;let l=((r=s.text)&&"string"!=typeof r&&(r=r.reduce((t,e)=>t.length>e.length?t:e)),t+e.size/2+i.measureText(r).width),h=(a=e.lineHeight,o=n,"string"!=typeof s.text&&(o=nu(s,a)),o);return{itemWidth:l,itemHeight:h}}(i,e,n,t,s);a>0&&u+m+2*r>h&&(d+=c+r,l.push({width:c,height:u}),p+=c+r,g++,c=u=0),o[a]={left:p,top:u,col:g,width:f,height:m},c=Math.max(c,f),u+=m+r}),d+=c,l.push({width:c,height:u}),d}adjustHitBoxes(){if(!this.options.display)return;let t=this._computeTitleHeight(),{legendHitBoxes:e,options:{align:i,labels:{padding:s},rtl:n}}=this,a=e8(n,this.left,this.width);if(this.isHorizontal()){let n=0,r=tK(i,this.left+s,this.right-this.lineWidths[n]);for(let o of e)n!==o.row&&(n=o.row,r=tK(i,this.left+s,this.right-this.lineWidths[n])),o.top+=this.top+t+s,o.left=a.leftForLtr(a.x(r),o.width),r+=o.width+s}else{let n=0,r=tK(i,this.top+t+s,this.bottom-this.columnSizes[n].height);for(let o of e)o.col!==n&&(n=o.col,r=tK(i,this.top+t+s,this.bottom-this.columnSizes[n].height)),o.top=r,o.left+=this.left+s,o.left=a.leftForLtr(a.x(o.left),o.width),r+=o.height+s}}isHorizontal(){return"top"===this.options.position||"bottom"===this.options.position}draw(){if(this.options.display){let t=this.ctx;eg(t,this),this._draw(),ef(t)}}_draw(){let t;let{options:e,columnSizes:i,lineWidths:s,ctx:n}=this,{align:a,labels:r}=e,o=eo.color,l=e8(e.rtl,this.left,this.width),h=eP(r.font),{padding:d}=r,c=h.size,u=c/2;this.drawTitle(),n.textAlign=l.textAlign("left"),n.textBaseline="middle",n.lineWidth=.5,n.font=h.string;let{boxWidth:p,boxHeight:g,itemHeight:f}=nh(r,c),m=function(t,e,i){if(isNaN(p)||p<=0||isNaN(g)||g<0)return;n.save();let s=tt(i.lineWidth,1);if(n.fillStyle=tt(i.fillStyle,o),n.lineCap=tt(i.lineCap,"butt"),n.lineDashOffset=tt(i.lineDashOffset,0),n.lineJoin=tt(i.lineJoin,"miter"),n.lineWidth=s,n.strokeStyle=tt(i.strokeStyle,o),n.setLineDash(tt(i.lineDash,[])),r.usePointStyle){let a={radius:g*Math.SQRT2/2,pointStyle:i.pointStyle,rotation:i.rotation,borderWidth:s},o=l.xPlus(t,p/2),h=e+u;eu(n,a,o,h,r.pointStyleWidth&&p)}else{let a=e+Math.max((c-g)/2,0),r=l.leftForLtr(t,p),o=eC(i.borderRadius);n.beginPath(),Object.values(o).some(t=>0!==t)?ey(n,{x:r,y:a,w:p,h:g,radius:o}):n.rect(r,a,p,g),n.fill(),0!==s&&n.stroke()}n.restore()},x=function(t,e,i){eb(n,i.text,t,e+f/2,h,{strikethrough:i.hidden,textAlign:l.textAlign(i.textAlign)})},b=this.isHorizontal(),y=this._computeTitleHeight();t=b?{x:tK(a,this.left+d,this.right-s[0]),y:this.top+d+y,line:0}:{x:this.left+d,y:tK(a,this.top+y+d,this.bottom-i[0].height),line:0},e7(this.ctx,e.textDirection);let _=f+d;this.legendItems.forEach((o,c)=>{n.strokeStyle=o.fontColor,n.fillStyle=o.fontColor;let g=n.measureText(o.text).width,f=l.textAlign(o.textAlign||(o.textAlign=r.textAlign)),v=p+u+g,k=t.x,w=t.y;l.setWidth(this.width),b?c>0&&k+v+d>this.right&&(w=t.y+=_,t.line++,k=t.x=tK(a,this.left+d,this.right-s[t.line])):c>0&&w+_>this.bottom&&(k=t.x=k+i[t.line].width+d,t.line++,w=t.y=tK(a,this.top+y+d,this.bottom-i[t.line].height));let M=l.x(k);if(m(M,w,o),k=tZ(f,k+p+u,b?k+v:this.right,e.rtl),x(l.x(k),w,o),b)t.x+=v+d;else if("string"!=typeof o.text){let e=h.lineHeight;t.y+=nu(o,e)+d}else t.y+=_}),e9(this.ctx,e.textDirection)}drawTitle(){let t;let e=this.options,i=e.title,s=eP(i.font),n=eS(i.padding);if(!i.display)return;let a=e8(e.rtl,this.left,this.width),r=this.ctx,o=i.position,l=s.size/2,h=n.top+l,d=this.left,c=this.width;if(this.isHorizontal())c=Math.max(...this.lineWidths),t=this.top+h,d=tK(e.align,d,this.right-c);else{let i=this.columnSizes.reduce((t,e)=>Math.max(t,e.height),0);t=h+tK(e.align,this.top,this.bottom-i-e.labels.padding-this._computeTitleHeight())}let u=tK(o,d,d+c);r.textAlign=a.textAlign(tG(o)),r.textBaseline="middle",r.strokeStyle=i.color,r.fillStyle=i.color,r.font=s.string,eb(r,i.text,u,t,s)}_computeTitleHeight(){let t=this.options.title,e=eP(t.font),i=eS(t.padding);return t.display?e.lineHeight+i.height:0}_getLegendItemAt(t,e){let i,s,n;if(tW(t,this.left,this.right)&&tW(e,this.top,this.bottom)){for(i=0,n=this.legendHitBoxes;i<n.length;++i)if(tW(t,(s=n[i]).left,s.left+s.width)&&tW(e,s.top,s.top+s.height))return this.legendItems[i]}return null}handleEvent(t){var e;let i=this.options;if(("mousemove"!==(e=t.type)&&"mouseout"!==e||!i.onHover&&!i.onLeave)&&(!i.onClick||"click"!==e&&"mouseup"!==e))return;let s=this._getLegendItemAt(t.x,t.y);if("mousemove"===t.type||"mouseout"===t.type){let e=this._hoveredItem,n=nd(e,s);e&&!n&&ts(i.onLeave,[t,e,this],this),this._hoveredItem=s,s&&!n&&ts(i.onHover,[t,s,this],this)}else s&&ts(i.onClick,[t,s,this],this)}}function nu(t,e){let i=t.text?t.text.length:0;return e*i}class np extends sn{constructor(t){super(),this.chart=t.chart,this.options=t.options,this.ctx=t.ctx,this._padding=void 0,this.top=void 0,this.bottom=void 0,this.left=void 0,this.right=void 0,this.width=void 0,this.height=void 0,this.position=void 0,this.weight=void 0,this.fullSize=void 0}update(t,e){let i=this.options;if(this.left=0,this.top=0,!i.display){this.width=this.height=this.right=this.bottom=0;return}this.width=this.right=t,this.height=this.bottom=e;let s=K(i.text)?i.text.length:1;this._padding=eS(i.padding);let n=s*eP(i.font).lineHeight+this._padding.height;this.isHorizontal()?this.height=n:this.width=n}isHorizontal(){let t=this.options.position;return"top"===t||"bottom"===t}_drawArgs(t){let e,i,s;let{top:n,left:a,bottom:r,right:o,options:l}=this,h=l.align,d=0;return this.isHorizontal()?(i=tK(h,a,o),s=n+t,e=o-a):("left"===l.position?(i=a+t,s=tK(h,r,n),d=-.5*tb):(i=o-t,s=tK(h,n,r),d=.5*tb),e=r-n),{titleX:i,titleY:s,maxWidth:e,rotation:d}}draw(){let t=this.ctx,e=this.options;if(!e.display)return;let i=eP(e.font),s=i.lineHeight,n=s/2+this._padding.top,{titleX:a,titleY:r,maxWidth:o,rotation:l}=this._drawArgs(n);eb(t,e.text,0,0,i,{color:e.color,maxWidth:o,rotation:l,textAlign:tG(e.align),textBaseline:"middle",translation:[a,r]})}}let ng=new WeakMap,nf={average(t){let e,i;if(!t.length)return!1;let s=0,n=0,a=0;for(e=0,i=t.length;e<i;++e){let i=t[e].element;if(i&&i.hasValue()){let t=i.tooltipPosition();s+=t.x,n+=t.y,++a}}return{x:s/a,y:n/a}},nearest(t,e){let i,s,n;if(!t.length)return!1;let a=e.x,r=e.y,o=Number.POSITIVE_INFINITY;for(i=0,s=t.length;i<s;++i){let s=t[i].element;if(s&&s.hasValue()){let t=s.getCenterPoint(),i=tR(e,t);i<o&&(o=i,n=s)}}if(n){let t=n.tooltipPosition();a=t.x,r=t.y}return{x:a,y:r}}};function nm(t,e){return e&&(K(e)?Array.prototype.push.apply(t,e):t.push(e)),t}function nx(t){return("string"==typeof t||t instanceof String)&&t.indexOf("\n")>-1?t.split("\n"):t}function nb(t,e){let i=t.chart.ctx,{body:s,footer:n,title:a}=t,{boxWidth:r,boxHeight:o}=e,l=eP(e.bodyFont),h=eP(e.titleFont),d=eP(e.footerFont),c=a.length,u=n.length,p=s.length,g=eS(e.padding),f=g.height,m=0,x=s.reduce((t,e)=>t+e.before.length+e.lines.length+e.after.length,0);if(x+=t.beforeBody.length+t.afterBody.length,c&&(f+=c*h.lineHeight+(c-1)*e.titleSpacing+e.titleMarginBottom),x){let t=e.displayColors?Math.max(o,l.lineHeight):l.lineHeight;f+=p*t+(x-p)*l.lineHeight+(x-1)*e.bodySpacing}u&&(f+=e.footerMarginTop+u*d.lineHeight+(u-1)*e.footerSpacing);let b=0,y=function(t){m=Math.max(m,i.measureText(t).width+b)};return i.save(),i.font=h.string,tn(t.title,y),i.font=l.string,tn(t.beforeBody.concat(t.afterBody),y),b=e.displayColors?r+2+e.boxPadding:0,tn(s,t=>{tn(t.before,y),tn(t.lines,y),tn(t.after,y)}),b=0,i.font=d.string,tn(t.footer,y),i.restore(),{width:m+=g.width,height:f}}function ny(t,e,i){let s=i.yAlign||e.yAlign||function(t,e){let{y:i,height:s}=e;return i<s/2?"top":i>t.height-s/2?"bottom":"center"}(t,i);return{xAlign:i.xAlign||e.xAlign||function(t,e,i,s){let{x:n,width:a}=i,{width:r,chartArea:{left:o,right:l}}=t,h="center";return"center"===s?h=n<=(o+l)/2?"left":"right":n<=a/2?h="left":n>=r-a/2&&(h="right"),function(t,e,i,s){let{x:n,width:a}=s,r=i.caretSize+i.caretPadding;if("left"===t&&n+a+r>e.width||"right"===t&&n-a-r<0)return!0}(h,t,e,i)&&(h="center"),h}(t,e,i,s),yAlign:s}}function n_(t,e,i,s){let{caretSize:n,caretPadding:a,cornerRadius:r}=t,{xAlign:o,yAlign:l}=i,h=n+a,{topLeft:d,topRight:c,bottomLeft:u,bottomRight:p}=eC(r),g=function(t,e){let{x:i,width:s}=t;return"right"===e?i-=s:"center"===e&&(i-=s/2),i}(e,o),f=function(t,e,i){let{y:s,height:n}=t;return"top"===e?s+=i:"bottom"===e?s-=n+i:s-=n/2,s}(e,l,h);return"center"===l?"left"===o?g+=h:"right"===o&&(g-=h):"left"===o?g-=Math.max(d,u)+n:"right"===o&&(g+=Math.max(c,p)+n),{x:tV(g,0,s.width-e.width),y:tV(f,0,s.height-e.height)}}function nv(t,e,i){let s=eS(i.padding);return"center"===e?t.x+t.width/2:"right"===e?t.x+t.width-s.right:t.x+s.left}function nk(t,e){let i=e&&e.dataset&&e.dataset.tooltip&&e.dataset.tooltip.callbacks;return i?t.override(i):t}let nw={beforeTitle:U,title(t){if(t.length>0){let e=t[0],i=e.chart.data.labels,s=i?i.length:0;if(this&&this.options&&"dataset"===this.options.mode)return e.dataset.label||"";if(e.label)return e.label;if(s>0&&e.dataIndex<s)return i[e.dataIndex]}return""},afterTitle:U,beforeBody:U,beforeLabel:U,label(t){if(this&&this.options&&"dataset"===this.options.mode)return t.label+": "+t.formattedValue||t.formattedValue;let e=t.dataset.label||"";e&&(e+=": ");let i=t.formattedValue;return G(i)||(e+=i),e},labelColor(t){let e=t.chart.getDatasetMeta(t.datasetIndex),i=e.controller.getStyle(t.dataIndex);return{borderColor:i.borderColor,backgroundColor:i.backgroundColor,borderWidth:i.borderWidth,borderDash:i.borderDash,borderDashOffset:i.borderDashOffset,borderRadius:0}},labelTextColor(){return this.options.bodyColor},labelPointStyle(t){let e=t.chart.getDatasetMeta(t.datasetIndex),i=e.controller.getStyle(t.dataIndex);return{pointStyle:i.pointStyle,rotation:i.rotation}},afterLabel:U,afterBody:U,beforeFooter:U,footer:U,afterFooter:U};function nM(t,e,i,s){let n=t[e].call(i,s);return void 0===n?nw[e].call(i,s):n}class nC extends sn{static positioners=nf;constructor(t){super(),this.opacity=0,this._active=[],this._eventPosition=void 0,this._size=void 0,this._cachedAnimations=void 0,this._tooltipItems=[],this.$animations=void 0,this.$context=void 0,this.chart=t.chart,this.options=t.options,this.dataPoints=void 0,this.title=void 0,this.beforeBody=void 0,this.body=void 0,this.afterBody=void 0,this.footer=void 0,this.xAlign=void 0,this.yAlign=void 0,this.x=void 0,this.y=void 0,this.height=void 0,this.width=void 0,this.caretX=void 0,this.caretY=void 0,this.labelColors=void 0,this.labelPointStyles=void 0,this.labelTextColors=void 0}initialize(t){this.options=t,this._cachedAnimations=void 0,this.$context=void 0}_resolveAnimations(){let t=this._cachedAnimations;if(t)return t;let e=this.chart,i=this.options.setContext(this.getContext()),s=i.enabled&&e.options.animation&&i.animations,n=new ic(this.chart,s);return s._cacheable&&(this._cachedAnimations=Object.freeze(n)),n}getContext(){return this.$context||(this.$context=eD(this.chart.getContext(),{tooltip:this,tooltipItems:this._tooltipItems,type:"tooltip"}))}getTitle(t,e){let{callbacks:i}=e,s=nM(i,"beforeTitle",this,t),n=nM(i,"title",this,t),a=nM(i,"afterTitle",this,t),r=[];return r=nm(r,nx(s)),r=nm(r,nx(n)),r=nm(r,nx(a))}getBeforeBody(t,e){return nm([],nx(nM(e.callbacks,"beforeBody",this,t)))}getBody(t,e){let{callbacks:i}=e,s=[];return tn(t,t=>{let e={before:[],lines:[],after:[]},n=nk(i,t);nm(e.before,nx(nM(n,"beforeLabel",this,t))),nm(e.lines,nM(n,"label",this,t)),nm(e.after,nx(nM(n,"afterLabel",this,t))),s.push(e)}),s}getAfterBody(t,e){return nm([],nx(nM(e.callbacks,"afterBody",this,t)))}getFooter(t,e){let{callbacks:i}=e,s=nM(i,"beforeFooter",this,t),n=nM(i,"footer",this,t),a=nM(i,"afterFooter",this,t),r=[];return r=nm(r,nx(s)),r=nm(r,nx(n)),r=nm(r,nx(a))}_createItems(t){let e,i;let s=this._active,n=this.chart.data,a=[],r=[],o=[],l=[];for(e=0,i=s.length;e<i;++e)l.push(function(t,e){let{element:i,datasetIndex:s,index:n}=e,a=t.getDatasetMeta(s).controller,{label:r,value:o}=a.getLabelAndValue(n);return{chart:t,label:r,parsed:a.getParsed(n),raw:t.data.datasets[s].data[n],formattedValue:o,dataset:a.getDataset(),dataIndex:n,datasetIndex:s,element:i}}(this.chart,s[e]));return t.filter&&(l=l.filter((e,i,s)=>t.filter(e,i,s,n))),t.itemSort&&(l=l.sort((e,i)=>t.itemSort(e,i,n))),tn(l,e=>{let i=nk(t.callbacks,e);a.push(nM(i,"labelColor",this,e)),r.push(nM(i,"labelPointStyle",this,e)),o.push(nM(i,"labelTextColor",this,e))}),this.labelColors=a,this.labelPointStyles=r,this.labelTextColors=o,this.dataPoints=l,l}update(t,e){let i;let s=this.options.setContext(this.getContext()),n=this._active,a=[];if(n.length){let t=nf[s.position].call(this,n,this._eventPosition);a=this._createItems(s),this.title=this.getTitle(a,s),this.beforeBody=this.getBeforeBody(a,s),this.body=this.getBody(a,s),this.afterBody=this.getAfterBody(a,s),this.footer=this.getFooter(a,s);let e=this._size=nb(this,s),r=Object.assign({},t,e),o=ny(this.chart,s,r),l=n_(s,r,o,this.chart);this.xAlign=o.xAlign,this.yAlign=o.yAlign,i={opacity:1,x:l.x,y:l.y,width:e.width,height:e.height,caretX:t.x,caretY:t.y}}else 0!==this.opacity&&(i={opacity:0});this._tooltipItems=a,this.$context=void 0,i&&this._resolveAnimations().update(this,i),t&&s.external&&s.external.call(this,{chart:this.chart,tooltip:this,replay:e})}drawCaret(t,e,i,s){let n=this.getCaretPosition(t,i,s);e.lineTo(n.x1,n.y1),e.lineTo(n.x2,n.y2),e.lineTo(n.x3,n.y3)}getCaretPosition(t,e,i){let s,n,a,r,o,l;let{xAlign:h,yAlign:d}=this,{caretSize:c,cornerRadius:u}=i,{topLeft:p,topRight:g,bottomLeft:f,bottomRight:m}=eC(u),{x:x,y:b}=t,{width:y,height:_}=e;return"center"===d?(o=b+_/2,"left"===h?(n=(s=x)-c,r=o+c,l=o-c):(n=(s=x+y)+c,r=o-c,l=o+c),a=s):(n="left"===h?x+Math.max(p,f)+c:"right"===h?x+y-Math.max(g,m)-c:this.caretX,"top"===d?(o=(r=b)-c,s=n-c,a=n+c):(o=(r=b+_)+c,s=n+c,a=n-c),l=r),{x1:s,x2:n,x3:a,y1:r,y2:o,y3:l}}drawTitle(t,e,i){let s,n,a;let r=this.title,o=r.length;if(o){let l=e8(i.rtl,this.x,this.width);for(a=0,t.x=nv(this,i.titleAlign,i),e.textAlign=l.textAlign(i.titleAlign),e.textBaseline="middle",s=eP(i.titleFont),n=i.titleSpacing,e.fillStyle=i.titleColor,e.font=s.string;a<o;++a)e.fillText(r[a],l.x(t.x),t.y+s.lineHeight/2),t.y+=s.lineHeight+n,a+1===o&&(t.y+=i.titleMarginBottom-n)}}_drawColorBox(t,e,i,s,n){let a=this.labelColors[i],r=this.labelPointStyles[i],{boxHeight:o,boxWidth:l}=n,h=eP(n.bodyFont),d=nv(this,"left",n),c=s.x(d),u=o<h.lineHeight?(h.lineHeight-o)/2:0,p=e.y+u;if(n.usePointStyle){let e={radius:Math.min(l,o)/2,pointStyle:r.pointStyle,rotation:r.rotation,borderWidth:1},i=s.leftForLtr(c,l)+l/2,h=p+o/2;t.strokeStyle=n.multiKeyBackground,t.fillStyle=n.multiKeyBackground,ec(t,e,i,h),t.strokeStyle=a.borderColor,t.fillStyle=a.backgroundColor,ec(t,e,i,h)}else{t.lineWidth=Z(a.borderWidth)?Math.max(...Object.values(a.borderWidth)):a.borderWidth||1,t.strokeStyle=a.borderColor,t.setLineDash(a.borderDash||[]),t.lineDashOffset=a.borderDashOffset||0;let e=s.leftForLtr(c,l),i=s.leftForLtr(s.xPlus(c,1),l-2),r=eC(a.borderRadius);Object.values(r).some(t=>0!==t)?(t.beginPath(),t.fillStyle=n.multiKeyBackground,ey(t,{x:e,y:p,w:l,h:o,radius:r}),t.fill(),t.stroke(),t.fillStyle=a.backgroundColor,t.beginPath(),ey(t,{x:i,y:p+1,w:l-2,h:o-2,radius:r}),t.fill()):(t.fillStyle=n.multiKeyBackground,t.fillRect(e,p,l,o),t.strokeRect(e,p,l,o),t.fillStyle=a.backgroundColor,t.fillRect(i,p+1,l-2,o-2))}t.fillStyle=this.labelTextColors[i]}drawBody(t,e,i){let s,n,a,r,o,l,h;let{body:d}=this,{bodySpacing:c,bodyAlign:u,displayColors:p,boxHeight:g,boxWidth:f,boxPadding:m}=i,x=eP(i.bodyFont),b=x.lineHeight,y=0,_=e8(i.rtl,this.x,this.width),v=function(i){e.fillText(i,_.x(t.x+y),t.y+b/2),t.y+=b+c},k=_.textAlign(u);for(e.textAlign=u,e.textBaseline="middle",e.font=x.string,t.x=nv(this,k,i),e.fillStyle=i.bodyColor,tn(this.beforeBody,v),y=p&&"right"!==k?"center"===u?f/2+m:f+2+m:0,r=0,l=d.length;r<l;++r){for(s=d[r],n=this.labelTextColors[r],e.fillStyle=n,tn(s.before,v),a=s.lines,p&&a.length&&(this._drawColorBox(e,t,r,_,i),b=Math.max(x.lineHeight,g)),o=0,h=a.length;o<h;++o)v(a[o]),b=x.lineHeight;tn(s.after,v)}y=0,b=x.lineHeight,tn(this.afterBody,v),t.y-=c}drawFooter(t,e,i){let s,n;let a=this.footer,r=a.length;if(r){let o=e8(i.rtl,this.x,this.width);for(t.x=nv(this,i.footerAlign,i),t.y+=i.footerMarginTop,e.textAlign=o.textAlign(i.footerAlign),e.textBaseline="middle",s=eP(i.footerFont),e.fillStyle=i.footerColor,e.font=s.string,n=0;n<r;++n)e.fillText(a[n],o.x(t.x),t.y+s.lineHeight/2),t.y+=s.lineHeight+i.footerSpacing}}drawBackground(t,e,i,s){let{xAlign:n,yAlign:a}=this,{x:r,y:o}=t,{width:l,height:h}=i,{topLeft:d,topRight:c,bottomLeft:u,bottomRight:p}=eC(s.cornerRadius);e.fillStyle=s.backgroundColor,e.strokeStyle=s.borderColor,e.lineWidth=s.borderWidth,e.beginPath(),e.moveTo(r+d,o),"top"===a&&this.drawCaret(t,e,i,s),e.lineTo(r+l-c,o),e.quadraticCurveTo(r+l,o,r+l,o+c),"center"===a&&"right"===n&&this.drawCaret(t,e,i,s),e.lineTo(r+l,o+h-p),e.quadraticCurveTo(r+l,o+h,r+l-p,o+h),"bottom"===a&&this.drawCaret(t,e,i,s),e.lineTo(r+u,o+h),e.quadraticCurveTo(r,o+h,r,o+h-u),"center"===a&&"left"===n&&this.drawCaret(t,e,i,s),e.lineTo(r,o+d),e.quadraticCurveTo(r,o,r+d,o),e.closePath(),e.fill(),s.borderWidth>0&&e.stroke()}_updateAnimationTarget(t){let e=this.chart,i=this.$animations,s=i&&i.x,n=i&&i.y;if(s||n){let i=nf[t.position].call(this,this._active,this._eventPosition);if(!i)return;let a=this._size=nb(this,t),r=Object.assign({},i,this._size),o=ny(e,t,r),l=n_(t,r,o,e);(s._to!==l.x||n._to!==l.y)&&(this.xAlign=o.xAlign,this.yAlign=o.yAlign,this.width=a.width,this.height=a.height,this.caretX=i.x,this.caretY=i.y,this._resolveAnimations().update(this,l))}}_willRender(){return!!this.opacity}draw(t){let e=this.options.setContext(this.getContext()),i=this.opacity;if(!i)return;this._updateAnimationTarget(e);let s={width:this.width,height:this.height},n={x:this.x,y:this.y};i=.001>Math.abs(i)?0:i;let a=eS(e.padding),r=this.title.length||this.beforeBody.length||this.body.length||this.afterBody.length||this.footer.length;e.enabled&&r&&(t.save(),t.globalAlpha=i,this.drawBackground(n,t,s,e),e7(t,e.textDirection),n.y+=a.top,this.drawTitle(n,t,e),this.drawBody(n,t,e),this.drawFooter(n,t,e),e9(t,e.textDirection),t.restore())}getActiveElements(){return this._active||[]}setActiveElements(t,e){let i=this._active,s=t.map(({datasetIndex:t,index:e})=>{let i=this.chart.getDatasetMeta(t);if(!i)throw Error("Cannot find a dataset at index "+t);return{datasetIndex:t,element:i.data[e],index:e}}),n=!ta(i,s),a=this._positionChanged(s,e);(n||a)&&(this._active=s,this._eventPosition=e,this._ignoreReplayEvents=!0,this.update(!0))}handleEvent(t,e,i=!0){if(e&&this._ignoreReplayEvents)return!1;this._ignoreReplayEvents=!1;let s=this.options,n=this._active||[],a=this._getActiveElements(t,n,e,i),r=this._positionChanged(a,t),o=e||!ta(a,n)||r;return o&&(this._active=a,(s.enabled||s.external)&&(this._eventPosition={x:t.x,y:t.y},this.update(!0,e))),o}_getActiveElements(t,e,i,s){let n=this.options;if("mouseout"===t.type)return[];if(!s)return e;let a=this.chart.getElementsAtEventForMode(t,n.mode,n,i);return n.reverse&&a.reverse(),a}_positionChanged(t,e){let{caretX:i,caretY:s,options:n}=this,a=nf[n.position].call(this,t,e);return!1!==a&&(i!==a.x||s!==a.y)}}var nS=Object.freeze({__proto__:null,Colors:{id:"colors",defaults:{enabled:!0,forceOverride:!1},beforeLayout(t,e,i){let s;if(!i.enabled)return;let{data:{datasets:n},options:a}=t.config,{elements:r}=a;if(!i.forceOverride&&(s6(n)||a&&(a.borderColor||a.backgroundColor)||r&&s6(r)))return;let o=(s=0,(e,i)=>{var n,a,r;let o=t.getDatasetMeta(i).controller;o instanceof iL?(n=s,e.backgroundColor=e.data.map(()=>s3(n++)),s=n):o instanceof iE?(a=s,e.backgroundColor=e.data.map(()=>s4(a++)),s=a):o&&(r=s,e.borderColor=s3(r),e.backgroundColor=s4(r),s=++r)});n.forEach(o)}},Decimation:{id:"decimation",defaults:{algorithm:"min-max",enabled:!1},beforeElementsUpdate:(t,e,i)=>{if(!i.enabled){s7(t);return}let s=t.width;t.data.datasets.forEach((e,n)=>{let a;let{_data:r,indexAxis:o}=e,l=t.getDatasetMeta(n),h=r||e.data;if("y"===eA([o,t.options.indexAxis])||!l.controller.supportsDecimation)return;let d=t.scales[l.xAxisID];if("linear"!==d.type&&"time"!==d.type||t.options.parsing)return;let{start:c,count:u}=function(t,e){let i;let s=e.length,n=0,{iScale:a}=t,{min:r,max:o,minDefined:l,maxDefined:h}=a.getUserBounds();return l&&(n=tV(tq(e,a.axis,r).lo,0,s-1)),i=h?tV(tq(e,a.axis,o).hi+1,n,s)-n:s-n,{start:n,count:i}}(l,h),p=i.threshold||4*s;if(u<=p){s8(e);return}switch(G(r)&&(e._data=h,delete e.data,Object.defineProperty(e,"data",{configurable:!0,enumerable:!0,get:function(){return this._decimated},set:function(t){this._data=t}})),i.algorithm){case"lttb":a=function(t,e,i,s,n){let a,r,o,l,h;let d=n.samples||s;if(d>=i)return t.slice(e,e+i);let c=[],u=(i-2)/(d-2),p=0,g=e+i-1,f=e;for(a=0,c[p++]=t[f];a<d-2;a++){let s,n=0,d=0,g=Math.floor((a+1)*u)+1+e,m=Math.min(Math.floor((a+2)*u)+1,i)+e,x=m-g;for(s=g;s<m;s++)n+=t[s].x,d+=t[s].y;n/=x,d/=x;let b=Math.floor(a*u)+1+e,y=Math.min(Math.floor((a+1)*u)+1,i)+e,{x:_,y:v}=t[f];for(o=l=-1,s=b;s<y;s++)(l=.5*Math.abs((_-n)*(t[s].y-v)-(_-t[s].x)*(d-v)))>o&&(o=l,r=t[s],h=s);c[p++]=r,f=h}return c[p++]=t[g],c}(h,c,u,s,i);break;case"min-max":a=function(t,e,i,s){let n,a,r,o,l,h,d,c,u,p,g=0,f=0,m=[],x=t[e].x,b=t[e+i-1].x,y=b-x;for(n=e;n<e+i;++n){r=((a=t[n]).x-x)/y*s,o=a.y;let e=0|r;if(e===l)o<u?(u=o,h=n):o>p&&(p=o,d=n),g=(f*g+a.x)/++f;else{let i=n-1;if(!G(h)&&!G(d)){let e=Math.min(h,d),s=Math.max(h,d);e!==c&&e!==i&&m.push({...t[e],x:g}),s!==c&&s!==i&&m.push({...t[s],x:g})}n>0&&i!==c&&m.push(t[i]),m.push(a),l=e,f=0,u=p=o,h=d=c=n}}return m}(h,c,u,s);break;default:throw Error(`Unsupported decimation algorithm '${i.algorithm}'`)}e._decimated=a})},destroy(t){s7(t)}},Filler:{id:"filler",afterDatasetsUpdate(t,e,i){let s,n,a,r;let o=(t.data.datasets||[]).length,l=[];for(n=0;n<o;++n)a=(s=t.getDatasetMeta(n)).dataset,r=null,a&&a.options&&a instanceof sX&&(r={visible:t.isDatasetVisible(n),index:n,fill:function(t,e,i){var s,n;let a=function(t){let e=t.options,i=e.fill,s=tt(i&&i.target,i);return void 0===s&&(s=!!e.backgroundColor),!1!==s&&null!==s&&(!0===s?"origin":s)}(t);if(Z(a))return!isNaN(a.value)&&a;let r=parseFloat(a);return J(r)&&Math.floor(r)===r?(s=a[0],n=r,("-"===s||"+"===s)&&(n=e+n),n!==e&&!(n<0)&&!(n>=i)&&n):["origin","start","end","stack","shape"].indexOf(a)>=0&&a}(a,n,o),chart:t,axis:s.controller.options.indexAxis,scale:s.vScale,line:a}),s.$filler=r,l.push(r);for(n=0;n<o;++n)(r=l[n])&&!1!==r.fill&&(r.fill=function(t,e,i){let s;let n=t[e],a=n.fill,r=[e];if(!i)return a;for(;!1!==a&&-1===r.indexOf(a);){if(!J(a))return a;if(!(s=t[a]))break;if(s.visible)return a;r.push(a),a=s.fill}return!1}(l,n,i.propagate))},beforeDraw(t,e,i){let s="beforeDraw"===i.drawTime,n=t.getSortedVisibleDatasetMetas(),a=t.chartArea;for(let e=n.length-1;e>=0;--e){let i=n[e].$filler;i&&(i.line.updateControlPoints(a,i.axis),s&&i.fill&&na(t.ctx,i,a))}},beforeDatasetsDraw(t,e,i){if("beforeDatasetsDraw"!==i.drawTime)return;let s=t.getSortedVisibleDatasetMetas();for(let e=s.length-1;e>=0;--e){let i=s[e].$filler;ns(i)&&na(t.ctx,i,t.chartArea)}},beforeDatasetDraw(t,e,i){let s=e.meta.$filler;ns(s)&&"beforeDatasetDraw"===i.drawTime&&na(t.ctx,s,t.chartArea)},defaults:{propagate:!0,drawTime:"beforeDatasetDraw"}},Legend:{id:"legend",_element:nc,start(t,e,i){let s=t.legend=new nc({ctx:t.ctx,options:i,chart:t});iK.configure(t,s,i),iK.addBox(t,s)},stop(t){iK.removeBox(t,t.legend),delete t.legend},beforeUpdate(t,e,i){let s=t.legend;iK.configure(t,s,i),s.options=i},afterUpdate(t){let e=t.legend;e.buildLabels(),e.adjustHitBoxes()},afterEvent(t,e){e.replay||t.legend.handleEvent(e.event)},defaults:{display:!0,position:"top",align:"center",fullSize:!0,reverse:!1,weight:1e3,onClick(t,e,i){let s=e.datasetIndex,n=i.chart;n.isDatasetVisible(s)?(n.hide(s),e.hidden=!0):(n.show(s),e.hidden=!1)},onHover:null,onLeave:null,labels:{color:t=>t.chart.options.color,boxWidth:40,padding:10,generateLabels(t){let e=t.data.datasets,{labels:{usePointStyle:i,pointStyle:s,textAlign:n,color:a,useBorderRadius:r,borderRadius:o}}=t.legend.options;return t._getSortedDatasetMetas().map(t=>{let l=t.controller.getStyle(i?0:void 0),h=eS(l.borderWidth);return{text:e[t.index].label,fillStyle:l.backgroundColor,fontColor:a,hidden:!t.visible,lineCap:l.borderCapStyle,lineDash:l.borderDash,lineDashOffset:l.borderDashOffset,lineJoin:l.borderJoinStyle,lineWidth:(h.width+h.height)/4,strokeStyle:l.borderColor,pointStyle:s||l.pointStyle,rotation:l.rotation,textAlign:n||l.textAlign,borderRadius:r&&(o||l.borderRadius),datasetIndex:t.index}},this)}},title:{color:t=>t.chart.options.color,display:!1,position:"center",text:""}},descriptors:{_scriptable:t=>!t.startsWith("on"),labels:{_scriptable:t=>!["generateLabels","filter","sort"].includes(t)}}},SubTitle:{id:"subtitle",start(t,e,i){let s=new np({ctx:t.ctx,options:i,chart:t});iK.configure(t,s,i),iK.addBox(t,s),ng.set(t,s)},stop(t){iK.removeBox(t,ng.get(t)),ng.delete(t)},beforeUpdate(t,e,i){let s=ng.get(t);iK.configure(t,s,i),s.options=i},defaults:{align:"center",display:!1,font:{weight:"normal"},fullSize:!0,padding:0,position:"top",text:"",weight:1500},defaultRoutes:{color:"color"},descriptors:{_scriptable:!0,_indexable:!1}},Title:{id:"title",_element:np,start(t,e,i){!function(t,e){let i=new np({ctx:t.ctx,options:e,chart:t});iK.configure(t,i,e),iK.addBox(t,i),t.titleBlock=i}(t,i)},stop(t){let e=t.titleBlock;iK.removeBox(t,e),delete t.titleBlock},beforeUpdate(t,e,i){let s=t.titleBlock;iK.configure(t,s,i),s.options=i},defaults:{align:"center",display:!1,font:{weight:"bold"},fullSize:!0,padding:10,position:"top",text:"",weight:2e3},defaultRoutes:{color:"color"},descriptors:{_scriptable:!0,_indexable:!1}},Tooltip:{id:"tooltip",_element:nC,positioners:nf,afterInit(t,e,i){i&&(t.tooltip=new nC({chart:t,options:i}))},beforeUpdate(t,e,i){t.tooltip&&t.tooltip.initialize(i)},reset(t,e,i){t.tooltip&&t.tooltip.initialize(i)},afterDraw(t){let e=t.tooltip;if(e&&e._willRender()){let i={tooltip:e};if(!1===t.notifyPlugins("beforeTooltipDraw",{...i,cancelable:!0}))return;e.draw(t.ctx),t.notifyPlugins("afterTooltipDraw",i)}},afterEvent(t,e){if(t.tooltip){let i=e.replay;t.tooltip.handleEvent(e.event,i,e.inChartArea)&&(e.changed=!0)}},defaults:{enabled:!0,external:null,position:"average",backgroundColor:"rgba(0,0,0,0.8)",titleColor:"#fff",titleFont:{weight:"bold"},titleSpacing:2,titleMarginBottom:6,titleAlign:"left",bodyColor:"#fff",bodySpacing:2,bodyFont:{},bodyAlign:"left",footerColor:"#fff",footerSpacing:2,footerMarginTop:6,footerFont:{weight:"bold"},footerAlign:"left",padding:6,caretPadding:2,caretSize:5,cornerRadius:6,boxHeight:(t,e)=>e.bodyFont.size,boxWidth:(t,e)=>e.bodyFont.size,multiKeyBackground:"#fff",displayColors:!0,boxPadding:0,borderColor:"rgba(0,0,0,0)",borderWidth:0,animation:{duration:400,easing:"easeOutQuart"},animations:{numbers:{type:"number",properties:["x","y","width","height","caretX","caretY"]},opacity:{easing:"linear",duration:200}},callbacks:nw},defaultRoutes:{bodyFont:"font",footerFont:"font",titleFont:"font"},descriptors:{_scriptable:t=>"filter"!==t&&"itemSort"!==t&&"external"!==t,_indexable:!1,callbacks:{_scriptable:!1,_indexable:!1},animation:{_fallback:!1},animations:{_fallback:"animation"}},additionalOptionScopes:["interaction"]}});let nP=(t,e,i,s)=>("string"==typeof e?(i=t.push(e)-1,s.unshift({index:i,label:e})):isNaN(e)&&(i=null),i),nA=(t,e)=>null===t?null:tV(Math.round(t),0,e);function nD(t){let e=this.getLabels();return t>=0&&t<e.length?e[t]:t}function nL(t,e,{horizontal:i,minRotation:s}){let n=tI(s),a=.75*e*(""+t).length;return Math.min(e/((i?Math.sin(n):Math.cos(n))||.001),a)}class nE extends su{constructor(t){super(t),this.start=void 0,this.end=void 0,this._startValue=void 0,this._endValue=void 0,this._valueRange=0}parse(t,e){return G(t)||("number"==typeof t||t instanceof Number)&&!isFinite(+t)?null:+t}handleTickRangeOptions(){let{beginAtZero:t}=this.options,{minDefined:e,maxDefined:i}=this.getUserBounds(),{min:s,max:n}=this,a=t=>s=e?s:t,r=t=>n=i?n:t;if(t){let t=tP(s),e=tP(n);t<0&&e<0?r(0):t>0&&e>0&&a(0)}if(s===n){let e=0===n?1:Math.abs(.05*n);r(n+e),t||a(s-e)}this.min=s,this.max=n}getTickLimit(){let t;let e=this.options.ticks,{maxTicksLimit:i,stepSize:s}=e;return s?(t=Math.ceil(this.max/s)-Math.floor(this.min/s)+1)>1e3&&(console.warn(`scales.${this.id}.ticks.stepSize: ${s} would result generating up to ${t} ticks. Limiting to 1000.`),t=1e3):(t=this.computeTickLimit(),i=i||11),i&&(t=Math.min(i,t)),t}computeTickLimit(){return Number.POSITIVE_INFINITY}buildTicks(){let t=this.options,e=t.ticks,i=this.getTickLimit();i=Math.max(2,i);let s={maxTicks:i,bounds:t.bounds,min:t.min,max:t.max,precision:e.precision,step:e.stepSize,count:e.count,maxDigits:this._maxDigits(),horizontal:this.isHorizontal(),minRotation:e.minRotation||0,includeBounds:!1!==e.includeBounds},n=this._range||this,a=function(t,e){let i,s,n,a;let r=[],{bounds:o,step:l,min:h,max:d,precision:c,count:u,maxTicks:p,maxDigits:g,includeBounds:f}=t,m=l||1,x=p-1,{min:b,max:y}=e,_=!G(h),v=!G(d),k=!G(u),w=(y-b)/(g+1),M=tD((y-b)/x/m)*m;if(M<1e-14&&!_&&!v)return[{value:b},{value:y}];(a=Math.ceil(y/M)-Math.floor(b/M))>x&&(M=tD(a*M/x/m)*m),G(c)||(M=Math.ceil(M*(i=Math.pow(10,c)))/i),"ticks"===o?(s=Math.floor(b/M)*M,n=Math.ceil(y/M)*M):(s=b,n=y),_&&v&&l&&function(t,e){let i=Math.round(t);return i-e<=t&&i+e>=t}((d-h)/l,M/1e3)?(a=Math.round(Math.min((d-h)/M,p)),M=(d-h)/a,s=h,n=d):k?(s=_?h:s,M=((n=v?d:n)-s)/(a=u-1)):a=tA(a=(n-s)/M,Math.round(a),M/1e3)?Math.round(a):Math.ceil(a);let C=Math.max(tO(M),tO(s));i=Math.pow(10,G(c)?C:c),s=Math.round(s*i)/i,n=Math.round(n*i)/i;let S=0;for(_&&(f&&s!==h?(r.push({value:h}),s<h&&S++,tA(Math.round((s+S*M)*i)/i,h,nL(h,w,t))&&S++):s<h&&S++);S<a;++S){let t=Math.round((s+S*M)*i)/i;if(v&&t>d)break;r.push({value:t})}return v&&f&&n!==d?r.length&&tA(r[r.length-1].value,d,nL(d,w,t))?r[r.length-1].value=d:r.push({value:d}):v&&n!==d||r.push({value:n}),r}(s,n);return"ticks"===t.bounds&&tE(a,this,"value"),t.reverse?(a.reverse(),this.start=this.max,this.end=this.min):(this.start=this.min,this.end=this.max),a}configure(){let t=this.ticks,e=this.min,i=this.max;if(super.configure(),this.options.offset&&t.length){let s=(i-e)/Math.max(t.length-1,1)/2;e-=s,i+=s}this._startValue=e,this._endValue=i,this._valueRange=i-e}getLabelForValue(t){return et(t,this.chart.options.locale,this.options.ticks.format)}}class nI extends nE{static id="linear";static defaults={ticks:{callback:ei.formatters.numeric}};determineDataLimits(){let{min:t,max:e}=this.getMinMax(!0);this.min=J(t)?t:0,this.max=J(e)?e:1,this.handleTickRangeOptions()}computeTickLimit(){let t=this.isHorizontal(),e=t?this.width:this.height,i=tI(this.options.ticks.minRotation),s=this._resolveTickFontOptions(0);return Math.ceil(e/Math.min(40,s.lineHeight/((t?Math.sin(i):Math.cos(i))||.001)))}getPixelForValue(t){return null===t?NaN:this.getPixelForDecimal((t-this._startValue)/this._valueRange)}getValueForPixel(t){return this._startValue+this.getDecimalForPixel(t)*this._valueRange}}let nO=t=>Math.floor(tS(t)),nT=(t,e)=>Math.pow(10,nO(t)+e);function nR(t){let e=t/Math.pow(10,nO(t));return 1===e}function nz(t,e,i){let s=Math.pow(10,i);return Math.ceil(e/s)-Math.floor(t/s)}class nF extends su{static id="logarithmic";static defaults={ticks:{callback:ei.formatters.logarithmic,major:{enabled:!0}}};constructor(t){super(t),this.start=void 0,this.end=void 0,this._startValue=void 0,this._valueRange=0}parse(t,e){let i=nE.prototype.parse.apply(this,[t,e]);if(0===i){this._zero=!0;return}return J(i)&&i>0?i:null}determineDataLimits(){let{min:t,max:e}=this.getMinMax(!0);this.min=J(t)?Math.max(0,t):null,this.max=J(e)?Math.max(0,e):null,this.options.beginAtZero&&(this._zero=!0),this._zero&&this.min!==this._suggestedMin&&!J(this._userMin)&&(this.min=t===nT(this.min,0)?nT(this.min,-1):nT(this.min,0)),this.handleTickRangeOptions()}handleTickRangeOptions(){let{minDefined:t,maxDefined:e}=this.getUserBounds(),i=this.min,s=this.max,n=e=>i=t?i:e,a=t=>s=e?s:t;i===s&&(i<=0?(n(1),a(10)):(n(nT(i,-1)),a(nT(s,1)))),i<=0&&n(nT(s,-1)),s<=0&&a(nT(i,1)),this.min=i,this.max=s}buildTicks(){let t=this.options,e={min:this._userMin,max:this._userMax},i=function(t,{min:e,max:i}){e=Q(t.min,e);let s=[],n=nO(e),a=function(t,e){let i=e-t,s=nO(i);for(;nz(t,e,s)>10;)s++;for(;10>nz(t,e,s);)s--;return Math.min(s,nO(t))}(e,i),r=a<0?Math.pow(10,Math.abs(a)):1,o=Math.pow(10,a),l=n>a?Math.pow(10,n):0,h=Math.round((e-l)*r)/r,d=Math.floor((e-l)/o/10)*o*10,c=Math.floor((h-d)/Math.pow(10,a)),u=Q(t.min,Math.round((l+d+c*Math.pow(10,a))*r)/r);for(;u<i;)s.push({value:u,major:nR(u),significand:c}),c>=10?c=c<15?15:20:c++,c>=20&&(c=2,r=++a>=0?1:r),u=Math.round((l+d+c*Math.pow(10,a))*r)/r;let p=Q(t.max,u);return s.push({value:p,major:nR(p),significand:c}),s}(e,this);return"ticks"===t.bounds&&tE(i,this,"value"),t.reverse?(i.reverse(),this.start=this.max,this.end=this.min):(this.start=this.min,this.end=this.max),i}getLabelForValue(t){return void 0===t?"0":et(t,this.chart.options.locale,this.options.ticks.format)}configure(){let t=this.min;super.configure(),this._startValue=tS(t),this._valueRange=tS(this.max)-tS(t)}getPixelForValue(t){return((void 0===t||0===t)&&(t=this.min),null===t||isNaN(t))?NaN:this.getPixelForDecimal(t===this.min?0:(tS(t)-this._startValue)/this._valueRange)}getValueForPixel(t){let e=this.getDecimalForPixel(t);return Math.pow(10,this._startValue+e*this._valueRange)}}function nB(t){let e=t.ticks;if(e.display&&t.display){let t=eS(e.backdropPadding);return tt(e.font&&e.font.size,eo.font.size)+t.height}return 0}function nV(t,e,i,s,n){return t===s||t===n?{start:e-i/2,end:e+i/2}:t<s||t>n?{start:e-i,end:e}:{start:e,end:e+i}}function nW(t,e,i,s){let{ctx:n}=t;if(i)n.arc(t.xCenter,t.yCenter,e,0,ty);else{let i=t.getPointPosition(0,e);n.moveTo(i.x,i.y);for(let a=1;a<s;a++)i=t.getPointPosition(a,e),n.lineTo(i.x,i.y)}}class nN extends nE{static id="radialLinear";static defaults={display:!0,animate:!0,position:"chartArea",angleLines:{display:!0,lineWidth:1,borderDash:[],borderDashOffset:0},grid:{circular:!1},startAngle:0,ticks:{showLabelBackdrop:!0,callback:ei.formatters.numeric},pointLabels:{backdropColor:void 0,backdropPadding:2,display:!0,font:{size:10},callback:t=>t,padding:5,centerPointLabels:!1}};static defaultRoutes={"angleLines.color":"borderColor","pointLabels.color":"color","ticks.color":"color"};static descriptors={angleLines:{_fallback:"grid"}};constructor(t){super(t),this.xCenter=void 0,this.yCenter=void 0,this.drawingArea=void 0,this._pointLabels=[],this._pointLabelItems=[]}setDimensions(){let t=this._padding=eS(nB(this.options)/2),e=this.width=this.maxWidth-t.width,i=this.height=this.maxHeight-t.height;this.xCenter=Math.floor(this.left+e/2+t.left),this.yCenter=Math.floor(this.top+i/2+t.top),this.drawingArea=Math.floor(Math.min(e,i)/2)}determineDataLimits(){let{min:t,max:e}=this.getMinMax(!1);this.min=J(t)&&!isNaN(t)?t:0,this.max=J(e)&&!isNaN(e)?e:0,this.handleTickRangeOptions()}computeTickLimit(){return Math.ceil(this.drawingArea/nB(this.options))}generateTickLabels(t){nE.prototype.generateTickLabels.call(this,t),this._pointLabels=this.getLabels().map((t,e)=>{let i=ts(this.options.pointLabels.callback,[t,e],this);return i||0===i?i:""}).filter((t,e)=>this.chart.getDataVisibility(e))}fit(){let t=this.options;t.display&&t.pointLabels.display?function(t){let e={l:t.left+t._padding.left,r:t.right-t._padding.right,t:t.top+t._padding.top,b:t.bottom-t._padding.bottom},i=Object.assign({},e),s=[],n=[],a=t._pointLabels.length,r=t.options.pointLabels,o=r.centerPointLabels?tb/a:0;for(let d=0;d<a;d++){var l,h;let a=r.setContext(t.getPointLabelContext(d));n[d]=a.padding;let c=t.getPointPosition(d,t.drawingArea+n[d],o),u=eP(a.font),p=(l=t.ctx,h=K(h=t._pointLabels[d])?h:[h],{w:function(t,e,i,s){let n,a,r,o,l;let h=(s=s||{}).data=s.data||{},d=s.garbageCollect=s.garbageCollect||[];s.font!==e&&(h=s.data={},d=s.garbageCollect=[],s.font=e),t.save(),t.font=e;let c=0,u=i.length;for(n=0;n<u;n++)if(null==(o=i[n])||K(o)){if(K(o))for(a=0,r=o.length;a<r;a++)null==(l=o[a])||K(l)||(c=el(t,h,d,c,l))}else c=el(t,h,d,c,o);t.restore();let p=d.length/2;if(p>i.length){for(n=0;n<p;n++)delete h[d[n]];d.splice(0,p)}return c}(l,u.string,h),h:h.length*u.lineHeight});s[d]=p;let g=tF(t.getIndexAngle(d)+o),f=Math.round(g*(180/tb)),m=nV(f,c.x,p.w,0,180),x=nV(f,c.y,p.h,90,270);!function(t,e,i,s,n){let a=Math.abs(Math.sin(i)),r=Math.abs(Math.cos(i)),o=0,l=0;s.start<e.l?(o=(e.l-s.start)/a,t.l=Math.min(t.l,e.l-o)):s.end>e.r&&(o=(s.end-e.r)/a,t.r=Math.max(t.r,e.r+o)),n.start<e.t?(l=(e.t-n.start)/r,t.t=Math.min(t.t,e.t-l)):n.end>e.b&&(l=(n.end-e.b)/r,t.b=Math.max(t.b,e.b+l))}(i,e,g,m,x)}t.setCenterPoint(e.l-i.l,i.r-e.r,e.t-i.t,i.b-e.b),t._pointLabelItems=function(t,e,i){let s;let n=[],a=t._pointLabels.length,r=t.options,{centerPointLabels:o,display:l}=r.pointLabels,h={extra:nB(r)/2,additionalAngle:o?tb/a:0};for(let r=0;r<a;r++){h.padding=i[r],h.size=e[r];let a=function(t,e,i){var s,n,a,r;let o=t.drawingArea,{extra:l,additionalAngle:h,padding:d,size:c}=i,u=t.getPointPosition(e,o+l+d,h),p=Math.round(tF(u.angle+tw)*(180/tb)),g=(s=u.y,n=c.h,90===p||270===p?s-=n/2:(p>270||p<90)&&(s-=n),s),f=0===p||180===p?"center":p<180?"left":"right",m=(a=u.x,r=c.w,"right"===f?a-=r:"center"===f&&(a-=r/2),a);return{visible:!0,x:u.x,y:g,textAlign:f,left:m,top:g,right:m+c.w,bottom:g+c.h}}(t,r,h);n.push(a),"auto"===l&&(a.visible=function(t,e){if(!e)return!0;let{left:i,top:s,right:n,bottom:a}=t,r=ep({x:i,y:s},e)||ep({x:i,y:a},e)||ep({x:n,y:s},e)||ep({x:n,y:a},e);return!r}(a,s),a.visible&&(s=a))}return n}(t,s,n)}(this):this.setCenterPoint(0,0,0,0)}setCenterPoint(t,e,i,s){this.xCenter+=Math.floor((t-e)/2),this.yCenter+=Math.floor((i-s)/2),this.drawingArea-=Math.min(this.drawingArea/2,Math.max(t,e,i,s))}getIndexAngle(t){let e=ty/(this._pointLabels.length||1),i=this.options.startAngle||0;return tF(t*e+tI(i))}getDistanceFromCenterForValue(t){if(G(t))return NaN;let e=this.drawingArea/(this.max-this.min);return this.options.reverse?(this.max-t)*e:(t-this.min)*e}getValueForDistanceFromCenter(t){if(G(t))return NaN;let e=t/(this.drawingArea/(this.max-this.min));return this.options.reverse?this.max-e:this.min+e}getPointLabelContext(t){let e=this._pointLabels||[];if(t>=0&&t<e.length){let i=e[t];return eD(this.getContext(),{label:i,index:t,type:"pointLabel"})}}getPointPosition(t,e,i=0){let s=this.getIndexAngle(t)-tw+i;return{x:Math.cos(s)*e+this.xCenter,y:Math.sin(s)*e+this.yCenter,angle:s}}getPointPositionForValue(t,e){return this.getPointPosition(t,this.getDistanceFromCenterForValue(e))}getBasePosition(t){return this.getPointPositionForValue(t||0,this.getBaseValue())}getPointLabelPosition(t){let{left:e,top:i,right:s,bottom:n}=this._pointLabelItems[t];return{left:e,top:i,right:s,bottom:n}}drawBackground(){let{backgroundColor:t,grid:{circular:e}}=this.options;if(t){let i=this.ctx;i.save(),i.beginPath(),nW(this,this.getDistanceFromCenterForValue(this._endValue),e,this._pointLabels.length),i.closePath(),i.fillStyle=t,i.fill(),i.restore()}}drawGrid(){let t,e,i;let s=this.ctx,n=this.options,{angleLines:a,grid:r,border:o}=n,l=this._pointLabels.length;if(n.pointLabels.display&&function(t,e){let{ctx:i,options:{pointLabels:s}}=t;for(let n=e-1;n>=0;n--){let e=t._pointLabelItems[n];if(!e.visible)continue;let a=s.setContext(t.getPointLabelContext(n));!function(t,e,i){let{left:s,top:n,right:a,bottom:r}=i,{backdropColor:o}=e;if(!G(o)){let i=eC(e.borderRadius),l=eS(e.backdropPadding);t.fillStyle=o;let h=s-l.left,d=n-l.top,c=a-s+l.width,u=r-n+l.height;Object.values(i).some(t=>0!==t)?(t.beginPath(),ey(t,{x:h,y:d,w:c,h:u,radius:i}),t.fill()):t.fillRect(h,d,c,u)}}(i,a,e);let r=eP(a.font),{x:o,y:l,textAlign:h}=e;eb(i,t._pointLabels[n],o,l+r.lineHeight/2,r,{color:a.color,textAlign:h,textBaseline:"middle"})}}(this,l),r.display&&this.ticks.forEach((t,i)=>{if(0!==i){e=this.getDistanceFromCenterForValue(t.value);let s=this.getContext(i),n=r.setContext(s),a=o.setContext(s);!function(t,e,i,s,n){let a=t.ctx,r=e.circular,{color:o,lineWidth:l}=e;(r||s)&&o&&l&&!(i<0)&&(a.save(),a.strokeStyle=o,a.lineWidth=l,a.setLineDash(n.dash),a.lineDashOffset=n.dashOffset,a.beginPath(),nW(t,i,r,s),a.closePath(),a.stroke(),a.restore())}(this,n,e,l,a)}}),a.display){for(s.save(),t=l-1;t>=0;t--){let r=a.setContext(this.getPointLabelContext(t)),{color:o,lineWidth:l}=r;l&&o&&(s.lineWidth=l,s.strokeStyle=o,s.setLineDash(r.borderDash),s.lineDashOffset=r.borderDashOffset,e=this.getDistanceFromCenterForValue(n.ticks.reverse?this.min:this.max),i=this.getPointPosition(t,e),s.beginPath(),s.moveTo(this.xCenter,this.yCenter),s.lineTo(i.x,i.y),s.stroke())}s.restore()}}drawBorder(){}drawLabels(){let t,e;let i=this.ctx,s=this.options,n=s.ticks;if(!n.display)return;let a=this.getIndexAngle(0);i.save(),i.translate(this.xCenter,this.yCenter),i.rotate(a),i.textAlign="center",i.textBaseline="middle",this.ticks.forEach((a,r)=>{if(0===r&&!s.reverse)return;let o=n.setContext(this.getContext(r)),l=eP(o.font);if(t=this.getDistanceFromCenterForValue(this.ticks[r].value),o.showLabelBackdrop){i.font=l.string,e=i.measureText(a.label).width,i.fillStyle=o.backdropColor;let s=eS(o.backdropPadding);i.fillRect(-e/2-s.left,-t-l.size/2-s.top,e+s.width,l.size+s.height)}eb(i,a.label,0,-t,l,{color:o.color,strokeColor:o.textStrokeColor,strokeWidth:o.textStrokeWidth})}),i.restore()}drawTitle(){}}let nq={millisecond:{common:!0,size:1,steps:1e3},second:{common:!0,size:1e3,steps:60},minute:{common:!0,size:6e4,steps:60},hour:{common:!0,size:36e5,steps:24},day:{common:!0,size:864e5,steps:30},week:{common:!1,size:6048e5,steps:4},month:{common:!0,size:2628e6,steps:12},quarter:{common:!1,size:7884e6,steps:4},year:{common:!0,size:3154e7}},nH=Object.keys(nq);function n$(t,e){return t-e}function nj(t,e){if(G(e))return null;let i=t._adapter,{parser:s,round:n,isoWeekday:a}=t._parseOpts,r=e;return("function"==typeof s&&(r=s(r)),J(r)||(r="string"==typeof s?i.parse(r,s):i.parse(r)),null===r)?null:(n&&(r="week"===n&&(tL(a)||!0===a)?i.startOf(r,"isoWeek",a):i.startOf(r,n)),+r)}function nY(t,e,i,s){let n=nH.length;for(let a=nH.indexOf(t);a<n-1;++a){let t=nq[nH[a]],n=t.steps?t.steps:Number.MAX_SAFE_INTEGER;if(t.common&&Math.ceil((i-e)/(n*t.size))<=s)return nH[a]}return nH[n-1]}function nU(t,e,i){if(i){if(i.length){let{lo:s,hi:n}=tN(i,e),a=i[s]>=e?i[s]:i[n];t[a]=!0}}else t[e]=!0}function nX(t,e,i){let s,n;let a=[],r={},o=e.length;for(s=0;s<o;++s)r[n=e[s]]=s,a.push({value:n,major:!1});return 0!==o&&i?function(t,e,i,s){let n,a;let r=t._adapter,o=+r.startOf(e[0].value,s),l=e[e.length-1].value;for(n=o;n<=l;n=+r.add(n,1,s))(a=i[n])>=0&&(e[a].major=!0);return e}(t,a,r,i):a}class nG extends su{static id="time";static defaults={bounds:"data",adapters:{},time:{parser:!1,unit:!1,round:!1,isoWeekday:!1,minUnit:"millisecond",displayFormats:{}},ticks:{source:"auto",callback:!1,major:{enabled:!1}}};constructor(t){super(t),this._cache={data:[],labels:[],all:[]},this._unit="day",this._majorUnit=void 0,this._offsets={},this._normalized=!1,this._parseOpts=void 0}init(t,e={}){let i=t.time||(t.time={}),s=this._adapter=new iR._date(t.adapters.date);s.init(e),td(i.displayFormats,s.formats()),this._parseOpts={parser:i.parser,round:i.round,isoWeekday:i.isoWeekday},super.init(t),this._normalized=e.normalized}parse(t,e){return void 0===t?null:nj(this,t)}beforeLayout(){super.beforeLayout(),this._cache={data:[],labels:[],all:[]}}determineDataLimits(){let t=this.options,e=this._adapter,i=t.time.unit||"day",{min:s,max:n,minDefined:a,maxDefined:r}=this.getUserBounds();function o(t){a||isNaN(t.min)||(s=Math.min(s,t.min)),r||isNaN(t.max)||(n=Math.max(n,t.max))}a&&r||(o(this._getLabelBounds()),("ticks"!==t.bounds||"labels"!==t.ticks.source)&&o(this.getMinMax(!1))),s=J(s)&&!isNaN(s)?s:+e.startOf(Date.now(),i),n=J(n)&&!isNaN(n)?n:+e.endOf(Date.now(),i)+1,this.min=Math.min(s,n-1),this.max=Math.max(s+1,n)}_getLabelBounds(){let t=this.getLabelTimestamps(),e=Number.POSITIVE_INFINITY,i=Number.NEGATIVE_INFINITY;return t.length&&(e=t[0],i=t[t.length-1]),{min:e,max:i}}buildTicks(){let t=this.options,e=t.time,i=t.ticks,s="labels"===i.source?this.getLabelTimestamps():this._generate();"ticks"===t.bounds&&s.length&&(this.min=this._userMin||s[0],this.max=this._userMax||s[s.length-1]);let n=this.min,a=this.max,r=function(t,e,i){let s=0,n=t.length;for(;s<n&&t[s]<e;)s++;for(;n>s&&t[n-1]>i;)n--;return s>0||n<t.length?t.slice(s,n):t}(s,n,a);return this._unit=e.unit||(i.autoSkip?nY(e.minUnit,this.min,this.max,this._getLabelCapacity(n)):function(t,e,i,s,n){for(let a=nH.length-1;a>=nH.indexOf(i);a--){let i=nH[a];if(nq[i].common&&t._adapter.diff(n,s,i)>=e-1)return i}return nH[i?nH.indexOf(i):0]}(this,r.length,e.minUnit,this.min,this.max)),this._majorUnit=i.major.enabled&&"year"!==this._unit?function(t){for(let e=nH.indexOf(t)+1,i=nH.length;e<i;++e)if(nq[nH[e]].common)return nH[e]}(this._unit):void 0,this.initOffsets(s),t.reverse&&r.reverse(),nX(this,r,this._majorUnit)}afterAutoSkip(){this.options.offsetAfterAutoskip&&this.initOffsets(this.ticks.map(t=>+t.value))}initOffsets(t=[]){let e,i,s=0,n=0;this.options.offset&&t.length&&(e=this.getDecimalForValue(t[0]),s=1===t.length?1-e:(this.getDecimalForValue(t[1])-e)/2,i=this.getDecimalForValue(t[t.length-1]),n=1===t.length?i:(i-this.getDecimalForValue(t[t.length-2]))/2);let a=t.length<3?.5:.25;s=tV(s,0,a),n=tV(n,0,a),this._offsets={start:s,end:n,factor:1/(s+1+n)}}_generate(){let t,e;let i=this._adapter,s=this.min,n=this.max,a=this.options,r=a.time,o=r.unit||nY(r.minUnit,s,n,this._getLabelCapacity(s)),l=tt(a.ticks.stepSize,1),h="week"===o&&r.isoWeekday,d=tL(h)||!0===h,c={},u=s;if(d&&(u=+i.startOf(u,"isoWeek",h)),u=+i.startOf(u,d?"day":o),i.diff(n,s,o)>1e5*l)throw Error(s+" and "+n+" are too far apart with stepSize of "+l+" "+o);let p="data"===a.ticks.source&&this.getDataTimestamps();for(t=u,e=0;t<n;t=+i.add(t,l,o),e++)nU(c,t,p);return(t===n||"ticks"===a.bounds||1===e)&&nU(c,t,p),Object.keys(c).sort(n$).map(t=>+t)}getLabelForValue(t){let e=this._adapter,i=this.options.time;return i.tooltipFormat?e.format(t,i.tooltipFormat):e.format(t,i.displayFormats.datetime)}format(t,e){let i=this.options,s=i.time.displayFormats,n=this._unit,a=e||s[n];return this._adapter.format(t,a)}_tickFormatFunction(t,e,i,s){let n=this.options,a=n.ticks.callback;if(a)return ts(a,[t,e,i],this);let r=n.time.displayFormats,o=this._unit,l=this._majorUnit,h=o&&r[o],d=l&&r[l],c=i[e],u=l&&d&&c&&c.major;return this._adapter.format(t,s||(u?d:h))}generateTickLabels(t){let e,i,s;for(e=0,i=t.length;e<i;++e)(s=t[e]).label=this._tickFormatFunction(s.value,e,t)}getDecimalForValue(t){return null===t?NaN:(t-this.min)/(this.max-this.min)}getPixelForValue(t){let e=this._offsets,i=this.getDecimalForValue(t);return this.getPixelForDecimal((e.start+i)*e.factor)}getValueForPixel(t){let e=this._offsets,i=this.getDecimalForPixel(t)/e.factor-e.end;return this.min+i*(this.max-this.min)}_getLabelSize(t){let e=this.options.ticks,i=this.ctx.measureText(t).width,s=tI(this.isHorizontal()?e.maxRotation:e.minRotation),n=Math.cos(s),a=Math.sin(s),r=this._resolveTickFontOptions(0).size;return{w:i*n+r*a,h:i*a+r*n}}_getLabelCapacity(t){let e=this.options.time,i=e.displayFormats,s=i[e.unit]||i.millisecond,n=this._tickFormatFunction(t,0,nX(this,[t],this._majorUnit),s),a=this._getLabelSize(n),r=Math.floor(this.isHorizontal()?this.width/a.w:this.height/a.h)-1;return r>0?r:1}getDataTimestamps(){let t,e,i=this._cache.data||[];if(i.length)return i;let s=this.getMatchingVisibleMetas();if(this._normalized&&s.length)return this._cache.data=s[0].controller.getAllParsedValues(this);for(t=0,e=s.length;t<e;++t)i=i.concat(s[t].controller.getAllParsedValues(this));return this._cache.data=this.normalize(i)}getLabelTimestamps(){let t,e;let i=this._cache.labels||[];if(i.length)return i;let s=this.getLabels();for(t=0,e=s.length;t<e;++t)i.push(nj(this,s[t]));return this._cache.labels=this._normalized?i:this.normalize(i)}normalize(t){return tY(t.sort(n$))}}function nK(t,e,i){let s,n,a,r,o=0,l=t.length-1;i?(e>=t[o].pos&&e<=t[l].pos&&({lo:o,hi:l}=tq(t,"pos",e)),{pos:s,time:a}=t[o],{pos:n,time:r}=t[l]):(e>=t[o].time&&e<=t[l].time&&({lo:o,hi:l}=tq(t,"time",e)),{time:s,pos:a}=t[o],{time:n,pos:r}=t[l]);let h=n-s;return h?a+(r-a)*(e-s)/h:a}class nZ extends nG{static id="timeseries";static defaults=nG.defaults;constructor(t){super(t),this._table=[],this._minPos=void 0,this._tableRange=void 0}initOffsets(){let t=this._getTimestampsForTable(),e=this._table=this.buildLookupTable(t);this._minPos=nK(e,this.min),this._tableRange=nK(e,this.max)-this._minPos,super.initOffsets(t)}buildLookupTable(t){let e,i,s;let{min:n,max:a}=this,r=[],o=[];for(e=0,i=t.length;e<i;++e)(s=t[e])>=n&&s<=a&&r.push(s);if(r.length<2)return[{time:n,pos:0},{time:a,pos:1}];for(e=0,i=r.length;e<i;++e)Math.round((r[e+1]+r[e-1])/2)!==(s=r[e])&&o.push({time:s,pos:e/(i-1)});return o}_generate(){let t=this.min,e=this.max,i=super.getDataTimestamps();return i.includes(t)&&i.length||i.splice(0,0,t),i.includes(e)&&1!==i.length||i.push(e),i.sort((t,e)=>t-e)}_getTimestampsForTable(){let t=this._cache.all||[];if(t.length)return t;let e=this.getDataTimestamps(),i=this.getLabelTimestamps();return t=e.length&&i.length?this.normalize(e.concat(i)):e.length?e:i,t=this._cache.all=t}getDecimalForValue(t){return(nK(this._table,t)-this._minPos)/this._tableRange}getValueForPixel(t){let e=this._offsets,i=this.getDecimalForPixel(t)/e.factor-e.end;return nK(this._table,i*this._tableRange+this._minPos,!0)}}var nJ=Object.freeze({__proto__:null,CategoryScale:class extends su{static id="category";static defaults={ticks:{callback:nD}};constructor(t){super(t),this._startValue=void 0,this._valueRange=0,this._addedLabels=[]}init(t){let e=this._addedLabels;if(e.length){let t=this.getLabels();for(let{index:i,label:s}of e)t[i]===s&&t.splice(i,1);this._addedLabels=[]}super.init(t)}parse(t,e){if(G(t))return null;let i=this.getLabels();return nA(e=isFinite(e)&&i[e]===t?e:function(t,e,i,s){let n=t.indexOf(e);if(-1===n)return nP(t,e,i,s);let a=t.lastIndexOf(e);return n!==a?i:n}(i,t,tt(e,t),this._addedLabels),i.length-1)}determineDataLimits(){let{minDefined:t,maxDefined:e}=this.getUserBounds(),{min:i,max:s}=this.getMinMax(!0);"ticks"!==this.options.bounds||(t||(i=0),e||(s=this.getLabels().length-1)),this.min=i,this.max=s}buildTicks(){let t=this.min,e=this.max,i=this.options.offset,s=[],n=this.getLabels();n=0===t&&e===n.length-1?n:n.slice(t,e+1),this._valueRange=Math.max(n.length-(i?0:1),1),this._startValue=this.min-(i?.5:0);for(let i=t;i<=e;i++)s.push({value:i});return s}getLabelForValue(t){return nD.call(this,t)}configure(){super.configure(),this.isHorizontal()||(this._reversePixels=!this._reversePixels)}getPixelForValue(t){return"number"!=typeof t&&(t=this.parse(t)),null===t?NaN:this.getPixelForDecimal((t-this._startValue)/this._valueRange)}getPixelForTick(t){let e=this.ticks;return t<0||t>e.length-1?null:this.getPixelForValue(e[t].value)}getValueForPixel(t){return Math.round(this._startValue+this.getDecimalForPixel(t)*this._valueRange)}getBasePixel(){return this.bottom}},LinearScale:nI,LogarithmicScale:nF,RadialLinearScale:nN,TimeScale:nG,TimeSeriesScale:nZ});let nQ=[iI,s1,nS,nJ];sF.register(...nQ);let n0=()=>{let t=document.querySelector(".top_info_team"),e=t.querySelectorAll(".link_r"),i=e[e.length-1].textContent,s=/\((\d+)\//g.exec(i);return s&&s[1]?(console.log(`current season day: ${s[1]}`),parseInt(s[1])):(console.log("error getting current season day"),1)},n1=t=>t/112,n2=(t=null)=>{let e=n1(1);console.log(`current seasonProgress: ${e}`);let i=1;console.log(t),t&&"G"===t&&(i=1.25);let s=a.map(t=>({...t,skill:Math.round(t.skill*i)})),n=s.map(t=>{let i=Math.round(t.skill+e*(s[t.age-14]?s[t.age-14].skill-t.skill:-40)),n=Math.round(t.exp+e*(s[t.age-14]?s[t.age-14].exp-t.exp:10));return{age:t.age,skill:i,exp:n}});return console.log(n),n},n5=(t,e)=>{let i=n2(t.position),s=n0(),n=n1(s),a=[],r=[];a.push({x:Math.round((t.age+n)*10)/10,y:t.skill}),r.push({x:Math.round((t.age+n)*10)/10,y:l(t.skill,t.exp)}),console.log(a),console.log(i.map(t=>({x:t.age,y:t.skill})));let o={type:"line",options:{responsive:!1,scales:{x:{type:"linear",title:{display:!0,text:"Age"},min:15,max:40,ticks:{stepSize:1}}}},data:{datasets:[{label:"Perfect Player Skill",data:i.map(t=>({x:t.age,y:t.skill})),backgroundColor:"rgba(56, 50, 58, 0.5)",pointBackgroundColor:"rgba(56, 50, 58, 0.5)"},{label:"Perfect Player Skill With Exp",data:i.map(t=>({x:t.age,y:l(t.skill,t.exp)})),backgroundColor:"rgba(29, 27, 29, 0.5)",pointBackgroundColor:"rgba(29, 27, 29, 0.5)"},{label:"This player",data:a,backgroundColor:"rgba(255, 0, 4, 0.35)",pointBackgroundColor:"rgba(255, 0, 4, 0.35)",pointStyle:"circle",borderColor:"rgba(255, 0, 4, 0.35)",pointRadius:8},{label:"This player With Exp",data:r,backgroundColor:"rgba(255, 0, 4, 0.9)",pointBackgroundColor:"rgba(255, 0, 4, 0.9)",pointStyle:"circle",borderColor:"rgba(255, 0, 4, 0.9)",pointRadius:8}]}},h=new sF(e,o);return h.resize(590,300),h};var n3=()=>{let t=document.getElementById("table-1");if(!t)return Error("Player table not found");let e={age:parseInt(t.querySelector("#age").textContent),careerLongitivity:parseInt(Array.from(t.querySelector("#life_time span").textContent)[0]),skills:{goalie:parseInt(t.querySelector("#goalie").textContent),defence:parseInt(t.querySelector("#defense").textContent),offence:parseInt(t.querySelector("#attack").textContent),shooting:parseInt(t.querySelector("#shooting").textContent),passing:parseInt(t.querySelector("#passing").textContent),technical:parseInt(t.querySelector("#technique_attribute").textContent),aggression:parseInt(t.querySelector("#aggressive").textContent)},qualities:{goalie:parseInt(t.querySelector("#kva_goalie").textContent),defence:parseInt(t.querySelector("#kva_defense").textContent),offence:parseInt(t.querySelector("#kva_attack").textContent),shooting:parseInt(t.querySelector("#kva_shooting").textContent),passing:parseInt(t.querySelector("#kva_passing").textContent),technical:parseInt(t.querySelector("#technique_quality").textContent),aggression:parseInt(t.querySelector("#kva_aggressive").textContent)},experience:parseInt(t.querySelector("#experience").textContent),overall:t.querySelector("#index_skill").textContent},i=r(e,s),a=o(i),d=document.querySelector(".column_left");if(!d)return Error("Content column not found");let c=document.createElement("div");c.classList.add("player-profile"),c.classList.add("player-profile--ability");let u=document.createElement("div");u.classList.add("ability__position"),u.textContent=a.position;let m=document.createElement("div");m.classList.add("ability__positions");let x="";i.forEach(t=>{x+=`<div>${t.position} ${l(t.level,e.experience)}</div>`}),m.innerHTML=x,c.appendChild(u);let b=document.createElement("div");b.classList.add("ability__text");let y=document.createElement("div");y.innerHTML=`<div>${l(a.level,e.experience)}</div>
-   <div>(${a.level})</div>`;let _=document.createElement("div");_.classList.add("comparison"),_.appendChild(p(l(a.level,e.experience),n)),b.appendChild(y),b.appendChild(_),c.appendChild(b),c.appendChild(m),d.appendChild(c);let v=document.createElement("div");v.classList.add("player-profile"),v.classList.add("player-profile--potential");let k=h(e,s),w=k.find(t=>t.position===a.position),M=f(w.potential);v.appendChild(M);let C=g(w);v.appendChild(C);let S=document.createElement("div");S.classList.add("potential__positions");let P="";k.forEach(t=>{P+=`<div>${t.position} ${t.potential}</div>`}),S.innerHTML=P,v.appendChild(S),d.appendChild(v);let A=document.createElement("div"),D=document.createElement("canvas");A.classList.add("player-chart"),D.classList.add("player-chart__canvas"),n5({age:e.age,skill:a.level,position:a.position,exp:e.experience},D),A.appendChild(D),document.querySelector(".profile_player_center").appendChild(A)},n4=()=>{let t=document.querySelectorAll(".table");t.forEach(t=>{let e=t.querySelectorAll("thead"),i=t.querySelector("tbody").querySelectorAll("tr");e.forEach(t=>{t.querySelector("tr").appendChild(u("POS","th1")),t.querySelector("tr").appendChild(u("SK","th2")),t.querySelector("tr").appendChild(u("RATING","th1"))}),i.forEach((t,e)=>{let i=t.querySelectorAll("td");if(i.length>2){let a={name:i[1].textContent,skills:{goalie:i[4].textContent,defence:i[5].textContent,offence:i[6].textContent,shooting:i[7].textContent,passing:i[8].textContent,technical:i[9].textContent,aggression:i[10].textContent},experience:parseInt(i[11].textContent)},h=e%2==0?"tr1":"tr0",d=r(a,s),c=o(d),g=l(c.level,a.experience);t.appendChild(u(c.position,`${h}td1`)),t.appendChild(u(l(c.level,a.experience),`${h}td2`));let f=document.createElement("td");f.classList.add(`${h}td1`),f.appendChild(p(g,n)),t.appendChild(f)}else i[1].colSpan=16})})},n6=()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("POS","th1")),t.querySelector("tr").appendChild(u("SK","th2")),t.querySelector("tr").appendChild(u("RATING","th1"))}),e.forEach((t,e)=>{let i=t.querySelectorAll("td"),a={name:i[2].textContent,skills:{goalie:i[i.length-10].textContent,defence:i[i.length-9].textContent,offence:i[i.length-8].textContent,shooting:i[i.length-7].textContent,passing:i[i.length-6].textContent,technical:i[i.length-5].textContent,aggression:i[i.length-4].textContent},experience:parseInt(i[i.length-3].textContent)},h=e%2==0?"tr1":"tr0",d=r(a,s),c=o(d),g=l(c.level,a.experience);t.appendChild(u(c.position,`${h}td1`)),t.appendChild(u(l(c.level,a.experience),`${h}td2`));let f=document.createElement("td");f.classList.add(`${h}td1`),f.appendChild(p(g,n)),t.appendChild(f)})},n8=()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("Pos","th1")),t.querySelector("tr").appendChild(u("Sk","th2")),t.querySelector("tr").appendChild(u("Rating","th1")),t.querySelector("tr").appendChild(u("Grd","th2"))});let i=t=>parseInt([].reduce.call(t.childNodes,(t,e)=>t+(3===e.nodeType?e.textContent:""),""));e.forEach((t,e)=>{let a=t.querySelectorAll("td"),c=t.querySelectorAll(".kva"),g={name:a[0].textContent,age:a[1].textContent,careerLongitivity:Array.from(a[4].textContent)[0],skills:{goalie:i(a[5]),defence:i(a[6]),offence:i(a[7]),shooting:i(a[8]),passing:i(a[9]),technical:i(a[10]),aggression:i(a[11])},qualities:{goalie:parseInt(c[0].textContent),defence:parseInt(c[1].textContent),offence:parseInt(c[2].textContent),shooting:parseInt(c[3].textContent),passing:parseInt(c[4].textContent),technical:parseInt(c[5].textContent),aggression:parseInt(c[6].textContent)},experience:parseInt(a[12].textContent),overall:a[13].textContent},m=e%2==0?"tr1":"tr0",x=r(g,s),b=o(x),y=l(b.level,g.experience);t.appendChild(u(b.position,`${m}td1`)),t.appendChild(u(y,`${m}td2`));let _=document.createElement("td");_.classList.add(`${m}td1`),_.appendChild(p(y,n)),t.appendChild(_);let v=d(h(g,s)),k=f(v.potential,"small"),w=document.createElement("td");w.classList.add(`${m}td2`),w.classList.add("td-center"),w.appendChild(k),t.appendChild(w)})};let n7=t=>{let e=t.innerHTML.indexOf('<span class="kva">');return parseInt(t.innerHTML.slice(0,e).replace(/^\D+/g,""))};var n9=()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("Grd","th1"))}),e.forEach((t,e)=>{let i=t.querySelectorAll(".kva"),n=t.querySelectorAll("td"),a={skills:{goalie:n7(n[5]),defence:n7(n[6]),offence:n7(n[7]),shooting:n7(n[8]),passing:n7(n[9]),technical:n7(n[10]),aggression:n7(n[11])},qualities:{goalie:parseInt(i[0].textContent),defence:parseInt(i[1].textContent),offence:parseInt(i[2].textContent),shooting:parseInt(i[3].textContent),passing:parseInt(i[4].textContent),technical:parseInt(i[5].textContent),aggression:parseInt(i[6].textContent)}},l=r(a,s),d=o(l),c=h(a,s),u=c.find(t=>t.position===d.position),p=f(u.potential,"small"),g=document.createElement("td");g.classList.add(`${e%2==0?"tr1":"tr0"}td1`),g.classList.add("td-center"),g.appendChild(p),t.appendChild(g)})};let at=t=>{let e=t.innerHTML.indexOf('<span class="kva">');return parseInt(t.innerHTML.slice(0,e).replace(/^\D+/g,""))};var ae=()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("Grd","th1"))}),e.forEach((t,e)=>{let i=t.querySelectorAll(".kva"),n=t.querySelectorAll("td"),a={skills:{goalie:at(n[6]),defence:at(n[7]),offence:at(n[8]),shooting:at(n[9]),passing:at(n[10]),technical:at(n[11]),aggression:at(n[12])},qualities:{goalie:parseInt(i[0].textContent),defence:parseInt(i[1].textContent),offence:parseInt(i[2].textContent),shooting:parseInt(i[3].textContent),passing:parseInt(i[4].textContent),technical:parseInt(i[5].textContent),aggression:parseInt(i[6].textContent)}},l=r(a,s),d=o(l),c=h(a,s),u=c.find(t=>t.position===d.position),p=f(u.potential,"small"),g=document.createElement("td");g.classList.add(`${e%2==0?"tr1":"tr0"}td1`),g.classList.add("td-center"),g.appendChild(p),t.appendChild(g)})};let ai={main:1,high:.75,medium:.5,low:.25},as=[{name:"GK",ratios:{goalie:ai.main,technical:ai.high,speed:ai.high,passing:ai.low,heading:ai.low}},{name:"SD",ratios:{defence:ai.main,technical:ai.medium,speed:ai.high,passing:ai.medium,heading:ai.low}},{name:"CD",ratios:{defence:ai.main,technical:ai.medium,speed:ai.medium,passing:ai.medium,heading:ai.medium}},{name:"SM",ratios:{midfield:ai.main,technical:ai.medium,speed:ai.high,passing:ai.medium,heading:ai.low}},{name:"CM",ratios:{midfield:ai.main,technical:ai.high,speed:ai.low,passing:ai.high,heading:ai.low}},{name:"SF",ratios:{offence:ai.main,technical:ai.high,speed:ai.high,passing:ai.medium,heading:ai.low}},{name:"CF",ratios:{offence:ai.main,technical:ai.medium,speed:ai.high,passing:ai.low,heading:ai.low}}],an={low:300,medium:600,high:900},aa=t=>{let e=t.querySelector("span:first-child");return parseInt(e.textContent)};window.location.href.includes("hockey.powerplaymanager.com")&&(()=>{let t=/https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/,e=e=>{let i=e.match(t);return i[1]},s=window.location.href;i.playersOverview.includes(e(s))&&x(),i.playerProfile.includes(e(s))&&n3(),i.playerTraining.includes(e(s))&&n9(),i.lines.includes(e(s))&&n4(),i.editLine.includes(e(s))&&n6(),i.market.includes(e(s))&&n8(),i.trainingCamp.includes(e(s))&&ae()})(),window.location.href.includes("soccer.powerplaymanager.com")&&(window.location.href.includes("speletaju-parskats")&&(()=>{let t=document.getElementsByClassName("main_content"),e=document.getElementById("table-1").querySelectorAll("thead"),i=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");e.forEach(t=>{t.querySelector("tr").appendChild(u("POS","th1")),t.querySelector("tr").appendChild(u("SK","th2")),t.querySelector("tr").appendChild(u("RATING","th1"))}),i.forEach((t,e)=>{let i=t.querySelectorAll("td");t.classList.add("player-row");let s={name:i[0].textContent,age:i[2].textContent,careerLongitivity:Array.from(i[5].textContent)[0],skills:{goalie:i[6].textContent,defence:i[7].textContent,midfield:i[8].textContent,offence:i[9].textContent,shooting:i[10].textContent,passing:i[11].textContent,technical:i[12].textContent,speed:i[13].textContent,heading:i[14].textContent},experience:parseInt(i[15].textContent),overall:i[16].textContent},n=e%2==0?"tr1":"tr0",a=r(s,as),h=o(a);t.classList.add(`position-${h.position.toLowerCase()}`);let d=l(h.level,s.experience);t.classList.add(`pos-${h.position.toLowerCase()}`),t.appendChild(u(h.position,`${n}td1`)),t.appendChild(u(d,`${n}td2`));let c=document.createElement("td");c.classList.add(`${n}td1`),c.appendChild(p(d,an)),t.appendChild(c)});let s=t=>{if("All"===t){document.querySelectorAll(".player-row").forEach(t=>{t.style.display="table-row"});return}document.querySelectorAll(".player-row").forEach(t=>{t.style.display="none"}),document.querySelectorAll(`.position-${t.toLowerCase()}`).forEach(t=>{t.style.display="table-row"})},n=document.createElement("div");n.classList.add("position-filter"),n.classList.add("white_box");let a=m(`All (${i.length})`);a.addEventListener("click",()=>s("All")),n.append(a),as.forEach(t=>{let e=m(`${t.name} (${document.querySelectorAll(`.position-${t.name.toLowerCase()}`).length})`);e.addEventListener("click",()=>s(t.name)),n.append(e)}),t[0].prepend(n)})(),window.location.href.includes("speletajs")&&(()=>{let t=document.getElementById("table-1"),e={careerLongitivity:parseInt(Array.from(t.querySelector("#life_time span").textContent)[0]),skills:{goalie:parseInt(t.querySelector("#goalie").textContent),defence:parseInt(t.querySelector("#defense").textContent),midfield:parseInt(t.querySelector("#midfield").textContent),offence:parseInt(t.querySelector("#attack").textContent),shooting:parseInt(t.querySelector("#shooting").textContent),passing:parseInt(t.querySelector("#passing").textContent),technical:parseInt(t.querySelector("#technique_attribute").textContent),speed:parseInt(t.querySelector("#speed").textContent),heading:parseInt(t.querySelector("#heading").textContent)},qualities:{goalie:parseInt(t.querySelector("#kva_goalie").textContent),defence:parseInt(t.querySelector("#kva_defense").textContent),midfield:parseInt(t.querySelector("#kva_midfield").textContent),offence:parseInt(t.querySelector("#kva_attack").textContent),shooting:parseInt(t.querySelector("#kva_shooting").textContent),passing:parseInt(t.querySelector("#kva_passing").textContent),technical:parseInt(t.querySelector("#technique_quality").textContent),speed:parseInt(t.querySelector("#kva_speed").textContent),heading:parseInt(t.querySelector("#kva_heading").textContent)},experience:parseInt(t.querySelector("#experience").textContent),overall:t.querySelector("#index_skill").textContent},i=r(e,as),s=o(i),n=document.querySelector(".column_left"),a=document.createElement("div");a.classList.add("player-profile"),a.classList.add("player-profile--ability");let d=document.createElement("div");d.classList.add("ability__position"),d.textContent=s.position;let c=document.createElement("div");c.classList.add("ability__positions");let u="";i.forEach(t=>{u+=`<div>${t.position} ${l(t.level,e.experience)}</div>`}),c.innerHTML=u,a.appendChild(d);let m=document.createElement("div");m.classList.add("ability__text");let x=document.createElement("div");x.innerHTML=`<div>${l(s.level,e.experience)}</div>
-  <div>(${s.level})</div>`;let b=document.createElement("div");b.classList.add("comparison"),b.appendChild(p(l(s.level,e.experience),an)),m.appendChild(x),m.appendChild(b),a.appendChild(m),a.appendChild(c),n.appendChild(a);let y=document.createElement("div");y.classList.add("player-profile"),y.classList.add("player-profile--potential");let _=h(e,as),v=_.find(t=>t.position===s.position),k=f(v.potential);y.appendChild(k);let w=g(v);y.appendChild(w);let M=document.createElement("div");M.classList.add("potential__positions");let C="";_.forEach(t=>{C+=`<div>${t.position} ${t.potential}</div>`}),M.innerHTML=C,y.appendChild(M),n.appendChild(y)})(),(window.location.href.includes("sastavs")||window.location.href.includes("izkartojuma-versija"))&&(()=>{let t=document.querySelectorAll(".table"),e=[];t.forEach(t=>{let i=t.querySelectorAll("thead"),s=t.querySelector("tbody").querySelectorAll("tr");i.forEach(t=>{t.querySelector("tr").appendChild(u("POS","th1")),t.querySelector("tr").appendChild(u("SK","th2")),t.querySelector("tr").appendChild(u("RATING","th1"))}),s.forEach((t,i)=>{let s=t.querySelectorAll("td");if(s.length>2){let n={id:s[1].querySelectorAll("a")[1].getAttribute("href").match(/\d/g).join(""),name:s[1].textContent,skills:{goalie:s[4].textContent,defence:s[5].textContent,midfield:s[6].textContent,offence:s[7].textContent,shooting:s[8].textContent,passing:s[9].textContent,technical:s[10].textContent,speed:s[11].textContent,heading:s[12].textContent},experience:parseInt(s[13].textContent)};e.push(n);let a=i%2==0?"tr1":"tr0",h=r(n,as),d=o(h),c=l(d.level,n.experience);t.appendChild(u(d.position,`${a}td1`)),t.appendChild(u(l(d.level,n.experience),`${a}td2`));let g=document.createElement("td");g.classList.add(`${a}td1`),g.appendChild(p(c,an)),t.appendChild(g)}else s[1].colSpan=16})});let i=document.querySelector("#lineup"),s=i.querySelectorAll(".player_slot"),n=t=>{let e;for(let[i,s]of Object.entries({GK:[0],SD:[11,12,21,22,16,17,26,27],CD:[13,14,15,23,24,25],CM:[33,34,35,43,44,45,53,54,55],SM:[31,32,41,42,51,52,36,37,46,47,56,57],CF:[63,64,65,73,74,75],SF:[61,62,71,72,66,67,76,77]}))s.includes(parseInt(t))&&(e=i);return e},a=t=>e.find(e=>e.id===t),h=()=>{s.forEach(t=>{let e=t.getAttribute("id"),i=t.querySelector(".player");if(i){let t=n(e),s=i.getAttribute("id").substring(12),o=a(s),h=r(o,as),d=i.querySelector(".lineup_spot_caption"),c=l(h.find(e=>e.position===t).level,o.experience);d.querySelector(".rating")&&d.querySelector(".rating").remove(),d.appendChild(p(c,an))}})};h();let d=document.querySelector("#lineup .lineup_field"),c={attributes:!1,childList:!0,subtree:!0},g=new MutationObserver((t,e)=>{e.disconnect(),h(),e.observe(d,c)});g.observe(d,c)})(),window.location.href.includes("speletaju-trenini")&&(()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("Grd","th1"))}),e.forEach((t,e)=>{let i=t.querySelectorAll(".kva"),s=t.querySelectorAll("td"),n={skills:{goalie:aa(s[5]),defence:aa(s[6]),midfield:aa(s[7]),offence:aa(s[8]),shooting:aa(s[9]),passing:aa(s[10]),technical:aa(s[11]),speed:aa(s[12]),heading:aa(s[13])},qualities:{goalie:parseInt(i[0].textContent),defence:parseInt(i[1].textContent),midfield:parseInt(i[2].textContent),offence:parseInt(i[3].textContent),shooting:parseInt(i[4].textContent),passing:parseInt(i[5].textContent),technical:parseInt(i[6].textContent),speed:parseInt(i[7].textContent),heading:parseInt(i[8].textContent)}},a=r(n,as),l=o(a),d=h(n,as),c=d.find(t=>t.position===l.position),u=f(c.potential,"small"),p=document.createElement("td");p.classList.add(`${e%2==0?"tr1":"tr0"}td1`),p.classList.add("td-center"),p.appendChild(u),t.appendChild(p)})})(),window.location.href.includes("speletaju-tirgus")&&(()=>{let t=document.getElementById("table-1").querySelectorAll("thead"),e=document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");t.forEach(t=>{t.querySelector("tr").appendChild(u("Pos","th1")),t.querySelector("tr").appendChild(u("Sk","th2")),t.querySelector("tr").appendChild(u("Rating","th1")),t.querySelector("tr").appendChild(u("Grd","th2"))});let i=t=>parseInt([].reduce.call(t.childNodes,(t,e)=>t+(3===e.nodeType?e.textContent:""),""));e.forEach((t,e)=>{let s=t.querySelectorAll("td"),n=t.querySelectorAll(".kva"),a={name:s[0].textContent,age:s[1].textContent,careerLongitivity:Array.from(s[3].textContent)[0],skills:{goalie:i(s[4]),defence:i(s[5]),midfield:i(s[6]),offence:i(s[7]),shooting:i(s[8]),passing:i(s[9]),technical:i(s[10]),speed:i(s[11]),heading:i(s[11])},qualities:{goalie:parseInt(n[0].textContent),defence:parseInt(n[1].textContent),midfield:parseInt(n[2].textContent),offence:parseInt(n[3].textContent),shooting:parseInt(n[4].textContent),passing:parseInt(n[5].textContent),technical:parseInt(n[6].textContent),speed:parseInt(n[7].textContent),heading:parseInt(n[7].textContent)},experience:parseInt(s[13].textContent),overall:s[14].textContent},c=e%2==0?"tr1":"tr0",g=r(a,as),m=o(g),x=l(m.level,a.experience);t.appendChild(u(m.position,`${c}td1`)),t.appendChild(u(x,`${c}td2`));let b=document.createElement("td");b.classList.add(`${c}td1`),b.appendChild(p(x,an)),t.appendChild(b);let y=d(h(a,as)),_=f(y.potential,"small"),v=document.createElement("td");v.classList.add(`${c}td2`),v.classList.add("td-center"),v.appendChild(_),t.appendChild(v)})})())}();
+// modules are defined as an array
+// [ module function, map of requires ]
+//
+// map of requires is short require name -> numeric require
+//
+// anything defined in a previous bundle is accessed via the
+// orig method which is the require for previous bundles
+
+(function (modules, entry, mainEntry, parcelRequireName, globalName) {
+  /* eslint-disable no-undef */
+  var globalObject =
+    typeof globalThis !== 'undefined'
+      ? globalThis
+      : typeof self !== 'undefined'
+      ? self
+      : typeof window !== 'undefined'
+      ? window
+      : typeof global !== 'undefined'
+      ? global
+      : {};
+  /* eslint-enable no-undef */
+
+  // Save the require from previous bundle to this closure if any
+  var previousRequire =
+    typeof globalObject[parcelRequireName] === 'function' &&
+    globalObject[parcelRequireName];
+
+  var cache = previousRequire.cache || {};
+  // Do not use `require` to prevent Webpack from trying to bundle this call
+  var nodeRequire =
+    typeof module !== 'undefined' &&
+    typeof module.require === 'function' &&
+    module.require.bind(module);
+
+  function newRequire(name, jumped) {
+    if (!cache[name]) {
+      if (!modules[name]) {
+        // if we cannot find the module within our internal map or
+        // cache jump to the current global require ie. the last bundle
+        // that was added to the page.
+        var currentRequire =
+          typeof globalObject[parcelRequireName] === 'function' &&
+          globalObject[parcelRequireName];
+        if (!jumped && currentRequire) {
+          return currentRequire(name, true);
+        }
+
+        // If there are other bundles on this page the require from the
+        // previous one is saved to 'previousRequire'. Repeat this as
+        // many times as there are bundles until the module is found or
+        // we exhaust the require chain.
+        if (previousRequire) {
+          return previousRequire(name, true);
+        }
+
+        // Try the node require function if it exists.
+        if (nodeRequire && typeof name === 'string') {
+          return nodeRequire(name);
+        }
+
+        var err = new Error("Cannot find module '" + name + "'");
+        err.code = 'MODULE_NOT_FOUND';
+        throw err;
+      }
+
+      localRequire.resolve = resolve;
+      localRequire.cache = {};
+
+      var module = (cache[name] = new newRequire.Module(name));
+
+      modules[name][0].call(
+        module.exports,
+        localRequire,
+        module,
+        module.exports,
+        this
+      );
+    }
+
+    return cache[name].exports;
+
+    function localRequire(x) {
+      var res = localRequire.resolve(x);
+      return res === false ? {} : newRequire(res);
+    }
+
+    function resolve(x) {
+      var id = modules[name][1][x];
+      return id != null ? id : x;
+    }
+  }
+
+  function Module(moduleName) {
+    this.id = moduleName;
+    this.bundle = newRequire;
+    this.exports = {};
+  }
+
+  newRequire.isParcelRequire = true;
+  newRequire.Module = Module;
+  newRequire.modules = modules;
+  newRequire.cache = cache;
+  newRequire.parent = previousRequire;
+  newRequire.register = function (id, exports) {
+    modules[id] = [
+      function (require, module) {
+        module.exports = exports;
+      },
+      {},
+    ];
+  };
+
+  Object.defineProperty(newRequire, 'root', {
+    get: function () {
+      return globalObject[parcelRequireName];
+    },
+  });
+
+  globalObject[parcelRequireName] = newRequire;
+
+  for (var i = 0; i < entry.length; i++) {
+    newRequire(entry[i]);
+  }
+
+  if (mainEntry) {
+    // Expose entry point to Node, AMD or browser globals
+    // Based on https://github.com/ForbesLindesay/umd/blob/master/template.js
+    var mainExports = newRequire(mainEntry);
+
+    // CommonJS
+    if (typeof exports === 'object' && typeof module !== 'undefined') {
+      module.exports = mainExports;
+
+      // RequireJS
+    } else if (typeof define === 'function' && define.amd) {
+      define(function () {
+        return mainExports;
+      });
+
+      // <script>
+    } else if (globalName) {
+      this[globalName] = mainExports;
+    }
+  }
+})({"dr3gM":[function(require,module,exports) {
+var global = arguments[3];
+var HMR_HOST = null;
+var HMR_PORT = 1234;
+var HMR_SECURE = false;
+var HMR_ENV_HASH = "916932b22e4085ab";
+module.bundle.HMR_BUNDLE_ID = "7173f5c12a771bd8";
+"use strict";
+/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
+import type {
+  HMRAsset,
+  HMRMessage,
+} from '@parcel/reporter-dev-server/src/HMRServer.js';
+interface ParcelRequire {
+  (string): mixed;
+  cache: {|[string]: ParcelModule|};
+  hotData: {|[string]: mixed|};
+  Module: any;
+  parent: ?ParcelRequire;
+  isParcelRequire: true;
+  modules: {|[string]: [Function, {|[string]: string|}]|};
+  HMR_BUNDLE_ID: string;
+  root: ParcelRequire;
+}
+interface ParcelModule {
+  hot: {|
+    data: mixed,
+    accept(cb: (Function) => void): void,
+    dispose(cb: (mixed) => void): void,
+    // accept(deps: Array<string> | string, cb: (Function) => void): void,
+    // decline(): void,
+    _acceptCallbacks: Array<(Function) => void>,
+    _disposeCallbacks: Array<(mixed) => void>,
+  |};
+}
+interface ExtensionContext {
+  runtime: {|
+    reload(): void,
+    getURL(url: string): string;
+    getManifest(): {manifest_version: number, ...};
+  |};
+}
+declare var module: {bundle: ParcelRequire, ...};
+declare var HMR_HOST: string;
+declare var HMR_PORT: string;
+declare var HMR_ENV_HASH: string;
+declare var HMR_SECURE: boolean;
+declare var chrome: ExtensionContext;
+declare var browser: ExtensionContext;
+declare var __parcel__import__: (string) => Promise<void>;
+declare var __parcel__importScripts__: (string) => Promise<void>;
+declare var globalThis: typeof self;
+declare var ServiceWorkerGlobalScope: Object;
+*/ var OVERLAY_ID = "__parcel__error__overlay__";
+var OldModule = module.bundle.Module;
+function Module(moduleName) {
+    OldModule.call(this, moduleName);
+    this.hot = {
+        data: module.bundle.hotData[moduleName],
+        _acceptCallbacks: [],
+        _disposeCallbacks: [],
+        accept: function(fn) {
+            this._acceptCallbacks.push(fn || function() {});
+        },
+        dispose: function(fn) {
+            this._disposeCallbacks.push(fn);
+        }
+    };
+    module.bundle.hotData[moduleName] = undefined;
+}
+module.bundle.Module = Module;
+module.bundle.hotData = {};
+var checkedAssets /*: {|[string]: boolean|} */ , assetsToDispose /*: Array<[ParcelRequire, string]> */ , assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
+function getHostname() {
+    return HMR_HOST || (location.protocol.indexOf("http") === 0 ? location.hostname : "localhost");
+}
+function getPort() {
+    return HMR_PORT || location.port;
+}
+// eslint-disable-next-line no-redeclare
+var parent = module.bundle.parent;
+if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
+    var hostname = getHostname();
+    var port = getPort();
+    var protocol = HMR_SECURE || location.protocol == "https:" && !/localhost|127.0.0.1|0.0.0.0/.test(hostname) ? "wss" : "ws";
+    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/");
+    // Web extension context
+    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome;
+    // Safari doesn't support sourceURL in error stacks.
+    // eval may also be disabled via CSP, so do a quick check.
+    var supportsSourceURL = false;
+    try {
+        (0, eval)('throw new Error("test"); //# sourceURL=test.js');
+    } catch (err) {
+        supportsSourceURL = err.stack.includes("test.js");
+    }
+    // $FlowFixMe
+    ws.onmessage = async function(event /*: {data: string, ...} */ ) {
+        checkedAssets = {} /*: {|[string]: boolean|} */ ;
+        assetsToAccept = [];
+        assetsToDispose = [];
+        var data /*: HMRMessage */  = JSON.parse(event.data);
+        if (data.type === "update") {
+            // Remove error overlay if there is one
+            if (typeof document !== "undefined") removeErrorOverlay();
+            let assets = data.assets.filter((asset)=>asset.envHash === HMR_ENV_HASH);
+            // Handle HMR Update
+            let handled = assets.every((asset)=>{
+                return asset.type === "css" || asset.type === "js" && hmrAcceptCheck(module.bundle.root, asset.id, asset.depsByBundle);
+            });
+            if (handled) {
+                console.clear();
+                // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
+                if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") window.dispatchEvent(new CustomEvent("parcelhmraccept"));
+                await hmrApplyUpdates(assets);
+                // Dispose all old assets.
+                let processedAssets = {} /*: {|[string]: boolean|} */ ;
+                for(let i = 0; i < assetsToDispose.length; i++){
+                    let id = assetsToDispose[i][1];
+                    if (!processedAssets[id]) {
+                        hmrDispose(assetsToDispose[i][0], id);
+                        processedAssets[id] = true;
+                    }
+                }
+                // Run accept callbacks. This will also re-execute other disposed assets in topological order.
+                processedAssets = {};
+                for(let i = 0; i < assetsToAccept.length; i++){
+                    let id = assetsToAccept[i][1];
+                    if (!processedAssets[id]) {
+                        hmrAccept(assetsToAccept[i][0], id);
+                        processedAssets[id] = true;
+                    }
+                }
+            } else fullReload();
+        }
+        if (data.type === "error") {
+            // Log parcel errors to console
+            for (let ansiDiagnostic of data.diagnostics.ansi){
+                let stack = ansiDiagnostic.codeframe ? ansiDiagnostic.codeframe : ansiDiagnostic.stack;
+                console.error("\uD83D\uDEA8 [parcel]: " + ansiDiagnostic.message + "\n" + stack + "\n\n" + ansiDiagnostic.hints.join("\n"));
+            }
+            if (typeof document !== "undefined") {
+                // Render the fancy html overlay
+                removeErrorOverlay();
+                var overlay = createErrorOverlay(data.diagnostics.html);
+                // $FlowFixMe
+                document.body.appendChild(overlay);
+            }
+        }
+    };
+    ws.onerror = function(e) {
+        console.error(e.message);
+    };
+    ws.onclose = function() {
+        console.warn("[parcel] \uD83D\uDEA8 Connection to the HMR server was lost");
+    };
+}
+function removeErrorOverlay() {
+    var overlay = document.getElementById(OVERLAY_ID);
+    if (overlay) {
+        overlay.remove();
+        console.log("[parcel] ✨ Error resolved");
+    }
+}
+function createErrorOverlay(diagnostics) {
+    var overlay = document.createElement("div");
+    overlay.id = OVERLAY_ID;
+    let errorHTML = '<div style="background: black; opacity: 0.85; font-size: 16px; color: white; position: fixed; height: 100%; width: 100%; top: 0px; left: 0px; padding: 30px; font-family: Menlo, Consolas, monospace; z-index: 9999;">';
+    for (let diagnostic of diagnostics){
+        let stack = diagnostic.frames.length ? diagnostic.frames.reduce((p, frame)=>{
+            return `${p}
+<a href="/__parcel_launch_editor?file=${encodeURIComponent(frame.location)}" style="text-decoration: underline; color: #888" onclick="fetch(this.href); return false">${frame.location}</a>
+${frame.code}`;
+        }, "") : diagnostic.stack;
+        errorHTML += `
+      <div>
+        <div style="font-size: 18px; font-weight: bold; margin-top: 20px;">
+          🚨 ${diagnostic.message}
+        </div>
+        <pre>${stack}</pre>
+        <div>
+          ${diagnostic.hints.map((hint)=>"<div>\uD83D\uDCA1 " + hint + "</div>").join("")}
+        </div>
+        ${diagnostic.documentation ? `<div>📝 <a style="color: violet" href="${diagnostic.documentation}" target="_blank">Learn more</a></div>` : ""}
+      </div>
+    `;
+    }
+    errorHTML += "</div>";
+    overlay.innerHTML = errorHTML;
+    return overlay;
+}
+function fullReload() {
+    if ("reload" in location) location.reload();
+    else if (extCtx && extCtx.runtime && extCtx.runtime.reload) extCtx.runtime.reload();
+}
+function getParents(bundle, id) /*: Array<[ParcelRequire, string]> */ {
+    var modules = bundle.modules;
+    if (!modules) return [];
+    var parents = [];
+    var k, d, dep;
+    for(k in modules)for(d in modules[k][1]){
+        dep = modules[k][1][d];
+        if (dep === id || Array.isArray(dep) && dep[dep.length - 1] === id) parents.push([
+            bundle,
+            k
+        ]);
+    }
+    if (bundle.parent) parents = parents.concat(getParents(bundle.parent, id));
+    return parents;
+}
+function updateLink(link) {
+    var href = link.getAttribute("href");
+    if (!href) return;
+    var newLink = link.cloneNode();
+    newLink.onload = function() {
+        if (link.parentNode !== null) // $FlowFixMe
+        link.parentNode.removeChild(link);
+    };
+    newLink.setAttribute("href", // $FlowFixMe
+    href.split("?")[0] + "?" + Date.now());
+    // $FlowFixMe
+    link.parentNode.insertBefore(newLink, link.nextSibling);
+}
+var cssTimeout = null;
+function reloadCSS() {
+    if (cssTimeout) return;
+    cssTimeout = setTimeout(function() {
+        var links = document.querySelectorAll('link[rel="stylesheet"]');
+        for(var i = 0; i < links.length; i++){
+            // $FlowFixMe[incompatible-type]
+            var href /*: string */  = links[i].getAttribute("href");
+            var hostname = getHostname();
+            var servedFromHMRServer = hostname === "localhost" ? new RegExp("^(https?:\\/\\/(0.0.0.0|127.0.0.1)|localhost):" + getPort()).test(href) : href.indexOf(hostname + ":" + getPort());
+            var absolute = /^https?:\/\//i.test(href) && href.indexOf(location.origin) !== 0 && !servedFromHMRServer;
+            if (!absolute) updateLink(links[i]);
+        }
+        cssTimeout = null;
+    }, 50);
+}
+function hmrDownload(asset) {
+    if (asset.type === "js") {
+        if (typeof document !== "undefined") {
+            let script = document.createElement("script");
+            script.src = asset.url + "?t=" + Date.now();
+            if (asset.outputFormat === "esmodule") script.type = "module";
+            return new Promise((resolve, reject)=>{
+                var _document$head;
+                script.onload = ()=>resolve(script);
+                script.onerror = reject;
+                (_document$head = document.head) === null || _document$head === void 0 || _document$head.appendChild(script);
+            });
+        } else if (typeof importScripts === "function") {
+            // Worker scripts
+            if (asset.outputFormat === "esmodule") return import(asset.url + "?t=" + Date.now());
+            else return new Promise((resolve, reject)=>{
+                try {
+                    importScripts(asset.url + "?t=" + Date.now());
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+    }
+}
+async function hmrApplyUpdates(assets) {
+    global.parcelHotUpdate = Object.create(null);
+    let scriptsToRemove;
+    try {
+        // If sourceURL comments aren't supported in eval, we need to load
+        // the update from the dev server over HTTP so that stack traces
+        // are correct in errors/logs. This is much slower than eval, so
+        // we only do it if needed (currently just Safari).
+        // https://bugs.webkit.org/show_bug.cgi?id=137297
+        // This path is also taken if a CSP disallows eval.
+        if (!supportsSourceURL) {
+            let promises = assets.map((asset)=>{
+                var _hmrDownload;
+                return (_hmrDownload = hmrDownload(asset)) === null || _hmrDownload === void 0 ? void 0 : _hmrDownload.catch((err)=>{
+                    // Web extension bugfix for Chromium
+                    // https://bugs.chromium.org/p/chromium/issues/detail?id=1255412#c12
+                    if (extCtx && extCtx.runtime && extCtx.runtime.getManifest().manifest_version == 3) {
+                        if (typeof ServiceWorkerGlobalScope != "undefined" && global instanceof ServiceWorkerGlobalScope) {
+                            extCtx.runtime.reload();
+                            return;
+                        }
+                        asset.url = extCtx.runtime.getURL("/__parcel_hmr_proxy__?url=" + encodeURIComponent(asset.url + "?t=" + Date.now()));
+                        return hmrDownload(asset);
+                    }
+                    throw err;
+                });
+            });
+            scriptsToRemove = await Promise.all(promises);
+        }
+        assets.forEach(function(asset) {
+            hmrApply(module.bundle.root, asset);
+        });
+    } finally{
+        delete global.parcelHotUpdate;
+        if (scriptsToRemove) scriptsToRemove.forEach((script)=>{
+            if (script) {
+                var _document$head2;
+                (_document$head2 = document.head) === null || _document$head2 === void 0 || _document$head2.removeChild(script);
+            }
+        });
+    }
+}
+function hmrApply(bundle /*: ParcelRequire */ , asset /*:  HMRAsset */ ) {
+    var modules = bundle.modules;
+    if (!modules) return;
+    if (asset.type === "css") reloadCSS();
+    else if (asset.type === "js") {
+        let deps = asset.depsByBundle[bundle.HMR_BUNDLE_ID];
+        if (deps) {
+            if (modules[asset.id]) {
+                // Remove dependencies that are removed and will become orphaned.
+                // This is necessary so that if the asset is added back again, the cache is gone, and we prevent a full page reload.
+                let oldDeps = modules[asset.id][1];
+                for(let dep in oldDeps)if (!deps[dep] || deps[dep] !== oldDeps[dep]) {
+                    let id = oldDeps[dep];
+                    let parents = getParents(module.bundle.root, id);
+                    if (parents.length === 1) hmrDelete(module.bundle.root, id);
+                }
+            }
+            if (supportsSourceURL) // Global eval. We would use `new Function` here but browser
+            // support for source maps is better with eval.
+            (0, eval)(asset.output);
+            // $FlowFixMe
+            let fn = global.parcelHotUpdate[asset.id];
+            modules[asset.id] = [
+                fn,
+                deps
+            ];
+        } else if (bundle.parent) hmrApply(bundle.parent, asset);
+    }
+}
+function hmrDelete(bundle, id) {
+    let modules = bundle.modules;
+    if (!modules) return;
+    if (modules[id]) {
+        // Collect dependencies that will become orphaned when this module is deleted.
+        let deps = modules[id][1];
+        let orphans = [];
+        for(let dep in deps){
+            let parents = getParents(module.bundle.root, deps[dep]);
+            if (parents.length === 1) orphans.push(deps[dep]);
+        }
+        // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
+        delete modules[id];
+        delete bundle.cache[id];
+        // Now delete the orphans.
+        orphans.forEach((id)=>{
+            hmrDelete(module.bundle.root, id);
+        });
+    } else if (bundle.parent) hmrDelete(bundle.parent, id);
+}
+function hmrAcceptCheck(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
+    if (hmrAcceptCheckOne(bundle, id, depsByBundle)) return true;
+    // Traverse parents breadth first. All possible ancestries must accept the HMR update, or we'll reload.
+    let parents = getParents(module.bundle.root, id);
+    let accepted = false;
+    while(parents.length > 0){
+        let v = parents.shift();
+        let a = hmrAcceptCheckOne(v[0], v[1], null);
+        if (a) // If this parent accepts, stop traversing upward, but still consider siblings.
+        accepted = true;
+        else {
+            // Otherwise, queue the parents in the next level upward.
+            let p = getParents(module.bundle.root, v[1]);
+            if (p.length === 0) {
+                // If there are no parents, then we've reached an entry without accepting. Reload.
+                accepted = false;
+                break;
+            }
+            parents.push(...p);
+        }
+    }
+    return accepted;
+}
+function hmrAcceptCheckOne(bundle /*: ParcelRequire */ , id /*: string */ , depsByBundle /*: ?{ [string]: { [string]: string } }*/ ) {
+    var modules = bundle.modules;
+    if (!modules) return;
+    if (depsByBundle && !depsByBundle[bundle.HMR_BUNDLE_ID]) {
+        // If we reached the root bundle without finding where the asset should go,
+        // there's nothing to do. Mark as "accepted" so we don't reload the page.
+        if (!bundle.parent) return true;
+        return hmrAcceptCheck(bundle.parent, id, depsByBundle);
+    }
+    if (checkedAssets[id]) return true;
+    checkedAssets[id] = true;
+    var cached = bundle.cache[id];
+    assetsToDispose.push([
+        bundle,
+        id
+    ]);
+    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) {
+        assetsToAccept.push([
+            bundle,
+            id
+        ]);
+        return true;
+    }
+}
+function hmrDispose(bundle /*: ParcelRequire */ , id /*: string */ ) {
+    var cached = bundle.cache[id];
+    bundle.hotData[id] = {};
+    if (cached && cached.hot) cached.hot.data = bundle.hotData[id];
+    if (cached && cached.hot && cached.hot._disposeCallbacks.length) cached.hot._disposeCallbacks.forEach(function(cb) {
+        cb(bundle.hotData[id]);
+    });
+    delete bundle.cache[id];
+}
+function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
+    // Execute the module.
+    bundle(id);
+    // Run the accept callbacks in the new version of the module.
+    var cached = bundle.cache[id];
+    if (cached && cached.hot && cached.hot._acceptCallbacks.length) cached.hot._acceptCallbacks.forEach(function(cb) {
+        var assetsToAlsoAccept = cb(function() {
+            return getParents(module.bundle.root, id);
+        });
+        if (assetsToAlsoAccept && assetsToAccept.length) {
+            assetsToAlsoAccept.forEach(function(a) {
+                hmrDispose(a[0], a[1]);
+            });
+            // $FlowFixMe[method-unbinding]
+            assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
+        }
+    });
+}
+
+},{}],"fZBAS":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+var _hockeyJs = require("~/src/hockey/hockey.js");
+var _hockeyJsDefault = parcelHelpers.interopDefault(_hockeyJs);
+var _soccerJs = require("~/src/soccer/soccer.js");
+var _soccerJsDefault = parcelHelpers.interopDefault(_soccerJs);
+var _basketball = require("./basketball/basketball");
+var _basketballDefault = parcelHelpers.interopDefault(_basketball);
+if (window.location.href.includes("hockey.powerplaymanager.com")) (0, _hockeyJsDefault.default)();
+if (window.location.href.includes("soccer.powerplaymanager.com")) (0, _soccerJsDefault.default)();
+if (window.location.href.includes("basketball.powerplaymanager.com")) (0, _basketballDefault.default)();
+
+},{"~/src/hockey/hockey.js":"kzP6H","~/src/soccer/soccer.js":"mJRmF","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU","./basketball/basketball":"5Tlaz"}],"kzP6H":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _routes = require("./routes");
+var _routesDefault = parcelHelpers.interopDefault(_routes);
+var _viewPlayerList = require("./views/viewPlayerList");
+var _viewPlayerListDefault = parcelHelpers.interopDefault(_viewPlayerList);
+var _viewPlayerProfile = require("./views/viewPlayerProfile");
+var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
+var _viewLineup = require("./views/viewLineup");
+var _viewLineupDefault = parcelHelpers.interopDefault(_viewLineup);
+var _viewLineupChange = require("./views/viewLineupChange");
+var _viewLineupChangeDefault = parcelHelpers.interopDefault(_viewLineupChange);
+var _viewMarket = require("./views/viewMarket");
+var _viewMarketDefault = parcelHelpers.interopDefault(_viewMarket);
+var _viewTraining = require("./views/viewTraining");
+var _viewTrainingDefault = parcelHelpers.interopDefault(_viewTraining);
+var _viewTrainingCamp = require("./views/viewTrainingCamp");
+var _viewTrainingCampDefault = parcelHelpers.interopDefault(_viewTrainingCamp);
+/**
+ * Run View Functions
+ */ const initHockey = ()=>{
+    const urlRegex = /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
+    const getRoute = (inputUrl)=>{
+        const match = inputUrl.match(urlRegex);
+        return match[1];
+    };
+    // check if we are on player list page
+    // if yes, run viewPlayerList function
+    const url = window.location.href;
+    if ((0, _routesDefault.default).playersOverview.includes(getRoute(url))) (0, _viewPlayerListDefault.default)();
+    if ((0, _routesDefault.default).playerProfile.includes(getRoute(url))) (0, _viewPlayerProfileDefault.default)();
+    if ((0, _routesDefault.default).playerTraining.includes(getRoute(url))) (0, _viewTrainingDefault.default)();
+    if ((0, _routesDefault.default).lines.includes(getRoute(url))) (0, _viewLineupDefault.default)();
+    if ((0, _routesDefault.default).editLine.includes(getRoute(url))) (0, _viewLineupChangeDefault.default)();
+    if ((0, _routesDefault.default).market.includes(getRoute(url))) (0, _viewMarketDefault.default)();
+    if ((0, _routesDefault.default).trainingCamp.includes(getRoute(url))) (0, _viewTrainingCampDefault.default)();
+// TODO: Create next game view
+// if (routes.nextGame.includes(getRoute(url))) viewNextGame();
+};
+exports.default = initHockey;
+
+},{"./views/viewPlayerList":"cz51W","./views/viewPlayerProfile":"dW5Ci","./views/viewLineup":"2lgZC","./views/viewLineupChange":"3H7rA","./views/viewMarket":"89fpl","./views/viewTraining":"1zmuv","./views/viewTrainingCamp":"4uAmO","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU","./routes":"3cZG7"}],"cz51W":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerList = ()=>{
+    const mainContent = document.getElementsByClassName("main_content");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[2].textContent,
+            careerLongitivity: Array.from(playerColumns[5].textContent)[0],
+            skills: {
+                goalie: playerColumns[6].textContent,
+                defence: playerColumns[7].textContent,
+                offence: playerColumns[8].textContent,
+                shooting: playerColumns[9].textContent,
+                passing: playerColumns[10].textContent,
+                technical: playerColumns[11].textContent,
+                aggression: playerColumns[12].textContent
+            },
+            experience: parseInt(playerColumns[13].textContent),
+            overall: playerColumns[14].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    });
+    const filterByPositions = (pos)=>{
+        if (pos === "All") {
+            document.querySelectorAll(".player-row").forEach((row)=>{
+                row.style.display = "table-row";
+            });
+            return;
+        }
+        document.querySelectorAll(".player-row").forEach((row)=>{
+            row.style.display = "none";
+        });
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
+            row.style.display = "table-row";
+        });
+    };
+    const positionFilter = document.createElement("div");
+    positionFilter.classList.add("position-filter");
+    positionFilter.classList.add("white_box");
+    const positionButtonAll = (0, _renderJs.renderButton)(`All (${playerRows.length})`);
+    positionFilter.append(positionButtonAll);
+    (0, _settings.positionSettings).forEach((pos)=>{
+        const positionButton = (0, _renderJs.renderButton)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
+        positionFilter.append(positionButton);
+    });
+    mainContent[0].prepend(positionFilter);
+};
+exports.default = viewPlayerList;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"aAEvc":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
+parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
+parcelHelpers.export(exports, "playerGrowthPrediction", ()=>playerGrowthPrediction);
+const positionSettings = [
+    {
+        name: "G",
+        ratios: {
+            goalie: 1,
+            technical: 0.5,
+            passing: 0.5
+        }
+    },
+    {
+        name: "D",
+        ratios: {
+            defence: 1,
+            passing: 0.5,
+            aggression: 0.5
+        },
+        bonus: {
+            technical: 0.5
+        }
+    },
+    {
+        name: "W",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            aggression: 0.5
+        },
+        bonus: {
+            shooting: 0.75
+        }
+    },
+    {
+        name: "C",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            passing: 0.5
+        },
+        bonus: {
+            shooting: 0.5
+        }
+    }
+];
+const ratingSettings = {
+    low: 500,
+    medium: 1000,
+    high: 1500
+};
+const playerGrowthPrediction = [
+    {
+        age: 15,
+        skill: 90,
+        exp: 0
+    },
+    {
+        age: 16,
+        skill: 175,
+        exp: 6
+    },
+    {
+        age: 17,
+        skill: 250,
+        exp: 12
+    },
+    {
+        age: 18,
+        skill: 315,
+        exp: 18
+    },
+    {
+        age: 19,
+        skill: 370,
+        exp: 26
+    },
+    {
+        age: 20,
+        skill: 415,
+        exp: 34
+    },
+    {
+        age: 21,
+        skill: 450,
+        exp: 45
+    },
+    {
+        age: 22,
+        skill: 480,
+        exp: 56
+    },
+    {
+        age: 23,
+        skill: 505,
+        exp: 67
+    },
+    {
+        age: 24,
+        skill: 525,
+        exp: 78
+    },
+    {
+        age: 25,
+        skill: 540,
+        exp: 89
+    },
+    {
+        age: 26,
+        skill: 552,
+        exp: 100
+    },
+    {
+        age: 27,
+        skill: 561,
+        exp: 111
+    },
+    {
+        age: 28,
+        skill: 568,
+        exp: 122
+    },
+    {
+        age: 29,
+        skill: 573,
+        exp: 135
+    },
+    {
+        age: 30,
+        skill: 576,
+        exp: 148
+    },
+    {
+        age: 31,
+        skill: 576,
+        exp: 161
+    },
+    {
+        age: 32,
+        skill: 576,
+        exp: 174
+    },
+    {
+        age: 33,
+        skill: 576,
+        exp: 187
+    },
+    {
+        age: 34,
+        skill: 573,
+        exp: 200
+    },
+    {
+        age: 35,
+        skill: 565,
+        exp: 213
+    },
+    {
+        age: 36,
+        skill: 552,
+        exp: 226
+    },
+    {
+        age: 37,
+        skill: 533,
+        exp: 239
+    },
+    {
+        age: 38,
+        skill: 508,
+        exp: 252
+    },
+    {
+        age: 39,
+        skill: 477,
+        exp: 265
+    },
+    {
+        age: 40,
+        skill: 440,
+        exp: 278
+    }
+];
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"5oERU":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"6mg5U":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
+parcelHelpers.export(exports, "calculateBestPosition", ()=>calculateBestPosition);
+parcelHelpers.export(exports, "calculateSkillWithExp", ()=>calculateSkillWithExp);
+parcelHelpers.export(exports, "calculatePositionsQualities", ()=>calculatePositionsQualities);
+parcelHelpers.export(exports, "calculateBestPotential", ()=>calculateBestPotential);
+const calculatePositionsSkills = (player, positionSettings)=>{
+    const positionSkills = [];
+    positionSettings.forEach((position)=>{
+        const skills = [];
+        for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
+        positionSkills.push({
+            position: position.name,
+            level: Math.round(Math.min(...skills))
+        });
+    });
+    return positionSkills;
+};
+const calculateBestPosition = (skills)=>{
+    return skills.sort((a, b)=>b.level - a.level)[0];
+};
+const calculateSkillWithExp = (skill, experience)=>{
+    return Math.round(skill * (1 + experience / 500));
+};
+const calculatePositionsQualities = (player, positionSettings)=>{
+    const positionPotentials = [];
+    positionSettings.forEach((position)=>{
+        let qualities = 0;
+        let modifier = 0;
+        for (const [key, value] of Object.entries(position.ratios)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
+        }
+        if (position.bonus) for (const [key, value] of Object.entries(position.bonus)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
+        }
+        positionPotentials.push({
+            position: position.name,
+            potential: Math.round(Math.min(qualities / modifier))
+        });
+    });
+    return positionPotentials;
+};
+const calculateBestPotential = (potentials)=>{
+    return potentials.sort((a, b)=>b.potential - a.potential)[0];
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"5eDoo":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "renderTableCell", ()=>renderTableCell);
+parcelHelpers.export(exports, "renderComparison", ()=>renderComparison);
+parcelHelpers.export(exports, "renderPotential", ()=>renderPotential);
+parcelHelpers.export(exports, "renderPotentialBadge", ()=>renderPotentialBadge);
+parcelHelpers.export(exports, "renderTrainableSkill", ()=>renderTrainableSkill);
+parcelHelpers.export(exports, "renderButton", ()=>renderButton);
+var _utilitiesJs = require("./utilities.js");
+const renderTableCell = (content, cssClass)=>{
+    const cell = document.createElement("td");
+    cell.classList.add(cssClass);
+    cell.textContent = content;
+    return cell;
+};
+const renderComparison = (skill, ratingSettings)=>{
+    let ratingPercentage;
+    const ratingOuter = document.createElement("div");
+    const ratingInner = document.createElement("div");
+    ratingOuter.classList.add("rating");
+    ratingInner.classList.add("rating__inner");
+    if (skill < ratingSettings.low) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-empty.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
+        ratingPercentage = Math.min(skill / ratingSettings.low * 100, 100);
+    } else if (skill < ratingSettings.medium) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
+        ratingPercentage = Math.min((skill - ratingSettings.low) / (ratingSettings.medium - ratingSettings.low) * 100, 100);
+    } else if (skill >= ratingSettings.medium) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-diamond.svg")})`;
+        ratingPercentage = Math.min((skill - ratingSettings.medium) / (ratingSettings.high - ratingSettings.medium) * 100, 100);
+    }
+    ratingInner.style.width = `${ratingPercentage}%`;
+    ratingOuter.appendChild(ratingInner);
+    return ratingOuter;
+};
+const renderPotential = (bestPotential)=>{
+    const potential = document.createElement("div");
+    potential.classList.add("potential__text");
+    potential.textContent = `Best potential position is ${bestPotential.position} with ${Math.round(bestPotential.potential)}`;
+    return potential;
+};
+const renderPotentialBadge = (potential, size)=>{
+    const badge = document.createElement("div");
+    badge.classList.add("potential__badge");
+    if (size) badge.classList.add(`potential__badge--${size}`);
+    const potentialObj = (0, _utilitiesJs.potentialGrade)(potential);
+    badge.classList.add(`potential__badge--${potentialObj.class}`);
+    badge.textContent = potentialObj.label;
+    return badge;
+};
+const renderTrainableSkill = (trainableSkill)=>{
+    const trainableSkillElement = document.createElement("div");
+    trainableSkillElement.classList.add("trainable-skill");
+    trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
+    return trainableSkillElement;
+};
+const renderButton = (text)=>{
+    const button = document.createElement("button");
+    button.innerText = text;
+    return button;
+};
+
+},{"./utilities.js":"ivR0u","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"ivR0u":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "potentialGrade", ()=>potentialGrade);
+const potentialGrade = (potential)=>{
+    if (!potential || potential === null) return {
+        label: "?",
+        class: "unknown"
+    };
+    if (potential >= 95) return {
+        label: "A+",
+        class: "a-plus"
+    };
+    if (potential >= 90) return {
+        label: "A",
+        class: "a"
+    };
+    if (potential >= 85) return {
+        label: "B+",
+        class: "b-plus"
+    };
+    if (potential >= 80) return {
+        label: "B",
+        class: "b"
+    };
+    if (potential >= 75) return {
+        label: "C+",
+        class: "c-plus"
+    };
+    if (potential >= 70) return {
+        label: "C",
+        class: "c"
+    };
+    if (potential >= 60) return {
+        label: "D+",
+        class: "d-plus"
+    };
+    if (potential >= 50) return {
+        label: "D",
+        class: "d"
+    };
+    if (potential < 50) return {
+        label: "F",
+        class: "f"
+    };
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"dW5Ci":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _charts = require("~/src/charts");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerProfile = ()=>{
+    const playerTable = document.getElementById("table-1");
+    // If player table is not found, return
+    if (!playerTable) return new Error("Player table not found");
+    const player = {
+        age: parseInt(playerTable.querySelector("#age").textContent),
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#defense").textContent),
+            offence: parseInt(playerTable.querySelector("#attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            aggression: parseInt(playerTable.querySelector("#aggressive").textContent)
+        },
+        qualities: {
+            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
+            aggression: parseInt(playerTable.querySelector("#kva_aggressive").textContent)
+        },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    const positions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+    const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
+    const contentColumn = document.querySelector(".column_left");
+    // If content column is not found, return
+    if (!contentColumn) return new Error("Content column not found");
+    /**
+   * Ability Box
+   */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience)}</div>
+   <div>(${bestPosition.level})</div>`;
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, _renderJs.renderComparison)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), (0, _settings.ratingSettings)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
+    /**
+   * Potential Box
+   */ const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+    const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+    const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential);
+    potentialBox.appendChild(potentialBadge);
+    const potentialDescription = (0, _renderJs.renderPotential)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
+    contentColumn.appendChild(potentialBox);
+    /**
+   * Add chart
+   */ const chartBox = document.createElement("div");
+    const chartCanvas = document.createElement("canvas");
+    chartBox.classList.add("player-chart");
+    chartCanvas.classList.add("player-chart__canvas");
+    (0, _charts.renderPotentialChart)({
+        age: player.age,
+        skill: bestPosition.level,
+        position: bestPosition.position,
+        exp: player.experience
+    }, chartCanvas);
+    chartBox.appendChild(chartCanvas);
+    document.querySelector(".profile_player_center").appendChild(chartBox);
+};
+exports.default = viewPlayerProfile;
+
+},{"../settings":"aAEvc","~/src/charts":"hmTWS","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"hmTWS":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "renderPotentialChart", ()=>renderPotentialChart);
+var _auto = require("chart.js/auto");
+var _autoDefault = parcelHelpers.interopDefault(_auto);
+var _settingsJs = require("~/src/hockey/settings.js");
+var _calculationsJs = require("~/src/calculations.js");
+// TODO: Improve calculations by using player age, career longitivity, current training level, etc.
+const getCurrentSeasonDay = ()=>{
+    const teamInfoEl = document.querySelector(".top_info_team");
+    const dayEl = teamInfoEl.querySelectorAll(".link_r");
+    const dayString = dayEl[dayEl.length - 1].textContent;
+    const regex = /\((\d+)\//g;
+    const match = regex.exec(dayString);
+    if (!match || !match[1]) {
+        console.log("error getting current season day");
+        return 1;
+    }
+    console.log(`current season day: ${match[1]}`);
+    return parseInt(match[1]);
+};
+const calculateSeasonProgress = (seasonDay)=>{
+    return seasonDay / 112;
+};
+// TODO: Refactor this function
+// this might be unnecessary code, it's current only use is to adjust the ratio for Goalies
+const recalculatePredictDataAccordingToSeasonDay = (position = null)=>{
+    const seasonDay = 1;
+    const seasonProgress = calculateSeasonProgress(seasonDay);
+    console.log(`current seasonProgress: ${seasonProgress}`);
+    let positionRatio = 1;
+    console.log(position);
+    // adjust ratio for Goalies, because they only need 2 skill points per ability compared to
+    // other positions which need 2.5 skill points per ability
+    if (position && position === "G") positionRatio = 1.25;
+    const predictData = (0, _settingsJs.playerGrowthPrediction).map((row)=>{
+        return {
+            ...row,
+            skill: Math.round(row.skill * positionRatio)
+        };
+    });
+    const newPredictData = predictData.map((row)=>{
+        const newSkill = Math.round(row.skill + seasonProgress * (predictData[row.age - 14] ? predictData[row.age - 14].skill - row.skill : -40));
+        const newExp = Math.round(row.exp + seasonProgress * (predictData[row.age - 14] ? predictData[row.age - 14].exp - row.exp : 10));
+        return {
+            age: row.age,
+            skill: newSkill,
+            exp: newExp
+        };
+    });
+    console.log(newPredictData);
+    return newPredictData;
+};
+const renderPotentialChart = (data, el)=>{
+    const predictData = recalculatePredictDataAccordingToSeasonDay(data.position);
+    const seasonDay = getCurrentSeasonDay();
+    const seasonProgress = calculateSeasonProgress(seasonDay);
+    const playerSkillArr = [];
+    const playerSkillExpArr = [];
+    playerSkillArr.push({
+        x: Math.round((data.age + seasonProgress) * 10) / 10,
+        y: data.skill
+    });
+    playerSkillExpArr.push({
+        x: Math.round((data.age + seasonProgress) * 10) / 10,
+        y: (0, _calculationsJs.calculateSkillWithExp)(data.skill, data.exp)
+    });
+    console.log(playerSkillArr);
+    console.log(predictData.map((row)=>{
+        return {
+            x: row.age,
+            y: row.skill
+        };
+    }));
+    const chartConfig = {
+        type: "line",
+        options: {
+            responsive: false,
+            scales: {
+                x: {
+                    type: "linear",
+                    title: {
+                        display: true,
+                        text: "Age"
+                    },
+                    min: 15,
+                    max: 40,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        },
+        data: {
+            // labels: predictData.map((row) => parseInt(row.age)),
+            datasets: [
+                {
+                    label: "Perfect Player Skill",
+                    data: predictData.map((row)=>{
+                        return {
+                            x: row.age,
+                            y: row.skill
+                        };
+                    }),
+                    backgroundColor: "rgba(56, 50, 58, 0.5)",
+                    pointBackgroundColor: "rgba(56, 50, 58, 0.5)"
+                },
+                {
+                    label: "Perfect Player Skill With Exp",
+                    data: predictData.map((row)=>{
+                        return {
+                            x: row.age,
+                            y: (0, _calculationsJs.calculateSkillWithExp)(row.skill, row.exp)
+                        };
+                    }),
+                    backgroundColor: "rgba(29, 27, 29, 0.5)",
+                    pointBackgroundColor: "rgba(29, 27, 29, 0.5)"
+                },
+                {
+                    label: "This player",
+                    data: playerSkillArr,
+                    backgroundColor: "rgba(255, 0, 4, 0.35)",
+                    pointBackgroundColor: "rgba(255, 0, 4, 0.35)",
+                    pointStyle: "circle",
+                    borderColor: "rgba(255, 0, 4, 0.35)",
+                    pointRadius: 8
+                },
+                {
+                    label: "This player With Exp",
+                    data: playerSkillExpArr,
+                    backgroundColor: "rgba(255, 0, 4, 0.9)",
+                    pointBackgroundColor: "rgba(255, 0, 4, 0.9)",
+                    pointStyle: "circle",
+                    borderColor: "rgba(255, 0, 4, 0.9)",
+                    pointRadius: 8
+                }
+            ]
+        }
+    };
+    const chart = new (0, _autoDefault.default)(el, chartConfig);
+    chart.resize(590, 300);
+    return chart;
+};
+
+},{"chart.js/auto":"fPqP2","~/src/hockey/settings.js":"aAEvc","~/src/calculations.js":"6mg5U","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"fPqP2":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _chartJs = require("../dist/chart.js");
+parcelHelpers.exportAll(_chartJs, exports);
+(0, _chartJs.Chart).register(...(0, _chartJs.registerables));
+exports.default = (0, _chartJs.Chart);
+
+},{"../dist/chart.js":"k5F58","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"k5F58":[function(require,module,exports) {
+/*!
+ * Chart.js v4.3.2
+ * https://www.chartjs.org
+ * (c) 2023 Chart.js Contributors
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Animation", ()=>Animation);
+parcelHelpers.export(exports, "Animations", ()=>Animations);
+parcelHelpers.export(exports, "ArcElement", ()=>ArcElement);
+parcelHelpers.export(exports, "BarController", ()=>BarController);
+parcelHelpers.export(exports, "BarElement", ()=>BarElement);
+parcelHelpers.export(exports, "BasePlatform", ()=>BasePlatform);
+parcelHelpers.export(exports, "BasicPlatform", ()=>BasicPlatform);
+parcelHelpers.export(exports, "BubbleController", ()=>BubbleController);
+parcelHelpers.export(exports, "CategoryScale", ()=>CategoryScale);
+parcelHelpers.export(exports, "Chart", ()=>Chart);
+parcelHelpers.export(exports, "Colors", ()=>plugin_colors);
+parcelHelpers.export(exports, "DatasetController", ()=>DatasetController);
+parcelHelpers.export(exports, "Decimation", ()=>plugin_decimation);
+parcelHelpers.export(exports, "DomPlatform", ()=>DomPlatform);
+parcelHelpers.export(exports, "DoughnutController", ()=>DoughnutController);
+parcelHelpers.export(exports, "Element", ()=>Element);
+parcelHelpers.export(exports, "Filler", ()=>index);
+parcelHelpers.export(exports, "Interaction", ()=>Interaction);
+parcelHelpers.export(exports, "Legend", ()=>plugin_legend);
+parcelHelpers.export(exports, "LineController", ()=>LineController);
+parcelHelpers.export(exports, "LineElement", ()=>LineElement);
+parcelHelpers.export(exports, "LinearScale", ()=>LinearScale);
+parcelHelpers.export(exports, "LogarithmicScale", ()=>LogarithmicScale);
+parcelHelpers.export(exports, "PieController", ()=>PieController);
+parcelHelpers.export(exports, "PointElement", ()=>PointElement);
+parcelHelpers.export(exports, "PolarAreaController", ()=>PolarAreaController);
+parcelHelpers.export(exports, "RadarController", ()=>RadarController);
+parcelHelpers.export(exports, "RadialLinearScale", ()=>RadialLinearScale);
+parcelHelpers.export(exports, "Scale", ()=>Scale);
+parcelHelpers.export(exports, "ScatterController", ()=>ScatterController);
+parcelHelpers.export(exports, "SubTitle", ()=>plugin_subtitle);
+parcelHelpers.export(exports, "Ticks", ()=>(0, _helpersSegmentJs.aL));
+parcelHelpers.export(exports, "TimeScale", ()=>TimeScale);
+parcelHelpers.export(exports, "TimeSeriesScale", ()=>TimeSeriesScale);
+parcelHelpers.export(exports, "Title", ()=>plugin_title);
+parcelHelpers.export(exports, "Tooltip", ()=>plugin_tooltip);
+parcelHelpers.export(exports, "_adapters", ()=>adapters);
+parcelHelpers.export(exports, "_detectPlatform", ()=>_detectPlatform);
+parcelHelpers.export(exports, "animator", ()=>animator);
+parcelHelpers.export(exports, "controllers", ()=>controllers);
+parcelHelpers.export(exports, "defaults", ()=>(0, _helpersSegmentJs.d));
+parcelHelpers.export(exports, "elements", ()=>elements);
+parcelHelpers.export(exports, "layouts", ()=>layouts);
+parcelHelpers.export(exports, "plugins", ()=>plugins);
+parcelHelpers.export(exports, "registerables", ()=>registerables);
+parcelHelpers.export(exports, "registry", ()=>registry);
+parcelHelpers.export(exports, "scales", ()=>scales);
+var _helpersSegmentJs = require("./chunks/helpers.segment.js");
+var _color = require("@kurkle/color");
+class Animator {
+    constructor(){
+        this._request = null;
+        this._charts = new Map();
+        this._running = false;
+        this._lastDate = undefined;
+    }
+    _notify(chart, anims, date, type) {
+        const callbacks = anims.listeners[type];
+        const numSteps = anims.duration;
+        callbacks.forEach((fn)=>fn({
+                chart,
+                initial: anims.initial,
+                numSteps,
+                currentStep: Math.min(date - anims.start, numSteps)
+            }));
+    }
+    _refresh() {
+        if (this._request) return;
+        this._running = true;
+        this._request = (0, _helpersSegmentJs.r).call(window, ()=>{
+            this._update();
+            this._request = null;
+            if (this._running) this._refresh();
+        });
+    }
+    _update(date = Date.now()) {
+        let remaining = 0;
+        this._charts.forEach((anims, chart)=>{
+            if (!anims.running || !anims.items.length) return;
+            const items = anims.items;
+            let i = items.length - 1;
+            let draw = false;
+            let item;
+            for(; i >= 0; --i){
+                item = items[i];
+                if (item._active) {
+                    if (item._total > anims.duration) anims.duration = item._total;
+                    item.tick(date);
+                    draw = true;
+                } else {
+                    items[i] = items[items.length - 1];
+                    items.pop();
+                }
+            }
+            if (draw) {
+                chart.draw();
+                this._notify(chart, anims, date, "progress");
+            }
+            if (!items.length) {
+                anims.running = false;
+                this._notify(chart, anims, date, "complete");
+                anims.initial = false;
+            }
+            remaining += items.length;
+        });
+        this._lastDate = date;
+        if (remaining === 0) this._running = false;
+    }
+    _getAnims(chart) {
+        const charts = this._charts;
+        let anims = charts.get(chart);
+        if (!anims) {
+            anims = {
+                running: false,
+                initial: true,
+                items: [],
+                listeners: {
+                    complete: [],
+                    progress: []
+                }
+            };
+            charts.set(chart, anims);
+        }
+        return anims;
+    }
+    listen(chart, event, cb) {
+        this._getAnims(chart).listeners[event].push(cb);
+    }
+    add(chart, items) {
+        if (!items || !items.length) return;
+        this._getAnims(chart).items.push(...items);
+    }
+    has(chart) {
+        return this._getAnims(chart).items.length > 0;
+    }
+    start(chart) {
+        const anims = this._charts.get(chart);
+        if (!anims) return;
+        anims.running = true;
+        anims.start = Date.now();
+        anims.duration = anims.items.reduce((acc, cur)=>Math.max(acc, cur._duration), 0);
+        this._refresh();
+    }
+    running(chart) {
+        if (!this._running) return false;
+        const anims = this._charts.get(chart);
+        if (!anims || !anims.running || !anims.items.length) return false;
+        return true;
+    }
+    stop(chart) {
+        const anims = this._charts.get(chart);
+        if (!anims || !anims.items.length) return;
+        const items = anims.items;
+        let i = items.length - 1;
+        for(; i >= 0; --i)items[i].cancel();
+        anims.items = [];
+        this._notify(chart, anims, Date.now(), "complete");
+    }
+    remove(chart) {
+        return this._charts.delete(chart);
+    }
+}
+var animator = /* #__PURE__ */ new Animator();
+const transparent = "transparent";
+const interpolators = {
+    boolean (from, to, factor) {
+        return factor > 0.5 ? to : from;
+    },
+    color (from, to, factor) {
+        const c0 = (0, _helpersSegmentJs.c)(from || transparent);
+        const c1 = c0.valid && (0, _helpersSegmentJs.c)(to || transparent);
+        return c1 && c1.valid ? c1.mix(c0, factor).hexString() : to;
+    },
+    number (from, to, factor) {
+        return from + (to - from) * factor;
+    }
+};
+class Animation {
+    constructor(cfg, target, prop, to){
+        const currentValue = target[prop];
+        to = (0, _helpersSegmentJs.a)([
+            cfg.to,
+            to,
+            currentValue,
+            cfg.from
+        ]);
+        const from = (0, _helpersSegmentJs.a)([
+            cfg.from,
+            currentValue,
+            to
+        ]);
+        this._active = true;
+        this._fn = cfg.fn || interpolators[cfg.type || typeof from];
+        this._easing = (0, _helpersSegmentJs.e)[cfg.easing] || (0, _helpersSegmentJs.e).linear;
+        this._start = Math.floor(Date.now() + (cfg.delay || 0));
+        this._duration = this._total = Math.floor(cfg.duration);
+        this._loop = !!cfg.loop;
+        this._target = target;
+        this._prop = prop;
+        this._from = from;
+        this._to = to;
+        this._promises = undefined;
+    }
+    active() {
+        return this._active;
+    }
+    update(cfg, to, date) {
+        if (this._active) {
+            this._notify(false);
+            const currentValue = this._target[this._prop];
+            const elapsed = date - this._start;
+            const remain = this._duration - elapsed;
+            this._start = date;
+            this._duration = Math.floor(Math.max(remain, cfg.duration));
+            this._total += elapsed;
+            this._loop = !!cfg.loop;
+            this._to = (0, _helpersSegmentJs.a)([
+                cfg.to,
+                to,
+                currentValue,
+                cfg.from
+            ]);
+            this._from = (0, _helpersSegmentJs.a)([
+                cfg.from,
+                currentValue,
+                to
+            ]);
+        }
+    }
+    cancel() {
+        if (this._active) {
+            this.tick(Date.now());
+            this._active = false;
+            this._notify(false);
+        }
+    }
+    tick(date) {
+        const elapsed = date - this._start;
+        const duration = this._duration;
+        const prop = this._prop;
+        const from = this._from;
+        const loop = this._loop;
+        const to = this._to;
+        let factor;
+        this._active = from !== to && (loop || elapsed < duration);
+        if (!this._active) {
+            this._target[prop] = to;
+            this._notify(true);
+            return;
+        }
+        if (elapsed < 0) {
+            this._target[prop] = from;
+            return;
+        }
+        factor = elapsed / duration % 2;
+        factor = loop && factor > 1 ? 2 - factor : factor;
+        factor = this._easing(Math.min(1, Math.max(0, factor)));
+        this._target[prop] = this._fn(from, to, factor);
+    }
+    wait() {
+        const promises = this._promises || (this._promises = []);
+        return new Promise((res, rej)=>{
+            promises.push({
+                res,
+                rej
+            });
+        });
+    }
+    _notify(resolved) {
+        const method = resolved ? "res" : "rej";
+        const promises = this._promises || [];
+        for(let i = 0; i < promises.length; i++)promises[i][method]();
+    }
+}
+class Animations {
+    constructor(chart, config){
+        this._chart = chart;
+        this._properties = new Map();
+        this.configure(config);
+    }
+    configure(config) {
+        if (!(0, _helpersSegmentJs.i)(config)) return;
+        const animationOptions = Object.keys((0, _helpersSegmentJs.d).animation);
+        const animatedProps = this._properties;
+        Object.getOwnPropertyNames(config).forEach((key)=>{
+            const cfg = config[key];
+            if (!(0, _helpersSegmentJs.i)(cfg)) return;
+            const resolved = {};
+            for (const option of animationOptions)resolved[option] = cfg[option];
+            ((0, _helpersSegmentJs.b)(cfg.properties) && cfg.properties || [
+                key
+            ]).forEach((prop)=>{
+                if (prop === key || !animatedProps.has(prop)) animatedProps.set(prop, resolved);
+            });
+        });
+    }
+    _animateOptions(target, values) {
+        const newOptions = values.options;
+        const options = resolveTargetOptions(target, newOptions);
+        if (!options) return [];
+        const animations = this._createAnimations(options, newOptions);
+        if (newOptions.$shared) awaitAll(target.options.$animations, newOptions).then(()=>{
+            target.options = newOptions;
+        }, ()=>{});
+        return animations;
+    }
+    _createAnimations(target, values) {
+        const animatedProps = this._properties;
+        const animations = [];
+        const running = target.$animations || (target.$animations = {});
+        const props = Object.keys(values);
+        const date = Date.now();
+        let i;
+        for(i = props.length - 1; i >= 0; --i){
+            const prop = props[i];
+            if (prop.charAt(0) === "$") continue;
+            if (prop === "options") {
+                animations.push(...this._animateOptions(target, values));
+                continue;
+            }
+            const value = values[prop];
+            let animation = running[prop];
+            const cfg = animatedProps.get(prop);
+            if (animation) {
+                if (cfg && animation.active()) {
+                    animation.update(cfg, value, date);
+                    continue;
+                } else animation.cancel();
+            }
+            if (!cfg || !cfg.duration) {
+                target[prop] = value;
+                continue;
+            }
+            running[prop] = animation = new Animation(cfg, target, prop, value);
+            animations.push(animation);
+        }
+        return animations;
+    }
+    update(target, values) {
+        if (this._properties.size === 0) {
+            Object.assign(target, values);
+            return;
+        }
+        const animations = this._createAnimations(target, values);
+        if (animations.length) {
+            animator.add(this._chart, animations);
+            return true;
+        }
+    }
+}
+function awaitAll(animations, properties) {
+    const running = [];
+    const keys = Object.keys(properties);
+    for(let i = 0; i < keys.length; i++){
+        const anim = animations[keys[i]];
+        if (anim && anim.active()) running.push(anim.wait());
+    }
+    return Promise.all(running);
+}
+function resolveTargetOptions(target, newOptions) {
+    if (!newOptions) return;
+    let options = target.options;
+    if (!options) {
+        target.options = newOptions;
+        return;
+    }
+    if (options.$shared) target.options = options = Object.assign({}, options, {
+        $shared: false,
+        $animations: {}
+    });
+    return options;
+}
+function scaleClip(scale, allowedOverflow) {
+    const opts = scale && scale.options || {};
+    const reverse = opts.reverse;
+    const min = opts.min === undefined ? allowedOverflow : 0;
+    const max = opts.max === undefined ? allowedOverflow : 0;
+    return {
+        start: reverse ? max : min,
+        end: reverse ? min : max
+    };
+}
+function defaultClip(xScale, yScale, allowedOverflow) {
+    if (allowedOverflow === false) return false;
+    const x = scaleClip(xScale, allowedOverflow);
+    const y = scaleClip(yScale, allowedOverflow);
+    return {
+        top: y.end,
+        right: x.end,
+        bottom: y.start,
+        left: x.start
+    };
+}
+function toClip(value) {
+    let t, r, b, l;
+    if ((0, _helpersSegmentJs.i)(value)) {
+        t = value.top;
+        r = value.right;
+        b = value.bottom;
+        l = value.left;
+    } else t = r = b = l = value;
+    return {
+        top: t,
+        right: r,
+        bottom: b,
+        left: l,
+        disabled: value === false
+    };
+}
+function getSortedDatasetIndices(chart, filterVisible) {
+    const keys = [];
+    const metasets = chart._getSortedDatasetMetas(filterVisible);
+    let i, ilen;
+    for(i = 0, ilen = metasets.length; i < ilen; ++i)keys.push(metasets[i].index);
+    return keys;
+}
+function applyStack(stack, value, dsIndex, options = {}) {
+    const keys = stack.keys;
+    const singleMode = options.mode === "single";
+    let i, ilen, datasetIndex, otherValue;
+    if (value === null) return;
+    for(i = 0, ilen = keys.length; i < ilen; ++i){
+        datasetIndex = +keys[i];
+        if (datasetIndex === dsIndex) {
+            if (options.all) continue;
+            break;
+        }
+        otherValue = stack.values[datasetIndex];
+        if ((0, _helpersSegmentJs.g)(otherValue) && (singleMode || value === 0 || (0, _helpersSegmentJs.s)(value) === (0, _helpersSegmentJs.s)(otherValue))) value += otherValue;
+    }
+    return value;
+}
+function convertObjectDataToArray(data) {
+    const keys = Object.keys(data);
+    const adata = new Array(keys.length);
+    let i, ilen, key;
+    for(i = 0, ilen = keys.length; i < ilen; ++i){
+        key = keys[i];
+        adata[i] = {
+            x: key,
+            y: data[key]
+        };
+    }
+    return adata;
+}
+function isStacked(scale, meta) {
+    const stacked = scale && scale.options.stacked;
+    return stacked || stacked === undefined && meta.stack !== undefined;
+}
+function getStackKey(indexScale, valueScale, meta) {
+    return `${indexScale.id}.${valueScale.id}.${meta.stack || meta.type}`;
+}
+function getUserBounds(scale) {
+    const { min, max, minDefined, maxDefined } = scale.getUserBounds();
+    return {
+        min: minDefined ? min : Number.NEGATIVE_INFINITY,
+        max: maxDefined ? max : Number.POSITIVE_INFINITY
+    };
+}
+function getOrCreateStack(stacks, stackKey, indexValue) {
+    const subStack = stacks[stackKey] || (stacks[stackKey] = {});
+    return subStack[indexValue] || (subStack[indexValue] = {});
+}
+function getLastIndexInStack(stack, vScale, positive, type) {
+    for (const meta of vScale.getMatchingVisibleMetas(type).reverse()){
+        const value = stack[meta.index];
+        if (positive && value > 0 || !positive && value < 0) return meta.index;
+    }
+    return null;
+}
+function updateStacks(controller, parsed) {
+    const { chart, _cachedMeta: meta } = controller;
+    const stacks = chart._stacks || (chart._stacks = {});
+    const { iScale, vScale, index: datasetIndex } = meta;
+    const iAxis = iScale.axis;
+    const vAxis = vScale.axis;
+    const key = getStackKey(iScale, vScale, meta);
+    const ilen = parsed.length;
+    let stack;
+    for(let i = 0; i < ilen; ++i){
+        const item = parsed[i];
+        const { [iAxis]: index, [vAxis]: value } = item;
+        const itemStacks = item._stacks || (item._stacks = {});
+        stack = itemStacks[vAxis] = getOrCreateStack(stacks, key, index);
+        stack[datasetIndex] = value;
+        stack._top = getLastIndexInStack(stack, vScale, true, meta.type);
+        stack._bottom = getLastIndexInStack(stack, vScale, false, meta.type);
+        const visualValues = stack._visualValues || (stack._visualValues = {});
+        visualValues[datasetIndex] = value;
+    }
+}
+function getFirstScaleId(chart, axis) {
+    const scales = chart.scales;
+    return Object.keys(scales).filter((key)=>scales[key].axis === axis).shift();
+}
+function createDatasetContext(parent, index) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        active: false,
+        dataset: undefined,
+        datasetIndex: index,
+        index,
+        mode: "default",
+        type: "dataset"
+    });
+}
+function createDataContext(parent, index, element) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        active: false,
+        dataIndex: index,
+        parsed: undefined,
+        raw: undefined,
+        element,
+        index,
+        mode: "default",
+        type: "data"
+    });
+}
+function clearStacks(meta, items) {
+    const datasetIndex = meta.controller.index;
+    const axis = meta.vScale && meta.vScale.axis;
+    if (!axis) return;
+    items = items || meta._parsed;
+    for (const parsed of items){
+        const stacks = parsed._stacks;
+        if (!stacks || stacks[axis] === undefined || stacks[axis][datasetIndex] === undefined) return;
+        delete stacks[axis][datasetIndex];
+        if (stacks[axis]._visualValues !== undefined && stacks[axis]._visualValues[datasetIndex] !== undefined) delete stacks[axis]._visualValues[datasetIndex];
+    }
+}
+const isDirectUpdateMode = (mode)=>mode === "reset" || mode === "none";
+const cloneIfNotShared = (cached, shared)=>shared ? cached : Object.assign({}, cached);
+const createStack = (canStack, meta, chart)=>canStack && !meta.hidden && meta._stacked && {
+        keys: getSortedDatasetIndices(chart, true),
+        values: null
+    };
+class DatasetController {
+    static defaults = {};
+    static datasetElementType = null;
+    static dataElementType = null;
+    constructor(chart, datasetIndex){
+        this.chart = chart;
+        this._ctx = chart.ctx;
+        this.index = datasetIndex;
+        this._cachedDataOpts = {};
+        this._cachedMeta = this.getMeta();
+        this._type = this._cachedMeta.type;
+        this.options = undefined;
+        this._parsing = false;
+        this._data = undefined;
+        this._objectData = undefined;
+        this._sharedOptions = undefined;
+        this._drawStart = undefined;
+        this._drawCount = undefined;
+        this.enableOptionSharing = false;
+        this.supportsDecimation = false;
+        this.$context = undefined;
+        this._syncList = [];
+        this.datasetElementType = new.target.datasetElementType;
+        this.dataElementType = new.target.dataElementType;
+        this.initialize();
+    }
+    initialize() {
+        const meta = this._cachedMeta;
+        this.configure();
+        this.linkScales();
+        meta._stacked = isStacked(meta.vScale, meta);
+        this.addElements();
+        if (this.options.fill && !this.chart.isPluginEnabled("filler")) console.warn("Tried to use the 'fill' option without the 'Filler' plugin enabled. Please import and register the 'Filler' plugin and make sure it is not disabled in the options");
+    }
+    updateIndex(datasetIndex) {
+        if (this.index !== datasetIndex) clearStacks(this._cachedMeta);
+        this.index = datasetIndex;
+    }
+    linkScales() {
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const dataset = this.getDataset();
+        const chooseId = (axis, x, y, r)=>axis === "x" ? x : axis === "r" ? r : y;
+        const xid = meta.xAxisID = (0, _helpersSegmentJs.v)(dataset.xAxisID, getFirstScaleId(chart, "x"));
+        const yid = meta.yAxisID = (0, _helpersSegmentJs.v)(dataset.yAxisID, getFirstScaleId(chart, "y"));
+        const rid = meta.rAxisID = (0, _helpersSegmentJs.v)(dataset.rAxisID, getFirstScaleId(chart, "r"));
+        const indexAxis = meta.indexAxis;
+        const iid = meta.iAxisID = chooseId(indexAxis, xid, yid, rid);
+        const vid = meta.vAxisID = chooseId(indexAxis, yid, xid, rid);
+        meta.xScale = this.getScaleForId(xid);
+        meta.yScale = this.getScaleForId(yid);
+        meta.rScale = this.getScaleForId(rid);
+        meta.iScale = this.getScaleForId(iid);
+        meta.vScale = this.getScaleForId(vid);
+    }
+    getDataset() {
+        return this.chart.data.datasets[this.index];
+    }
+    getMeta() {
+        return this.chart.getDatasetMeta(this.index);
+    }
+    getScaleForId(scaleID) {
+        return this.chart.scales[scaleID];
+    }
+    _getOtherScale(scale) {
+        const meta = this._cachedMeta;
+        return scale === meta.iScale ? meta.vScale : meta.iScale;
+    }
+    reset() {
+        this._update("reset");
+    }
+    _destroy() {
+        const meta = this._cachedMeta;
+        if (this._data) (0, _helpersSegmentJs.u)(this._data, this);
+        if (meta._stacked) clearStacks(meta);
+    }
+    _dataCheck() {
+        const dataset = this.getDataset();
+        const data = dataset.data || (dataset.data = []);
+        const _data = this._data;
+        if ((0, _helpersSegmentJs.i)(data)) this._data = convertObjectDataToArray(data);
+        else if (_data !== data) {
+            if (_data) {
+                (0, _helpersSegmentJs.u)(_data, this);
+                const meta = this._cachedMeta;
+                clearStacks(meta);
+                meta._parsed = [];
+            }
+            if (data && Object.isExtensible(data)) (0, _helpersSegmentJs.l)(data, this);
+            this._syncList = [];
+            this._data = data;
+        }
+    }
+    addElements() {
+        const meta = this._cachedMeta;
+        this._dataCheck();
+        if (this.datasetElementType) meta.dataset = new this.datasetElementType();
+    }
+    buildOrUpdateElements(resetNewElements) {
+        const meta = this._cachedMeta;
+        const dataset = this.getDataset();
+        let stackChanged = false;
+        this._dataCheck();
+        const oldStacked = meta._stacked;
+        meta._stacked = isStacked(meta.vScale, meta);
+        if (meta.stack !== dataset.stack) {
+            stackChanged = true;
+            clearStacks(meta);
+            meta.stack = dataset.stack;
+        }
+        this._resyncElements(resetNewElements);
+        if (stackChanged || oldStacked !== meta._stacked) updateStacks(this, meta._parsed);
+    }
+    configure() {
+        const config = this.chart.config;
+        const scopeKeys = config.datasetScopeKeys(this._type);
+        const scopes = config.getOptionScopes(this.getDataset(), scopeKeys, true);
+        this.options = config.createResolver(scopes, this.getContext());
+        this._parsing = this.options.parsing;
+        this._cachedDataOpts = {};
+    }
+    parse(start, count) {
+        const { _cachedMeta: meta, _data: data } = this;
+        const { iScale, _stacked } = meta;
+        const iAxis = iScale.axis;
+        let sorted = start === 0 && count === data.length ? true : meta._sorted;
+        let prev = start > 0 && meta._parsed[start - 1];
+        let i, cur, parsed;
+        if (this._parsing === false) {
+            meta._parsed = data;
+            meta._sorted = true;
+            parsed = data;
+        } else {
+            if ((0, _helpersSegmentJs.b)(data[start])) parsed = this.parseArrayData(meta, data, start, count);
+            else if ((0, _helpersSegmentJs.i)(data[start])) parsed = this.parseObjectData(meta, data, start, count);
+            else parsed = this.parsePrimitiveData(meta, data, start, count);
+            const isNotInOrderComparedToPrev = ()=>cur[iAxis] === null || prev && cur[iAxis] < prev[iAxis];
+            for(i = 0; i < count; ++i){
+                meta._parsed[i + start] = cur = parsed[i];
+                if (sorted) {
+                    if (isNotInOrderComparedToPrev()) sorted = false;
+                    prev = cur;
+                }
+            }
+            meta._sorted = sorted;
+        }
+        if (_stacked) updateStacks(this, parsed);
+    }
+    parsePrimitiveData(meta, data, start, count) {
+        const { iScale, vScale } = meta;
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const labels = iScale.getLabels();
+        const singleScale = iScale === vScale;
+        const parsed = new Array(count);
+        let i, ilen, index;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            parsed[i] = {
+                [iAxis]: singleScale || iScale.parse(labels[index], index),
+                [vAxis]: vScale.parse(data[index], index)
+            };
+        }
+        return parsed;
+    }
+    parseArrayData(meta, data, start, count) {
+        const { xScale, yScale } = meta;
+        const parsed = new Array(count);
+        let i, ilen, index, item;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            item = data[index];
+            parsed[i] = {
+                x: xScale.parse(item[0], index),
+                y: yScale.parse(item[1], index)
+            };
+        }
+        return parsed;
+    }
+    parseObjectData(meta, data, start, count) {
+        const { xScale, yScale } = meta;
+        const { xAxisKey = "x", yAxisKey = "y" } = this._parsing;
+        const parsed = new Array(count);
+        let i, ilen, index, item;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            item = data[index];
+            parsed[i] = {
+                x: xScale.parse((0, _helpersSegmentJs.f)(item, xAxisKey), index),
+                y: yScale.parse((0, _helpersSegmentJs.f)(item, yAxisKey), index)
+            };
+        }
+        return parsed;
+    }
+    getParsed(index) {
+        return this._cachedMeta._parsed[index];
+    }
+    getDataElement(index) {
+        return this._cachedMeta.data[index];
+    }
+    applyStack(scale, parsed, mode) {
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const value = parsed[scale.axis];
+        const stack = {
+            keys: getSortedDatasetIndices(chart, true),
+            values: parsed._stacks[scale.axis]._visualValues
+        };
+        return applyStack(stack, value, meta.index, {
+            mode
+        });
+    }
+    updateRangeFromParsed(range, scale, parsed, stack) {
+        const parsedValue = parsed[scale.axis];
+        let value = parsedValue === null ? NaN : parsedValue;
+        const values = stack && parsed._stacks[scale.axis];
+        if (stack && values) {
+            stack.values = values;
+            value = applyStack(stack, parsedValue, this._cachedMeta.index);
+        }
+        range.min = Math.min(range.min, value);
+        range.max = Math.max(range.max, value);
+    }
+    getMinMax(scale, canStack) {
+        const meta = this._cachedMeta;
+        const _parsed = meta._parsed;
+        const sorted = meta._sorted && scale === meta.iScale;
+        const ilen = _parsed.length;
+        const otherScale = this._getOtherScale(scale);
+        const stack = createStack(canStack, meta, this.chart);
+        const range = {
+            min: Number.POSITIVE_INFINITY,
+            max: Number.NEGATIVE_INFINITY
+        };
+        const { min: otherMin, max: otherMax } = getUserBounds(otherScale);
+        let i, parsed;
+        function _skip() {
+            parsed = _parsed[i];
+            const otherValue = parsed[otherScale.axis];
+            return !(0, _helpersSegmentJs.g)(parsed[scale.axis]) || otherMin > otherValue || otherMax < otherValue;
+        }
+        for(i = 0; i < ilen; ++i){
+            if (_skip()) continue;
+            this.updateRangeFromParsed(range, scale, parsed, stack);
+            if (sorted) break;
+        }
+        if (sorted) for(i = ilen - 1; i >= 0; --i){
+            if (_skip()) continue;
+            this.updateRangeFromParsed(range, scale, parsed, stack);
+            break;
+        }
+        return range;
+    }
+    getAllParsedValues(scale) {
+        const parsed = this._cachedMeta._parsed;
+        const values = [];
+        let i, ilen, value;
+        for(i = 0, ilen = parsed.length; i < ilen; ++i){
+            value = parsed[i][scale.axis];
+            if ((0, _helpersSegmentJs.g)(value)) values.push(value);
+        }
+        return values;
+    }
+    getMaxOverflow() {
+        return false;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const iScale = meta.iScale;
+        const vScale = meta.vScale;
+        const parsed = this.getParsed(index);
+        return {
+            label: iScale ? "" + iScale.getLabelForValue(parsed[iScale.axis]) : "",
+            value: vScale ? "" + vScale.getLabelForValue(parsed[vScale.axis]) : ""
+        };
+    }
+    _update(mode) {
+        const meta = this._cachedMeta;
+        this.update(mode || "default");
+        meta._clip = toClip((0, _helpersSegmentJs.v)(this.options.clip, defaultClip(meta.xScale, meta.yScale, this.getMaxOverflow())));
+    }
+    update(mode) {}
+    draw() {
+        const ctx = this._ctx;
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const elements = meta.data || [];
+        const area = chart.chartArea;
+        const active = [];
+        const start = this._drawStart || 0;
+        const count = this._drawCount || elements.length - start;
+        const drawActiveElementsOnTop = this.options.drawActiveElementsOnTop;
+        let i;
+        if (meta.dataset) meta.dataset.draw(ctx, area, start, count);
+        for(i = start; i < start + count; ++i){
+            const element = elements[i];
+            if (element.hidden) continue;
+            if (element.active && drawActiveElementsOnTop) active.push(element);
+            else element.draw(ctx, area);
+        }
+        for(i = 0; i < active.length; ++i)active[i].draw(ctx, area);
+    }
+    getStyle(index, active) {
+        const mode = active ? "active" : "default";
+        return index === undefined && this._cachedMeta.dataset ? this.resolveDatasetElementOptions(mode) : this.resolveDataElementOptions(index || 0, mode);
+    }
+    getContext(index, active, mode) {
+        const dataset = this.getDataset();
+        let context;
+        if (index >= 0 && index < this._cachedMeta.data.length) {
+            const element = this._cachedMeta.data[index];
+            context = element.$context || (element.$context = createDataContext(this.getContext(), index, element));
+            context.parsed = this.getParsed(index);
+            context.raw = dataset.data[index];
+            context.index = context.dataIndex = index;
+        } else {
+            context = this.$context || (this.$context = createDatasetContext(this.chart.getContext(), this.index));
+            context.dataset = dataset;
+            context.index = context.datasetIndex = this.index;
+        }
+        context.active = !!active;
+        context.mode = mode;
+        return context;
+    }
+    resolveDatasetElementOptions(mode) {
+        return this._resolveElementOptions(this.datasetElementType.id, mode);
+    }
+    resolveDataElementOptions(index, mode) {
+        return this._resolveElementOptions(this.dataElementType.id, mode, index);
+    }
+    _resolveElementOptions(elementType, mode = "default", index) {
+        const active = mode === "active";
+        const cache = this._cachedDataOpts;
+        const cacheKey = elementType + "-" + mode;
+        const cached = cache[cacheKey];
+        const sharing = this.enableOptionSharing && (0, _helpersSegmentJs.h)(index);
+        if (cached) return cloneIfNotShared(cached, sharing);
+        const config = this.chart.config;
+        const scopeKeys = config.datasetElementScopeKeys(this._type, elementType);
+        const prefixes = active ? [
+            `${elementType}Hover`,
+            "hover",
+            elementType,
+            ""
+        ] : [
+            elementType,
+            ""
+        ];
+        const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
+        const names = Object.keys((0, _helpersSegmentJs.d).elements[elementType]);
+        const context = ()=>this.getContext(index, active, mode);
+        const values = config.resolveNamedOptions(scopes, names, context, prefixes);
+        if (values.$shared) {
+            values.$shared = sharing;
+            cache[cacheKey] = Object.freeze(cloneIfNotShared(values, sharing));
+        }
+        return values;
+    }
+    _resolveAnimations(index, transition, active) {
+        const chart = this.chart;
+        const cache = this._cachedDataOpts;
+        const cacheKey = `animation-${transition}`;
+        const cached = cache[cacheKey];
+        if (cached) return cached;
+        let options;
+        if (chart.options.animation !== false) {
+            const config = this.chart.config;
+            const scopeKeys = config.datasetAnimationScopeKeys(this._type, transition);
+            const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
+            options = config.createResolver(scopes, this.getContext(index, active, transition));
+        }
+        const animations = new Animations(chart, options && options.animations);
+        if (options && options._cacheable) cache[cacheKey] = Object.freeze(animations);
+        return animations;
+    }
+    getSharedOptions(options) {
+        if (!options.$shared) return;
+        return this._sharedOptions || (this._sharedOptions = Object.assign({}, options));
+    }
+    includeOptions(mode, sharedOptions) {
+        return !sharedOptions || isDirectUpdateMode(mode) || this.chart._animationsDisabled;
+    }
+    _getSharedOptions(start, mode) {
+        const firstOpts = this.resolveDataElementOptions(start, mode);
+        const previouslySharedOptions = this._sharedOptions;
+        const sharedOptions = this.getSharedOptions(firstOpts);
+        const includeOptions = this.includeOptions(mode, sharedOptions) || sharedOptions !== previouslySharedOptions;
+        this.updateSharedOptions(sharedOptions, mode, firstOpts);
+        return {
+            sharedOptions,
+            includeOptions
+        };
+    }
+    updateElement(element, index, properties, mode) {
+        if (isDirectUpdateMode(mode)) Object.assign(element, properties);
+        else this._resolveAnimations(index, mode).update(element, properties);
+    }
+    updateSharedOptions(sharedOptions, mode, newOptions) {
+        if (sharedOptions && !isDirectUpdateMode(mode)) this._resolveAnimations(undefined, mode).update(sharedOptions, newOptions);
+    }
+    _setStyle(element, index, mode, active) {
+        element.active = active;
+        const options = this.getStyle(index, active);
+        this._resolveAnimations(index, mode, active).update(element, {
+            options: !active && this.getSharedOptions(options) || options
+        });
+    }
+    removeHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, "active", false);
+    }
+    setHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, "active", true);
+    }
+    _removeDatasetHoverStyle() {
+        const element = this._cachedMeta.dataset;
+        if (element) this._setStyle(element, undefined, "active", false);
+    }
+    _setDatasetHoverStyle() {
+        const element = this._cachedMeta.dataset;
+        if (element) this._setStyle(element, undefined, "active", true);
+    }
+    _resyncElements(resetNewElements) {
+        const data = this._data;
+        const elements = this._cachedMeta.data;
+        for (const [method, arg1, arg2] of this._syncList)this[method](arg1, arg2);
+        this._syncList = [];
+        const numMeta = elements.length;
+        const numData = data.length;
+        const count = Math.min(numData, numMeta);
+        if (count) this.parse(0, count);
+        if (numData > numMeta) this._insertElements(numMeta, numData - numMeta, resetNewElements);
+        else if (numData < numMeta) this._removeElements(numData, numMeta - numData);
+    }
+    _insertElements(start, count, resetNewElements = true) {
+        const meta = this._cachedMeta;
+        const data = meta.data;
+        const end = start + count;
+        let i;
+        const move = (arr)=>{
+            arr.length += count;
+            for(i = arr.length - 1; i >= end; i--)arr[i] = arr[i - count];
+        };
+        move(data);
+        for(i = start; i < end; ++i)data[i] = new this.dataElementType();
+        if (this._parsing) move(meta._parsed);
+        this.parse(start, count);
+        if (resetNewElements) this.updateElements(data, start, count, "reset");
+    }
+    updateElements(element, start, count, mode) {}
+    _removeElements(start, count) {
+        const meta = this._cachedMeta;
+        if (this._parsing) {
+            const removed = meta._parsed.splice(start, count);
+            if (meta._stacked) clearStacks(meta, removed);
+        }
+        meta.data.splice(start, count);
+    }
+    _sync(args) {
+        if (this._parsing) this._syncList.push(args);
+        else {
+            const [method, arg1, arg2] = args;
+            this[method](arg1, arg2);
+        }
+        this.chart._dataChanges.push([
+            this.index,
+            ...args
+        ]);
+    }
+    _onDataPush() {
+        const count = arguments.length;
+        this._sync([
+            "_insertElements",
+            this.getDataset().data.length - count,
+            count
+        ]);
+    }
+    _onDataPop() {
+        this._sync([
+            "_removeElements",
+            this._cachedMeta.data.length - 1,
+            1
+        ]);
+    }
+    _onDataShift() {
+        this._sync([
+            "_removeElements",
+            0,
+            1
+        ]);
+    }
+    _onDataSplice(start, count) {
+        if (count) this._sync([
+            "_removeElements",
+            start,
+            count
+        ]);
+        const newCount = arguments.length - 2;
+        if (newCount) this._sync([
+            "_insertElements",
+            start,
+            newCount
+        ]);
+    }
+    _onDataUnshift() {
+        this._sync([
+            "_insertElements",
+            0,
+            arguments.length
+        ]);
+    }
+}
+function getAllScaleValues(scale, type) {
+    if (!scale._cache.$bar) {
+        const visibleMetas = scale.getMatchingVisibleMetas(type);
+        let values = [];
+        for(let i = 0, ilen = visibleMetas.length; i < ilen; i++)values = values.concat(visibleMetas[i].controller.getAllParsedValues(scale));
+        scale._cache.$bar = (0, _helpersSegmentJs._)(values.sort((a, b)=>a - b));
+    }
+    return scale._cache.$bar;
+}
+function computeMinSampleSize(meta) {
+    const scale = meta.iScale;
+    const values = getAllScaleValues(scale, meta.type);
+    let min = scale._length;
+    let i, ilen, curr, prev;
+    const updateMinAndPrev = ()=>{
+        if (curr === 32767 || curr === -32768) return;
+        if ((0, _helpersSegmentJs.h)(prev)) min = Math.min(min, Math.abs(curr - prev) || min);
+        prev = curr;
+    };
+    for(i = 0, ilen = values.length; i < ilen; ++i){
+        curr = scale.getPixelForValue(values[i]);
+        updateMinAndPrev();
+    }
+    prev = undefined;
+    for(i = 0, ilen = scale.ticks.length; i < ilen; ++i){
+        curr = scale.getPixelForTick(i);
+        updateMinAndPrev();
+    }
+    return min;
+}
+function computeFitCategoryTraits(index, ruler, options, stackCount) {
+    const thickness = options.barThickness;
+    let size, ratio;
+    if ((0, _helpersSegmentJs.k)(thickness)) {
+        size = ruler.min * options.categoryPercentage;
+        ratio = options.barPercentage;
+    } else {
+        size = thickness * stackCount;
+        ratio = 1;
+    }
+    return {
+        chunk: size / stackCount,
+        ratio,
+        start: ruler.pixels[index] - size / 2
+    };
+}
+function computeFlexCategoryTraits(index, ruler, options, stackCount) {
+    const pixels = ruler.pixels;
+    const curr = pixels[index];
+    let prev = index > 0 ? pixels[index - 1] : null;
+    let next = index < pixels.length - 1 ? pixels[index + 1] : null;
+    const percent = options.categoryPercentage;
+    if (prev === null) prev = curr - (next === null ? ruler.end - ruler.start : next - curr);
+    if (next === null) next = curr + curr - prev;
+    const start = curr - (curr - Math.min(prev, next)) / 2 * percent;
+    const size = Math.abs(next - prev) / 2 * percent;
+    return {
+        chunk: size / stackCount,
+        ratio: options.barPercentage,
+        start
+    };
+}
+function parseFloatBar(entry, item, vScale, i) {
+    const startValue = vScale.parse(entry[0], i);
+    const endValue = vScale.parse(entry[1], i);
+    const min = Math.min(startValue, endValue);
+    const max = Math.max(startValue, endValue);
+    let barStart = min;
+    let barEnd = max;
+    if (Math.abs(min) > Math.abs(max)) {
+        barStart = max;
+        barEnd = min;
+    }
+    item[vScale.axis] = barEnd;
+    item._custom = {
+        barStart,
+        barEnd,
+        start: startValue,
+        end: endValue,
+        min,
+        max
+    };
+}
+function parseValue(entry, item, vScale, i) {
+    if ((0, _helpersSegmentJs.b)(entry)) parseFloatBar(entry, item, vScale, i);
+    else item[vScale.axis] = vScale.parse(entry, i);
+    return item;
+}
+function parseArrayOrPrimitive(meta, data, start, count) {
+    const iScale = meta.iScale;
+    const vScale = meta.vScale;
+    const labels = iScale.getLabels();
+    const singleScale = iScale === vScale;
+    const parsed = [];
+    let i, ilen, item, entry;
+    for(i = start, ilen = start + count; i < ilen; ++i){
+        entry = data[i];
+        item = {};
+        item[iScale.axis] = singleScale || iScale.parse(labels[i], i);
+        parsed.push(parseValue(entry, item, vScale, i));
+    }
+    return parsed;
+}
+function isFloatBar(custom) {
+    return custom && custom.barStart !== undefined && custom.barEnd !== undefined;
+}
+function barSign(size, vScale, actualBase) {
+    if (size !== 0) return (0, _helpersSegmentJs.s)(size);
+    return (vScale.isHorizontal() ? 1 : -1) * (vScale.min >= actualBase ? 1 : -1);
+}
+function borderProps(properties) {
+    let reverse, start, end, top, bottom;
+    if (properties.horizontal) {
+        reverse = properties.base > properties.x;
+        start = "left";
+        end = "right";
+    } else {
+        reverse = properties.base < properties.y;
+        start = "bottom";
+        end = "top";
+    }
+    if (reverse) {
+        top = "end";
+        bottom = "start";
+    } else {
+        top = "start";
+        bottom = "end";
+    }
+    return {
+        start,
+        end,
+        reverse,
+        top,
+        bottom
+    };
+}
+function setBorderSkipped(properties, options, stack, index) {
+    let edge = options.borderSkipped;
+    const res = {};
+    if (!edge) {
+        properties.borderSkipped = res;
+        return;
+    }
+    if (edge === true) {
+        properties.borderSkipped = {
+            top: true,
+            right: true,
+            bottom: true,
+            left: true
+        };
+        return;
+    }
+    const { start, end, reverse, top, bottom } = borderProps(properties);
+    if (edge === "middle" && stack) {
+        properties.enableBorderRadius = true;
+        if ((stack._top || 0) === index) edge = top;
+        else if ((stack._bottom || 0) === index) edge = bottom;
+        else {
+            res[parseEdge(bottom, start, end, reverse)] = true;
+            edge = top;
+        }
+    }
+    res[parseEdge(edge, start, end, reverse)] = true;
+    properties.borderSkipped = res;
+}
+function parseEdge(edge, a, b, reverse) {
+    if (reverse) {
+        edge = swap(edge, a, b);
+        edge = startEnd(edge, b, a);
+    } else edge = startEnd(edge, a, b);
+    return edge;
+}
+function swap(orig, v1, v2) {
+    return orig === v1 ? v2 : orig === v2 ? v1 : orig;
+}
+function startEnd(v, start, end) {
+    return v === "start" ? start : v === "end" ? end : v;
+}
+function setInflateAmount(properties, { inflateAmount }, ratio) {
+    properties.inflateAmount = inflateAmount === "auto" ? ratio === 1 ? 0.33 : 0 : inflateAmount;
+}
+class BarController extends DatasetController {
+    static id = "bar";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "bar",
+        categoryPercentage: 0.8,
+        barPercentage: 0.9,
+        grouped: true,
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "base",
+                    "width",
+                    "height"
+                ]
+            }
+        }
+    };
+    static overrides = {
+        scales: {
+            _index_: {
+                type: "category",
+                offset: true,
+                grid: {
+                    offset: true
+                }
+            },
+            _value_: {
+                type: "linear",
+                beginAtZero: true
+            }
+        }
+    };
+    parsePrimitiveData(meta, data, start, count) {
+        return parseArrayOrPrimitive(meta, data, start, count);
+    }
+    parseArrayData(meta, data, start, count) {
+        return parseArrayOrPrimitive(meta, data, start, count);
+    }
+    parseObjectData(meta, data, start, count) {
+        const { iScale, vScale } = meta;
+        const { xAxisKey = "x", yAxisKey = "y" } = this._parsing;
+        const iAxisKey = iScale.axis === "x" ? xAxisKey : yAxisKey;
+        const vAxisKey = vScale.axis === "x" ? xAxisKey : yAxisKey;
+        const parsed = [];
+        let i, ilen, item, obj;
+        for(i = start, ilen = start + count; i < ilen; ++i){
+            obj = data[i];
+            item = {};
+            item[iScale.axis] = iScale.parse((0, _helpersSegmentJs.f)(obj, iAxisKey), i);
+            parsed.push(parseValue((0, _helpersSegmentJs.f)(obj, vAxisKey), item, vScale, i));
+        }
+        return parsed;
+    }
+    updateRangeFromParsed(range, scale, parsed, stack) {
+        super.updateRangeFromParsed(range, scale, parsed, stack);
+        const custom = parsed._custom;
+        if (custom && scale === this._cachedMeta.vScale) {
+            range.min = Math.min(range.min, custom.min);
+            range.max = Math.max(range.max, custom.max);
+        }
+    }
+    getMaxOverflow() {
+        return 0;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const { iScale, vScale } = meta;
+        const parsed = this.getParsed(index);
+        const custom = parsed._custom;
+        const value = isFloatBar(custom) ? "[" + custom.start + ", " + custom.end + "]" : "" + vScale.getLabelForValue(parsed[vScale.axis]);
+        return {
+            label: "" + iScale.getLabelForValue(parsed[iScale.axis]),
+            value
+        };
+    }
+    initialize() {
+        this.enableOptionSharing = true;
+        super.initialize();
+        const meta = this._cachedMeta;
+        meta.stack = this.getDataset().stack;
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        this.updateElements(meta.data, 0, meta.data.length, mode);
+    }
+    updateElements(bars, start, count, mode) {
+        const reset = mode === "reset";
+        const { index, _cachedMeta: { vScale } } = this;
+        const base = vScale.getBasePixel();
+        const horizontal = vScale.isHorizontal();
+        const ruler = this._getRuler();
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
+        for(let i = start; i < start + count; i++){
+            const parsed = this.getParsed(i);
+            const vpixels = reset || (0, _helpersSegmentJs.k)(parsed[vScale.axis]) ? {
+                base,
+                head: base
+            } : this._calculateBarValuePixels(i);
+            const ipixels = this._calculateBarIndexPixels(i, ruler);
+            const stack = (parsed._stacks || {})[vScale.axis];
+            const properties = {
+                horizontal,
+                base: vpixels.base,
+                enableBorderRadius: !stack || isFloatBar(parsed._custom) || index === stack._top || index === stack._bottom,
+                x: horizontal ? vpixels.head : ipixels.center,
+                y: horizontal ? ipixels.center : vpixels.head,
+                height: horizontal ? ipixels.size : Math.abs(vpixels.size),
+                width: horizontal ? Math.abs(vpixels.size) : ipixels.size
+            };
+            if (includeOptions) properties.options = sharedOptions || this.resolveDataElementOptions(i, bars[i].active ? "active" : mode);
+            const options = properties.options || bars[i].options;
+            setBorderSkipped(properties, options, stack, index);
+            setInflateAmount(properties, options, ruler.ratio);
+            this.updateElement(bars[i], i, properties, mode);
+        }
+    }
+    _getStacks(last, dataIndex) {
+        const { iScale } = this._cachedMeta;
+        const metasets = iScale.getMatchingVisibleMetas(this._type).filter((meta)=>meta.controller.options.grouped);
+        const stacked = iScale.options.stacked;
+        const stacks = [];
+        const skipNull = (meta)=>{
+            const parsed = meta.controller.getParsed(dataIndex);
+            const val = parsed && parsed[meta.vScale.axis];
+            if ((0, _helpersSegmentJs.k)(val) || isNaN(val)) return true;
+        };
+        for (const meta of metasets){
+            if (dataIndex !== undefined && skipNull(meta)) continue;
+            if (stacked === false || stacks.indexOf(meta.stack) === -1 || stacked === undefined && meta.stack === undefined) stacks.push(meta.stack);
+            if (meta.index === last) break;
+        }
+        if (!stacks.length) stacks.push(undefined);
+        return stacks;
+    }
+    _getStackCount(index) {
+        return this._getStacks(undefined, index).length;
+    }
+    _getStackIndex(datasetIndex, name, dataIndex) {
+        const stacks = this._getStacks(datasetIndex, dataIndex);
+        const index = name !== undefined ? stacks.indexOf(name) : -1;
+        return index === -1 ? stacks.length - 1 : index;
+    }
+    _getRuler() {
+        const opts = this.options;
+        const meta = this._cachedMeta;
+        const iScale = meta.iScale;
+        const pixels = [];
+        let i, ilen;
+        for(i = 0, ilen = meta.data.length; i < ilen; ++i)pixels.push(iScale.getPixelForValue(this.getParsed(i)[iScale.axis], i));
+        const barThickness = opts.barThickness;
+        const min = barThickness || computeMinSampleSize(meta);
+        return {
+            min,
+            pixels,
+            start: iScale._startPixel,
+            end: iScale._endPixel,
+            stackCount: this._getStackCount(),
+            scale: iScale,
+            grouped: opts.grouped,
+            ratio: barThickness ? 1 : opts.categoryPercentage * opts.barPercentage
+        };
+    }
+    _calculateBarValuePixels(index) {
+        const { _cachedMeta: { vScale, _stacked, index: datasetIndex }, options: { base: baseValue, minBarLength } } = this;
+        const actualBase = baseValue || 0;
+        const parsed = this.getParsed(index);
+        const custom = parsed._custom;
+        const floating = isFloatBar(custom);
+        let value = parsed[vScale.axis];
+        let start = 0;
+        let length = _stacked ? this.applyStack(vScale, parsed, _stacked) : value;
+        let head, size;
+        if (length !== value) {
+            start = length - value;
+            length = value;
+        }
+        if (floating) {
+            value = custom.barStart;
+            length = custom.barEnd - custom.barStart;
+            if (value !== 0 && (0, _helpersSegmentJs.s)(value) !== (0, _helpersSegmentJs.s)(custom.barEnd)) start = 0;
+            start += value;
+        }
+        const startValue = !(0, _helpersSegmentJs.k)(baseValue) && !floating ? baseValue : start;
+        let base = vScale.getPixelForValue(startValue);
+        if (this.chart.getDataVisibility(index)) head = vScale.getPixelForValue(start + length);
+        else head = base;
+        size = head - base;
+        if (Math.abs(size) < minBarLength) {
+            size = barSign(size, vScale, actualBase) * minBarLength;
+            if (value === actualBase) base -= size / 2;
+            const startPixel = vScale.getPixelForDecimal(0);
+            const endPixel = vScale.getPixelForDecimal(1);
+            const min = Math.min(startPixel, endPixel);
+            const max = Math.max(startPixel, endPixel);
+            base = Math.max(Math.min(base, max), min);
+            head = base + size;
+            if (_stacked && !floating) parsed._stacks[vScale.axis]._visualValues[datasetIndex] = vScale.getValueForPixel(head) - vScale.getValueForPixel(base);
+        }
+        if (base === vScale.getPixelForValue(actualBase)) {
+            const halfGrid = (0, _helpersSegmentJs.s)(size) * vScale.getLineWidthForValue(actualBase) / 2;
+            base += halfGrid;
+            size -= halfGrid;
+        }
+        return {
+            size,
+            base,
+            head,
+            center: head + size / 2
+        };
+    }
+    _calculateBarIndexPixels(index, ruler) {
+        const scale = ruler.scale;
+        const options = this.options;
+        const skipNull = options.skipNull;
+        const maxBarThickness = (0, _helpersSegmentJs.v)(options.maxBarThickness, Infinity);
+        let center, size;
+        if (ruler.grouped) {
+            const stackCount = skipNull ? this._getStackCount(index) : ruler.stackCount;
+            const range = options.barThickness === "flex" ? computeFlexCategoryTraits(index, ruler, options, stackCount) : computeFitCategoryTraits(index, ruler, options, stackCount);
+            const stackIndex = this._getStackIndex(this.index, this._cachedMeta.stack, skipNull ? index : undefined);
+            center = range.start + range.chunk * stackIndex + range.chunk / 2;
+            size = Math.min(maxBarThickness, range.chunk * range.ratio);
+        } else {
+            center = scale.getPixelForValue(this.getParsed(index)[scale.axis], index);
+            size = Math.min(maxBarThickness, ruler.min * ruler.ratio);
+        }
+        return {
+            base: center - size / 2,
+            head: center + size / 2,
+            center,
+            size
+        };
+    }
+    draw() {
+        const meta = this._cachedMeta;
+        const vScale = meta.vScale;
+        const rects = meta.data;
+        const ilen = rects.length;
+        let i = 0;
+        for(; i < ilen; ++i)if (this.getParsed(i)[vScale.axis] !== null) rects[i].draw(this._ctx);
+    }
+}
+class BubbleController extends DatasetController {
+    static id = "bubble";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "point",
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "borderWidth",
+                    "radius"
+                ]
+            }
+        }
+    };
+    static overrides = {
+        scales: {
+            x: {
+                type: "linear"
+            },
+            y: {
+                type: "linear"
+            }
+        }
+    };
+    initialize() {
+        this.enableOptionSharing = true;
+        super.initialize();
+    }
+    parsePrimitiveData(meta, data, start, count) {
+        const parsed = super.parsePrimitiveData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++)parsed[i]._custom = this.resolveDataElementOptions(i + start).radius;
+        return parsed;
+    }
+    parseArrayData(meta, data, start, count) {
+        const parsed = super.parseArrayData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++){
+            const item = data[start + i];
+            parsed[i]._custom = (0, _helpersSegmentJs.v)(item[2], this.resolveDataElementOptions(i + start).radius);
+        }
+        return parsed;
+    }
+    parseObjectData(meta, data, start, count) {
+        const parsed = super.parseObjectData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++){
+            const item = data[start + i];
+            parsed[i]._custom = (0, _helpersSegmentJs.v)(item && item.r && +item.r, this.resolveDataElementOptions(i + start).radius);
+        }
+        return parsed;
+    }
+    getMaxOverflow() {
+        const data = this._cachedMeta.data;
+        let max = 0;
+        for(let i = data.length - 1; i >= 0; --i)max = Math.max(max, data[i].size(this.resolveDataElementOptions(i)) / 2);
+        return max > 0 && max;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const labels = this.chart.data.labels || [];
+        const { xScale, yScale } = meta;
+        const parsed = this.getParsed(index);
+        const x = xScale.getLabelForValue(parsed.x);
+        const y = yScale.getLabelForValue(parsed.y);
+        const r = parsed._custom;
+        return {
+            label: labels[index] || "",
+            value: "(" + x + ", " + y + (r ? ", " + r : "") + ")"
+        };
+    }
+    update(mode) {
+        const points = this._cachedMeta.data;
+        this.updateElements(points, 0, points.length, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === "reset";
+        const { iScale, vScale } = this._cachedMeta;
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        for(let i = start; i < start + count; i++){
+            const point = points[i];
+            const parsed = !reset && this.getParsed(i);
+            const properties = {};
+            const iPixel = properties[iAxis] = reset ? iScale.getPixelForDecimal(0.5) : iScale.getPixelForValue(parsed[iAxis]);
+            const vPixel = properties[vAxis] = reset ? vScale.getBasePixel() : vScale.getPixelForValue(parsed[vAxis]);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel);
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? "active" : mode);
+                if (reset) properties.options.radius = 0;
+            }
+            this.updateElement(point, i, properties, mode);
+        }
+    }
+    resolveDataElementOptions(index, mode) {
+        const parsed = this.getParsed(index);
+        let values = super.resolveDataElementOptions(index, mode);
+        if (values.$shared) values = Object.assign({}, values, {
+            $shared: false
+        });
+        const radius = values.radius;
+        if (mode !== "active") values.radius = 0;
+        values.radius += (0, _helpersSegmentJs.v)(parsed && parsed._custom, radius);
+        return values;
+    }
+}
+function getRatioAndOffset(rotation, circumference, cutout) {
+    let ratioX = 1;
+    let ratioY = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    if (circumference < (0, _helpersSegmentJs.T)) {
+        const startAngle = rotation;
+        const endAngle = startAngle + circumference;
+        const startX = Math.cos(startAngle);
+        const startY = Math.sin(startAngle);
+        const endX = Math.cos(endAngle);
+        const endY = Math.sin(endAngle);
+        const calcMax = (angle, a, b)=>(0, _helpersSegmentJs.p)(angle, startAngle, endAngle, true) ? 1 : Math.max(a, a * cutout, b, b * cutout);
+        const calcMin = (angle, a, b)=>(0, _helpersSegmentJs.p)(angle, startAngle, endAngle, true) ? -1 : Math.min(a, a * cutout, b, b * cutout);
+        const maxX = calcMax(0, startX, endX);
+        const maxY = calcMax((0, _helpersSegmentJs.H), startY, endY);
+        const minX = calcMin((0, _helpersSegmentJs.P), startX, endX);
+        const minY = calcMin((0, _helpersSegmentJs.P) + (0, _helpersSegmentJs.H), startY, endY);
+        ratioX = (maxX - minX) / 2;
+        ratioY = (maxY - minY) / 2;
+        offsetX = -(maxX + minX) / 2;
+        offsetY = -(maxY + minY) / 2;
+    }
+    return {
+        ratioX,
+        ratioY,
+        offsetX,
+        offsetY
+    };
+}
+class DoughnutController extends DatasetController {
+    static id = "doughnut";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "arc",
+        animation: {
+            animateRotate: true,
+            animateScale: false
+        },
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "circumference",
+                    "endAngle",
+                    "innerRadius",
+                    "outerRadius",
+                    "startAngle",
+                    "x",
+                    "y",
+                    "offset",
+                    "borderWidth",
+                    "spacing"
+                ]
+            }
+        },
+        cutout: "50%",
+        rotation: 0,
+        circumference: 360,
+        radius: "100%",
+        spacing: 0,
+        indexAxis: "r"
+    };
+    static descriptors = {
+        _scriptable: (name)=>name !== "spacing",
+        _indexable: (name)=>name !== "spacing" && !name.startsWith("borderDash") && !name.startsWith("hoverBorderDash")
+    };
+    static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const { labels: { pointStyle, color } } = chart.legend.options;
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    strokeStyle: style.borderColor,
+                                    fontColor: color,
+                                    lineWidth: style.borderWidth,
+                                    pointStyle: pointStyle,
+                                    hidden: !chart.getDataVisibility(i),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.enableOptionSharing = true;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.offsetX = undefined;
+        this.offsetY = undefined;
+    }
+    linkScales() {}
+    parse(start, count) {
+        const data = this.getDataset().data;
+        const meta = this._cachedMeta;
+        if (this._parsing === false) meta._parsed = data;
+        else {
+            let getter = (i)=>+data[i];
+            if ((0, _helpersSegmentJs.i)(data[start])) {
+                const { key = "value" } = this._parsing;
+                getter = (i)=>+(0, _helpersSegmentJs.f)(data[i], key);
+            }
+            let i, ilen;
+            for(i = start, ilen = start + count; i < ilen; ++i)meta._parsed[i] = getter(i);
+        }
+    }
+    _getRotation() {
+        return (0, _helpersSegmentJs.t)(this.options.rotation - 90);
+    }
+    _getCircumference() {
+        return (0, _helpersSegmentJs.t)(this.options.circumference);
+    }
+    _getRotationExtents() {
+        let min = (0, _helpersSegmentJs.T);
+        let max = -(0, _helpersSegmentJs.T);
+        for(let i = 0; i < this.chart.data.datasets.length; ++i)if (this.chart.isDatasetVisible(i) && this.chart.getDatasetMeta(i).type === this._type) {
+            const controller = this.chart.getDatasetMeta(i).controller;
+            const rotation = controller._getRotation();
+            const circumference = controller._getCircumference();
+            min = Math.min(min, rotation);
+            max = Math.max(max, rotation + circumference);
+        }
+        return {
+            rotation: min,
+            circumference: max - min
+        };
+    }
+    update(mode) {
+        const chart = this.chart;
+        const { chartArea } = chart;
+        const meta = this._cachedMeta;
+        const arcs = meta.data;
+        const spacing = this.getMaxBorderWidth() + this.getMaxOffset(arcs) + this.options.spacing;
+        const maxSize = Math.max((Math.min(chartArea.width, chartArea.height) - spacing) / 2, 0);
+        const cutout = Math.min((0, _helpersSegmentJs.m)(this.options.cutout, maxSize), 1);
+        const chartWeight = this._getRingWeight(this.index);
+        const { circumference, rotation } = this._getRotationExtents();
+        const { ratioX, ratioY, offsetX, offsetY } = getRatioAndOffset(rotation, circumference, cutout);
+        const maxWidth = (chartArea.width - spacing) / ratioX;
+        const maxHeight = (chartArea.height - spacing) / ratioY;
+        const maxRadius = Math.max(Math.min(maxWidth, maxHeight) / 2, 0);
+        const outerRadius = (0, _helpersSegmentJs.n)(this.options.radius, maxRadius);
+        const innerRadius = Math.max(outerRadius * cutout, 0);
+        const radiusLength = (outerRadius - innerRadius) / this._getVisibleDatasetWeightTotal();
+        this.offsetX = offsetX * outerRadius;
+        this.offsetY = offsetY * outerRadius;
+        meta.total = this.calculateTotal();
+        this.outerRadius = outerRadius - radiusLength * this._getRingWeightOffset(this.index);
+        this.innerRadius = Math.max(this.outerRadius - radiusLength * chartWeight, 0);
+        this.updateElements(arcs, 0, arcs.length, mode);
+    }
+    _circumference(i, reset) {
+        const opts = this.options;
+        const meta = this._cachedMeta;
+        const circumference = this._getCircumference();
+        if (reset && opts.animation.animateRotate || !this.chart.getDataVisibility(i) || meta._parsed[i] === null || meta.data[i].hidden) return 0;
+        return this.calculateCircumference(meta._parsed[i] * circumference / (0, _helpersSegmentJs.T));
+    }
+    updateElements(arcs, start, count, mode) {
+        const reset = mode === "reset";
+        const chart = this.chart;
+        const chartArea = chart.chartArea;
+        const opts = chart.options;
+        const animationOpts = opts.animation;
+        const centerX = (chartArea.left + chartArea.right) / 2;
+        const centerY = (chartArea.top + chartArea.bottom) / 2;
+        const animateScale = reset && animationOpts.animateScale;
+        const innerRadius = animateScale ? 0 : this.innerRadius;
+        const outerRadius = animateScale ? 0 : this.outerRadius;
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
+        let startAngle = this._getRotation();
+        let i;
+        for(i = 0; i < start; ++i)startAngle += this._circumference(i, reset);
+        for(i = start; i < start + count; ++i){
+            const circumference = this._circumference(i, reset);
+            const arc = arcs[i];
+            const properties = {
+                x: centerX + this.offsetX,
+                y: centerY + this.offsetY,
+                startAngle,
+                endAngle: startAngle + circumference,
+                circumference,
+                outerRadius,
+                innerRadius
+            };
+            if (includeOptions) properties.options = sharedOptions || this.resolveDataElementOptions(i, arc.active ? "active" : mode);
+            startAngle += circumference;
+            this.updateElement(arc, i, properties, mode);
+        }
+    }
+    calculateTotal() {
+        const meta = this._cachedMeta;
+        const metaData = meta.data;
+        let total = 0;
+        let i;
+        for(i = 0; i < metaData.length; i++){
+            const value = meta._parsed[i];
+            if (value !== null && !isNaN(value) && this.chart.getDataVisibility(i) && !metaData[i].hidden) total += Math.abs(value);
+        }
+        return total;
+    }
+    calculateCircumference(value) {
+        const total = this._cachedMeta.total;
+        if (total > 0 && !isNaN(value)) return (0, _helpersSegmentJs.T) * (Math.abs(value) / total);
+        return 0;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const chart = this.chart;
+        const labels = chart.data.labels || [];
+        const value = (0, _helpersSegmentJs.o)(meta._parsed[index], chart.options.locale);
+        return {
+            label: labels[index] || "",
+            value
+        };
+    }
+    getMaxBorderWidth(arcs) {
+        let max = 0;
+        const chart = this.chart;
+        let i, ilen, meta, controller, options;
+        if (!arcs) {
+            for(i = 0, ilen = chart.data.datasets.length; i < ilen; ++i)if (chart.isDatasetVisible(i)) {
+                meta = chart.getDatasetMeta(i);
+                arcs = meta.data;
+                controller = meta.controller;
+                break;
+            }
+        }
+        if (!arcs) return 0;
+        for(i = 0, ilen = arcs.length; i < ilen; ++i){
+            options = controller.resolveDataElementOptions(i);
+            if (options.borderAlign !== "inner") max = Math.max(max, options.borderWidth || 0, options.hoverBorderWidth || 0);
+        }
+        return max;
+    }
+    getMaxOffset(arcs) {
+        let max = 0;
+        for(let i = 0, ilen = arcs.length; i < ilen; ++i){
+            const options = this.resolveDataElementOptions(i);
+            max = Math.max(max, options.offset || 0, options.hoverOffset || 0);
+        }
+        return max;
+    }
+    _getRingWeightOffset(datasetIndex) {
+        let ringWeightOffset = 0;
+        for(let i = 0; i < datasetIndex; ++i)if (this.chart.isDatasetVisible(i)) ringWeightOffset += this._getRingWeight(i);
+        return ringWeightOffset;
+    }
+    _getRingWeight(datasetIndex) {
+        return Math.max((0, _helpersSegmentJs.v)(this.chart.data.datasets[datasetIndex].weight, 1), 0);
+    }
+    _getVisibleDatasetWeightTotal() {
+        return this._getRingWeightOffset(this.chart.data.datasets.length) || 1;
+    }
+}
+class LineController extends DatasetController {
+    static id = "line";
+    static defaults = {
+        datasetElementType: "line",
+        dataElementType: "point",
+        showLine: true,
+        spanGaps: false
+    };
+    static overrides = {
+        scales: {
+            _index_: {
+                type: "category"
+            },
+            _value_: {
+                type: "linear"
+            }
+        }
+    };
+    initialize() {
+        this.enableOptionSharing = true;
+        this.supportsDecimation = true;
+        super.initialize();
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const { dataset: line, data: points = [], _dataset } = meta;
+        const animationsDisabled = this.chart._animationsDisabled;
+        let { start, count } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
+        this._drawStart = start;
+        this._drawCount = count;
+        if ((0, _helpersSegmentJs.w)(meta)) {
+            start = 0;
+            count = points.length;
+        }
+        line._chart = this.chart;
+        line._datasetIndex = this.index;
+        line._decimated = !!_dataset._decimated;
+        line.points = points.slice(Math.max(this._drawStart - 1, 0), this._drawStart + this._drawCount);
+        const options = this.resolveDatasetElementOptions(mode);
+        if (!this.options.showLine) options.borderWidth = 0;
+        options.segment = this.options.segment;
+        this.updateElement(line, undefined, {
+            animated: !animationsDisabled,
+            options
+        }, mode);
+        this.updateElements(points, start, count, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === "reset";
+        const { iScale, vScale, _stacked, _dataset } = this._cachedMeta;
+        const { sharedOptions, includeOptions } = this._getSharedOptions(start, mode);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const { spanGaps, segment } = this.options;
+        const maxGapLength = (0, _helpersSegmentJs.x)(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
+        const directUpdate = this.chart._animationsDisabled || reset || mode === "none";
+        const end = start + count;
+        const pointsCount = points.length;
+        let prevParsed = start > 0 && this.getParsed(start - 1);
+        for(let i = 0; i < pointsCount; ++i){
+            const point = points[i];
+            const properties = directUpdate ? point : {};
+            if (i < start || i >= end) {
+                properties.skip = true;
+                continue;
+            }
+            const parsed = this.getParsed(i);
+            const nullData = (0, _helpersSegmentJs.k)(parsed[vAxis]);
+            const iPixel = properties[iAxis] = iScale.getPixelForValue(parsed[iAxis], i);
+            const vPixel = properties[vAxis] = reset || nullData ? vScale.getBasePixel() : vScale.getPixelForValue(_stacked ? this.applyStack(vScale, parsed, _stacked) : parsed[vAxis], i);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel) || nullData;
+            properties.stop = i > 0 && Math.abs(parsed[iAxis] - prevParsed[iAxis]) > maxGapLength;
+            if (segment) {
+                properties.parsed = parsed;
+                properties.raw = _dataset.data[i];
+            }
+            if (includeOptions) properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? "active" : mode);
+            if (!directUpdate) this.updateElement(point, i, properties, mode);
+            prevParsed = parsed;
+        }
+    }
+    getMaxOverflow() {
+        const meta = this._cachedMeta;
+        const dataset = meta.dataset;
+        const border = dataset.options && dataset.options.borderWidth || 0;
+        const data = meta.data || [];
+        if (!data.length) return border;
+        const firstPoint = data[0].size(this.resolveDataElementOptions(0));
+        const lastPoint = data[data.length - 1].size(this.resolveDataElementOptions(data.length - 1));
+        return Math.max(border, firstPoint, lastPoint) / 2;
+    }
+    draw() {
+        const meta = this._cachedMeta;
+        meta.dataset.updateControlPoints(this.chart.chartArea, meta.iScale.axis);
+        super.draw();
+    }
+}
+class PolarAreaController extends DatasetController {
+    static id = "polarArea";
+    static defaults = {
+        dataElementType: "arc",
+        animation: {
+            animateRotate: true,
+            animateScale: true
+        },
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "startAngle",
+                    "endAngle",
+                    "innerRadius",
+                    "outerRadius"
+                ]
+            }
+        },
+        indexAxis: "r",
+        startAngle: 0
+    };
+    static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const { labels: { pointStyle, color } } = chart.legend.options;
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    strokeStyle: style.borderColor,
+                                    fontColor: color,
+                                    lineWidth: style.borderWidth,
+                                    pointStyle: pointStyle,
+                                    hidden: !chart.getDataVisibility(i),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        },
+        scales: {
+            r: {
+                type: "radialLinear",
+                angleLines: {
+                    display: false
+                },
+                beginAtZero: true,
+                grid: {
+                    circular: true
+                },
+                pointLabels: {
+                    display: false
+                },
+                startAngle: 0
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const chart = this.chart;
+        const labels = chart.data.labels || [];
+        const value = (0, _helpersSegmentJs.o)(meta._parsed[index].r, chart.options.locale);
+        return {
+            label: labels[index] || "",
+            value
+        };
+    }
+    parseObjectData(meta, data, start, count) {
+        return (0, _helpersSegmentJs.y).bind(this)(meta, data, start, count);
+    }
+    update(mode) {
+        const arcs = this._cachedMeta.data;
+        this._updateRadius();
+        this.updateElements(arcs, 0, arcs.length, mode);
+    }
+    getMinMax() {
+        const meta = this._cachedMeta;
+        const range = {
+            min: Number.POSITIVE_INFINITY,
+            max: Number.NEGATIVE_INFINITY
+        };
+        meta.data.forEach((element, index)=>{
+            const parsed = this.getParsed(index).r;
+            if (!isNaN(parsed) && this.chart.getDataVisibility(index)) {
+                if (parsed < range.min) range.min = parsed;
+                if (parsed > range.max) range.max = parsed;
+            }
+        });
+        return range;
+    }
+    _updateRadius() {
+        const chart = this.chart;
+        const chartArea = chart.chartArea;
+        const opts = chart.options;
+        const minSize = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        const outerRadius = Math.max(minSize / 2, 0);
+        const innerRadius = Math.max(opts.cutoutPercentage ? outerRadius / 100 * opts.cutoutPercentage : 1, 0);
+        const radiusLength = (outerRadius - innerRadius) / chart.getVisibleDatasetCount();
+        this.outerRadius = outerRadius - radiusLength * this.index;
+        this.innerRadius = this.outerRadius - radiusLength;
+    }
+    updateElements(arcs, start, count, mode) {
+        const reset = mode === "reset";
+        const chart = this.chart;
+        const opts = chart.options;
+        const animationOpts = opts.animation;
+        const scale = this._cachedMeta.rScale;
+        const centerX = scale.xCenter;
+        const centerY = scale.yCenter;
+        const datasetStartAngle = scale.getIndexAngle(0) - 0.5 * (0, _helpersSegmentJs.P);
+        let angle = datasetStartAngle;
+        let i;
+        const defaultAngle = 360 / this.countVisibleElements();
+        for(i = 0; i < start; ++i)angle += this._computeAngle(i, mode, defaultAngle);
+        for(i = start; i < start + count; i++){
+            const arc = arcs[i];
+            let startAngle = angle;
+            let endAngle = angle + this._computeAngle(i, mode, defaultAngle);
+            let outerRadius = chart.getDataVisibility(i) ? scale.getDistanceFromCenterForValue(this.getParsed(i).r) : 0;
+            angle = endAngle;
+            if (reset) {
+                if (animationOpts.animateScale) outerRadius = 0;
+                if (animationOpts.animateRotate) startAngle = endAngle = datasetStartAngle;
+            }
+            const properties = {
+                x: centerX,
+                y: centerY,
+                innerRadius: 0,
+                outerRadius,
+                startAngle,
+                endAngle,
+                options: this.resolveDataElementOptions(i, arc.active ? "active" : mode)
+            };
+            this.updateElement(arc, i, properties, mode);
+        }
+    }
+    countVisibleElements() {
+        const meta = this._cachedMeta;
+        let count = 0;
+        meta.data.forEach((element, index)=>{
+            if (!isNaN(this.getParsed(index).r) && this.chart.getDataVisibility(index)) count++;
+        });
+        return count;
+    }
+    _computeAngle(index, mode, defaultAngle) {
+        return this.chart.getDataVisibility(index) ? (0, _helpersSegmentJs.t)(this.resolveDataElementOptions(index, mode).angle || defaultAngle) : 0;
+    }
+}
+class PieController extends DoughnutController {
+    static id = "pie";
+    static defaults = {
+        cutout: 0,
+        rotation: 0,
+        circumference: 360,
+        radius: "100%"
+    };
+}
+class RadarController extends DatasetController {
+    static id = "radar";
+    static defaults = {
+        datasetElementType: "line",
+        dataElementType: "point",
+        indexAxis: "r",
+        showLine: true,
+        elements: {
+            line: {
+                fill: "start"
+            }
+        }
+    };
+    static overrides = {
+        aspectRatio: 1,
+        scales: {
+            r: {
+                type: "radialLinear"
+            }
+        }
+    };
+    getLabelAndValue(index) {
+        const vScale = this._cachedMeta.vScale;
+        const parsed = this.getParsed(index);
+        return {
+            label: vScale.getLabels()[index],
+            value: "" + vScale.getLabelForValue(parsed[vScale.axis])
+        };
+    }
+    parseObjectData(meta, data, start, count) {
+        return (0, _helpersSegmentJs.y).bind(this)(meta, data, start, count);
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const line = meta.dataset;
+        const points = meta.data || [];
+        const labels = meta.iScale.getLabels();
+        line.points = points;
+        if (mode !== "resize") {
+            const options = this.resolveDatasetElementOptions(mode);
+            if (!this.options.showLine) options.borderWidth = 0;
+            const properties = {
+                _loop: true,
+                _fullLoop: labels.length === points.length,
+                options
+            };
+            this.updateElement(line, undefined, properties, mode);
+        }
+        this.updateElements(points, 0, points.length, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const scale = this._cachedMeta.rScale;
+        const reset = mode === "reset";
+        for(let i = start; i < start + count; i++){
+            const point = points[i];
+            const options = this.resolveDataElementOptions(i, point.active ? "active" : mode);
+            const pointPosition = scale.getPointPositionForValue(i, this.getParsed(i).r);
+            const x = reset ? scale.xCenter : pointPosition.x;
+            const y = reset ? scale.yCenter : pointPosition.y;
+            const properties = {
+                x,
+                y,
+                angle: pointPosition.angle,
+                skip: isNaN(x) || isNaN(y),
+                options
+            };
+            this.updateElement(point, i, properties, mode);
+        }
+    }
+}
+class ScatterController extends DatasetController {
+    static id = "scatter";
+    static defaults = {
+        datasetElementType: false,
+        dataElementType: "point",
+        showLine: false,
+        fill: false
+    };
+    static overrides = {
+        interaction: {
+            mode: "point"
+        },
+        scales: {
+            x: {
+                type: "linear"
+            },
+            y: {
+                type: "linear"
+            }
+        }
+    };
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const labels = this.chart.data.labels || [];
+        const { xScale, yScale } = meta;
+        const parsed = this.getParsed(index);
+        const x = xScale.getLabelForValue(parsed.x);
+        const y = yScale.getLabelForValue(parsed.y);
+        return {
+            label: labels[index] || "",
+            value: "(" + x + ", " + y + ")"
+        };
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const { data: points = [] } = meta;
+        const animationsDisabled = this.chart._animationsDisabled;
+        let { start, count } = (0, _helpersSegmentJs.q)(meta, points, animationsDisabled);
+        this._drawStart = start;
+        this._drawCount = count;
+        if ((0, _helpersSegmentJs.w)(meta)) {
+            start = 0;
+            count = points.length;
+        }
+        if (this.options.showLine) {
+            if (!this.datasetElementType) this.addElements();
+            const { dataset: line, _dataset } = meta;
+            line._chart = this.chart;
+            line._datasetIndex = this.index;
+            line._decimated = !!_dataset._decimated;
+            line.points = points;
+            const options = this.resolveDatasetElementOptions(mode);
+            options.segment = this.options.segment;
+            this.updateElement(line, undefined, {
+                animated: !animationsDisabled,
+                options
+            }, mode);
+        } else if (this.datasetElementType) {
+            delete meta.dataset;
+            this.datasetElementType = false;
+        }
+        this.updateElements(points, start, count, mode);
+    }
+    addElements() {
+        const { showLine } = this.options;
+        if (!this.datasetElementType && showLine) this.datasetElementType = this.chart.registry.getElement("line");
+        super.addElements();
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === "reset";
+        const { iScale, vScale, _stacked, _dataset } = this._cachedMeta;
+        const firstOpts = this.resolveDataElementOptions(start, mode);
+        const sharedOptions = this.getSharedOptions(firstOpts);
+        const includeOptions = this.includeOptions(mode, sharedOptions);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const { spanGaps, segment } = this.options;
+        const maxGapLength = (0, _helpersSegmentJs.x)(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
+        const directUpdate = this.chart._animationsDisabled || reset || mode === "none";
+        let prevParsed = start > 0 && this.getParsed(start - 1);
+        for(let i = start; i < start + count; ++i){
+            const point = points[i];
+            const parsed = this.getParsed(i);
+            const properties = directUpdate ? point : {};
+            const nullData = (0, _helpersSegmentJs.k)(parsed[vAxis]);
+            const iPixel = properties[iAxis] = iScale.getPixelForValue(parsed[iAxis], i);
+            const vPixel = properties[vAxis] = reset || nullData ? vScale.getBasePixel() : vScale.getPixelForValue(_stacked ? this.applyStack(vScale, parsed, _stacked) : parsed[vAxis], i);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel) || nullData;
+            properties.stop = i > 0 && Math.abs(parsed[iAxis] - prevParsed[iAxis]) > maxGapLength;
+            if (segment) {
+                properties.parsed = parsed;
+                properties.raw = _dataset.data[i];
+            }
+            if (includeOptions) properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? "active" : mode);
+            if (!directUpdate) this.updateElement(point, i, properties, mode);
+            prevParsed = parsed;
+        }
+        this.updateSharedOptions(sharedOptions, mode, firstOpts);
+    }
+    getMaxOverflow() {
+        const meta = this._cachedMeta;
+        const data = meta.data || [];
+        if (!this.options.showLine) {
+            let max = 0;
+            for(let i = data.length - 1; i >= 0; --i)max = Math.max(max, data[i].size(this.resolveDataElementOptions(i)) / 2);
+            return max > 0 && max;
+        }
+        const dataset = meta.dataset;
+        const border = dataset.options && dataset.options.borderWidth || 0;
+        if (!data.length) return border;
+        const firstPoint = data[0].size(this.resolveDataElementOptions(0));
+        const lastPoint = data[data.length - 1].size(this.resolveDataElementOptions(data.length - 1));
+        return Math.max(border, firstPoint, lastPoint) / 2;
+    }
+}
+var controllers = /*#__PURE__*/ Object.freeze({
+    __proto__: null,
+    BarController: BarController,
+    BubbleController: BubbleController,
+    DoughnutController: DoughnutController,
+    LineController: LineController,
+    PieController: PieController,
+    PolarAreaController: PolarAreaController,
+    RadarController: RadarController,
+    ScatterController: ScatterController
+});
+/**
+ * @namespace Chart._adapters
+ * @since 2.8.0
+ * @private
+ */ function abstract() {
+    throw new Error("This method is not implemented: Check that a complete date adapter is provided.");
+}
+/**
+ * Date adapter (current used by the time scale)
+ * @namespace Chart._adapters._date
+ * @memberof Chart._adapters
+ * @private
+ */ class DateAdapterBase {
+    /**
+   * Override default date adapter methods.
+   * Accepts type parameter to define options type.
+   * @example
+   * Chart._adapters._date.override<{myAdapterOption: string}>({
+   *   init() {
+   *     console.log(this.options.myAdapterOption);
+   *   }
+   * })
+   */ static override(members) {
+        Object.assign(DateAdapterBase.prototype, members);
+    }
+    options;
+    constructor(options){
+        this.options = options || {};
+    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    init() {}
+    formats() {
+        return abstract();
+    }
+    parse() {
+        return abstract();
+    }
+    format() {
+        return abstract();
+    }
+    add() {
+        return abstract();
+    }
+    diff() {
+        return abstract();
+    }
+    startOf() {
+        return abstract();
+    }
+    endOf() {
+        return abstract();
+    }
+}
+var adapters = {
+    _date: DateAdapterBase
+};
+function binarySearch(metaset, axis, value, intersect) {
+    const { controller, data, _sorted } = metaset;
+    const iScale = controller._cachedMeta.iScale;
+    if (iScale && axis === iScale.axis && axis !== "r" && _sorted && data.length) {
+        const lookupMethod = iScale._reversePixels ? (0, _helpersSegmentJs.A) : (0, _helpersSegmentJs.B);
+        if (!intersect) return lookupMethod(data, axis, value);
+        else if (controller._sharedOptions) {
+            const el = data[0];
+            const range = typeof el.getRange === "function" && el.getRange(axis);
+            if (range) {
+                const start = lookupMethod(data, axis, value - range);
+                const end = lookupMethod(data, axis, value + range);
+                return {
+                    lo: start.lo,
+                    hi: end.hi
+                };
+            }
+        }
+    }
+    return {
+        lo: 0,
+        hi: data.length - 1
+    };
+}
+function evaluateInteractionItems(chart, axis, position, handler, intersect) {
+    const metasets = chart.getSortedVisibleDatasetMetas();
+    const value = position[axis];
+    for(let i = 0, ilen = metasets.length; i < ilen; ++i){
+        const { index, data } = metasets[i];
+        const { lo, hi } = binarySearch(metasets[i], axis, value, intersect);
+        for(let j = lo; j <= hi; ++j){
+            const element = data[j];
+            if (!element.skip) handler(element, index, j);
+        }
+    }
+}
+function getDistanceMetricForAxis(axis) {
+    const useX = axis.indexOf("x") !== -1;
+    const useY = axis.indexOf("y") !== -1;
+    return function(pt1, pt2) {
+        const deltaX = useX ? Math.abs(pt1.x - pt2.x) : 0;
+        const deltaY = useY ? Math.abs(pt1.y - pt2.y) : 0;
+        return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+    };
+}
+function getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) {
+    const items = [];
+    if (!includeInvisible && !chart.isPointInArea(position)) return items;
+    const evaluationFunc = function(element, datasetIndex, index) {
+        if (!includeInvisible && !(0, _helpersSegmentJs.C)(element, chart.chartArea, 0)) return;
+        if (element.inRange(position.x, position.y, useFinalPosition)) items.push({
+            element,
+            datasetIndex,
+            index
+        });
+    };
+    evaluateInteractionItems(chart, axis, position, evaluationFunc, true);
+    return items;
+}
+function getNearestRadialItems(chart, position, axis, useFinalPosition) {
+    let items = [];
+    function evaluationFunc(element, datasetIndex, index) {
+        const { startAngle, endAngle } = element.getProps([
+            "startAngle",
+            "endAngle"
+        ], useFinalPosition);
+        const { angle } = (0, _helpersSegmentJs.D)(element, {
+            x: position.x,
+            y: position.y
+        });
+        if ((0, _helpersSegmentJs.p)(angle, startAngle, endAngle)) items.push({
+            element,
+            datasetIndex,
+            index
+        });
+    }
+    evaluateInteractionItems(chart, axis, position, evaluationFunc);
+    return items;
+}
+function getNearestCartesianItems(chart, position, axis, intersect, useFinalPosition, includeInvisible) {
+    let items = [];
+    const distanceMetric = getDistanceMetricForAxis(axis);
+    let minDistance = Number.POSITIVE_INFINITY;
+    function evaluationFunc(element, datasetIndex, index) {
+        const inRange = element.inRange(position.x, position.y, useFinalPosition);
+        if (intersect && !inRange) return;
+        const center = element.getCenterPoint(useFinalPosition);
+        const pointInArea = !!includeInvisible || chart.isPointInArea(center);
+        if (!pointInArea && !inRange) return;
+        const distance = distanceMetric(position, center);
+        if (distance < minDistance) {
+            items = [
+                {
+                    element,
+                    datasetIndex,
+                    index
+                }
+            ];
+            minDistance = distance;
+        } else if (distance === minDistance) items.push({
+            element,
+            datasetIndex,
+            index
+        });
+    }
+    evaluateInteractionItems(chart, axis, position, evaluationFunc);
+    return items;
+}
+function getNearestItems(chart, position, axis, intersect, useFinalPosition, includeInvisible) {
+    if (!includeInvisible && !chart.isPointInArea(position)) return [];
+    return axis === "r" && !intersect ? getNearestRadialItems(chart, position, axis, useFinalPosition) : getNearestCartesianItems(chart, position, axis, intersect, useFinalPosition, includeInvisible);
+}
+function getAxisItems(chart, position, axis, intersect, useFinalPosition) {
+    const items = [];
+    const rangeMethod = axis === "x" ? "inXRange" : "inYRange";
+    let intersectsItem = false;
+    evaluateInteractionItems(chart, axis, position, (element, datasetIndex, index)=>{
+        if (element[rangeMethod](position[axis], useFinalPosition)) {
+            items.push({
+                element,
+                datasetIndex,
+                index
+            });
+            intersectsItem = intersectsItem || element.inRange(position.x, position.y, useFinalPosition);
+        }
+    });
+    if (intersect && !intersectsItem) return [];
+    return items;
+}
+var Interaction = {
+    evaluateInteractionItems,
+    modes: {
+        index (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            const axis = options.axis || "x";
+            const includeInvisible = options.includeInvisible || false;
+            const items = options.intersect ? getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) : getNearestItems(chart, position, axis, false, useFinalPosition, includeInvisible);
+            const elements = [];
+            if (!items.length) return [];
+            chart.getSortedVisibleDatasetMetas().forEach((meta)=>{
+                const index = items[0].index;
+                const element = meta.data[index];
+                if (element && !element.skip) elements.push({
+                    element,
+                    datasetIndex: meta.index,
+                    index
+                });
+            });
+            return elements;
+        },
+        dataset (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            const axis = options.axis || "xy";
+            const includeInvisible = options.includeInvisible || false;
+            let items = options.intersect ? getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) : getNearestItems(chart, position, axis, false, useFinalPosition, includeInvisible);
+            if (items.length > 0) {
+                const datasetIndex = items[0].datasetIndex;
+                const data = chart.getDatasetMeta(datasetIndex).data;
+                items = [];
+                for(let i = 0; i < data.length; ++i)items.push({
+                    element: data[i],
+                    datasetIndex,
+                    index: i
+                });
+            }
+            return items;
+        },
+        point (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            const axis = options.axis || "xy";
+            const includeInvisible = options.includeInvisible || false;
+            return getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible);
+        },
+        nearest (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            const axis = options.axis || "xy";
+            const includeInvisible = options.includeInvisible || false;
+            return getNearestItems(chart, position, axis, options.intersect, useFinalPosition, includeInvisible);
+        },
+        x (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            return getAxisItems(chart, position, "x", options.intersect, useFinalPosition);
+        },
+        y (chart, e, options, useFinalPosition) {
+            const position = (0, _helpersSegmentJs.z)(e, chart);
+            return getAxisItems(chart, position, "y", options.intersect, useFinalPosition);
+        }
+    }
+};
+const STATIC_POSITIONS = [
+    "left",
+    "top",
+    "right",
+    "bottom"
+];
+function filterByPosition(array, position) {
+    return array.filter((v)=>v.pos === position);
+}
+function filterDynamicPositionByAxis(array, axis) {
+    return array.filter((v)=>STATIC_POSITIONS.indexOf(v.pos) === -1 && v.box.axis === axis);
+}
+function sortByWeight(array, reverse) {
+    return array.sort((a, b)=>{
+        const v0 = reverse ? b : a;
+        const v1 = reverse ? a : b;
+        return v0.weight === v1.weight ? v0.index - v1.index : v0.weight - v1.weight;
+    });
+}
+function wrapBoxes(boxes) {
+    const layoutBoxes = [];
+    let i, ilen, box, pos, stack, stackWeight;
+    for(i = 0, ilen = (boxes || []).length; i < ilen; ++i){
+        box = boxes[i];
+        ({ position: pos, options: { stack, stackWeight = 1 } } = box);
+        layoutBoxes.push({
+            index: i,
+            box,
+            pos,
+            horizontal: box.isHorizontal(),
+            weight: box.weight,
+            stack: stack && pos + stack,
+            stackWeight
+        });
+    }
+    return layoutBoxes;
+}
+function buildStacks(layouts) {
+    const stacks = {};
+    for (const wrap of layouts){
+        const { stack, pos, stackWeight } = wrap;
+        if (!stack || !STATIC_POSITIONS.includes(pos)) continue;
+        const _stack = stacks[stack] || (stacks[stack] = {
+            count: 0,
+            placed: 0,
+            weight: 0,
+            size: 0
+        });
+        _stack.count++;
+        _stack.weight += stackWeight;
+    }
+    return stacks;
+}
+function setLayoutDims(layouts, params) {
+    const stacks = buildStacks(layouts);
+    const { vBoxMaxWidth, hBoxMaxHeight } = params;
+    let i, ilen, layout;
+    for(i = 0, ilen = layouts.length; i < ilen; ++i){
+        layout = layouts[i];
+        const { fullSize } = layout.box;
+        const stack = stacks[layout.stack];
+        const factor = stack && layout.stackWeight / stack.weight;
+        if (layout.horizontal) {
+            layout.width = factor ? factor * vBoxMaxWidth : fullSize && params.availableWidth;
+            layout.height = hBoxMaxHeight;
+        } else {
+            layout.width = vBoxMaxWidth;
+            layout.height = factor ? factor * hBoxMaxHeight : fullSize && params.availableHeight;
+        }
+    }
+    return stacks;
+}
+function buildLayoutBoxes(boxes) {
+    const layoutBoxes = wrapBoxes(boxes);
+    const fullSize = sortByWeight(layoutBoxes.filter((wrap)=>wrap.box.fullSize), true);
+    const left = sortByWeight(filterByPosition(layoutBoxes, "left"), true);
+    const right = sortByWeight(filterByPosition(layoutBoxes, "right"));
+    const top = sortByWeight(filterByPosition(layoutBoxes, "top"), true);
+    const bottom = sortByWeight(filterByPosition(layoutBoxes, "bottom"));
+    const centerHorizontal = filterDynamicPositionByAxis(layoutBoxes, "x");
+    const centerVertical = filterDynamicPositionByAxis(layoutBoxes, "y");
+    return {
+        fullSize,
+        leftAndTop: left.concat(top),
+        rightAndBottom: right.concat(centerVertical).concat(bottom).concat(centerHorizontal),
+        chartArea: filterByPosition(layoutBoxes, "chartArea"),
+        vertical: left.concat(right).concat(centerVertical),
+        horizontal: top.concat(bottom).concat(centerHorizontal)
+    };
+}
+function getCombinedMax(maxPadding, chartArea, a, b) {
+    return Math.max(maxPadding[a], chartArea[a]) + Math.max(maxPadding[b], chartArea[b]);
+}
+function updateMaxPadding(maxPadding, boxPadding) {
+    maxPadding.top = Math.max(maxPadding.top, boxPadding.top);
+    maxPadding.left = Math.max(maxPadding.left, boxPadding.left);
+    maxPadding.bottom = Math.max(maxPadding.bottom, boxPadding.bottom);
+    maxPadding.right = Math.max(maxPadding.right, boxPadding.right);
+}
+function updateDims(chartArea, params, layout, stacks) {
+    const { pos, box } = layout;
+    const maxPadding = chartArea.maxPadding;
+    if (!(0, _helpersSegmentJs.i)(pos)) {
+        if (layout.size) chartArea[pos] -= layout.size;
+        const stack = stacks[layout.stack] || {
+            size: 0,
+            count: 1
+        };
+        stack.size = Math.max(stack.size, layout.horizontal ? box.height : box.width);
+        layout.size = stack.size / stack.count;
+        chartArea[pos] += layout.size;
+    }
+    if (box.getPadding) updateMaxPadding(maxPadding, box.getPadding());
+    const newWidth = Math.max(0, params.outerWidth - getCombinedMax(maxPadding, chartArea, "left", "right"));
+    const newHeight = Math.max(0, params.outerHeight - getCombinedMax(maxPadding, chartArea, "top", "bottom"));
+    const widthChanged = newWidth !== chartArea.w;
+    const heightChanged = newHeight !== chartArea.h;
+    chartArea.w = newWidth;
+    chartArea.h = newHeight;
+    return layout.horizontal ? {
+        same: widthChanged,
+        other: heightChanged
+    } : {
+        same: heightChanged,
+        other: widthChanged
+    };
+}
+function handleMaxPadding(chartArea) {
+    const maxPadding = chartArea.maxPadding;
+    function updatePos(pos) {
+        const change = Math.max(maxPadding[pos] - chartArea[pos], 0);
+        chartArea[pos] += change;
+        return change;
+    }
+    chartArea.y += updatePos("top");
+    chartArea.x += updatePos("left");
+    updatePos("right");
+    updatePos("bottom");
+}
+function getMargins(horizontal, chartArea) {
+    const maxPadding = chartArea.maxPadding;
+    function marginForPositions(positions) {
+        const margin = {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+        };
+        positions.forEach((pos)=>{
+            margin[pos] = Math.max(chartArea[pos], maxPadding[pos]);
+        });
+        return margin;
+    }
+    return horizontal ? marginForPositions([
+        "left",
+        "right"
+    ]) : marginForPositions([
+        "top",
+        "bottom"
+    ]);
+}
+function fitBoxes(boxes, chartArea, params, stacks) {
+    const refitBoxes = [];
+    let i, ilen, layout, box, refit, changed;
+    for(i = 0, ilen = boxes.length, refit = 0; i < ilen; ++i){
+        layout = boxes[i];
+        box = layout.box;
+        box.update(layout.width || chartArea.w, layout.height || chartArea.h, getMargins(layout.horizontal, chartArea));
+        const { same, other } = updateDims(chartArea, params, layout, stacks);
+        refit |= same && refitBoxes.length;
+        changed = changed || other;
+        if (!box.fullSize) refitBoxes.push(layout);
+    }
+    return refit && fitBoxes(refitBoxes, chartArea, params, stacks) || changed;
+}
+function setBoxDims(box, left, top, width, height) {
+    box.top = top;
+    box.left = left;
+    box.right = left + width;
+    box.bottom = top + height;
+    box.width = width;
+    box.height = height;
+}
+function placeBoxes(boxes, chartArea, params, stacks) {
+    const userPadding = params.padding;
+    let { x, y } = chartArea;
+    for (const layout of boxes){
+        const box = layout.box;
+        const stack = stacks[layout.stack] || {
+            count: 1,
+            placed: 0,
+            weight: 1
+        };
+        const weight = layout.stackWeight / stack.weight || 1;
+        if (layout.horizontal) {
+            const width = chartArea.w * weight;
+            const height = stack.size || box.height;
+            if ((0, _helpersSegmentJs.h)(stack.start)) y = stack.start;
+            if (box.fullSize) setBoxDims(box, userPadding.left, y, params.outerWidth - userPadding.right - userPadding.left, height);
+            else setBoxDims(box, chartArea.left + stack.placed, y, width, height);
+            stack.start = y;
+            stack.placed += width;
+            y = box.bottom;
+        } else {
+            const height = chartArea.h * weight;
+            const width = stack.size || box.width;
+            if ((0, _helpersSegmentJs.h)(stack.start)) x = stack.start;
+            if (box.fullSize) setBoxDims(box, x, userPadding.top, width, params.outerHeight - userPadding.bottom - userPadding.top);
+            else setBoxDims(box, x, chartArea.top + stack.placed, width, height);
+            stack.start = x;
+            stack.placed += height;
+            x = box.right;
+        }
+    }
+    chartArea.x = x;
+    chartArea.y = y;
+}
+var layouts = {
+    addBox (chart, item) {
+        if (!chart.boxes) chart.boxes = [];
+        item.fullSize = item.fullSize || false;
+        item.position = item.position || "top";
+        item.weight = item.weight || 0;
+        item._layers = item._layers || function() {
+            return [
+                {
+                    z: 0,
+                    draw (chartArea) {
+                        item.draw(chartArea);
+                    }
+                }
+            ];
+        };
+        chart.boxes.push(item);
+    },
+    removeBox (chart, layoutItem) {
+        const index = chart.boxes ? chart.boxes.indexOf(layoutItem) : -1;
+        if (index !== -1) chart.boxes.splice(index, 1);
+    },
+    configure (chart, item, options) {
+        item.fullSize = options.fullSize;
+        item.position = options.position;
+        item.weight = options.weight;
+    },
+    update (chart, width, height, minPadding) {
+        if (!chart) return;
+        const padding = (0, _helpersSegmentJs.E)(chart.options.layout.padding);
+        const availableWidth = Math.max(width - padding.width, 0);
+        const availableHeight = Math.max(height - padding.height, 0);
+        const boxes = buildLayoutBoxes(chart.boxes);
+        const verticalBoxes = boxes.vertical;
+        const horizontalBoxes = boxes.horizontal;
+        (0, _helpersSegmentJs.F)(chart.boxes, (box)=>{
+            if (typeof box.beforeLayout === "function") box.beforeLayout();
+        });
+        const visibleVerticalBoxCount = verticalBoxes.reduce((total, wrap)=>wrap.box.options && wrap.box.options.display === false ? total : total + 1, 0) || 1;
+        const params = Object.freeze({
+            outerWidth: width,
+            outerHeight: height,
+            padding,
+            availableWidth,
+            availableHeight,
+            vBoxMaxWidth: availableWidth / 2 / visibleVerticalBoxCount,
+            hBoxMaxHeight: availableHeight / 2
+        });
+        const maxPadding = Object.assign({}, padding);
+        updateMaxPadding(maxPadding, (0, _helpersSegmentJs.E)(minPadding));
+        const chartArea = Object.assign({
+            maxPadding,
+            w: availableWidth,
+            h: availableHeight,
+            x: padding.left,
+            y: padding.top
+        }, padding);
+        const stacks = setLayoutDims(verticalBoxes.concat(horizontalBoxes), params);
+        fitBoxes(boxes.fullSize, chartArea, params, stacks);
+        fitBoxes(verticalBoxes, chartArea, params, stacks);
+        if (fitBoxes(horizontalBoxes, chartArea, params, stacks)) fitBoxes(verticalBoxes, chartArea, params, stacks);
+        handleMaxPadding(chartArea);
+        placeBoxes(boxes.leftAndTop, chartArea, params, stacks);
+        chartArea.x += chartArea.w;
+        chartArea.y += chartArea.h;
+        placeBoxes(boxes.rightAndBottom, chartArea, params, stacks);
+        chart.chartArea = {
+            left: chartArea.left,
+            top: chartArea.top,
+            right: chartArea.left + chartArea.w,
+            bottom: chartArea.top + chartArea.h,
+            height: chartArea.h,
+            width: chartArea.w
+        };
+        (0, _helpersSegmentJs.F)(boxes.chartArea, (layout)=>{
+            const box = layout.box;
+            Object.assign(box, chart.chartArea);
+            box.update(chartArea.w, chartArea.h, {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0
+            });
+        });
+    }
+};
+class BasePlatform {
+    acquireContext(canvas, aspectRatio) {}
+    releaseContext(context) {
+        return false;
+    }
+    addEventListener(chart, type, listener) {}
+    removeEventListener(chart, type, listener) {}
+    getDevicePixelRatio() {
+        return 1;
+    }
+    getMaximumSize(element, width, height, aspectRatio) {
+        width = Math.max(0, width || element.width);
+        height = height || element.height;
+        return {
+            width,
+            height: Math.max(0, aspectRatio ? Math.floor(width / aspectRatio) : height)
+        };
+    }
+    isAttached(canvas) {
+        return true;
+    }
+    updateConfig(config) {}
+}
+class BasicPlatform extends BasePlatform {
+    acquireContext(item) {
+        return item && item.getContext && item.getContext("2d") || null;
+    }
+    updateConfig(config) {
+        config.options.animation = false;
+    }
+}
+const EXPANDO_KEY = "$chartjs";
+const EVENT_TYPES = {
+    touchstart: "mousedown",
+    touchmove: "mousemove",
+    touchend: "mouseup",
+    pointerenter: "mouseenter",
+    pointerdown: "mousedown",
+    pointermove: "mousemove",
+    pointerup: "mouseup",
+    pointerleave: "mouseout",
+    pointerout: "mouseout"
+};
+const isNullOrEmpty = (value)=>value === null || value === "";
+function initCanvas(canvas, aspectRatio) {
+    const style = canvas.style;
+    const renderHeight = canvas.getAttribute("height");
+    const renderWidth = canvas.getAttribute("width");
+    canvas[EXPANDO_KEY] = {
+        initial: {
+            height: renderHeight,
+            width: renderWidth,
+            style: {
+                display: style.display,
+                height: style.height,
+                width: style.width
+            }
+        }
+    };
+    style.display = style.display || "block";
+    style.boxSizing = style.boxSizing || "border-box";
+    if (isNullOrEmpty(renderWidth)) {
+        const displayWidth = (0, _helpersSegmentJs.J)(canvas, "width");
+        if (displayWidth !== undefined) canvas.width = displayWidth;
+    }
+    if (isNullOrEmpty(renderHeight)) {
+        if (canvas.style.height === "") canvas.height = canvas.width / (aspectRatio || 2);
+        else {
+            const displayHeight = (0, _helpersSegmentJs.J)(canvas, "height");
+            if (displayHeight !== undefined) canvas.height = displayHeight;
+        }
+    }
+    return canvas;
+}
+const eventListenerOptions = (0, _helpersSegmentJs.K) ? {
+    passive: true
+} : false;
+function addListener(node, type, listener) {
+    node.addEventListener(type, listener, eventListenerOptions);
+}
+function removeListener(chart, type, listener) {
+    chart.canvas.removeEventListener(type, listener, eventListenerOptions);
+}
+function fromNativeEvent(event, chart) {
+    const type = EVENT_TYPES[event.type] || event.type;
+    const { x, y } = (0, _helpersSegmentJs.z)(event, chart);
+    return {
+        type,
+        chart,
+        native: event,
+        x: x !== undefined ? x : null,
+        y: y !== undefined ? y : null
+    };
+}
+function nodeListContains(nodeList, canvas) {
+    for (const node of nodeList){
+        if (node === canvas || node.contains(canvas)) return true;
+    }
+}
+function createAttachObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const observer = new MutationObserver((entries)=>{
+        let trigger = false;
+        for (const entry of entries){
+            trigger = trigger || nodeListContains(entry.addedNodes, canvas);
+            trigger = trigger && !nodeListContains(entry.removedNodes, canvas);
+        }
+        if (trigger) listener();
+    });
+    observer.observe(document, {
+        childList: true,
+        subtree: true
+    });
+    return observer;
+}
+function createDetachObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const observer = new MutationObserver((entries)=>{
+        let trigger = false;
+        for (const entry of entries){
+            trigger = trigger || nodeListContains(entry.removedNodes, canvas);
+            trigger = trigger && !nodeListContains(entry.addedNodes, canvas);
+        }
+        if (trigger) listener();
+    });
+    observer.observe(document, {
+        childList: true,
+        subtree: true
+    });
+    return observer;
+}
+const drpListeningCharts = new Map();
+let oldDevicePixelRatio = 0;
+function onWindowResize() {
+    const dpr = window.devicePixelRatio;
+    if (dpr === oldDevicePixelRatio) return;
+    oldDevicePixelRatio = dpr;
+    drpListeningCharts.forEach((resize, chart)=>{
+        if (chart.currentDevicePixelRatio !== dpr) resize();
+    });
+}
+function listenDevicePixelRatioChanges(chart, resize) {
+    if (!drpListeningCharts.size) window.addEventListener("resize", onWindowResize);
+    drpListeningCharts.set(chart, resize);
+}
+function unlistenDevicePixelRatioChanges(chart) {
+    drpListeningCharts.delete(chart);
+    if (!drpListeningCharts.size) window.removeEventListener("resize", onWindowResize);
+}
+function createResizeObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const container = canvas && (0, _helpersSegmentJs.I)(canvas);
+    if (!container) return;
+    const resize = (0, _helpersSegmentJs.L)((width, height)=>{
+        const w = container.clientWidth;
+        listener(width, height);
+        if (w < container.clientWidth) listener();
+    }, window);
+    const observer = new ResizeObserver((entries)=>{
+        const entry = entries[0];
+        const width = entry.contentRect.width;
+        const height = entry.contentRect.height;
+        if (width === 0 && height === 0) return;
+        resize(width, height);
+    });
+    observer.observe(container);
+    listenDevicePixelRatioChanges(chart, resize);
+    return observer;
+}
+function releaseObserver(chart, type, observer) {
+    if (observer) observer.disconnect();
+    if (type === "resize") unlistenDevicePixelRatioChanges(chart);
+}
+function createProxyAndListen(chart, type, listener) {
+    const canvas = chart.canvas;
+    const proxy = (0, _helpersSegmentJs.L)((event)=>{
+        if (chart.ctx !== null) listener(fromNativeEvent(event, chart));
+    }, chart);
+    addListener(canvas, type, proxy);
+    return proxy;
+}
+class DomPlatform extends BasePlatform {
+    acquireContext(canvas, aspectRatio) {
+        const context = canvas && canvas.getContext && canvas.getContext("2d");
+        if (context && context.canvas === canvas) {
+            initCanvas(canvas, aspectRatio);
+            return context;
+        }
+        return null;
+    }
+    releaseContext(context) {
+        const canvas = context.canvas;
+        if (!canvas[EXPANDO_KEY]) return false;
+        const initial = canvas[EXPANDO_KEY].initial;
+        [
+            "height",
+            "width"
+        ].forEach((prop)=>{
+            const value = initial[prop];
+            if ((0, _helpersSegmentJs.k)(value)) canvas.removeAttribute(prop);
+            else canvas.setAttribute(prop, value);
+        });
+        const style = initial.style || {};
+        Object.keys(style).forEach((key)=>{
+            canvas.style[key] = style[key];
+        });
+        canvas.width = canvas.width;
+        delete canvas[EXPANDO_KEY];
+        return true;
+    }
+    addEventListener(chart, type, listener) {
+        this.removeEventListener(chart, type);
+        const proxies = chart.$proxies || (chart.$proxies = {});
+        const handlers = {
+            attach: createAttachObserver,
+            detach: createDetachObserver,
+            resize: createResizeObserver
+        };
+        const handler = handlers[type] || createProxyAndListen;
+        proxies[type] = handler(chart, type, listener);
+    }
+    removeEventListener(chart, type) {
+        const proxies = chart.$proxies || (chart.$proxies = {});
+        const proxy = proxies[type];
+        if (!proxy) return;
+        const handlers = {
+            attach: releaseObserver,
+            detach: releaseObserver,
+            resize: releaseObserver
+        };
+        const handler = handlers[type] || removeListener;
+        handler(chart, type, proxy);
+        proxies[type] = undefined;
+    }
+    getDevicePixelRatio() {
+        return window.devicePixelRatio;
+    }
+    getMaximumSize(canvas, width, height, aspectRatio) {
+        return (0, _helpersSegmentJs.G)(canvas, width, height, aspectRatio);
+    }
+    isAttached(canvas) {
+        const container = (0, _helpersSegmentJs.I)(canvas);
+        return !!(container && container.isConnected);
+    }
+}
+function _detectPlatform(canvas) {
+    if (!(0, _helpersSegmentJs.M)() || typeof OffscreenCanvas !== "undefined" && canvas instanceof OffscreenCanvas) return BasicPlatform;
+    return DomPlatform;
+}
+class Element {
+    static defaults = {};
+    static defaultRoutes = undefined;
+    x;
+    y;
+    active = false;
+    options;
+    $animations;
+    tooltipPosition(useFinalPosition) {
+        const { x, y } = this.getProps([
+            "x",
+            "y"
+        ], useFinalPosition);
+        return {
+            x,
+            y
+        };
+    }
+    hasValue() {
+        return (0, _helpersSegmentJs.x)(this.x) && (0, _helpersSegmentJs.x)(this.y);
+    }
+    getProps(props, final) {
+        const anims = this.$animations;
+        if (!final || !anims) // let's not create an object, if not needed
+        return this;
+        const ret = {};
+        props.forEach((prop)=>{
+            ret[prop] = anims[prop] && anims[prop].active() ? anims[prop]._to : this[prop];
+        });
+        return ret;
+    }
+}
+function autoSkip(scale, ticks) {
+    const tickOpts = scale.options.ticks;
+    const determinedMaxTicks = determineMaxTicks(scale);
+    const ticksLimit = Math.min(tickOpts.maxTicksLimit || determinedMaxTicks, determinedMaxTicks);
+    const majorIndices = tickOpts.major.enabled ? getMajorIndices(ticks) : [];
+    const numMajorIndices = majorIndices.length;
+    const first = majorIndices[0];
+    const last = majorIndices[numMajorIndices - 1];
+    const newTicks = [];
+    if (numMajorIndices > ticksLimit) {
+        skipMajors(ticks, newTicks, majorIndices, numMajorIndices / ticksLimit);
+        return newTicks;
+    }
+    const spacing = calculateSpacing(majorIndices, ticks, ticksLimit);
+    if (numMajorIndices > 0) {
+        let i, ilen;
+        const avgMajorSpacing = numMajorIndices > 1 ? Math.round((last - first) / (numMajorIndices - 1)) : null;
+        skip(ticks, newTicks, spacing, (0, _helpersSegmentJs.k)(avgMajorSpacing) ? 0 : first - avgMajorSpacing, first);
+        for(i = 0, ilen = numMajorIndices - 1; i < ilen; i++)skip(ticks, newTicks, spacing, majorIndices[i], majorIndices[i + 1]);
+        skip(ticks, newTicks, spacing, last, (0, _helpersSegmentJs.k)(avgMajorSpacing) ? ticks.length : last + avgMajorSpacing);
+        return newTicks;
+    }
+    skip(ticks, newTicks, spacing);
+    return newTicks;
+}
+function determineMaxTicks(scale) {
+    const offset = scale.options.offset;
+    const tickLength = scale._tickSize();
+    const maxScale = scale._length / tickLength + (offset ? 0 : 1);
+    const maxChart = scale._maxLength / tickLength;
+    return Math.floor(Math.min(maxScale, maxChart));
+}
+function calculateSpacing(majorIndices, ticks, ticksLimit) {
+    const evenMajorSpacing = getEvenSpacing(majorIndices);
+    const spacing = ticks.length / ticksLimit;
+    if (!evenMajorSpacing) return Math.max(spacing, 1);
+    const factors = (0, _helpersSegmentJs.N)(evenMajorSpacing);
+    for(let i = 0, ilen = factors.length - 1; i < ilen; i++){
+        const factor = factors[i];
+        if (factor > spacing) return factor;
+    }
+    return Math.max(spacing, 1);
+}
+function getMajorIndices(ticks) {
+    const result = [];
+    let i, ilen;
+    for(i = 0, ilen = ticks.length; i < ilen; i++)if (ticks[i].major) result.push(i);
+    return result;
+}
+function skipMajors(ticks, newTicks, majorIndices, spacing) {
+    let count = 0;
+    let next = majorIndices[0];
+    let i;
+    spacing = Math.ceil(spacing);
+    for(i = 0; i < ticks.length; i++)if (i === next) {
+        newTicks.push(ticks[i]);
+        count++;
+        next = majorIndices[count * spacing];
+    }
+}
+function skip(ticks, newTicks, spacing, majorStart, majorEnd) {
+    const start = (0, _helpersSegmentJs.v)(majorStart, 0);
+    const end = Math.min((0, _helpersSegmentJs.v)(majorEnd, ticks.length), ticks.length);
+    let count = 0;
+    let length, i, next;
+    spacing = Math.ceil(spacing);
+    if (majorEnd) {
+        length = majorEnd - majorStart;
+        spacing = length / Math.floor(length / spacing);
+    }
+    next = start;
+    while(next < 0){
+        count++;
+        next = Math.round(start + count * spacing);
+    }
+    for(i = Math.max(start, 0); i < end; i++)if (i === next) {
+        newTicks.push(ticks[i]);
+        count++;
+        next = Math.round(start + count * spacing);
+    }
+}
+function getEvenSpacing(arr) {
+    const len = arr.length;
+    let i, diff;
+    if (len < 2) return false;
+    for(diff = arr[0], i = 1; i < len; ++i){
+        if (arr[i] - arr[i - 1] !== diff) return false;
+    }
+    return diff;
+}
+const reverseAlign = (align)=>align === "left" ? "right" : align === "right" ? "left" : align;
+const offsetFromEdge = (scale, edge, offset)=>edge === "top" || edge === "left" ? scale[edge] + offset : scale[edge] - offset;
+const getTicksLimit = (ticksLength, maxTicksLimit)=>Math.min(maxTicksLimit || ticksLength, ticksLength);
+function sample(arr, numItems) {
+    const result = [];
+    const increment = arr.length / numItems;
+    const len = arr.length;
+    let i = 0;
+    for(; i < len; i += increment)result.push(arr[Math.floor(i)]);
+    return result;
+}
+function getPixelForGridLine(scale, index, offsetGridLines) {
+    const length = scale.ticks.length;
+    const validIndex = Math.min(index, length - 1);
+    const start = scale._startPixel;
+    const end = scale._endPixel;
+    const epsilon = 1e-6;
+    let lineValue = scale.getPixelForTick(validIndex);
+    let offset;
+    if (offsetGridLines) {
+        if (length === 1) offset = Math.max(lineValue - start, end - lineValue);
+        else if (index === 0) offset = (scale.getPixelForTick(1) - lineValue) / 2;
+        else offset = (lineValue - scale.getPixelForTick(validIndex - 1)) / 2;
+        lineValue += validIndex < index ? offset : -offset;
+        if (lineValue < start - epsilon || lineValue > end + epsilon) return;
+    }
+    return lineValue;
+}
+function garbageCollect(caches, length) {
+    (0, _helpersSegmentJs.F)(caches, (cache)=>{
+        const gc = cache.gc;
+        const gcLen = gc.length / 2;
+        let i;
+        if (gcLen > length) {
+            for(i = 0; i < gcLen; ++i)delete cache.data[gc[i]];
+            gc.splice(0, gcLen);
+        }
+    });
+}
+function getTickMarkLength(options) {
+    return options.drawTicks ? options.tickLength : 0;
+}
+function getTitleHeight(options, fallback) {
+    if (!options.display) return 0;
+    const font = (0, _helpersSegmentJs.a0)(options.font, fallback);
+    const padding = (0, _helpersSegmentJs.E)(options.padding);
+    const lines = (0, _helpersSegmentJs.b)(options.text) ? options.text.length : 1;
+    return lines * font.lineHeight + padding.height;
+}
+function createScaleContext(parent, scale) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        scale,
+        type: "scale"
+    });
+}
+function createTickContext(parent, index, tick) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        tick,
+        index,
+        type: "tick"
+    });
+}
+function titleAlign(align, position, reverse) {
+    let ret = (0, _helpersSegmentJs.a1)(align);
+    if (reverse && position !== "right" || !reverse && position === "right") ret = reverseAlign(ret);
+    return ret;
+}
+function titleArgs(scale, offset, position, align) {
+    const { top, left, bottom, right, chart } = scale;
+    const { chartArea, scales } = chart;
+    let rotation = 0;
+    let maxWidth, titleX, titleY;
+    const height = bottom - top;
+    const width = right - left;
+    if (scale.isHorizontal()) {
+        titleX = (0, _helpersSegmentJs.a2)(align, left, right);
+        if ((0, _helpersSegmentJs.i)(position)) {
+            const positionAxisID = Object.keys(position)[0];
+            const value = position[positionAxisID];
+            titleY = scales[positionAxisID].getPixelForValue(value) + height - offset;
+        } else if (position === "center") titleY = (chartArea.bottom + chartArea.top) / 2 + height - offset;
+        else titleY = offsetFromEdge(scale, position, offset);
+        maxWidth = right - left;
+    } else {
+        if ((0, _helpersSegmentJs.i)(position)) {
+            const positionAxisID = Object.keys(position)[0];
+            const value = position[positionAxisID];
+            titleX = scales[positionAxisID].getPixelForValue(value) - width + offset;
+        } else if (position === "center") titleX = (chartArea.left + chartArea.right) / 2 - width + offset;
+        else titleX = offsetFromEdge(scale, position, offset);
+        titleY = (0, _helpersSegmentJs.a2)(align, bottom, top);
+        rotation = position === "left" ? -(0, _helpersSegmentJs.H) : (0, _helpersSegmentJs.H);
+    }
+    return {
+        titleX,
+        titleY,
+        maxWidth,
+        rotation
+    };
+}
+class Scale extends Element {
+    constructor(cfg){
+        super();
+        this.id = cfg.id;
+        this.type = cfg.type;
+        this.options = undefined;
+        this.ctx = cfg.ctx;
+        this.chart = cfg.chart;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this._margins = {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
+        };
+        this.maxWidth = undefined;
+        this.maxHeight = undefined;
+        this.paddingTop = undefined;
+        this.paddingBottom = undefined;
+        this.paddingLeft = undefined;
+        this.paddingRight = undefined;
+        this.axis = undefined;
+        this.labelRotation = undefined;
+        this.min = undefined;
+        this.max = undefined;
+        this._range = undefined;
+        this.ticks = [];
+        this._gridLineItems = null;
+        this._labelItems = null;
+        this._labelSizes = null;
+        this._length = 0;
+        this._maxLength = 0;
+        this._longestTextCache = {};
+        this._startPixel = undefined;
+        this._endPixel = undefined;
+        this._reversePixels = false;
+        this._userMax = undefined;
+        this._userMin = undefined;
+        this._suggestedMax = undefined;
+        this._suggestedMin = undefined;
+        this._ticksLength = 0;
+        this._borderValue = 0;
+        this._cache = {};
+        this._dataLimitsCached = false;
+        this.$context = undefined;
+    }
+    init(options) {
+        this.options = options.setContext(this.getContext());
+        this.axis = options.axis;
+        this._userMin = this.parse(options.min);
+        this._userMax = this.parse(options.max);
+        this._suggestedMin = this.parse(options.suggestedMin);
+        this._suggestedMax = this.parse(options.suggestedMax);
+    }
+    parse(raw, index) {
+        return raw;
+    }
+    getUserBounds() {
+        let { _userMin, _userMax, _suggestedMin, _suggestedMax } = this;
+        _userMin = (0, _helpersSegmentJs.O)(_userMin, Number.POSITIVE_INFINITY);
+        _userMax = (0, _helpersSegmentJs.O)(_userMax, Number.NEGATIVE_INFINITY);
+        _suggestedMin = (0, _helpersSegmentJs.O)(_suggestedMin, Number.POSITIVE_INFINITY);
+        _suggestedMax = (0, _helpersSegmentJs.O)(_suggestedMax, Number.NEGATIVE_INFINITY);
+        return {
+            min: (0, _helpersSegmentJs.O)(_userMin, _suggestedMin),
+            max: (0, _helpersSegmentJs.O)(_userMax, _suggestedMax),
+            minDefined: (0, _helpersSegmentJs.g)(_userMin),
+            maxDefined: (0, _helpersSegmentJs.g)(_userMax)
+        };
+    }
+    getMinMax(canStack) {
+        let { min, max, minDefined, maxDefined } = this.getUserBounds();
+        let range;
+        if (minDefined && maxDefined) return {
+            min,
+            max
+        };
+        const metas = this.getMatchingVisibleMetas();
+        for(let i = 0, ilen = metas.length; i < ilen; ++i){
+            range = metas[i].controller.getMinMax(this, canStack);
+            if (!minDefined) min = Math.min(min, range.min);
+            if (!maxDefined) max = Math.max(max, range.max);
+        }
+        min = maxDefined && min > max ? max : min;
+        max = minDefined && min > max ? min : max;
+        return {
+            min: (0, _helpersSegmentJs.O)(min, (0, _helpersSegmentJs.O)(max, min)),
+            max: (0, _helpersSegmentJs.O)(max, (0, _helpersSegmentJs.O)(min, max))
+        };
+    }
+    getPadding() {
+        return {
+            left: this.paddingLeft || 0,
+            top: this.paddingTop || 0,
+            right: this.paddingRight || 0,
+            bottom: this.paddingBottom || 0
+        };
+    }
+    getTicks() {
+        return this.ticks;
+    }
+    getLabels() {
+        const data = this.chart.data;
+        return this.options.labels || (this.isHorizontal() ? data.xLabels : data.yLabels) || data.labels || [];
+    }
+    getLabelItems(chartArea = this.chart.chartArea) {
+        const items = this._labelItems || (this._labelItems = this._computeLabelItems(chartArea));
+        return items;
+    }
+    beforeLayout() {
+        this._cache = {};
+        this._dataLimitsCached = false;
+    }
+    beforeUpdate() {
+        (0, _helpersSegmentJs.Q)(this.options.beforeUpdate, [
+            this
+        ]);
+    }
+    update(maxWidth, maxHeight, margins) {
+        const { beginAtZero, grace, ticks: tickOpts } = this.options;
+        const sampleSize = tickOpts.sampleSize;
+        this.beforeUpdate();
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+        this._margins = margins = Object.assign({
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
+        }, margins);
+        this.ticks = null;
+        this._labelSizes = null;
+        this._gridLineItems = null;
+        this._labelItems = null;
+        this.beforeSetDimensions();
+        this.setDimensions();
+        this.afterSetDimensions();
+        this._maxLength = this.isHorizontal() ? this.width + margins.left + margins.right : this.height + margins.top + margins.bottom;
+        if (!this._dataLimitsCached) {
+            this.beforeDataLimits();
+            this.determineDataLimits();
+            this.afterDataLimits();
+            this._range = (0, _helpersSegmentJs.R)(this, grace, beginAtZero);
+            this._dataLimitsCached = true;
+        }
+        this.beforeBuildTicks();
+        this.ticks = this.buildTicks() || [];
+        this.afterBuildTicks();
+        const samplingEnabled = sampleSize < this.ticks.length;
+        this._convertTicksToLabels(samplingEnabled ? sample(this.ticks, sampleSize) : this.ticks);
+        this.configure();
+        this.beforeCalculateLabelRotation();
+        this.calculateLabelRotation();
+        this.afterCalculateLabelRotation();
+        if (tickOpts.display && (tickOpts.autoSkip || tickOpts.source === "auto")) {
+            this.ticks = autoSkip(this, this.ticks);
+            this._labelSizes = null;
+            this.afterAutoSkip();
+        }
+        if (samplingEnabled) this._convertTicksToLabels(this.ticks);
+        this.beforeFit();
+        this.fit();
+        this.afterFit();
+        this.afterUpdate();
+    }
+    configure() {
+        let reversePixels = this.options.reverse;
+        let startPixel, endPixel;
+        if (this.isHorizontal()) {
+            startPixel = this.left;
+            endPixel = this.right;
+        } else {
+            startPixel = this.top;
+            endPixel = this.bottom;
+            reversePixels = !reversePixels;
+        }
+        this._startPixel = startPixel;
+        this._endPixel = endPixel;
+        this._reversePixels = reversePixels;
+        this._length = endPixel - startPixel;
+        this._alignToPixels = this.options.alignToPixels;
+    }
+    afterUpdate() {
+        (0, _helpersSegmentJs.Q)(this.options.afterUpdate, [
+            this
+        ]);
+    }
+    beforeSetDimensions() {
+        (0, _helpersSegmentJs.Q)(this.options.beforeSetDimensions, [
+            this
+        ]);
+    }
+    setDimensions() {
+        if (this.isHorizontal()) {
+            this.width = this.maxWidth;
+            this.left = 0;
+            this.right = this.width;
+        } else {
+            this.height = this.maxHeight;
+            this.top = 0;
+            this.bottom = this.height;
+        }
+        this.paddingLeft = 0;
+        this.paddingTop = 0;
+        this.paddingRight = 0;
+        this.paddingBottom = 0;
+    }
+    afterSetDimensions() {
+        (0, _helpersSegmentJs.Q)(this.options.afterSetDimensions, [
+            this
+        ]);
+    }
+    _callHooks(name) {
+        this.chart.notifyPlugins(name, this.getContext());
+        (0, _helpersSegmentJs.Q)(this.options[name], [
+            this
+        ]);
+    }
+    beforeDataLimits() {
+        this._callHooks("beforeDataLimits");
+    }
+    determineDataLimits() {}
+    afterDataLimits() {
+        this._callHooks("afterDataLimits");
+    }
+    beforeBuildTicks() {
+        this._callHooks("beforeBuildTicks");
+    }
+    buildTicks() {
+        return [];
+    }
+    afterBuildTicks() {
+        this._callHooks("afterBuildTicks");
+    }
+    beforeTickToLabelConversion() {
+        (0, _helpersSegmentJs.Q)(this.options.beforeTickToLabelConversion, [
+            this
+        ]);
+    }
+    generateTickLabels(ticks) {
+        const tickOpts = this.options.ticks;
+        let i, ilen, tick;
+        for(i = 0, ilen = ticks.length; i < ilen; i++){
+            tick = ticks[i];
+            tick.label = (0, _helpersSegmentJs.Q)(tickOpts.callback, [
+                tick.value,
+                i,
+                ticks
+            ], this);
+        }
+    }
+    afterTickToLabelConversion() {
+        (0, _helpersSegmentJs.Q)(this.options.afterTickToLabelConversion, [
+            this
+        ]);
+    }
+    beforeCalculateLabelRotation() {
+        (0, _helpersSegmentJs.Q)(this.options.beforeCalculateLabelRotation, [
+            this
+        ]);
+    }
+    calculateLabelRotation() {
+        const options = this.options;
+        const tickOpts = options.ticks;
+        const numTicks = getTicksLimit(this.ticks.length, options.ticks.maxTicksLimit);
+        const minRotation = tickOpts.minRotation || 0;
+        const maxRotation = tickOpts.maxRotation;
+        let labelRotation = minRotation;
+        let tickWidth, maxHeight, maxLabelDiagonal;
+        if (!this._isVisible() || !tickOpts.display || minRotation >= maxRotation || numTicks <= 1 || !this.isHorizontal()) {
+            this.labelRotation = minRotation;
+            return;
+        }
+        const labelSizes = this._getLabelSizes();
+        const maxLabelWidth = labelSizes.widest.width;
+        const maxLabelHeight = labelSizes.highest.height;
+        const maxWidth = (0, _helpersSegmentJs.S)(this.chart.width - maxLabelWidth, 0, this.maxWidth);
+        tickWidth = options.offset ? this.maxWidth / numTicks : maxWidth / (numTicks - 1);
+        if (maxLabelWidth + 6 > tickWidth) {
+            tickWidth = maxWidth / (numTicks - (options.offset ? 0.5 : 1));
+            maxHeight = this.maxHeight - getTickMarkLength(options.grid) - tickOpts.padding - getTitleHeight(options.title, this.chart.options.font);
+            maxLabelDiagonal = Math.sqrt(maxLabelWidth * maxLabelWidth + maxLabelHeight * maxLabelHeight);
+            labelRotation = (0, _helpersSegmentJs.U)(Math.min(Math.asin((0, _helpersSegmentJs.S)((labelSizes.highest.height + 6) / tickWidth, -1, 1)), Math.asin((0, _helpersSegmentJs.S)(maxHeight / maxLabelDiagonal, -1, 1)) - Math.asin((0, _helpersSegmentJs.S)(maxLabelHeight / maxLabelDiagonal, -1, 1))));
+            labelRotation = Math.max(minRotation, Math.min(maxRotation, labelRotation));
+        }
+        this.labelRotation = labelRotation;
+    }
+    afterCalculateLabelRotation() {
+        (0, _helpersSegmentJs.Q)(this.options.afterCalculateLabelRotation, [
+            this
+        ]);
+    }
+    afterAutoSkip() {}
+    beforeFit() {
+        (0, _helpersSegmentJs.Q)(this.options.beforeFit, [
+            this
+        ]);
+    }
+    fit() {
+        const minSize = {
+            width: 0,
+            height: 0
+        };
+        const { chart, options: { ticks: tickOpts, title: titleOpts, grid: gridOpts } } = this;
+        const display = this._isVisible();
+        const isHorizontal = this.isHorizontal();
+        if (display) {
+            const titleHeight = getTitleHeight(titleOpts, chart.options.font);
+            if (isHorizontal) {
+                minSize.width = this.maxWidth;
+                minSize.height = getTickMarkLength(gridOpts) + titleHeight;
+            } else {
+                minSize.height = this.maxHeight;
+                minSize.width = getTickMarkLength(gridOpts) + titleHeight;
+            }
+            if (tickOpts.display && this.ticks.length) {
+                const { first, last, widest, highest } = this._getLabelSizes();
+                const tickPadding = tickOpts.padding * 2;
+                const angleRadians = (0, _helpersSegmentJs.t)(this.labelRotation);
+                const cos = Math.cos(angleRadians);
+                const sin = Math.sin(angleRadians);
+                if (isHorizontal) {
+                    const labelHeight = tickOpts.mirror ? 0 : sin * widest.width + cos * highest.height;
+                    minSize.height = Math.min(this.maxHeight, minSize.height + labelHeight + tickPadding);
+                } else {
+                    const labelWidth = tickOpts.mirror ? 0 : cos * widest.width + sin * highest.height;
+                    minSize.width = Math.min(this.maxWidth, minSize.width + labelWidth + tickPadding);
+                }
+                this._calculatePadding(first, last, sin, cos);
+            }
+        }
+        this._handleMargins();
+        if (isHorizontal) {
+            this.width = this._length = chart.width - this._margins.left - this._margins.right;
+            this.height = minSize.height;
+        } else {
+            this.width = minSize.width;
+            this.height = this._length = chart.height - this._margins.top - this._margins.bottom;
+        }
+    }
+    _calculatePadding(first, last, sin, cos) {
+        const { ticks: { align, padding }, position } = this.options;
+        const isRotated = this.labelRotation !== 0;
+        const labelsBelowTicks = position !== "top" && this.axis === "x";
+        if (this.isHorizontal()) {
+            const offsetLeft = this.getPixelForTick(0) - this.left;
+            const offsetRight = this.right - this.getPixelForTick(this.ticks.length - 1);
+            let paddingLeft = 0;
+            let paddingRight = 0;
+            if (isRotated) {
+                if (labelsBelowTicks) {
+                    paddingLeft = cos * first.width;
+                    paddingRight = sin * last.height;
+                } else {
+                    paddingLeft = sin * first.height;
+                    paddingRight = cos * last.width;
+                }
+            } else if (align === "start") paddingRight = last.width;
+            else if (align === "end") paddingLeft = first.width;
+            else if (align !== "inner") {
+                paddingLeft = first.width / 2;
+                paddingRight = last.width / 2;
+            }
+            this.paddingLeft = Math.max((paddingLeft - offsetLeft + padding) * this.width / (this.width - offsetLeft), 0);
+            this.paddingRight = Math.max((paddingRight - offsetRight + padding) * this.width / (this.width - offsetRight), 0);
+        } else {
+            let paddingTop = last.height / 2;
+            let paddingBottom = first.height / 2;
+            if (align === "start") {
+                paddingTop = 0;
+                paddingBottom = first.height;
+            } else if (align === "end") {
+                paddingTop = last.height;
+                paddingBottom = 0;
+            }
+            this.paddingTop = paddingTop + padding;
+            this.paddingBottom = paddingBottom + padding;
+        }
+    }
+    _handleMargins() {
+        if (this._margins) {
+            this._margins.left = Math.max(this.paddingLeft, this._margins.left);
+            this._margins.top = Math.max(this.paddingTop, this._margins.top);
+            this._margins.right = Math.max(this.paddingRight, this._margins.right);
+            this._margins.bottom = Math.max(this.paddingBottom, this._margins.bottom);
+        }
+    }
+    afterFit() {
+        (0, _helpersSegmentJs.Q)(this.options.afterFit, [
+            this
+        ]);
+    }
+    isHorizontal() {
+        const { axis, position } = this.options;
+        return position === "top" || position === "bottom" || axis === "x";
+    }
+    isFullSize() {
+        return this.options.fullSize;
+    }
+    _convertTicksToLabels(ticks) {
+        this.beforeTickToLabelConversion();
+        this.generateTickLabels(ticks);
+        let i, ilen;
+        for(i = 0, ilen = ticks.length; i < ilen; i++)if ((0, _helpersSegmentJs.k)(ticks[i].label)) {
+            ticks.splice(i, 1);
+            ilen--;
+            i--;
+        }
+        this.afterTickToLabelConversion();
+    }
+    _getLabelSizes() {
+        let labelSizes = this._labelSizes;
+        if (!labelSizes) {
+            const sampleSize = this.options.ticks.sampleSize;
+            let ticks = this.ticks;
+            if (sampleSize < ticks.length) ticks = sample(ticks, sampleSize);
+            this._labelSizes = labelSizes = this._computeLabelSizes(ticks, ticks.length, this.options.ticks.maxTicksLimit);
+        }
+        return labelSizes;
+    }
+    _computeLabelSizes(ticks, length, maxTicksLimit) {
+        const { ctx, _longestTextCache: caches } = this;
+        const widths = [];
+        const heights = [];
+        const increment = Math.floor(length / getTicksLimit(length, maxTicksLimit));
+        let widestLabelSize = 0;
+        let highestLabelSize = 0;
+        let i, j, jlen, label, tickFont, fontString, cache, lineHeight, width, height, nestedLabel;
+        for(i = 0; i < length; i += increment){
+            label = ticks[i].label;
+            tickFont = this._resolveTickFontOptions(i);
+            ctx.font = fontString = tickFont.string;
+            cache = caches[fontString] = caches[fontString] || {
+                data: {},
+                gc: []
+            };
+            lineHeight = tickFont.lineHeight;
+            width = height = 0;
+            if (!(0, _helpersSegmentJs.k)(label) && !(0, _helpersSegmentJs.b)(label)) {
+                width = (0, _helpersSegmentJs.V)(ctx, cache.data, cache.gc, width, label);
+                height = lineHeight;
+            } else if ((0, _helpersSegmentJs.b)(label)) for(j = 0, jlen = label.length; j < jlen; ++j){
+                nestedLabel = label[j];
+                if (!(0, _helpersSegmentJs.k)(nestedLabel) && !(0, _helpersSegmentJs.b)(nestedLabel)) {
+                    width = (0, _helpersSegmentJs.V)(ctx, cache.data, cache.gc, width, nestedLabel);
+                    height += lineHeight;
+                }
+            }
+            widths.push(width);
+            heights.push(height);
+            widestLabelSize = Math.max(width, widestLabelSize);
+            highestLabelSize = Math.max(height, highestLabelSize);
+        }
+        garbageCollect(caches, length);
+        const widest = widths.indexOf(widestLabelSize);
+        const highest = heights.indexOf(highestLabelSize);
+        const valueAt = (idx)=>({
+                width: widths[idx] || 0,
+                height: heights[idx] || 0
+            });
+        return {
+            first: valueAt(0),
+            last: valueAt(length - 1),
+            widest: valueAt(widest),
+            highest: valueAt(highest),
+            widths,
+            heights
+        };
+    }
+    getLabelForValue(value) {
+        return value;
+    }
+    getPixelForValue(value, index) {
+        return NaN;
+    }
+    getValueForPixel(pixel) {}
+    getPixelForTick(index) {
+        const ticks = this.ticks;
+        if (index < 0 || index > ticks.length - 1) return null;
+        return this.getPixelForValue(ticks[index].value);
+    }
+    getPixelForDecimal(decimal) {
+        if (this._reversePixels) decimal = 1 - decimal;
+        const pixel = this._startPixel + decimal * this._length;
+        return (0, _helpersSegmentJs.W)(this._alignToPixels ? (0, _helpersSegmentJs.X)(this.chart, pixel, 0) : pixel);
+    }
+    getDecimalForPixel(pixel) {
+        const decimal = (pixel - this._startPixel) / this._length;
+        return this._reversePixels ? 1 - decimal : decimal;
+    }
+    getBasePixel() {
+        return this.getPixelForValue(this.getBaseValue());
+    }
+    getBaseValue() {
+        const { min, max } = this;
+        return min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0;
+    }
+    getContext(index) {
+        const ticks = this.ticks || [];
+        if (index >= 0 && index < ticks.length) {
+            const tick = ticks[index];
+            return tick.$context || (tick.$context = createTickContext(this.getContext(), index, tick));
+        }
+        return this.$context || (this.$context = createScaleContext(this.chart.getContext(), this));
+    }
+    _tickSize() {
+        const optionTicks = this.options.ticks;
+        const rot = (0, _helpersSegmentJs.t)(this.labelRotation);
+        const cos = Math.abs(Math.cos(rot));
+        const sin = Math.abs(Math.sin(rot));
+        const labelSizes = this._getLabelSizes();
+        const padding = optionTicks.autoSkipPadding || 0;
+        const w = labelSizes ? labelSizes.widest.width + padding : 0;
+        const h = labelSizes ? labelSizes.highest.height + padding : 0;
+        return this.isHorizontal() ? h * cos > w * sin ? w / cos : h / sin : h * sin < w * cos ? h / cos : w / sin;
+    }
+    _isVisible() {
+        const display = this.options.display;
+        if (display !== "auto") return !!display;
+        return this.getMatchingVisibleMetas().length > 0;
+    }
+    _computeGridLineItems(chartArea) {
+        const axis = this.axis;
+        const chart = this.chart;
+        const options = this.options;
+        const { grid, position, border } = options;
+        const offset = grid.offset;
+        const isHorizontal = this.isHorizontal();
+        const ticks = this.ticks;
+        const ticksLength = ticks.length + (offset ? 1 : 0);
+        const tl = getTickMarkLength(grid);
+        const items = [];
+        const borderOpts = border.setContext(this.getContext());
+        const axisWidth = borderOpts.display ? borderOpts.width : 0;
+        const axisHalfWidth = axisWidth / 2;
+        const alignBorderValue = function(pixel) {
+            return (0, _helpersSegmentJs.X)(chart, pixel, axisWidth);
+        };
+        let borderValue, i, lineValue, alignedLineValue;
+        let tx1, ty1, tx2, ty2, x1, y1, x2, y2;
+        if (position === "top") {
+            borderValue = alignBorderValue(this.bottom);
+            ty1 = this.bottom - tl;
+            ty2 = borderValue - axisHalfWidth;
+            y1 = alignBorderValue(chartArea.top) + axisHalfWidth;
+            y2 = chartArea.bottom;
+        } else if (position === "bottom") {
+            borderValue = alignBorderValue(this.top);
+            y1 = chartArea.top;
+            y2 = alignBorderValue(chartArea.bottom) - axisHalfWidth;
+            ty1 = borderValue + axisHalfWidth;
+            ty2 = this.top + tl;
+        } else if (position === "left") {
+            borderValue = alignBorderValue(this.right);
+            tx1 = this.right - tl;
+            tx2 = borderValue - axisHalfWidth;
+            x1 = alignBorderValue(chartArea.left) + axisHalfWidth;
+            x2 = chartArea.right;
+        } else if (position === "right") {
+            borderValue = alignBorderValue(this.left);
+            x1 = chartArea.left;
+            x2 = alignBorderValue(chartArea.right) - axisHalfWidth;
+            tx1 = borderValue + axisHalfWidth;
+            tx2 = this.left + tl;
+        } else if (axis === "x") {
+            if (position === "center") borderValue = alignBorderValue((chartArea.top + chartArea.bottom) / 2 + 0.5);
+            else if ((0, _helpersSegmentJs.i)(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                borderValue = alignBorderValue(this.chart.scales[positionAxisID].getPixelForValue(value));
+            }
+            y1 = chartArea.top;
+            y2 = chartArea.bottom;
+            ty1 = borderValue + axisHalfWidth;
+            ty2 = ty1 + tl;
+        } else if (axis === "y") {
+            if (position === "center") borderValue = alignBorderValue((chartArea.left + chartArea.right) / 2);
+            else if ((0, _helpersSegmentJs.i)(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                borderValue = alignBorderValue(this.chart.scales[positionAxisID].getPixelForValue(value));
+            }
+            tx1 = borderValue - axisHalfWidth;
+            tx2 = tx1 - tl;
+            x1 = chartArea.left;
+            x2 = chartArea.right;
+        }
+        const limit = (0, _helpersSegmentJs.v)(options.ticks.maxTicksLimit, ticksLength);
+        const step = Math.max(1, Math.ceil(ticksLength / limit));
+        for(i = 0; i < ticksLength; i += step){
+            const context = this.getContext(i);
+            const optsAtIndex = grid.setContext(context);
+            const optsAtIndexBorder = border.setContext(context);
+            const lineWidth = optsAtIndex.lineWidth;
+            const lineColor = optsAtIndex.color;
+            const borderDash = optsAtIndexBorder.dash || [];
+            const borderDashOffset = optsAtIndexBorder.dashOffset;
+            const tickWidth = optsAtIndex.tickWidth;
+            const tickColor = optsAtIndex.tickColor;
+            const tickBorderDash = optsAtIndex.tickBorderDash || [];
+            const tickBorderDashOffset = optsAtIndex.tickBorderDashOffset;
+            lineValue = getPixelForGridLine(this, i, offset);
+            if (lineValue === undefined) continue;
+            alignedLineValue = (0, _helpersSegmentJs.X)(chart, lineValue, lineWidth);
+            if (isHorizontal) tx1 = tx2 = x1 = x2 = alignedLineValue;
+            else ty1 = ty2 = y1 = y2 = alignedLineValue;
+            items.push({
+                tx1,
+                ty1,
+                tx2,
+                ty2,
+                x1,
+                y1,
+                x2,
+                y2,
+                width: lineWidth,
+                color: lineColor,
+                borderDash,
+                borderDashOffset,
+                tickWidth,
+                tickColor,
+                tickBorderDash,
+                tickBorderDashOffset
+            });
+        }
+        this._ticksLength = ticksLength;
+        this._borderValue = borderValue;
+        return items;
+    }
+    _computeLabelItems(chartArea) {
+        const axis = this.axis;
+        const options = this.options;
+        const { position, ticks: optionTicks } = options;
+        const isHorizontal = this.isHorizontal();
+        const ticks = this.ticks;
+        const { align, crossAlign, padding, mirror } = optionTicks;
+        const tl = getTickMarkLength(options.grid);
+        const tickAndPadding = tl + padding;
+        const hTickAndPadding = mirror ? -padding : tickAndPadding;
+        const rotation = -(0, _helpersSegmentJs.t)(this.labelRotation);
+        const items = [];
+        let i, ilen, tick, label, x, y, textAlign, pixel, font, lineHeight, lineCount, textOffset;
+        let textBaseline = "middle";
+        if (position === "top") {
+            y = this.bottom - hTickAndPadding;
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (position === "bottom") {
+            y = this.top + hTickAndPadding;
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (position === "left") {
+            const ret = this._getYAxisLabelAlignment(tl);
+            textAlign = ret.textAlign;
+            x = ret.x;
+        } else if (position === "right") {
+            const ret = this._getYAxisLabelAlignment(tl);
+            textAlign = ret.textAlign;
+            x = ret.x;
+        } else if (axis === "x") {
+            if (position === "center") y = (chartArea.top + chartArea.bottom) / 2 + tickAndPadding;
+            else if ((0, _helpersSegmentJs.i)(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                y = this.chart.scales[positionAxisID].getPixelForValue(value) + tickAndPadding;
+            }
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (axis === "y") {
+            if (position === "center") x = (chartArea.left + chartArea.right) / 2 - tickAndPadding;
+            else if ((0, _helpersSegmentJs.i)(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                x = this.chart.scales[positionAxisID].getPixelForValue(value);
+            }
+            textAlign = this._getYAxisLabelAlignment(tl).textAlign;
+        }
+        if (axis === "y") {
+            if (align === "start") textBaseline = "top";
+            else if (align === "end") textBaseline = "bottom";
+        }
+        const labelSizes = this._getLabelSizes();
+        for(i = 0, ilen = ticks.length; i < ilen; ++i){
+            tick = ticks[i];
+            label = tick.label;
+            const optsAtIndex = optionTicks.setContext(this.getContext(i));
+            pixel = this.getPixelForTick(i) + optionTicks.labelOffset;
+            font = this._resolveTickFontOptions(i);
+            lineHeight = font.lineHeight;
+            lineCount = (0, _helpersSegmentJs.b)(label) ? label.length : 1;
+            const halfCount = lineCount / 2;
+            const color = optsAtIndex.color;
+            const strokeColor = optsAtIndex.textStrokeColor;
+            const strokeWidth = optsAtIndex.textStrokeWidth;
+            let tickTextAlign = textAlign;
+            if (isHorizontal) {
+                x = pixel;
+                if (textAlign === "inner") {
+                    if (i === ilen - 1) tickTextAlign = !this.options.reverse ? "right" : "left";
+                    else if (i === 0) tickTextAlign = !this.options.reverse ? "left" : "right";
+                    else tickTextAlign = "center";
+                }
+                if (position === "top") {
+                    if (crossAlign === "near" || rotation !== 0) textOffset = -lineCount * lineHeight + lineHeight / 2;
+                    else if (crossAlign === "center") textOffset = -labelSizes.highest.height / 2 - halfCount * lineHeight + lineHeight;
+                    else textOffset = -labelSizes.highest.height + lineHeight / 2;
+                } else {
+                    if (crossAlign === "near" || rotation !== 0) textOffset = lineHeight / 2;
+                    else if (crossAlign === "center") textOffset = labelSizes.highest.height / 2 - halfCount * lineHeight;
+                    else textOffset = labelSizes.highest.height - lineCount * lineHeight;
+                }
+                if (mirror) textOffset *= -1;
+                if (rotation !== 0 && !optsAtIndex.showLabelBackdrop) x += lineHeight / 2 * Math.sin(rotation);
+            } else {
+                y = pixel;
+                textOffset = (1 - lineCount) * lineHeight / 2;
+            }
+            let backdrop;
+            if (optsAtIndex.showLabelBackdrop) {
+                const labelPadding = (0, _helpersSegmentJs.E)(optsAtIndex.backdropPadding);
+                const height = labelSizes.heights[i];
+                const width = labelSizes.widths[i];
+                let top = textOffset - labelPadding.top;
+                let left = 0 - labelPadding.left;
+                switch(textBaseline){
+                    case "middle":
+                        top -= height / 2;
+                        break;
+                    case "bottom":
+                        top -= height;
+                        break;
+                }
+                switch(textAlign){
+                    case "center":
+                        left -= width / 2;
+                        break;
+                    case "right":
+                        left -= width;
+                        break;
+                }
+                backdrop = {
+                    left,
+                    top,
+                    width: width + labelPadding.width,
+                    height: height + labelPadding.height,
+                    color: optsAtIndex.backdropColor
+                };
+            }
+            items.push({
+                label,
+                font,
+                textOffset,
+                options: {
+                    rotation,
+                    color,
+                    strokeColor,
+                    strokeWidth,
+                    textAlign: tickTextAlign,
+                    textBaseline,
+                    translation: [
+                        x,
+                        y
+                    ],
+                    backdrop
+                }
+            });
+        }
+        return items;
+    }
+    _getXAxisLabelAlignment() {
+        const { position, ticks } = this.options;
+        const rotation = -(0, _helpersSegmentJs.t)(this.labelRotation);
+        if (rotation) return position === "top" ? "left" : "right";
+        let align = "center";
+        if (ticks.align === "start") align = "left";
+        else if (ticks.align === "end") align = "right";
+        else if (ticks.align === "inner") align = "inner";
+        return align;
+    }
+    _getYAxisLabelAlignment(tl) {
+        const { position, ticks: { crossAlign, mirror, padding } } = this.options;
+        const labelSizes = this._getLabelSizes();
+        const tickAndPadding = tl + padding;
+        const widest = labelSizes.widest.width;
+        let textAlign;
+        let x;
+        if (position === "left") {
+            if (mirror) {
+                x = this.right + padding;
+                if (crossAlign === "near") textAlign = "left";
+                else if (crossAlign === "center") {
+                    textAlign = "center";
+                    x += widest / 2;
+                } else {
+                    textAlign = "right";
+                    x += widest;
+                }
+            } else {
+                x = this.right - tickAndPadding;
+                if (crossAlign === "near") textAlign = "right";
+                else if (crossAlign === "center") {
+                    textAlign = "center";
+                    x -= widest / 2;
+                } else {
+                    textAlign = "left";
+                    x = this.left;
+                }
+            }
+        } else if (position === "right") {
+            if (mirror) {
+                x = this.left + padding;
+                if (crossAlign === "near") textAlign = "right";
+                else if (crossAlign === "center") {
+                    textAlign = "center";
+                    x -= widest / 2;
+                } else {
+                    textAlign = "left";
+                    x -= widest;
+                }
+            } else {
+                x = this.left + tickAndPadding;
+                if (crossAlign === "near") textAlign = "left";
+                else if (crossAlign === "center") {
+                    textAlign = "center";
+                    x += widest / 2;
+                } else {
+                    textAlign = "right";
+                    x = this.right;
+                }
+            }
+        } else textAlign = "right";
+        return {
+            textAlign,
+            x
+        };
+    }
+    _computeLabelArea() {
+        if (this.options.ticks.mirror) return;
+        const chart = this.chart;
+        const position = this.options.position;
+        if (position === "left" || position === "right") return {
+            top: 0,
+            left: this.left,
+            bottom: chart.height,
+            right: this.right
+        };
+        if (position === "top" || position === "bottom") return {
+            top: this.top,
+            left: 0,
+            bottom: this.bottom,
+            right: chart.width
+        };
+    }
+    drawBackground() {
+        const { ctx, options: { backgroundColor }, left, top, width, height } = this;
+        if (backgroundColor) {
+            ctx.save();
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(left, top, width, height);
+            ctx.restore();
+        }
+    }
+    getLineWidthForValue(value) {
+        const grid = this.options.grid;
+        if (!this._isVisible() || !grid.display) return 0;
+        const ticks = this.ticks;
+        const index = ticks.findIndex((t)=>t.value === value);
+        if (index >= 0) {
+            const opts = grid.setContext(this.getContext(index));
+            return opts.lineWidth;
+        }
+        return 0;
+    }
+    drawGrid(chartArea) {
+        const grid = this.options.grid;
+        const ctx = this.ctx;
+        const items = this._gridLineItems || (this._gridLineItems = this._computeGridLineItems(chartArea));
+        let i, ilen;
+        const drawLine = (p1, p2, style)=>{
+            if (!style.width || !style.color) return;
+            ctx.save();
+            ctx.lineWidth = style.width;
+            ctx.strokeStyle = style.color;
+            ctx.setLineDash(style.borderDash || []);
+            ctx.lineDashOffset = style.borderDashOffset;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.restore();
+        };
+        if (grid.display) for(i = 0, ilen = items.length; i < ilen; ++i){
+            const item = items[i];
+            if (grid.drawOnChartArea) drawLine({
+                x: item.x1,
+                y: item.y1
+            }, {
+                x: item.x2,
+                y: item.y2
+            }, item);
+            if (grid.drawTicks) drawLine({
+                x: item.tx1,
+                y: item.ty1
+            }, {
+                x: item.tx2,
+                y: item.ty2
+            }, {
+                color: item.tickColor,
+                width: item.tickWidth,
+                borderDash: item.tickBorderDash,
+                borderDashOffset: item.tickBorderDashOffset
+            });
+        }
+    }
+    drawBorder() {
+        const { chart, ctx, options: { border, grid } } = this;
+        const borderOpts = border.setContext(this.getContext());
+        const axisWidth = border.display ? borderOpts.width : 0;
+        if (!axisWidth) return;
+        const lastLineWidth = grid.setContext(this.getContext(0)).lineWidth;
+        const borderValue = this._borderValue;
+        let x1, x2, y1, y2;
+        if (this.isHorizontal()) {
+            x1 = (0, _helpersSegmentJs.X)(chart, this.left, axisWidth) - axisWidth / 2;
+            x2 = (0, _helpersSegmentJs.X)(chart, this.right, lastLineWidth) + lastLineWidth / 2;
+            y1 = y2 = borderValue;
+        } else {
+            y1 = (0, _helpersSegmentJs.X)(chart, this.top, axisWidth) - axisWidth / 2;
+            y2 = (0, _helpersSegmentJs.X)(chart, this.bottom, lastLineWidth) + lastLineWidth / 2;
+            x1 = x2 = borderValue;
+        }
+        ctx.save();
+        ctx.lineWidth = borderOpts.width;
+        ctx.strokeStyle = borderOpts.color;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+    drawLabels(chartArea) {
+        const optionTicks = this.options.ticks;
+        if (!optionTicks.display) return;
+        const ctx = this.ctx;
+        const area = this._computeLabelArea();
+        if (area) (0, _helpersSegmentJs.Y)(ctx, area);
+        const items = this.getLabelItems(chartArea);
+        for (const item of items){
+            const renderTextOptions = item.options;
+            const tickFont = item.font;
+            const label = item.label;
+            const y = item.textOffset;
+            (0, _helpersSegmentJs.Z)(ctx, label, 0, y, tickFont, renderTextOptions);
+        }
+        if (area) (0, _helpersSegmentJs.$)(ctx);
+    }
+    drawTitle() {
+        const { ctx, options: { position, title, reverse } } = this;
+        if (!title.display) return;
+        const font = (0, _helpersSegmentJs.a0)(title.font);
+        const padding = (0, _helpersSegmentJs.E)(title.padding);
+        const align = title.align;
+        let offset = font.lineHeight / 2;
+        if (position === "bottom" || position === "center" || (0, _helpersSegmentJs.i)(position)) {
+            offset += padding.bottom;
+            if ((0, _helpersSegmentJs.b)(title.text)) offset += font.lineHeight * (title.text.length - 1);
+        } else offset += padding.top;
+        const { titleX, titleY, maxWidth, rotation } = titleArgs(this, offset, position, align);
+        (0, _helpersSegmentJs.Z)(ctx, title.text, 0, 0, font, {
+            color: title.color,
+            maxWidth,
+            rotation,
+            textAlign: titleAlign(align, position, reverse),
+            textBaseline: "middle",
+            translation: [
+                titleX,
+                titleY
+            ]
+        });
+    }
+    draw(chartArea) {
+        if (!this._isVisible()) return;
+        this.drawBackground();
+        this.drawGrid(chartArea);
+        this.drawBorder();
+        this.drawTitle();
+        this.drawLabels(chartArea);
+    }
+    _layers() {
+        const opts = this.options;
+        const tz = opts.ticks && opts.ticks.z || 0;
+        const gz = (0, _helpersSegmentJs.v)(opts.grid && opts.grid.z, -1);
+        const bz = (0, _helpersSegmentJs.v)(opts.border && opts.border.z, 0);
+        if (!this._isVisible() || this.draw !== Scale.prototype.draw) return [
+            {
+                z: tz,
+                draw: (chartArea)=>{
+                    this.draw(chartArea);
+                }
+            }
+        ];
+        return [
+            {
+                z: gz,
+                draw: (chartArea)=>{
+                    this.drawBackground();
+                    this.drawGrid(chartArea);
+                    this.drawTitle();
+                }
+            },
+            {
+                z: bz,
+                draw: ()=>{
+                    this.drawBorder();
+                }
+            },
+            {
+                z: tz,
+                draw: (chartArea)=>{
+                    this.drawLabels(chartArea);
+                }
+            }
+        ];
+    }
+    getMatchingVisibleMetas(type) {
+        const metas = this.chart.getSortedVisibleDatasetMetas();
+        const axisID = this.axis + "AxisID";
+        const result = [];
+        let i, ilen;
+        for(i = 0, ilen = metas.length; i < ilen; ++i){
+            const meta = metas[i];
+            if (meta[axisID] === this.id && (!type || meta.type === type)) result.push(meta);
+        }
+        return result;
+    }
+    _resolveTickFontOptions(index) {
+        const opts = this.options.ticks.setContext(this.getContext(index));
+        return (0, _helpersSegmentJs.a0)(opts.font);
+    }
+    _maxDigits() {
+        const fontSize = this._resolveTickFontOptions(0).lineHeight;
+        return (this.isHorizontal() ? this.width : this.height) / fontSize;
+    }
+}
+class TypedRegistry {
+    constructor(type, scope, override){
+        this.type = type;
+        this.scope = scope;
+        this.override = override;
+        this.items = Object.create(null);
+    }
+    isForType(type) {
+        return Object.prototype.isPrototypeOf.call(this.type.prototype, type.prototype);
+    }
+    register(item) {
+        const proto = Object.getPrototypeOf(item);
+        let parentScope;
+        if (isIChartComponent(proto)) parentScope = this.register(proto);
+        const items = this.items;
+        const id = item.id;
+        const scope = this.scope + "." + id;
+        if (!id) throw new Error("class does not have id: " + item);
+        if (id in items) return scope;
+        items[id] = item;
+        registerDefaults(item, scope, parentScope);
+        if (this.override) (0, _helpersSegmentJs.d).override(item.id, item.overrides);
+        return scope;
+    }
+    get(id) {
+        return this.items[id];
+    }
+    unregister(item) {
+        const items = this.items;
+        const id = item.id;
+        const scope = this.scope;
+        if (id in items) delete items[id];
+        if (scope && id in (0, _helpersSegmentJs.d)[scope]) {
+            delete (0, _helpersSegmentJs.d)[scope][id];
+            if (this.override) delete (0, _helpersSegmentJs.a3)[id];
+        }
+    }
+}
+function registerDefaults(item, scope, parentScope) {
+    const itemDefaults = (0, _helpersSegmentJs.a4)(Object.create(null), [
+        parentScope ? (0, _helpersSegmentJs.d).get(parentScope) : {},
+        (0, _helpersSegmentJs.d).get(scope),
+        item.defaults
+    ]);
+    (0, _helpersSegmentJs.d).set(scope, itemDefaults);
+    if (item.defaultRoutes) routeDefaults(scope, item.defaultRoutes);
+    if (item.descriptors) (0, _helpersSegmentJs.d).describe(scope, item.descriptors);
+}
+function routeDefaults(scope, routes) {
+    Object.keys(routes).forEach((property)=>{
+        const propertyParts = property.split(".");
+        const sourceName = propertyParts.pop();
+        const sourceScope = [
+            scope
+        ].concat(propertyParts).join(".");
+        const parts = routes[property].split(".");
+        const targetName = parts.pop();
+        const targetScope = parts.join(".");
+        (0, _helpersSegmentJs.d).route(sourceScope, sourceName, targetScope, targetName);
+    });
+}
+function isIChartComponent(proto) {
+    return "id" in proto && "defaults" in proto;
+}
+class Registry {
+    constructor(){
+        this.controllers = new TypedRegistry(DatasetController, "datasets", true);
+        this.elements = new TypedRegistry(Element, "elements");
+        this.plugins = new TypedRegistry(Object, "plugins");
+        this.scales = new TypedRegistry(Scale, "scales");
+        this._typedRegistries = [
+            this.controllers,
+            this.scales,
+            this.elements
+        ];
+    }
+    add(...args) {
+        this._each("register", args);
+    }
+    remove(...args) {
+        this._each("unregister", args);
+    }
+    addControllers(...args) {
+        this._each("register", args, this.controllers);
+    }
+    addElements(...args) {
+        this._each("register", args, this.elements);
+    }
+    addPlugins(...args) {
+        this._each("register", args, this.plugins);
+    }
+    addScales(...args) {
+        this._each("register", args, this.scales);
+    }
+    getController(id) {
+        return this._get(id, this.controllers, "controller");
+    }
+    getElement(id) {
+        return this._get(id, this.elements, "element");
+    }
+    getPlugin(id) {
+        return this._get(id, this.plugins, "plugin");
+    }
+    getScale(id) {
+        return this._get(id, this.scales, "scale");
+    }
+    removeControllers(...args) {
+        this._each("unregister", args, this.controllers);
+    }
+    removeElements(...args) {
+        this._each("unregister", args, this.elements);
+    }
+    removePlugins(...args) {
+        this._each("unregister", args, this.plugins);
+    }
+    removeScales(...args) {
+        this._each("unregister", args, this.scales);
+    }
+    _each(method, args, typedRegistry) {
+        [
+            ...args
+        ].forEach((arg)=>{
+            const reg = typedRegistry || this._getRegistryForType(arg);
+            if (typedRegistry || reg.isForType(arg) || reg === this.plugins && arg.id) this._exec(method, reg, arg);
+            else (0, _helpersSegmentJs.F)(arg, (item)=>{
+                const itemReg = typedRegistry || this._getRegistryForType(item);
+                this._exec(method, itemReg, item);
+            });
+        });
+    }
+    _exec(method, registry, component) {
+        const camelMethod = (0, _helpersSegmentJs.a5)(method);
+        (0, _helpersSegmentJs.Q)(component["before" + camelMethod], [], component);
+        registry[method](component);
+        (0, _helpersSegmentJs.Q)(component["after" + camelMethod], [], component);
+    }
+    _getRegistryForType(type) {
+        for(let i = 0; i < this._typedRegistries.length; i++){
+            const reg = this._typedRegistries[i];
+            if (reg.isForType(type)) return reg;
+        }
+        return this.plugins;
+    }
+    _get(id, typedRegistry, type) {
+        const item = typedRegistry.get(id);
+        if (item === undefined) throw new Error('"' + id + '" is not a registered ' + type + ".");
+        return item;
+    }
+}
+var registry = /* #__PURE__ */ new Registry();
+class PluginService {
+    constructor(){
+        this._init = [];
+    }
+    notify(chart, hook, args, filter) {
+        if (hook === "beforeInit") {
+            this._init = this._createDescriptors(chart, true);
+            this._notify(this._init, chart, "install");
+        }
+        const descriptors = filter ? this._descriptors(chart).filter(filter) : this._descriptors(chart);
+        const result = this._notify(descriptors, chart, hook, args);
+        if (hook === "afterDestroy") {
+            this._notify(descriptors, chart, "stop");
+            this._notify(this._init, chart, "uninstall");
+        }
+        return result;
+    }
+    _notify(descriptors, chart, hook, args) {
+        args = args || {};
+        for (const descriptor of descriptors){
+            const plugin = descriptor.plugin;
+            const method = plugin[hook];
+            const params = [
+                chart,
+                args,
+                descriptor.options
+            ];
+            if ((0, _helpersSegmentJs.Q)(method, params, plugin) === false && args.cancelable) return false;
+        }
+        return true;
+    }
+    invalidate() {
+        if (!(0, _helpersSegmentJs.k)(this._cache)) {
+            this._oldCache = this._cache;
+            this._cache = undefined;
+        }
+    }
+    _descriptors(chart) {
+        if (this._cache) return this._cache;
+        const descriptors = this._cache = this._createDescriptors(chart);
+        this._notifyStateChanges(chart);
+        return descriptors;
+    }
+    _createDescriptors(chart, all) {
+        const config = chart && chart.config;
+        const options = (0, _helpersSegmentJs.v)(config.options && config.options.plugins, {});
+        const plugins = allPlugins(config);
+        return options === false && !all ? [] : createDescriptors(chart, plugins, options, all);
+    }
+    _notifyStateChanges(chart) {
+        const previousDescriptors = this._oldCache || [];
+        const descriptors = this._cache;
+        const diff = (a, b)=>a.filter((x)=>!b.some((y)=>x.plugin.id === y.plugin.id));
+        this._notify(diff(previousDescriptors, descriptors), chart, "stop");
+        this._notify(diff(descriptors, previousDescriptors), chart, "start");
+    }
+}
+function allPlugins(config) {
+    const localIds = {};
+    const plugins = [];
+    const keys = Object.keys(registry.plugins.items);
+    for(let i = 0; i < keys.length; i++)plugins.push(registry.getPlugin(keys[i]));
+    const local = config.plugins || [];
+    for(let i = 0; i < local.length; i++){
+        const plugin = local[i];
+        if (plugins.indexOf(plugin) === -1) {
+            plugins.push(plugin);
+            localIds[plugin.id] = true;
+        }
+    }
+    return {
+        plugins,
+        localIds
+    };
+}
+function getOpts(options, all) {
+    if (!all && options === false) return null;
+    if (options === true) return {};
+    return options;
+}
+function createDescriptors(chart, { plugins, localIds }, options, all) {
+    const result = [];
+    const context = chart.getContext();
+    for (const plugin of plugins){
+        const id = plugin.id;
+        const opts = getOpts(options[id], all);
+        if (opts === null) continue;
+        result.push({
+            plugin,
+            options: pluginOpts(chart.config, {
+                plugin,
+                local: localIds[id]
+            }, opts, context)
+        });
+    }
+    return result;
+}
+function pluginOpts(config, { plugin, local }, opts, context) {
+    const keys = config.pluginScopeKeys(plugin);
+    const scopes = config.getOptionScopes(opts, keys);
+    if (local && plugin.defaults) scopes.push(plugin.defaults);
+    return config.createResolver(scopes, context, [
+        ""
+    ], {
+        scriptable: false,
+        indexable: false,
+        allKeys: true
+    });
+}
+function getIndexAxis(type, options) {
+    const datasetDefaults = (0, _helpersSegmentJs.d).datasets[type] || {};
+    const datasetOptions = (options.datasets || {})[type] || {};
+    return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis || "x";
+}
+function getAxisFromDefaultScaleID(id, indexAxis) {
+    let axis = id;
+    if (id === "_index_") axis = indexAxis;
+    else if (id === "_value_") axis = indexAxis === "x" ? "y" : "x";
+    return axis;
+}
+function getDefaultScaleIDFromAxis(axis, indexAxis) {
+    return axis === indexAxis ? "_index_" : "_value_";
+}
+function idMatchesAxis(id) {
+    if (id === "x" || id === "y" || id === "r") return id;
+}
+function axisFromPosition(position) {
+    if (position === "top" || position === "bottom") return "x";
+    if (position === "left" || position === "right") return "y";
+}
+function determineAxis(id, ...scaleOptions) {
+    if (idMatchesAxis(id)) return id;
+    for (const opts of scaleOptions){
+        const axis = opts.axis || axisFromPosition(opts.position) || id.length > 1 && idMatchesAxis(id[0].toLowerCase());
+        if (axis) return axis;
+    }
+    throw new Error(`Cannot determine type of '${id}' axis. Please provide 'axis' or 'position' option.`);
+}
+function getAxisFromDataset(id, axis, dataset) {
+    if (dataset[axis + "AxisID"] === id) return {
+        axis
+    };
+}
+function retrieveAxisFromDatasets(id, config) {
+    if (config.data && config.data.datasets) {
+        const boundDs = config.data.datasets.filter((d)=>d.xAxisID === id || d.yAxisID === id);
+        if (boundDs.length) return getAxisFromDataset(id, "x", boundDs[0]) || getAxisFromDataset(id, "y", boundDs[0]);
+    }
+    return {};
+}
+function mergeScaleConfig(config, options) {
+    const chartDefaults = (0, _helpersSegmentJs.a3)[config.type] || {
+        scales: {}
+    };
+    const configScales = options.scales || {};
+    const chartIndexAxis = getIndexAxis(config.type, options);
+    const scales = Object.create(null);
+    Object.keys(configScales).forEach((id)=>{
+        const scaleConf = configScales[id];
+        if (!(0, _helpersSegmentJs.i)(scaleConf)) return console.error(`Invalid scale configuration for scale: ${id}`);
+        if (scaleConf._proxy) return console.warn(`Ignoring resolver passed as options for scale: ${id}`);
+        const axis = determineAxis(id, scaleConf, retrieveAxisFromDatasets(id, config), (0, _helpersSegmentJs.d).scales[scaleConf.type]);
+        const defaultId = getDefaultScaleIDFromAxis(axis, chartIndexAxis);
+        const defaultScaleOptions = chartDefaults.scales || {};
+        scales[id] = (0, _helpersSegmentJs.ab)(Object.create(null), [
+            {
+                axis
+            },
+            scaleConf,
+            defaultScaleOptions[axis],
+            defaultScaleOptions[defaultId]
+        ]);
+    });
+    config.data.datasets.forEach((dataset)=>{
+        const type = dataset.type || config.type;
+        const indexAxis = dataset.indexAxis || getIndexAxis(type, options);
+        const datasetDefaults = (0, _helpersSegmentJs.a3)[type] || {};
+        const defaultScaleOptions = datasetDefaults.scales || {};
+        Object.keys(defaultScaleOptions).forEach((defaultID)=>{
+            const axis = getAxisFromDefaultScaleID(defaultID, indexAxis);
+            const id = dataset[axis + "AxisID"] || axis;
+            scales[id] = scales[id] || Object.create(null);
+            (0, _helpersSegmentJs.ab)(scales[id], [
+                {
+                    axis
+                },
+                configScales[id],
+                defaultScaleOptions[defaultID]
+            ]);
+        });
+    });
+    Object.keys(scales).forEach((key)=>{
+        const scale = scales[key];
+        (0, _helpersSegmentJs.ab)(scale, [
+            (0, _helpersSegmentJs.d).scales[scale.type],
+            (0, _helpersSegmentJs.d).scale
+        ]);
+    });
+    return scales;
+}
+function initOptions(config) {
+    const options = config.options || (config.options = {});
+    options.plugins = (0, _helpersSegmentJs.v)(options.plugins, {});
+    options.scales = mergeScaleConfig(config, options);
+}
+function initData(data) {
+    data = data || {};
+    data.datasets = data.datasets || [];
+    data.labels = data.labels || [];
+    return data;
+}
+function initConfig(config) {
+    config = config || {};
+    config.data = initData(config.data);
+    initOptions(config);
+    return config;
+}
+const keyCache = new Map();
+const keysCached = new Set();
+function cachedKeys(cacheKey, generate) {
+    let keys = keyCache.get(cacheKey);
+    if (!keys) {
+        keys = generate();
+        keyCache.set(cacheKey, keys);
+        keysCached.add(keys);
+    }
+    return keys;
+}
+const addIfFound = (set, obj, key)=>{
+    const opts = (0, _helpersSegmentJs.f)(obj, key);
+    if (opts !== undefined) set.add(opts);
+};
+class Config {
+    constructor(config){
+        this._config = initConfig(config);
+        this._scopeCache = new Map();
+        this._resolverCache = new Map();
+    }
+    get platform() {
+        return this._config.platform;
+    }
+    get type() {
+        return this._config.type;
+    }
+    set type(type) {
+        this._config.type = type;
+    }
+    get data() {
+        return this._config.data;
+    }
+    set data(data) {
+        this._config.data = initData(data);
+    }
+    get options() {
+        return this._config.options;
+    }
+    set options(options) {
+        this._config.options = options;
+    }
+    get plugins() {
+        return this._config.plugins;
+    }
+    update() {
+        const config = this._config;
+        this.clearCache();
+        initOptions(config);
+    }
+    clearCache() {
+        this._scopeCache.clear();
+        this._resolverCache.clear();
+    }
+    datasetScopeKeys(datasetType) {
+        return cachedKeys(datasetType, ()=>[
+                [
+                    `datasets.${datasetType}`,
+                    ""
+                ]
+            ]);
+    }
+    datasetAnimationScopeKeys(datasetType, transition) {
+        return cachedKeys(`${datasetType}.transition.${transition}`, ()=>[
+                [
+                    `datasets.${datasetType}.transitions.${transition}`,
+                    `transitions.${transition}`
+                ],
+                [
+                    `datasets.${datasetType}`,
+                    ""
+                ]
+            ]);
+    }
+    datasetElementScopeKeys(datasetType, elementType) {
+        return cachedKeys(`${datasetType}-${elementType}`, ()=>[
+                [
+                    `datasets.${datasetType}.elements.${elementType}`,
+                    `datasets.${datasetType}`,
+                    `elements.${elementType}`,
+                    ""
+                ]
+            ]);
+    }
+    pluginScopeKeys(plugin) {
+        const id = plugin.id;
+        const type = this.type;
+        return cachedKeys(`${type}-plugin-${id}`, ()=>[
+                [
+                    `plugins.${id}`,
+                    ...plugin.additionalOptionScopes || []
+                ]
+            ]);
+    }
+    _cachedScopes(mainScope, resetCache) {
+        const _scopeCache = this._scopeCache;
+        let cache = _scopeCache.get(mainScope);
+        if (!cache || resetCache) {
+            cache = new Map();
+            _scopeCache.set(mainScope, cache);
+        }
+        return cache;
+    }
+    getOptionScopes(mainScope, keyLists, resetCache) {
+        const { options, type } = this;
+        const cache = this._cachedScopes(mainScope, resetCache);
+        const cached = cache.get(keyLists);
+        if (cached) return cached;
+        const scopes = new Set();
+        keyLists.forEach((keys)=>{
+            if (mainScope) {
+                scopes.add(mainScope);
+                keys.forEach((key)=>addIfFound(scopes, mainScope, key));
+            }
+            keys.forEach((key)=>addIfFound(scopes, options, key));
+            keys.forEach((key)=>addIfFound(scopes, (0, _helpersSegmentJs.a3)[type] || {}, key));
+            keys.forEach((key)=>addIfFound(scopes, (0, _helpersSegmentJs.d), key));
+            keys.forEach((key)=>addIfFound(scopes, (0, _helpersSegmentJs.a6), key));
+        });
+        const array = Array.from(scopes);
+        if (array.length === 0) array.push(Object.create(null));
+        if (keysCached.has(keyLists)) cache.set(keyLists, array);
+        return array;
+    }
+    chartOptionScopes() {
+        const { options, type } = this;
+        return [
+            options,
+            (0, _helpersSegmentJs.a3)[type] || {},
+            (0, _helpersSegmentJs.d).datasets[type] || {},
+            {
+                type
+            },
+            (0, _helpersSegmentJs.d),
+            (0, _helpersSegmentJs.a6)
+        ];
+    }
+    resolveNamedOptions(scopes, names, context, prefixes = [
+        ""
+    ]) {
+        const result = {
+            $shared: true
+        };
+        const { resolver, subPrefixes } = getResolver(this._resolverCache, scopes, prefixes);
+        let options = resolver;
+        if (needContext(resolver, names)) {
+            result.$shared = false;
+            context = (0, _helpersSegmentJs.a7)(context) ? context() : context;
+            const subResolver = this.createResolver(scopes, context, subPrefixes);
+            options = (0, _helpersSegmentJs.a8)(resolver, context, subResolver);
+        }
+        for (const prop of names)result[prop] = options[prop];
+        return result;
+    }
+    createResolver(scopes, context, prefixes = [
+        ""
+    ], descriptorDefaults) {
+        const { resolver } = getResolver(this._resolverCache, scopes, prefixes);
+        return (0, _helpersSegmentJs.i)(context) ? (0, _helpersSegmentJs.a8)(resolver, context, undefined, descriptorDefaults) : resolver;
+    }
+}
+function getResolver(resolverCache, scopes, prefixes) {
+    let cache = resolverCache.get(scopes);
+    if (!cache) {
+        cache = new Map();
+        resolverCache.set(scopes, cache);
+    }
+    const cacheKey = prefixes.join();
+    let cached = cache.get(cacheKey);
+    if (!cached) {
+        const resolver = (0, _helpersSegmentJs.a9)(scopes, prefixes);
+        cached = {
+            resolver,
+            subPrefixes: prefixes.filter((p)=>!p.toLowerCase().includes("hover"))
+        };
+        cache.set(cacheKey, cached);
+    }
+    return cached;
+}
+const hasFunction = (value)=>(0, _helpersSegmentJs.i)(value) && Object.getOwnPropertyNames(value).reduce((acc, key)=>acc || (0, _helpersSegmentJs.a7)(value[key]), false);
+function needContext(proxy, names) {
+    const { isScriptable, isIndexable } = (0, _helpersSegmentJs.aa)(proxy);
+    for (const prop of names){
+        const scriptable = isScriptable(prop);
+        const indexable = isIndexable(prop);
+        const value = (indexable || scriptable) && proxy[prop];
+        if (scriptable && ((0, _helpersSegmentJs.a7)(value) || hasFunction(value)) || indexable && (0, _helpersSegmentJs.b)(value)) return true;
+    }
+    return false;
+}
+var version = "4.3.2";
+const KNOWN_POSITIONS = [
+    "top",
+    "bottom",
+    "left",
+    "right",
+    "chartArea"
+];
+function positionIsHorizontal(position, axis) {
+    return position === "top" || position === "bottom" || KNOWN_POSITIONS.indexOf(position) === -1 && axis === "x";
+}
+function compare2Level(l1, l2) {
+    return function(a, b) {
+        return a[l1] === b[l1] ? a[l2] - b[l2] : a[l1] - b[l1];
+    };
+}
+function onAnimationsComplete(context) {
+    const chart = context.chart;
+    const animationOptions = chart.options.animation;
+    chart.notifyPlugins("afterRender");
+    (0, _helpersSegmentJs.Q)(animationOptions && animationOptions.onComplete, [
+        context
+    ], chart);
+}
+function onAnimationProgress(context) {
+    const chart = context.chart;
+    const animationOptions = chart.options.animation;
+    (0, _helpersSegmentJs.Q)(animationOptions && animationOptions.onProgress, [
+        context
+    ], chart);
+}
+function getCanvas(item) {
+    if ((0, _helpersSegmentJs.M)() && typeof item === "string") item = document.getElementById(item);
+    else if (item && item.length) item = item[0];
+    if (item && item.canvas) item = item.canvas;
+    return item;
+}
+const instances = {};
+const getChart = (key)=>{
+    const canvas = getCanvas(key);
+    return Object.values(instances).filter((c)=>c.canvas === canvas).pop();
+};
+function moveNumericKeys(obj, start, move) {
+    const keys = Object.keys(obj);
+    for (const key of keys){
+        const intKey = +key;
+        if (intKey >= start) {
+            const value = obj[key];
+            delete obj[key];
+            if (move > 0 || intKey > start) obj[intKey + move] = value;
+        }
+    }
+}
+function determineLastEvent(e, lastEvent, inChartArea, isClick) {
+    if (!inChartArea || e.type === "mouseout") return null;
+    if (isClick) return lastEvent;
+    return e;
+}
+function getDatasetArea(meta) {
+    const { xScale, yScale } = meta;
+    if (xScale && yScale) return {
+        left: xScale.left,
+        right: xScale.right,
+        top: yScale.top,
+        bottom: yScale.bottom
+    };
+}
+class Chart {
+    static defaults = (0, _helpersSegmentJs.d);
+    static instances = instances;
+    static overrides = (0, _helpersSegmentJs.a3);
+    static registry = registry;
+    static version = version;
+    static getChart = getChart;
+    static register(...items) {
+        registry.add(...items);
+        invalidatePlugins();
+    }
+    static unregister(...items) {
+        registry.remove(...items);
+        invalidatePlugins();
+    }
+    constructor(item, userConfig){
+        const config = this.config = new Config(userConfig);
+        const initialCanvas = getCanvas(item);
+        const existingChart = getChart(initialCanvas);
+        if (existingChart) throw new Error("Canvas is already in use. Chart with ID '" + existingChart.id + "'" + " must be destroyed before the canvas with ID '" + existingChart.canvas.id + "' can be reused.");
+        const options = config.createResolver(config.chartOptionScopes(), this.getContext());
+        this.platform = new (config.platform || _detectPlatform(initialCanvas))();
+        this.platform.updateConfig(config);
+        const context = this.platform.acquireContext(initialCanvas, options.aspectRatio);
+        const canvas = context && context.canvas;
+        const height = canvas && canvas.height;
+        const width = canvas && canvas.width;
+        this.id = (0, _helpersSegmentJs.ac)();
+        this.ctx = context;
+        this.canvas = canvas;
+        this.width = width;
+        this.height = height;
+        this._options = options;
+        this._aspectRatio = this.aspectRatio;
+        this._layers = [];
+        this._metasets = [];
+        this._stacks = undefined;
+        this.boxes = [];
+        this.currentDevicePixelRatio = undefined;
+        this.chartArea = undefined;
+        this._active = [];
+        this._lastEvent = undefined;
+        this._listeners = {};
+        this._responsiveListeners = undefined;
+        this._sortedMetasets = [];
+        this.scales = {};
+        this._plugins = new PluginService();
+        this.$proxies = {};
+        this._hiddenIndices = {};
+        this.attached = false;
+        this._animationsDisabled = undefined;
+        this.$context = undefined;
+        this._doResize = (0, _helpersSegmentJs.ad)((mode)=>this.update(mode), options.resizeDelay || 0);
+        this._dataChanges = [];
+        instances[this.id] = this;
+        if (!context || !canvas) {
+            console.error("Failed to create chart: can't acquire context from the given item");
+            return;
+        }
+        animator.listen(this, "complete", onAnimationsComplete);
+        animator.listen(this, "progress", onAnimationProgress);
+        this._initialize();
+        if (this.attached) this.update();
+    }
+    get aspectRatio() {
+        const { options: { aspectRatio, maintainAspectRatio }, width, height, _aspectRatio } = this;
+        if (!(0, _helpersSegmentJs.k)(aspectRatio)) return aspectRatio;
+        if (maintainAspectRatio && _aspectRatio) return _aspectRatio;
+        return height ? width / height : null;
+    }
+    get data() {
+        return this.config.data;
+    }
+    set data(data) {
+        this.config.data = data;
+    }
+    get options() {
+        return this._options;
+    }
+    set options(options) {
+        this.config.options = options;
+    }
+    get registry() {
+        return registry;
+    }
+    _initialize() {
+        this.notifyPlugins("beforeInit");
+        if (this.options.responsive) this.resize();
+        else (0, _helpersSegmentJs.ae)(this, this.options.devicePixelRatio);
+        this.bindEvents();
+        this.notifyPlugins("afterInit");
+        return this;
+    }
+    clear() {
+        (0, _helpersSegmentJs.af)(this.canvas, this.ctx);
+        return this;
+    }
+    stop() {
+        animator.stop(this);
+        return this;
+    }
+    resize(width, height) {
+        if (!animator.running(this)) this._resize(width, height);
+        else this._resizeBeforeDraw = {
+            width,
+            height
+        };
+    }
+    _resize(width, height) {
+        const options = this.options;
+        const canvas = this.canvas;
+        const aspectRatio = options.maintainAspectRatio && this.aspectRatio;
+        const newSize = this.platform.getMaximumSize(canvas, width, height, aspectRatio);
+        const newRatio = options.devicePixelRatio || this.platform.getDevicePixelRatio();
+        const mode = this.width ? "resize" : "attach";
+        this.width = newSize.width;
+        this.height = newSize.height;
+        this._aspectRatio = this.aspectRatio;
+        if (!(0, _helpersSegmentJs.ae)(this, newRatio, true)) return;
+        this.notifyPlugins("resize", {
+            size: newSize
+        });
+        (0, _helpersSegmentJs.Q)(options.onResize, [
+            this,
+            newSize
+        ], this);
+        if (this.attached) {
+            if (this._doResize(mode)) this.render();
+        }
+    }
+    ensureScalesHaveIDs() {
+        const options = this.options;
+        const scalesOptions = options.scales || {};
+        (0, _helpersSegmentJs.F)(scalesOptions, (axisOptions, axisID)=>{
+            axisOptions.id = axisID;
+        });
+    }
+    buildOrUpdateScales() {
+        const options = this.options;
+        const scaleOpts = options.scales;
+        const scales = this.scales;
+        const updated = Object.keys(scales).reduce((obj, id)=>{
+            obj[id] = false;
+            return obj;
+        }, {});
+        let items = [];
+        if (scaleOpts) items = items.concat(Object.keys(scaleOpts).map((id)=>{
+            const scaleOptions = scaleOpts[id];
+            const axis = determineAxis(id, scaleOptions);
+            const isRadial = axis === "r";
+            const isHorizontal = axis === "x";
+            return {
+                options: scaleOptions,
+                dposition: isRadial ? "chartArea" : isHorizontal ? "bottom" : "left",
+                dtype: isRadial ? "radialLinear" : isHorizontal ? "category" : "linear"
+            };
+        }));
+        (0, _helpersSegmentJs.F)(items, (item)=>{
+            const scaleOptions = item.options;
+            const id = scaleOptions.id;
+            const axis = determineAxis(id, scaleOptions);
+            const scaleType = (0, _helpersSegmentJs.v)(scaleOptions.type, item.dtype);
+            if (scaleOptions.position === undefined || positionIsHorizontal(scaleOptions.position, axis) !== positionIsHorizontal(item.dposition)) scaleOptions.position = item.dposition;
+            updated[id] = true;
+            let scale = null;
+            if (id in scales && scales[id].type === scaleType) scale = scales[id];
+            else {
+                const scaleClass = registry.getScale(scaleType);
+                scale = new scaleClass({
+                    id,
+                    type: scaleType,
+                    ctx: this.ctx,
+                    chart: this
+                });
+                scales[scale.id] = scale;
+            }
+            scale.init(scaleOptions, options);
+        });
+        (0, _helpersSegmentJs.F)(updated, (hasUpdated, id)=>{
+            if (!hasUpdated) delete scales[id];
+        });
+        (0, _helpersSegmentJs.F)(scales, (scale)=>{
+            layouts.configure(this, scale, scale.options);
+            layouts.addBox(this, scale);
+        });
+    }
+    _updateMetasets() {
+        const metasets = this._metasets;
+        const numData = this.data.datasets.length;
+        const numMeta = metasets.length;
+        metasets.sort((a, b)=>a.index - b.index);
+        if (numMeta > numData) {
+            for(let i = numData; i < numMeta; ++i)this._destroyDatasetMeta(i);
+            metasets.splice(numData, numMeta - numData);
+        }
+        this._sortedMetasets = metasets.slice(0).sort(compare2Level("order", "index"));
+    }
+    _removeUnreferencedMetasets() {
+        const { _metasets: metasets, data: { datasets } } = this;
+        if (metasets.length > datasets.length) delete this._stacks;
+        metasets.forEach((meta, index)=>{
+            if (datasets.filter((x)=>x === meta._dataset).length === 0) this._destroyDatasetMeta(index);
+        });
+    }
+    buildOrUpdateControllers() {
+        const newControllers = [];
+        const datasets = this.data.datasets;
+        let i, ilen;
+        this._removeUnreferencedMetasets();
+        for(i = 0, ilen = datasets.length; i < ilen; i++){
+            const dataset = datasets[i];
+            let meta = this.getDatasetMeta(i);
+            const type = dataset.type || this.config.type;
+            if (meta.type && meta.type !== type) {
+                this._destroyDatasetMeta(i);
+                meta = this.getDatasetMeta(i);
+            }
+            meta.type = type;
+            meta.indexAxis = dataset.indexAxis || getIndexAxis(type, this.options);
+            meta.order = dataset.order || 0;
+            meta.index = i;
+            meta.label = "" + dataset.label;
+            meta.visible = this.isDatasetVisible(i);
+            if (meta.controller) {
+                meta.controller.updateIndex(i);
+                meta.controller.linkScales();
+            } else {
+                const ControllerClass = registry.getController(type);
+                const { datasetElementType, dataElementType } = (0, _helpersSegmentJs.d).datasets[type];
+                Object.assign(ControllerClass, {
+                    dataElementType: registry.getElement(dataElementType),
+                    datasetElementType: datasetElementType && registry.getElement(datasetElementType)
+                });
+                meta.controller = new ControllerClass(this, i);
+                newControllers.push(meta.controller);
+            }
+        }
+        this._updateMetasets();
+        return newControllers;
+    }
+    _resetElements() {
+        (0, _helpersSegmentJs.F)(this.data.datasets, (dataset, datasetIndex)=>{
+            this.getDatasetMeta(datasetIndex).controller.reset();
+        }, this);
+    }
+    reset() {
+        this._resetElements();
+        this.notifyPlugins("reset");
+    }
+    update(mode) {
+        const config = this.config;
+        config.update();
+        const options = this._options = config.createResolver(config.chartOptionScopes(), this.getContext());
+        const animsDisabled = this._animationsDisabled = !options.animation;
+        this._updateScales();
+        this._checkEventBindings();
+        this._updateHiddenIndices();
+        this._plugins.invalidate();
+        if (this.notifyPlugins("beforeUpdate", {
+            mode,
+            cancelable: true
+        }) === false) return;
+        const newControllers = this.buildOrUpdateControllers();
+        this.notifyPlugins("beforeElementsUpdate");
+        let minPadding = 0;
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; i++){
+            const { controller } = this.getDatasetMeta(i);
+            const reset = !animsDisabled && newControllers.indexOf(controller) === -1;
+            controller.buildOrUpdateElements(reset);
+            minPadding = Math.max(+controller.getMaxOverflow(), minPadding);
+        }
+        minPadding = this._minPadding = options.layout.autoPadding ? minPadding : 0;
+        this._updateLayout(minPadding);
+        if (!animsDisabled) (0, _helpersSegmentJs.F)(newControllers, (controller)=>{
+            controller.reset();
+        });
+        this._updateDatasets(mode);
+        this.notifyPlugins("afterUpdate", {
+            mode
+        });
+        this._layers.sort(compare2Level("z", "_idx"));
+        const { _active, _lastEvent } = this;
+        if (_lastEvent) this._eventHandler(_lastEvent, true);
+        else if (_active.length) this._updateHoverStyles(_active, _active, true);
+        this.render();
+    }
+    _updateScales() {
+        (0, _helpersSegmentJs.F)(this.scales, (scale)=>{
+            layouts.removeBox(this, scale);
+        });
+        this.ensureScalesHaveIDs();
+        this.buildOrUpdateScales();
+    }
+    _checkEventBindings() {
+        const options = this.options;
+        const existingEvents = new Set(Object.keys(this._listeners));
+        const newEvents = new Set(options.events);
+        if (!(0, _helpersSegmentJs.ag)(existingEvents, newEvents) || !!this._responsiveListeners !== options.responsive) {
+            this.unbindEvents();
+            this.bindEvents();
+        }
+    }
+    _updateHiddenIndices() {
+        const { _hiddenIndices } = this;
+        const changes = this._getUniformDataChanges() || [];
+        for (const { method, start, count } of changes){
+            const move = method === "_removeElements" ? -count : count;
+            moveNumericKeys(_hiddenIndices, start, move);
+        }
+    }
+    _getUniformDataChanges() {
+        const _dataChanges = this._dataChanges;
+        if (!_dataChanges || !_dataChanges.length) return;
+        this._dataChanges = [];
+        const datasetCount = this.data.datasets.length;
+        const makeSet = (idx)=>new Set(_dataChanges.filter((c)=>c[0] === idx).map((c, i)=>i + "," + c.splice(1).join(",")));
+        const changeSet = makeSet(0);
+        for(let i = 1; i < datasetCount; i++){
+            if (!(0, _helpersSegmentJs.ag)(changeSet, makeSet(i))) return;
+        }
+        return Array.from(changeSet).map((c)=>c.split(",")).map((a)=>({
+                method: a[1],
+                start: +a[2],
+                count: +a[3]
+            }));
+    }
+    _updateLayout(minPadding) {
+        if (this.notifyPlugins("beforeLayout", {
+            cancelable: true
+        }) === false) return;
+        layouts.update(this, this.width, this.height, minPadding);
+        const area = this.chartArea;
+        const noArea = area.width <= 0 || area.height <= 0;
+        this._layers = [];
+        (0, _helpersSegmentJs.F)(this.boxes, (box)=>{
+            if (noArea && box.position === "chartArea") return;
+            if (box.configure) box.configure();
+            this._layers.push(...box._layers());
+        }, this);
+        this._layers.forEach((item, index)=>{
+            item._idx = index;
+        });
+        this.notifyPlugins("afterLayout");
+    }
+    _updateDatasets(mode) {
+        if (this.notifyPlugins("beforeDatasetsUpdate", {
+            mode,
+            cancelable: true
+        }) === false) return;
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i)this.getDatasetMeta(i).controller.configure();
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i)this._updateDataset(i, (0, _helpersSegmentJs.a7)(mode) ? mode({
+            datasetIndex: i
+        }) : mode);
+        this.notifyPlugins("afterDatasetsUpdate", {
+            mode
+        });
+    }
+    _updateDataset(index, mode) {
+        const meta = this.getDatasetMeta(index);
+        const args = {
+            meta,
+            index,
+            mode,
+            cancelable: true
+        };
+        if (this.notifyPlugins("beforeDatasetUpdate", args) === false) return;
+        meta.controller._update(mode);
+        args.cancelable = false;
+        this.notifyPlugins("afterDatasetUpdate", args);
+    }
+    render() {
+        if (this.notifyPlugins("beforeRender", {
+            cancelable: true
+        }) === false) return;
+        if (animator.has(this)) {
+            if (this.attached && !animator.running(this)) animator.start(this);
+        } else {
+            this.draw();
+            onAnimationsComplete({
+                chart: this
+            });
+        }
+    }
+    draw() {
+        let i;
+        if (this._resizeBeforeDraw) {
+            const { width, height } = this._resizeBeforeDraw;
+            this._resize(width, height);
+            this._resizeBeforeDraw = null;
+        }
+        this.clear();
+        if (this.width <= 0 || this.height <= 0) return;
+        if (this.notifyPlugins("beforeDraw", {
+            cancelable: true
+        }) === false) return;
+        const layers = this._layers;
+        for(i = 0; i < layers.length && layers[i].z <= 0; ++i)layers[i].draw(this.chartArea);
+        this._drawDatasets();
+        for(; i < layers.length; ++i)layers[i].draw(this.chartArea);
+        this.notifyPlugins("afterDraw");
+    }
+    _getSortedDatasetMetas(filterVisible) {
+        const metasets = this._sortedMetasets;
+        const result = [];
+        let i, ilen;
+        for(i = 0, ilen = metasets.length; i < ilen; ++i){
+            const meta = metasets[i];
+            if (!filterVisible || meta.visible) result.push(meta);
+        }
+        return result;
+    }
+    getSortedVisibleDatasetMetas() {
+        return this._getSortedDatasetMetas(true);
+    }
+    _drawDatasets() {
+        if (this.notifyPlugins("beforeDatasetsDraw", {
+            cancelable: true
+        }) === false) return;
+        const metasets = this.getSortedVisibleDatasetMetas();
+        for(let i = metasets.length - 1; i >= 0; --i)this._drawDataset(metasets[i]);
+        this.notifyPlugins("afterDatasetsDraw");
+    }
+    _drawDataset(meta) {
+        const ctx = this.ctx;
+        const clip = meta._clip;
+        const useClip = !clip.disabled;
+        const area = getDatasetArea(meta) || this.chartArea;
+        const args = {
+            meta,
+            index: meta.index,
+            cancelable: true
+        };
+        if (this.notifyPlugins("beforeDatasetDraw", args) === false) return;
+        if (useClip) (0, _helpersSegmentJs.Y)(ctx, {
+            left: clip.left === false ? 0 : area.left - clip.left,
+            right: clip.right === false ? this.width : area.right + clip.right,
+            top: clip.top === false ? 0 : area.top - clip.top,
+            bottom: clip.bottom === false ? this.height : area.bottom + clip.bottom
+        });
+        meta.controller.draw();
+        if (useClip) (0, _helpersSegmentJs.$)(ctx);
+        args.cancelable = false;
+        this.notifyPlugins("afterDatasetDraw", args);
+    }
+    isPointInArea(point) {
+        return (0, _helpersSegmentJs.C)(point, this.chartArea, this._minPadding);
+    }
+    getElementsAtEventForMode(e, mode, options, useFinalPosition) {
+        const method = Interaction.modes[mode];
+        if (typeof method === "function") return method(this, e, options, useFinalPosition);
+        return [];
+    }
+    getDatasetMeta(datasetIndex) {
+        const dataset = this.data.datasets[datasetIndex];
+        const metasets = this._metasets;
+        let meta = metasets.filter((x)=>x && x._dataset === dataset).pop();
+        if (!meta) {
+            meta = {
+                type: null,
+                data: [],
+                dataset: null,
+                controller: null,
+                hidden: null,
+                xAxisID: null,
+                yAxisID: null,
+                order: dataset && dataset.order || 0,
+                index: datasetIndex,
+                _dataset: dataset,
+                _parsed: [],
+                _sorted: false
+            };
+            metasets.push(meta);
+        }
+        return meta;
+    }
+    getContext() {
+        return this.$context || (this.$context = (0, _helpersSegmentJs.j)(null, {
+            chart: this,
+            type: "chart"
+        }));
+    }
+    getVisibleDatasetCount() {
+        return this.getSortedVisibleDatasetMetas().length;
+    }
+    isDatasetVisible(datasetIndex) {
+        const dataset = this.data.datasets[datasetIndex];
+        if (!dataset) return false;
+        const meta = this.getDatasetMeta(datasetIndex);
+        return typeof meta.hidden === "boolean" ? !meta.hidden : !dataset.hidden;
+    }
+    setDatasetVisibility(datasetIndex, visible) {
+        const meta = this.getDatasetMeta(datasetIndex);
+        meta.hidden = !visible;
+    }
+    toggleDataVisibility(index) {
+        this._hiddenIndices[index] = !this._hiddenIndices[index];
+    }
+    getDataVisibility(index) {
+        return !this._hiddenIndices[index];
+    }
+    _updateVisibility(datasetIndex, dataIndex, visible) {
+        const mode = visible ? "show" : "hide";
+        const meta = this.getDatasetMeta(datasetIndex);
+        const anims = meta.controller._resolveAnimations(undefined, mode);
+        if ((0, _helpersSegmentJs.h)(dataIndex)) {
+            meta.data[dataIndex].hidden = !visible;
+            this.update();
+        } else {
+            this.setDatasetVisibility(datasetIndex, visible);
+            anims.update(meta, {
+                visible
+            });
+            this.update((ctx)=>ctx.datasetIndex === datasetIndex ? mode : undefined);
+        }
+    }
+    hide(datasetIndex, dataIndex) {
+        this._updateVisibility(datasetIndex, dataIndex, false);
+    }
+    show(datasetIndex, dataIndex) {
+        this._updateVisibility(datasetIndex, dataIndex, true);
+    }
+    _destroyDatasetMeta(datasetIndex) {
+        const meta = this._metasets[datasetIndex];
+        if (meta && meta.controller) meta.controller._destroy();
+        delete this._metasets[datasetIndex];
+    }
+    _stop() {
+        let i, ilen;
+        this.stop();
+        animator.remove(this);
+        for(i = 0, ilen = this.data.datasets.length; i < ilen; ++i)this._destroyDatasetMeta(i);
+    }
+    destroy() {
+        this.notifyPlugins("beforeDestroy");
+        const { canvas, ctx } = this;
+        this._stop();
+        this.config.clearCache();
+        if (canvas) {
+            this.unbindEvents();
+            (0, _helpersSegmentJs.af)(canvas, ctx);
+            this.platform.releaseContext(ctx);
+            this.canvas = null;
+            this.ctx = null;
+        }
+        delete instances[this.id];
+        this.notifyPlugins("afterDestroy");
+    }
+    toBase64Image(...args) {
+        return this.canvas.toDataURL(...args);
+    }
+    bindEvents() {
+        this.bindUserEvents();
+        if (this.options.responsive) this.bindResponsiveEvents();
+        else this.attached = true;
+    }
+    bindUserEvents() {
+        const listeners = this._listeners;
+        const platform = this.platform;
+        const _add = (type, listener)=>{
+            platform.addEventListener(this, type, listener);
+            listeners[type] = listener;
+        };
+        const listener = (e, x, y)=>{
+            e.offsetX = x;
+            e.offsetY = y;
+            this._eventHandler(e);
+        };
+        (0, _helpersSegmentJs.F)(this.options.events, (type)=>_add(type, listener));
+    }
+    bindResponsiveEvents() {
+        if (!this._responsiveListeners) this._responsiveListeners = {};
+        const listeners = this._responsiveListeners;
+        const platform = this.platform;
+        const _add = (type, listener)=>{
+            platform.addEventListener(this, type, listener);
+            listeners[type] = listener;
+        };
+        const _remove = (type, listener)=>{
+            if (listeners[type]) {
+                platform.removeEventListener(this, type, listener);
+                delete listeners[type];
+            }
+        };
+        const listener = (width, height)=>{
+            if (this.canvas) this.resize(width, height);
+        };
+        let detached;
+        const attached = ()=>{
+            _remove("attach", attached);
+            this.attached = true;
+            this.resize();
+            _add("resize", listener);
+            _add("detach", detached);
+        };
+        detached = ()=>{
+            this.attached = false;
+            _remove("resize", listener);
+            this._stop();
+            this._resize(0, 0);
+            _add("attach", attached);
+        };
+        if (platform.isAttached(this.canvas)) attached();
+        else detached();
+    }
+    unbindEvents() {
+        (0, _helpersSegmentJs.F)(this._listeners, (listener, type)=>{
+            this.platform.removeEventListener(this, type, listener);
+        });
+        this._listeners = {};
+        (0, _helpersSegmentJs.F)(this._responsiveListeners, (listener, type)=>{
+            this.platform.removeEventListener(this, type, listener);
+        });
+        this._responsiveListeners = undefined;
+    }
+    updateHoverStyle(items, mode, enabled) {
+        const prefix = enabled ? "set" : "remove";
+        let meta, item, i, ilen;
+        if (mode === "dataset") {
+            meta = this.getDatasetMeta(items[0].datasetIndex);
+            meta.controller["_" + prefix + "DatasetHoverStyle"]();
+        }
+        for(i = 0, ilen = items.length; i < ilen; ++i){
+            item = items[i];
+            const controller = item && this.getDatasetMeta(item.datasetIndex).controller;
+            if (controller) controller[prefix + "HoverStyle"](item.element, item.datasetIndex, item.index);
+        }
+    }
+    getActiveElements() {
+        return this._active || [];
+    }
+    setActiveElements(activeElements) {
+        const lastActive = this._active || [];
+        const active = activeElements.map(({ datasetIndex, index })=>{
+            const meta = this.getDatasetMeta(datasetIndex);
+            if (!meta) throw new Error("No dataset found at index " + datasetIndex);
+            return {
+                datasetIndex,
+                element: meta.data[index],
+                index
+            };
+        });
+        const changed = !(0, _helpersSegmentJs.ah)(active, lastActive);
+        if (changed) {
+            this._active = active;
+            this._lastEvent = null;
+            this._updateHoverStyles(active, lastActive);
+        }
+    }
+    notifyPlugins(hook, args, filter) {
+        return this._plugins.notify(this, hook, args, filter);
+    }
+    isPluginEnabled(pluginId) {
+        return this._plugins._cache.filter((p)=>p.plugin.id === pluginId).length === 1;
+    }
+    _updateHoverStyles(active, lastActive, replay) {
+        const hoverOptions = this.options.hover;
+        const diff = (a, b)=>a.filter((x)=>!b.some((y)=>x.datasetIndex === y.datasetIndex && x.index === y.index));
+        const deactivated = diff(lastActive, active);
+        const activated = replay ? active : diff(active, lastActive);
+        if (deactivated.length) this.updateHoverStyle(deactivated, hoverOptions.mode, false);
+        if (activated.length && hoverOptions.mode) this.updateHoverStyle(activated, hoverOptions.mode, true);
+    }
+    _eventHandler(e, replay) {
+        const args = {
+            event: e,
+            replay,
+            cancelable: true,
+            inChartArea: this.isPointInArea(e)
+        };
+        const eventFilter = (plugin)=>(plugin.options.events || this.options.events).includes(e.native.type);
+        if (this.notifyPlugins("beforeEvent", args, eventFilter) === false) return;
+        const changed = this._handleEvent(e, replay, args.inChartArea);
+        args.cancelable = false;
+        this.notifyPlugins("afterEvent", args, eventFilter);
+        if (changed || args.changed) this.render();
+        return this;
+    }
+    _handleEvent(e, replay, inChartArea) {
+        const { _active: lastActive = [], options } = this;
+        const useFinalPosition = replay;
+        const active = this._getActiveElements(e, lastActive, inChartArea, useFinalPosition);
+        const isClick = (0, _helpersSegmentJs.ai)(e);
+        const lastEvent = determineLastEvent(e, this._lastEvent, inChartArea, isClick);
+        if (inChartArea) {
+            this._lastEvent = null;
+            (0, _helpersSegmentJs.Q)(options.onHover, [
+                e,
+                active,
+                this
+            ], this);
+            if (isClick) (0, _helpersSegmentJs.Q)(options.onClick, [
+                e,
+                active,
+                this
+            ], this);
+        }
+        const changed = !(0, _helpersSegmentJs.ah)(active, lastActive);
+        if (changed || replay) {
+            this._active = active;
+            this._updateHoverStyles(active, lastActive, replay);
+        }
+        this._lastEvent = lastEvent;
+        return changed;
+    }
+    _getActiveElements(e, lastActive, inChartArea, useFinalPosition) {
+        if (e.type === "mouseout") return [];
+        if (!inChartArea) return lastActive;
+        const hoverOptions = this.options.hover;
+        return this.getElementsAtEventForMode(e, hoverOptions.mode, hoverOptions, useFinalPosition);
+    }
+}
+function invalidatePlugins() {
+    return (0, _helpersSegmentJs.F)(Chart.instances, (chart)=>chart._plugins.invalidate());
+}
+function clipArc(ctx, element, endAngle) {
+    const { startAngle, pixelMargin, x, y, outerRadius, innerRadius } = element;
+    let angleMargin = pixelMargin / outerRadius;
+    // Draw an inner border by clipping the arc and drawing a double-width border
+    // Enlarge the clipping arc by 0.33 pixels to eliminate glitches between borders
+    ctx.beginPath();
+    ctx.arc(x, y, outerRadius, startAngle - angleMargin, endAngle + angleMargin);
+    if (innerRadius > pixelMargin) {
+        angleMargin = pixelMargin / innerRadius;
+        ctx.arc(x, y, innerRadius, endAngle + angleMargin, startAngle - angleMargin, true);
+    } else ctx.arc(x, y, pixelMargin, endAngle + (0, _helpersSegmentJs.H), startAngle - (0, _helpersSegmentJs.H));
+    ctx.closePath();
+    ctx.clip();
+}
+function toRadiusCorners(value) {
+    return (0, _helpersSegmentJs.ak)(value, [
+        "outerStart",
+        "outerEnd",
+        "innerStart",
+        "innerEnd"
+    ]);
+}
+/**
+ * Parse border radius from the provided options
+ */ function parseBorderRadius$1(arc, innerRadius, outerRadius, angleDelta) {
+    const o = toRadiusCorners(arc.options.borderRadius);
+    const halfThickness = (outerRadius - innerRadius) / 2;
+    const innerLimit = Math.min(halfThickness, angleDelta * innerRadius / 2);
+    // Outer limits are complicated. We want to compute the available angular distance at
+    // a radius of outerRadius - borderRadius because for small angular distances, this term limits.
+    // We compute at r = outerRadius - borderRadius because this circle defines the center of the border corners.
+    //
+    // If the borderRadius is large, that value can become negative.
+    // This causes the outer borders to lose their radius entirely, which is rather unexpected. To solve that, if borderRadius > outerRadius
+    // we know that the thickness term will dominate and compute the limits at that point
+    const computeOuterLimit = (val)=>{
+        const outerArcLimit = (outerRadius - Math.min(halfThickness, val)) * angleDelta / 2;
+        return (0, _helpersSegmentJs.S)(val, 0, Math.min(halfThickness, outerArcLimit));
+    };
+    return {
+        outerStart: computeOuterLimit(o.outerStart),
+        outerEnd: computeOuterLimit(o.outerEnd),
+        innerStart: (0, _helpersSegmentJs.S)(o.innerStart, 0, innerLimit),
+        innerEnd: (0, _helpersSegmentJs.S)(o.innerEnd, 0, innerLimit)
+    };
+}
+/**
+ * Convert (r, 𝜃) to (x, y)
+ */ function rThetaToXY(r, theta, x, y) {
+    return {
+        x: x + r * Math.cos(theta),
+        y: y + r * Math.sin(theta)
+    };
+}
+/**
+ * Path the arc, respecting border radius by separating into left and right halves.
+ *
+ *   Start      End
+ *
+ *    1--->a--->2    Outer
+ *   /           \
+ *   8           3
+ *   |           |
+ *   |           |
+ *   7           4
+ *   \           /
+ *    6<---b<---5    Inner
+ */ function pathArc(ctx, element, offset, spacing, end, circular) {
+    const { x, y, startAngle: start, pixelMargin, innerRadius: innerR } = element;
+    const outerRadius = Math.max(element.outerRadius + spacing + offset - pixelMargin, 0);
+    const innerRadius = innerR > 0 ? innerR + spacing + offset + pixelMargin : 0;
+    let spacingOffset = 0;
+    const alpha = end - start;
+    if (spacing) {
+        // When spacing is present, it is the same for all items
+        // So we adjust the start and end angle of the arc such that
+        // the distance is the same as it would be without the spacing
+        const noSpacingInnerRadius = innerR > 0 ? innerR - spacing : 0;
+        const noSpacingOuterRadius = outerRadius > 0 ? outerRadius - spacing : 0;
+        const avNogSpacingRadius = (noSpacingInnerRadius + noSpacingOuterRadius) / 2;
+        const adjustedAngle = avNogSpacingRadius !== 0 ? alpha * avNogSpacingRadius / (avNogSpacingRadius + spacing) : alpha;
+        spacingOffset = (alpha - adjustedAngle) / 2;
+    }
+    const beta = Math.max(0.001, alpha * outerRadius - offset / (0, _helpersSegmentJs.P)) / outerRadius;
+    const angleOffset = (alpha - beta) / 2;
+    const startAngle = start + angleOffset + spacingOffset;
+    const endAngle = end - angleOffset - spacingOffset;
+    const { outerStart, outerEnd, innerStart, innerEnd } = parseBorderRadius$1(element, innerRadius, outerRadius, endAngle - startAngle);
+    const outerStartAdjustedRadius = outerRadius - outerStart;
+    const outerEndAdjustedRadius = outerRadius - outerEnd;
+    const outerStartAdjustedAngle = startAngle + outerStart / outerStartAdjustedRadius;
+    const outerEndAdjustedAngle = endAngle - outerEnd / outerEndAdjustedRadius;
+    const innerStartAdjustedRadius = innerRadius + innerStart;
+    const innerEndAdjustedRadius = innerRadius + innerEnd;
+    const innerStartAdjustedAngle = startAngle + innerStart / innerStartAdjustedRadius;
+    const innerEndAdjustedAngle = endAngle - innerEnd / innerEndAdjustedRadius;
+    ctx.beginPath();
+    if (circular) {
+        // The first arc segments from point 1 to point a to point 2
+        const outerMidAdjustedAngle = (outerStartAdjustedAngle + outerEndAdjustedAngle) / 2;
+        ctx.arc(x, y, outerRadius, outerStartAdjustedAngle, outerMidAdjustedAngle);
+        ctx.arc(x, y, outerRadius, outerMidAdjustedAngle, outerEndAdjustedAngle);
+        // The corner segment from point 2 to point 3
+        if (outerEnd > 0) {
+            const pCenter = rThetaToXY(outerEndAdjustedRadius, outerEndAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, outerEnd, outerEndAdjustedAngle, endAngle + (0, _helpersSegmentJs.H));
+        }
+        // The line from point 3 to point 4
+        const p4 = rThetaToXY(innerEndAdjustedRadius, endAngle, x, y);
+        ctx.lineTo(p4.x, p4.y);
+        // The corner segment from point 4 to point 5
+        if (innerEnd > 0) {
+            const pCenter = rThetaToXY(innerEndAdjustedRadius, innerEndAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, innerEnd, endAngle + (0, _helpersSegmentJs.H), innerEndAdjustedAngle + Math.PI);
+        }
+        // The inner arc from point 5 to point b to point 6
+        const innerMidAdjustedAngle = (endAngle - innerEnd / innerRadius + (startAngle + innerStart / innerRadius)) / 2;
+        ctx.arc(x, y, innerRadius, endAngle - innerEnd / innerRadius, innerMidAdjustedAngle, true);
+        ctx.arc(x, y, innerRadius, innerMidAdjustedAngle, startAngle + innerStart / innerRadius, true);
+        // The corner segment from point 6 to point 7
+        if (innerStart > 0) {
+            const pCenter = rThetaToXY(innerStartAdjustedRadius, innerStartAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, innerStart, innerStartAdjustedAngle + Math.PI, startAngle - (0, _helpersSegmentJs.H));
+        }
+        // The line from point 7 to point 8
+        const p8 = rThetaToXY(outerStartAdjustedRadius, startAngle, x, y);
+        ctx.lineTo(p8.x, p8.y);
+        // The corner segment from point 8 to point 1
+        if (outerStart > 0) {
+            const pCenter = rThetaToXY(outerStartAdjustedRadius, outerStartAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, outerStart, startAngle - (0, _helpersSegmentJs.H), outerStartAdjustedAngle);
+        }
+    } else {
+        ctx.moveTo(x, y);
+        const outerStartX = Math.cos(outerStartAdjustedAngle) * outerRadius + x;
+        const outerStartY = Math.sin(outerStartAdjustedAngle) * outerRadius + y;
+        ctx.lineTo(outerStartX, outerStartY);
+        const outerEndX = Math.cos(outerEndAdjustedAngle) * outerRadius + x;
+        const outerEndY = Math.sin(outerEndAdjustedAngle) * outerRadius + y;
+        ctx.lineTo(outerEndX, outerEndY);
+    }
+    ctx.closePath();
+}
+function drawArc(ctx, element, offset, spacing, circular) {
+    const { fullCircles, startAngle, circumference } = element;
+    let endAngle = element.endAngle;
+    if (fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        for(let i = 0; i < fullCircles; ++i)ctx.fill();
+        if (!isNaN(circumference)) endAngle = startAngle + (circumference % (0, _helpersSegmentJs.T) || (0, _helpersSegmentJs.T));
+    }
+    pathArc(ctx, element, offset, spacing, endAngle, circular);
+    ctx.fill();
+    return endAngle;
+}
+function drawBorder(ctx, element, offset, spacing, circular) {
+    const { fullCircles, startAngle, circumference, options } = element;
+    const { borderWidth, borderJoinStyle, borderDash, borderDashOffset } = options;
+    const inner = options.borderAlign === "inner";
+    if (!borderWidth) return;
+    ctx.setLineDash(borderDash || []);
+    ctx.lineDashOffset = borderDashOffset;
+    if (inner) {
+        ctx.lineWidth = borderWidth * 2;
+        ctx.lineJoin = borderJoinStyle || "round";
+    } else {
+        ctx.lineWidth = borderWidth;
+        ctx.lineJoin = borderJoinStyle || "bevel";
+    }
+    let endAngle = element.endAngle;
+    if (fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        for(let i = 0; i < fullCircles; ++i)ctx.stroke();
+        if (!isNaN(circumference)) endAngle = startAngle + (circumference % (0, _helpersSegmentJs.T) || (0, _helpersSegmentJs.T));
+    }
+    if (inner) clipArc(ctx, element, endAngle);
+    if (!fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        ctx.stroke();
+    }
+}
+class ArcElement extends Element {
+    static id = "arc";
+    static defaults = {
+        borderAlign: "center",
+        borderColor: "#fff",
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: undefined,
+        borderRadius: 0,
+        borderWidth: 2,
+        offset: 0,
+        spacing: 0,
+        angle: undefined,
+        circular: true
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor"
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== "borderDash"
+    };
+    circumference;
+    endAngle;
+    fullCircles;
+    innerRadius;
+    outerRadius;
+    pixelMargin;
+    startAngle;
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.circumference = undefined;
+        this.startAngle = undefined;
+        this.endAngle = undefined;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.pixelMargin = 0;
+        this.fullCircles = 0;
+        if (cfg) Object.assign(this, cfg);
+    }
+    inRange(chartX, chartY, useFinalPosition) {
+        const point = this.getProps([
+            "x",
+            "y"
+        ], useFinalPosition);
+        const { angle, distance } = (0, _helpersSegmentJs.D)(point, {
+            x: chartX,
+            y: chartY
+        });
+        const { startAngle, endAngle, innerRadius, outerRadius, circumference } = this.getProps([
+            "startAngle",
+            "endAngle",
+            "innerRadius",
+            "outerRadius",
+            "circumference"
+        ], useFinalPosition);
+        const rAdjust = (this.options.spacing + this.options.borderWidth) / 2;
+        const _circumference = (0, _helpersSegmentJs.v)(circumference, endAngle - startAngle);
+        const betweenAngles = _circumference >= (0, _helpersSegmentJs.T) || (0, _helpersSegmentJs.p)(angle, startAngle, endAngle);
+        const withinRadius = (0, _helpersSegmentJs.aj)(distance, innerRadius + rAdjust, outerRadius + rAdjust);
+        return betweenAngles && withinRadius;
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x, y, startAngle, endAngle, innerRadius, outerRadius } = this.getProps([
+            "x",
+            "y",
+            "startAngle",
+            "endAngle",
+            "innerRadius",
+            "outerRadius"
+        ], useFinalPosition);
+        const { offset, spacing } = this.options;
+        const halfAngle = (startAngle + endAngle) / 2;
+        const halfRadius = (innerRadius + outerRadius + spacing + offset) / 2;
+        return {
+            x: x + Math.cos(halfAngle) * halfRadius,
+            y: y + Math.sin(halfAngle) * halfRadius
+        };
+    }
+    tooltipPosition(useFinalPosition) {
+        return this.getCenterPoint(useFinalPosition);
+    }
+    draw(ctx) {
+        const { options, circumference } = this;
+        const offset = (options.offset || 0) / 4;
+        const spacing = (options.spacing || 0) / 2;
+        const circular = options.circular;
+        this.pixelMargin = options.borderAlign === "inner" ? 0.33 : 0;
+        this.fullCircles = circumference > (0, _helpersSegmentJs.T) ? Math.floor(circumference / (0, _helpersSegmentJs.T)) : 0;
+        if (circumference === 0 || this.innerRadius < 0 || this.outerRadius < 0) return;
+        ctx.save();
+        const halfAngle = (this.startAngle + this.endAngle) / 2;
+        ctx.translate(Math.cos(halfAngle) * offset, Math.sin(halfAngle) * offset);
+        const fix = 1 - Math.sin(Math.min((0, _helpersSegmentJs.P), circumference || 0));
+        const radiusOffset = offset * fix;
+        ctx.fillStyle = options.backgroundColor;
+        ctx.strokeStyle = options.borderColor;
+        drawArc(ctx, this, radiusOffset, spacing, circular);
+        drawBorder(ctx, this, radiusOffset, spacing, circular);
+        ctx.restore();
+    }
+}
+function setStyle(ctx, options, style = options) {
+    ctx.lineCap = (0, _helpersSegmentJs.v)(style.borderCapStyle, options.borderCapStyle);
+    ctx.setLineDash((0, _helpersSegmentJs.v)(style.borderDash, options.borderDash));
+    ctx.lineDashOffset = (0, _helpersSegmentJs.v)(style.borderDashOffset, options.borderDashOffset);
+    ctx.lineJoin = (0, _helpersSegmentJs.v)(style.borderJoinStyle, options.borderJoinStyle);
+    ctx.lineWidth = (0, _helpersSegmentJs.v)(style.borderWidth, options.borderWidth);
+    ctx.strokeStyle = (0, _helpersSegmentJs.v)(style.borderColor, options.borderColor);
+}
+function lineTo(ctx, previous, target) {
+    ctx.lineTo(target.x, target.y);
+}
+function getLineMethod(options) {
+    if (options.stepped) return 0, _helpersSegmentJs.ar;
+    if (options.tension || options.cubicInterpolationMode === "monotone") return 0, _helpersSegmentJs.as;
+    return lineTo;
+}
+function pathVars(points, segment, params = {}) {
+    const count = points.length;
+    const { start: paramsStart = 0, end: paramsEnd = count - 1 } = params;
+    const { start: segmentStart, end: segmentEnd } = segment;
+    const start = Math.max(paramsStart, segmentStart);
+    const end = Math.min(paramsEnd, segmentEnd);
+    const outside = paramsStart < segmentStart && paramsEnd < segmentStart || paramsStart > segmentEnd && paramsEnd > segmentEnd;
+    return {
+        count,
+        start,
+        loop: segment.loop,
+        ilen: end < start && !outside ? count + end - start : end - start
+    };
+}
+function pathSegment(ctx, line, segment, params) {
+    const { points, options } = line;
+    const { count, start, loop, ilen } = pathVars(points, segment, params);
+    const lineMethod = getLineMethod(options);
+    let { move = true, reverse } = params || {};
+    let i, point, prev;
+    for(i = 0; i <= ilen; ++i){
+        point = points[(start + (reverse ? ilen - i : i)) % count];
+        if (point.skip) continue;
+        else if (move) {
+            ctx.moveTo(point.x, point.y);
+            move = false;
+        } else lineMethod(ctx, prev, point, reverse, options.stepped);
+        prev = point;
+    }
+    if (loop) {
+        point = points[(start + (reverse ? ilen : 0)) % count];
+        lineMethod(ctx, prev, point, reverse, options.stepped);
+    }
+    return !!loop;
+}
+function fastPathSegment(ctx, line, segment, params) {
+    const points = line.points;
+    const { count, start, ilen } = pathVars(points, segment, params);
+    const { move = true, reverse } = params || {};
+    let avgX = 0;
+    let countX = 0;
+    let i, point, prevX, minY, maxY, lastY;
+    const pointIndex = (index)=>(start + (reverse ? ilen - index : index)) % count;
+    const drawX = ()=>{
+        if (minY !== maxY) {
+            ctx.lineTo(avgX, maxY);
+            ctx.lineTo(avgX, minY);
+            ctx.lineTo(avgX, lastY);
+        }
+    };
+    if (move) {
+        point = points[pointIndex(0)];
+        ctx.moveTo(point.x, point.y);
+    }
+    for(i = 0; i <= ilen; ++i){
+        point = points[pointIndex(i)];
+        if (point.skip) continue;
+        const x = point.x;
+        const y = point.y;
+        const truncX = x | 0;
+        if (truncX === prevX) {
+            if (y < minY) minY = y;
+            else if (y > maxY) maxY = y;
+            avgX = (countX * avgX + x) / ++countX;
+        } else {
+            drawX();
+            ctx.lineTo(x, y);
+            prevX = truncX;
+            countX = 0;
+            minY = maxY = y;
+        }
+        lastY = y;
+    }
+    drawX();
+}
+function _getSegmentMethod(line) {
+    const opts = line.options;
+    const borderDash = opts.borderDash && opts.borderDash.length;
+    const useFastPath = !line._decimated && !line._loop && !opts.tension && opts.cubicInterpolationMode !== "monotone" && !opts.stepped && !borderDash;
+    return useFastPath ? fastPathSegment : pathSegment;
+}
+function _getInterpolationMethod(options) {
+    if (options.stepped) return 0, _helpersSegmentJs.ao;
+    if (options.tension || options.cubicInterpolationMode === "monotone") return 0, _helpersSegmentJs.ap;
+    return 0, _helpersSegmentJs.aq;
+}
+function strokePathWithCache(ctx, line, start, count) {
+    let path = line._path;
+    if (!path) {
+        path = line._path = new Path2D();
+        if (line.path(path, start, count)) path.closePath();
+    }
+    setStyle(ctx, line.options);
+    ctx.stroke(path);
+}
+function strokePathDirect(ctx, line, start, count) {
+    const { segments, options } = line;
+    const segmentMethod = _getSegmentMethod(line);
+    for (const segment of segments){
+        setStyle(ctx, options, segment.style);
+        ctx.beginPath();
+        if (segmentMethod(ctx, line, segment, {
+            start,
+            end: start + count - 1
+        })) ctx.closePath();
+        ctx.stroke();
+    }
+}
+const usePath2D = typeof Path2D === "function";
+function draw(ctx, line, start, count) {
+    if (usePath2D && !line.options.segment) strokePathWithCache(ctx, line, start, count);
+    else strokePathDirect(ctx, line, start, count);
+}
+class LineElement extends Element {
+    static id = "line";
+    static defaults = {
+        borderCapStyle: "butt",
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: "miter",
+        borderWidth: 3,
+        capBezierPoints: true,
+        cubicInterpolationMode: "default",
+        fill: false,
+        spanGaps: false,
+        stepped: false,
+        tension: 0
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== "borderDash" && name !== "fill"
+    };
+    constructor(cfg){
+        super();
+        this.animated = true;
+        this.options = undefined;
+        this._chart = undefined;
+        this._loop = undefined;
+        this._fullLoop = undefined;
+        this._path = undefined;
+        this._points = undefined;
+        this._segments = undefined;
+        this._decimated = false;
+        this._pointsUpdated = false;
+        this._datasetIndex = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
+    updateControlPoints(chartArea, indexAxis) {
+        const options = this.options;
+        if ((options.tension || options.cubicInterpolationMode === "monotone") && !options.stepped && !this._pointsUpdated) {
+            const loop = options.spanGaps ? this._loop : this._fullLoop;
+            (0, _helpersSegmentJs.al)(this._points, options, chartArea, loop, indexAxis);
+            this._pointsUpdated = true;
+        }
+    }
+    set points(points) {
+        this._points = points;
+        delete this._segments;
+        delete this._path;
+        this._pointsUpdated = false;
+    }
+    get points() {
+        return this._points;
+    }
+    get segments() {
+        return this._segments || (this._segments = (0, _helpersSegmentJs.am)(this, this.options.segment));
+    }
+    first() {
+        const segments = this.segments;
+        const points = this.points;
+        return segments.length && points[segments[0].start];
+    }
+    last() {
+        const segments = this.segments;
+        const points = this.points;
+        const count = segments.length;
+        return count && points[segments[count - 1].end];
+    }
+    interpolate(point, property) {
+        const options = this.options;
+        const value = point[property];
+        const points = this.points;
+        const segments = (0, _helpersSegmentJs.an)(this, {
+            property,
+            start: value,
+            end: value
+        });
+        if (!segments.length) return;
+        const result = [];
+        const _interpolate = _getInterpolationMethod(options);
+        let i, ilen;
+        for(i = 0, ilen = segments.length; i < ilen; ++i){
+            const { start, end } = segments[i];
+            const p1 = points[start];
+            const p2 = points[end];
+            if (p1 === p2) {
+                result.push(p1);
+                continue;
+            }
+            const t = Math.abs((value - p1[property]) / (p2[property] - p1[property]));
+            const interpolated = _interpolate(p1, p2, t, options.stepped);
+            interpolated[property] = point[property];
+            result.push(interpolated);
+        }
+        return result.length === 1 ? result[0] : result;
+    }
+    pathSegment(ctx, segment, params) {
+        const segmentMethod = _getSegmentMethod(this);
+        return segmentMethod(ctx, this, segment, params);
+    }
+    path(ctx, start, count) {
+        const segments = this.segments;
+        const segmentMethod = _getSegmentMethod(this);
+        let loop = this._loop;
+        start = start || 0;
+        count = count || this.points.length - start;
+        for (const segment of segments)loop &= segmentMethod(ctx, this, segment, {
+            start,
+            end: start + count - 1
+        });
+        return !!loop;
+    }
+    draw(ctx, chartArea, start, count) {
+        const options = this.options || {};
+        const points = this.points || [];
+        if (points.length && options.borderWidth) {
+            ctx.save();
+            draw(ctx, this, start, count);
+            ctx.restore();
+        }
+        if (this.animated) {
+            this._pointsUpdated = false;
+            this._path = undefined;
+        }
+    }
+}
+function inRange$1(el, pos, axis, useFinalPosition) {
+    const options = el.options;
+    const { [axis]: value } = el.getProps([
+        axis
+    ], useFinalPosition);
+    return Math.abs(pos - value) < options.radius + options.hitRadius;
+}
+class PointElement extends Element {
+    static id = "point";
+    parsed;
+    skip;
+    stop;
+    /**
+   * @type {any}
+   */ static defaults = {
+        borderWidth: 1,
+        hitRadius: 1,
+        hoverBorderWidth: 1,
+        hoverRadius: 4,
+        pointStyle: "circle",
+        radius: 3,
+        rotation: 0
+    };
+    /**
+   * @type {any}
+   */ static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.parsed = undefined;
+        this.skip = undefined;
+        this.stop = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
+    inRange(mouseX, mouseY, useFinalPosition) {
+        const options = this.options;
+        const { x, y } = this.getProps([
+            "x",
+            "y"
+        ], useFinalPosition);
+        return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < Math.pow(options.hitRadius + options.radius, 2);
+    }
+    inXRange(mouseX, useFinalPosition) {
+        return inRange$1(this, mouseX, "x", useFinalPosition);
+    }
+    inYRange(mouseY, useFinalPosition) {
+        return inRange$1(this, mouseY, "y", useFinalPosition);
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x, y } = this.getProps([
+            "x",
+            "y"
+        ], useFinalPosition);
+        return {
+            x,
+            y
+        };
+    }
+    size(options) {
+        options = options || this.options || {};
+        let radius = options.radius || 0;
+        radius = Math.max(radius, radius && options.hoverRadius || 0);
+        const borderWidth = radius && options.borderWidth || 0;
+        return (radius + borderWidth) * 2;
+    }
+    draw(ctx, area) {
+        const options = this.options;
+        if (this.skip || options.radius < 0.1 || !(0, _helpersSegmentJs.C)(this, area, this.size(options) / 2)) return;
+        ctx.strokeStyle = options.borderColor;
+        ctx.lineWidth = options.borderWidth;
+        ctx.fillStyle = options.backgroundColor;
+        (0, _helpersSegmentJs.at)(ctx, options, this.x, this.y);
+    }
+    getRange() {
+        const options = this.options || {};
+        // @ts-expect-error Fallbacks should never be hit in practice
+        return options.radius + options.hitRadius;
+    }
+}
+function getBarBounds(bar, useFinalPosition) {
+    const { x, y, base, width, height } = bar.getProps([
+        "x",
+        "y",
+        "base",
+        "width",
+        "height"
+    ], useFinalPosition);
+    let left, right, top, bottom, half;
+    if (bar.horizontal) {
+        half = height / 2;
+        left = Math.min(x, base);
+        right = Math.max(x, base);
+        top = y - half;
+        bottom = y + half;
+    } else {
+        half = width / 2;
+        left = x - half;
+        right = x + half;
+        top = Math.min(y, base);
+        bottom = Math.max(y, base);
+    }
+    return {
+        left,
+        top,
+        right,
+        bottom
+    };
+}
+function skipOrLimit(skip, value, min, max) {
+    return skip ? 0 : (0, _helpersSegmentJs.S)(value, min, max);
+}
+function parseBorderWidth(bar, maxW, maxH) {
+    const value = bar.options.borderWidth;
+    const skip = bar.borderSkipped;
+    const o = (0, _helpersSegmentJs.av)(value);
+    return {
+        t: skipOrLimit(skip.top, o.top, 0, maxH),
+        r: skipOrLimit(skip.right, o.right, 0, maxW),
+        b: skipOrLimit(skip.bottom, o.bottom, 0, maxH),
+        l: skipOrLimit(skip.left, o.left, 0, maxW)
+    };
+}
+function parseBorderRadius(bar, maxW, maxH) {
+    const { enableBorderRadius } = bar.getProps([
+        "enableBorderRadius"
+    ]);
+    const value = bar.options.borderRadius;
+    const o = (0, _helpersSegmentJs.aw)(value);
+    const maxR = Math.min(maxW, maxH);
+    const skip = bar.borderSkipped;
+    const enableBorder = enableBorderRadius || (0, _helpersSegmentJs.i)(value);
+    return {
+        topLeft: skipOrLimit(!enableBorder || skip.top || skip.left, o.topLeft, 0, maxR),
+        topRight: skipOrLimit(!enableBorder || skip.top || skip.right, o.topRight, 0, maxR),
+        bottomLeft: skipOrLimit(!enableBorder || skip.bottom || skip.left, o.bottomLeft, 0, maxR),
+        bottomRight: skipOrLimit(!enableBorder || skip.bottom || skip.right, o.bottomRight, 0, maxR)
+    };
+}
+function boundingRects(bar) {
+    const bounds = getBarBounds(bar);
+    const width = bounds.right - bounds.left;
+    const height = bounds.bottom - bounds.top;
+    const border = parseBorderWidth(bar, width / 2, height / 2);
+    const radius = parseBorderRadius(bar, width / 2, height / 2);
+    return {
+        outer: {
+            x: bounds.left,
+            y: bounds.top,
+            w: width,
+            h: height,
+            radius
+        },
+        inner: {
+            x: bounds.left + border.l,
+            y: bounds.top + border.t,
+            w: width - border.l - border.r,
+            h: height - border.t - border.b,
+            radius: {
+                topLeft: Math.max(0, radius.topLeft - Math.max(border.t, border.l)),
+                topRight: Math.max(0, radius.topRight - Math.max(border.t, border.r)),
+                bottomLeft: Math.max(0, radius.bottomLeft - Math.max(border.b, border.l)),
+                bottomRight: Math.max(0, radius.bottomRight - Math.max(border.b, border.r))
+            }
+        }
+    };
+}
+function inRange(bar, x, y, useFinalPosition) {
+    const skipX = x === null;
+    const skipY = y === null;
+    const skipBoth = skipX && skipY;
+    const bounds = bar && !skipBoth && getBarBounds(bar, useFinalPosition);
+    return bounds && (skipX || (0, _helpersSegmentJs.aj)(x, bounds.left, bounds.right)) && (skipY || (0, _helpersSegmentJs.aj)(y, bounds.top, bounds.bottom));
+}
+function hasRadius(radius) {
+    return radius.topLeft || radius.topRight || radius.bottomLeft || radius.bottomRight;
+}
+function addNormalRectPath(ctx, rect) {
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+}
+function inflateRect(rect, amount, refRect = {}) {
+    const x = rect.x !== refRect.x ? -amount : 0;
+    const y = rect.y !== refRect.y ? -amount : 0;
+    const w = (rect.x + rect.w !== refRect.x + refRect.w ? amount : 0) - x;
+    const h = (rect.y + rect.h !== refRect.y + refRect.h ? amount : 0) - y;
+    return {
+        x: rect.x + x,
+        y: rect.y + y,
+        w: rect.w + w,
+        h: rect.h + h,
+        radius: rect.radius
+    };
+}
+class BarElement extends Element {
+    static id = "bar";
+    static defaults = {
+        borderSkipped: "start",
+        borderWidth: 0,
+        borderRadius: 0,
+        inflateAmount: "auto",
+        pointStyle: undefined
+    };
+    static defaultRoutes = {
+        backgroundColor: "backgroundColor",
+        borderColor: "borderColor"
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.horizontal = undefined;
+        this.base = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.inflateAmount = undefined;
+        if (cfg) Object.assign(this, cfg);
+    }
+    draw(ctx) {
+        const { inflateAmount, options: { borderColor, backgroundColor } } = this;
+        const { inner, outer } = boundingRects(this);
+        const addRectPath = hasRadius(outer.radius) ? (0, _helpersSegmentJs.au) : addNormalRectPath;
+        ctx.save();
+        if (outer.w !== inner.w || outer.h !== inner.h) {
+            ctx.beginPath();
+            addRectPath(ctx, inflateRect(outer, inflateAmount, inner));
+            ctx.clip();
+            addRectPath(ctx, inflateRect(inner, -inflateAmount, outer));
+            ctx.fillStyle = borderColor;
+            ctx.fill("evenodd");
+        }
+        ctx.beginPath();
+        addRectPath(ctx, inflateRect(inner, inflateAmount));
+        ctx.fillStyle = backgroundColor;
+        ctx.fill();
+        ctx.restore();
+    }
+    inRange(mouseX, mouseY, useFinalPosition) {
+        return inRange(this, mouseX, mouseY, useFinalPosition);
+    }
+    inXRange(mouseX, useFinalPosition) {
+        return inRange(this, mouseX, null, useFinalPosition);
+    }
+    inYRange(mouseY, useFinalPosition) {
+        return inRange(this, null, mouseY, useFinalPosition);
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x, y, base, horizontal } = this.getProps([
+            "x",
+            "y",
+            "base",
+            "horizontal"
+        ], useFinalPosition);
+        return {
+            x: horizontal ? (x + base) / 2 : x,
+            y: horizontal ? y : (y + base) / 2
+        };
+    }
+    getRange(axis) {
+        return axis === "x" ? this.width / 2 : this.height / 2;
+    }
+}
+var elements = /*#__PURE__*/ Object.freeze({
+    __proto__: null,
+    ArcElement: ArcElement,
+    BarElement: BarElement,
+    LineElement: LineElement,
+    PointElement: PointElement
+});
+const BORDER_COLORS = [
+    "rgb(54, 162, 235)",
+    "rgb(255, 99, 132)",
+    "rgb(255, 159, 64)",
+    "rgb(255, 205, 86)",
+    "rgb(75, 192, 192)",
+    "rgb(153, 102, 255)",
+    "rgb(201, 203, 207)" // grey
+];
+// Border colors with 50% transparency
+const BACKGROUND_COLORS = /* #__PURE__ */ BORDER_COLORS.map((color)=>color.replace("rgb(", "rgba(").replace(")", ", 0.5)"));
+function getBorderColor(i) {
+    return BORDER_COLORS[i % BORDER_COLORS.length];
+}
+function getBackgroundColor(i) {
+    return BACKGROUND_COLORS[i % BACKGROUND_COLORS.length];
+}
+function colorizeDefaultDataset(dataset, i) {
+    dataset.borderColor = getBorderColor(i);
+    dataset.backgroundColor = getBackgroundColor(i);
+    return ++i;
+}
+function colorizeDoughnutDataset(dataset, i) {
+    dataset.backgroundColor = dataset.data.map(()=>getBorderColor(i++));
+    return i;
+}
+function colorizePolarAreaDataset(dataset, i) {
+    dataset.backgroundColor = dataset.data.map(()=>getBackgroundColor(i++));
+    return i;
+}
+function getColorizer(chart) {
+    let i = 0;
+    return (dataset, datasetIndex)=>{
+        const controller = chart.getDatasetMeta(datasetIndex).controller;
+        if (controller instanceof DoughnutController) i = colorizeDoughnutDataset(dataset, i);
+        else if (controller instanceof PolarAreaController) i = colorizePolarAreaDataset(dataset, i);
+        else if (controller) i = colorizeDefaultDataset(dataset, i);
+    };
+}
+function containsColorsDefinitions(descriptors) {
+    let k;
+    for(k in descriptors){
+        if (descriptors[k].borderColor || descriptors[k].backgroundColor) return true;
+    }
+    return false;
+}
+function containsColorsDefinition(descriptor) {
+    return descriptor && (descriptor.borderColor || descriptor.backgroundColor);
+}
+var plugin_colors = {
+    id: "colors",
+    defaults: {
+        enabled: true,
+        forceOverride: false
+    },
+    beforeLayout (chart, _args, options) {
+        if (!options.enabled) return;
+        const { data: { datasets }, options: chartOptions } = chart.config;
+        const { elements } = chartOptions;
+        if (!options.forceOverride && (containsColorsDefinitions(datasets) || containsColorsDefinition(chartOptions) || elements && containsColorsDefinitions(elements))) return;
+        const colorizer = getColorizer(chart);
+        datasets.forEach(colorizer);
+    }
+};
+function lttbDecimation(data, start, count, availableWidth, options) {
+    const samples = options.samples || availableWidth;
+    if (samples >= count) return data.slice(start, start + count);
+    const decimated = [];
+    const bucketWidth = (count - 2) / (samples - 2);
+    let sampledIndex = 0;
+    const endIndex = start + count - 1;
+    let a = start;
+    let i, maxAreaPoint, maxArea, area, nextA;
+    decimated[sampledIndex++] = data[a];
+    for(i = 0; i < samples - 2; i++){
+        let avgX = 0;
+        let avgY = 0;
+        let j;
+        const avgRangeStart = Math.floor((i + 1) * bucketWidth) + 1 + start;
+        const avgRangeEnd = Math.min(Math.floor((i + 2) * bucketWidth) + 1, count) + start;
+        const avgRangeLength = avgRangeEnd - avgRangeStart;
+        for(j = avgRangeStart; j < avgRangeEnd; j++){
+            avgX += data[j].x;
+            avgY += data[j].y;
+        }
+        avgX /= avgRangeLength;
+        avgY /= avgRangeLength;
+        const rangeOffs = Math.floor(i * bucketWidth) + 1 + start;
+        const rangeTo = Math.min(Math.floor((i + 1) * bucketWidth) + 1, count) + start;
+        const { x: pointAx, y: pointAy } = data[a];
+        maxArea = area = -1;
+        for(j = rangeOffs; j < rangeTo; j++){
+            area = 0.5 * Math.abs((pointAx - avgX) * (data[j].y - pointAy) - (pointAx - data[j].x) * (avgY - pointAy));
+            if (area > maxArea) {
+                maxArea = area;
+                maxAreaPoint = data[j];
+                nextA = j;
+            }
+        }
+        decimated[sampledIndex++] = maxAreaPoint;
+        a = nextA;
+    }
+    decimated[sampledIndex++] = data[endIndex];
+    return decimated;
+}
+function minMaxDecimation(data, start, count, availableWidth) {
+    let avgX = 0;
+    let countX = 0;
+    let i, point, x, y, prevX, minIndex, maxIndex, startIndex, minY, maxY;
+    const decimated = [];
+    const endIndex = start + count - 1;
+    const xMin = data[start].x;
+    const xMax = data[endIndex].x;
+    const dx = xMax - xMin;
+    for(i = start; i < start + count; ++i){
+        point = data[i];
+        x = (point.x - xMin) / dx * availableWidth;
+        y = point.y;
+        const truncX = x | 0;
+        if (truncX === prevX) {
+            if (y < minY) {
+                minY = y;
+                minIndex = i;
+            } else if (y > maxY) {
+                maxY = y;
+                maxIndex = i;
+            }
+            avgX = (countX * avgX + point.x) / ++countX;
+        } else {
+            const lastIndex = i - 1;
+            if (!(0, _helpersSegmentJs.k)(minIndex) && !(0, _helpersSegmentJs.k)(maxIndex)) {
+                const intermediateIndex1 = Math.min(minIndex, maxIndex);
+                const intermediateIndex2 = Math.max(minIndex, maxIndex);
+                if (intermediateIndex1 !== startIndex && intermediateIndex1 !== lastIndex) decimated.push({
+                    ...data[intermediateIndex1],
+                    x: avgX
+                });
+                if (intermediateIndex2 !== startIndex && intermediateIndex2 !== lastIndex) decimated.push({
+                    ...data[intermediateIndex2],
+                    x: avgX
+                });
+            }
+            if (i > 0 && lastIndex !== startIndex) decimated.push(data[lastIndex]);
+            decimated.push(point);
+            prevX = truncX;
+            countX = 0;
+            minY = maxY = y;
+            minIndex = maxIndex = startIndex = i;
+        }
+    }
+    return decimated;
+}
+function cleanDecimatedDataset(dataset) {
+    if (dataset._decimated) {
+        const data = dataset._data;
+        delete dataset._decimated;
+        delete dataset._data;
+        Object.defineProperty(dataset, "data", {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: data
+        });
+    }
+}
+function cleanDecimatedData(chart) {
+    chart.data.datasets.forEach((dataset)=>{
+        cleanDecimatedDataset(dataset);
+    });
+}
+function getStartAndCountOfVisiblePointsSimplified(meta, points) {
+    const pointCount = points.length;
+    let start = 0;
+    let count;
+    const { iScale } = meta;
+    const { min, max, minDefined, maxDefined } = iScale.getUserBounds();
+    if (minDefined) start = (0, _helpersSegmentJs.S)((0, _helpersSegmentJs.B)(points, iScale.axis, min).lo, 0, pointCount - 1);
+    if (maxDefined) count = (0, _helpersSegmentJs.S)((0, _helpersSegmentJs.B)(points, iScale.axis, max).hi + 1, start, pointCount) - start;
+    else count = pointCount - start;
+    return {
+        start,
+        count
+    };
+}
+var plugin_decimation = {
+    id: "decimation",
+    defaults: {
+        algorithm: "min-max",
+        enabled: false
+    },
+    beforeElementsUpdate: (chart, args, options)=>{
+        if (!options.enabled) {
+            cleanDecimatedData(chart);
+            return;
+        }
+        const availableWidth = chart.width;
+        chart.data.datasets.forEach((dataset, datasetIndex)=>{
+            const { _data, indexAxis } = dataset;
+            const meta = chart.getDatasetMeta(datasetIndex);
+            const data = _data || dataset.data;
+            if ((0, _helpersSegmentJs.a)([
+                indexAxis,
+                chart.options.indexAxis
+            ]) === "y") return;
+            if (!meta.controller.supportsDecimation) return;
+            const xAxis = chart.scales[meta.xAxisID];
+            if (xAxis.type !== "linear" && xAxis.type !== "time") return;
+            if (chart.options.parsing) return;
+            let { start, count } = getStartAndCountOfVisiblePointsSimplified(meta, data);
+            const threshold = options.threshold || 4 * availableWidth;
+            if (count <= threshold) {
+                cleanDecimatedDataset(dataset);
+                return;
+            }
+            if ((0, _helpersSegmentJs.k)(_data)) {
+                dataset._data = data;
+                delete dataset.data;
+                Object.defineProperty(dataset, "data", {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() {
+                        return this._decimated;
+                    },
+                    set: function(d) {
+                        this._data = d;
+                    }
+                });
+            }
+            let decimated;
+            switch(options.algorithm){
+                case "lttb":
+                    decimated = lttbDecimation(data, start, count, availableWidth, options);
+                    break;
+                case "min-max":
+                    decimated = minMaxDecimation(data, start, count, availableWidth);
+                    break;
+                default:
+                    throw new Error(`Unsupported decimation algorithm '${options.algorithm}'`);
+            }
+            dataset._decimated = decimated;
+        });
+    },
+    destroy (chart) {
+        cleanDecimatedData(chart);
+    }
+};
+function _segments(line, target, property) {
+    const segments = line.segments;
+    const points = line.points;
+    const tpoints = target.points;
+    const parts = [];
+    for (const segment of segments){
+        let { start, end } = segment;
+        end = _findSegmentEnd(start, end, points);
+        const bounds = _getBounds(property, points[start], points[end], segment.loop);
+        if (!target.segments) {
+            parts.push({
+                source: segment,
+                target: bounds,
+                start: points[start],
+                end: points[end]
+            });
+            continue;
+        }
+        const targetSegments = (0, _helpersSegmentJs.an)(target, bounds);
+        for (const tgt of targetSegments){
+            const subBounds = _getBounds(property, tpoints[tgt.start], tpoints[tgt.end], tgt.loop);
+            const fillSources = (0, _helpersSegmentJs.ax)(segment, points, subBounds);
+            for (const fillSource of fillSources)parts.push({
+                source: fillSource,
+                target: tgt,
+                start: {
+                    [property]: _getEdge(bounds, subBounds, "start", Math.max)
+                },
+                end: {
+                    [property]: _getEdge(bounds, subBounds, "end", Math.min)
+                }
+            });
+        }
+    }
+    return parts;
+}
+function _getBounds(property, first, last, loop) {
+    if (loop) return;
+    let start = first[property];
+    let end = last[property];
+    if (property === "angle") {
+        start = (0, _helpersSegmentJs.ay)(start);
+        end = (0, _helpersSegmentJs.ay)(end);
+    }
+    return {
+        property,
+        start,
+        end
+    };
+}
+function _pointsFromSegments(boundary, line) {
+    const { x = null, y = null } = boundary || {};
+    const linePoints = line.points;
+    const points = [];
+    line.segments.forEach(({ start, end })=>{
+        end = _findSegmentEnd(start, end, linePoints);
+        const first = linePoints[start];
+        const last = linePoints[end];
+        if (y !== null) {
+            points.push({
+                x: first.x,
+                y
+            });
+            points.push({
+                x: last.x,
+                y
+            });
+        } else if (x !== null) {
+            points.push({
+                x,
+                y: first.y
+            });
+            points.push({
+                x,
+                y: last.y
+            });
+        }
+    });
+    return points;
+}
+function _findSegmentEnd(start, end, points) {
+    for(; end > start; end--){
+        const point = points[end];
+        if (!isNaN(point.x) && !isNaN(point.y)) break;
+    }
+    return end;
+}
+function _getEdge(a, b, prop, fn) {
+    if (a && b) return fn(a[prop], b[prop]);
+    return a ? a[prop] : b ? b[prop] : 0;
+}
+function _createBoundaryLine(boundary, line) {
+    let points = [];
+    let _loop = false;
+    if ((0, _helpersSegmentJs.b)(boundary)) {
+        _loop = true;
+        points = boundary;
+    } else points = _pointsFromSegments(boundary, line);
+    return points.length ? new LineElement({
+        points,
+        options: {
+            tension: 0
+        },
+        _loop,
+        _fullLoop: _loop
+    }) : null;
+}
+function _shouldApplyFill(source) {
+    return source && source.fill !== false;
+}
+function _resolveTarget(sources, index, propagate) {
+    const source = sources[index];
+    let fill = source.fill;
+    const visited = [
+        index
+    ];
+    let target;
+    if (!propagate) return fill;
+    while(fill !== false && visited.indexOf(fill) === -1){
+        if (!(0, _helpersSegmentJs.g)(fill)) return fill;
+        target = sources[fill];
+        if (!target) return false;
+        if (target.visible) return fill;
+        visited.push(fill);
+        fill = target.fill;
+    }
+    return false;
+}
+function _decodeFill(line, index, count) {
+    const fill = parseFillOption(line);
+    if ((0, _helpersSegmentJs.i)(fill)) return isNaN(fill.value) ? false : fill;
+    let target = parseFloat(fill);
+    if ((0, _helpersSegmentJs.g)(target) && Math.floor(target) === target) return decodeTargetIndex(fill[0], index, target, count);
+    return [
+        "origin",
+        "start",
+        "end",
+        "stack",
+        "shape"
+    ].indexOf(fill) >= 0 && fill;
+}
+function decodeTargetIndex(firstCh, index, target, count) {
+    if (firstCh === "-" || firstCh === "+") target = index + target;
+    if (target === index || target < 0 || target >= count) return false;
+    return target;
+}
+function _getTargetPixel(fill, scale) {
+    let pixel = null;
+    if (fill === "start") pixel = scale.bottom;
+    else if (fill === "end") pixel = scale.top;
+    else if ((0, _helpersSegmentJs.i)(fill)) pixel = scale.getPixelForValue(fill.value);
+    else if (scale.getBasePixel) pixel = scale.getBasePixel();
+    return pixel;
+}
+function _getTargetValue(fill, scale, startValue) {
+    let value;
+    if (fill === "start") value = startValue;
+    else if (fill === "end") value = scale.options.reverse ? scale.min : scale.max;
+    else if ((0, _helpersSegmentJs.i)(fill)) value = fill.value;
+    else value = scale.getBaseValue();
+    return value;
+}
+function parseFillOption(line) {
+    const options = line.options;
+    const fillOption = options.fill;
+    let fill = (0, _helpersSegmentJs.v)(fillOption && fillOption.target, fillOption);
+    if (fill === undefined) fill = !!options.backgroundColor;
+    if (fill === false || fill === null) return false;
+    if (fill === true) return "origin";
+    return fill;
+}
+function _buildStackLine(source) {
+    const { scale, index, line } = source;
+    const points = [];
+    const segments = line.segments;
+    const sourcePoints = line.points;
+    const linesBelow = getLinesBelow(scale, index);
+    linesBelow.push(_createBoundaryLine({
+        x: null,
+        y: scale.bottom
+    }, line));
+    for(let i = 0; i < segments.length; i++){
+        const segment = segments[i];
+        for(let j = segment.start; j <= segment.end; j++)addPointsBelow(points, sourcePoints[j], linesBelow);
+    }
+    return new LineElement({
+        points,
+        options: {}
+    });
+}
+function getLinesBelow(scale, index) {
+    const below = [];
+    const metas = scale.getMatchingVisibleMetas("line");
+    for(let i = 0; i < metas.length; i++){
+        const meta = metas[i];
+        if (meta.index === index) break;
+        if (!meta.hidden) below.unshift(meta.dataset);
+    }
+    return below;
+}
+function addPointsBelow(points, sourcePoint, linesBelow) {
+    const postponed = [];
+    for(let j = 0; j < linesBelow.length; j++){
+        const line = linesBelow[j];
+        const { first, last, point } = findPoint(line, sourcePoint, "x");
+        if (!point || first && last) continue;
+        if (first) postponed.unshift(point);
+        else {
+            points.push(point);
+            if (!last) break;
+        }
+    }
+    points.push(...postponed);
+}
+function findPoint(line, sourcePoint, property) {
+    const point = line.interpolate(sourcePoint, property);
+    if (!point) return {};
+    const pointValue = point[property];
+    const segments = line.segments;
+    const linePoints = line.points;
+    let first = false;
+    let last = false;
+    for(let i = 0; i < segments.length; i++){
+        const segment = segments[i];
+        const firstValue = linePoints[segment.start][property];
+        const lastValue = linePoints[segment.end][property];
+        if ((0, _helpersSegmentJs.aj)(pointValue, firstValue, lastValue)) {
+            first = pointValue === firstValue;
+            last = pointValue === lastValue;
+            break;
+        }
+    }
+    return {
+        first,
+        last,
+        point
+    };
+}
+class simpleArc {
+    constructor(opts){
+        this.x = opts.x;
+        this.y = opts.y;
+        this.radius = opts.radius;
+    }
+    pathSegment(ctx, bounds, opts) {
+        const { x, y, radius } = this;
+        bounds = bounds || {
+            start: 0,
+            end: (0, _helpersSegmentJs.T)
+        };
+        ctx.arc(x, y, radius, bounds.end, bounds.start, true);
+        return !opts.bounds;
+    }
+    interpolate(point) {
+        const { x, y, radius } = this;
+        const angle = point.angle;
+        return {
+            x: x + Math.cos(angle) * radius,
+            y: y + Math.sin(angle) * radius,
+            angle
+        };
+    }
+}
+function _getTarget(source) {
+    const { chart, fill, line } = source;
+    if ((0, _helpersSegmentJs.g)(fill)) return getLineByIndex(chart, fill);
+    if (fill === "stack") return _buildStackLine(source);
+    if (fill === "shape") return true;
+    const boundary = computeBoundary(source);
+    if (boundary instanceof simpleArc) return boundary;
+    return _createBoundaryLine(boundary, line);
+}
+function getLineByIndex(chart, index) {
+    const meta = chart.getDatasetMeta(index);
+    const visible = meta && chart.isDatasetVisible(index);
+    return visible ? meta.dataset : null;
+}
+function computeBoundary(source) {
+    const scale = source.scale || {};
+    if (scale.getPointPositionForValue) return computeCircularBoundary(source);
+    return computeLinearBoundary(source);
+}
+function computeLinearBoundary(source) {
+    const { scale = {}, fill } = source;
+    const pixel = _getTargetPixel(fill, scale);
+    if ((0, _helpersSegmentJs.g)(pixel)) {
+        const horizontal = scale.isHorizontal();
+        return {
+            x: horizontal ? pixel : null,
+            y: horizontal ? null : pixel
+        };
+    }
+    return null;
+}
+function computeCircularBoundary(source) {
+    const { scale, fill } = source;
+    const options = scale.options;
+    const length = scale.getLabels().length;
+    const start = options.reverse ? scale.max : scale.min;
+    const value = _getTargetValue(fill, scale, start);
+    const target = [];
+    if (options.grid.circular) {
+        const center = scale.getPointPositionForValue(0, start);
+        return new simpleArc({
+            x: center.x,
+            y: center.y,
+            radius: scale.getDistanceFromCenterForValue(value)
+        });
+    }
+    for(let i = 0; i < length; ++i)target.push(scale.getPointPositionForValue(i, value));
+    return target;
+}
+function _drawfill(ctx, source, area) {
+    const target = _getTarget(source);
+    const { line, scale, axis } = source;
+    const lineOpts = line.options;
+    const fillOption = lineOpts.fill;
+    const color = lineOpts.backgroundColor;
+    const { above = color, below = color } = fillOption || {};
+    if (target && line.points.length) {
+        (0, _helpersSegmentJs.Y)(ctx, area);
+        doFill(ctx, {
+            line,
+            target,
+            above,
+            below,
+            area,
+            scale,
+            axis
+        });
+        (0, _helpersSegmentJs.$)(ctx);
+    }
+}
+function doFill(ctx, cfg) {
+    const { line, target, above, below, area, scale } = cfg;
+    const property = line._loop ? "angle" : cfg.axis;
+    ctx.save();
+    if (property === "x" && below !== above) {
+        clipVertical(ctx, target, area.top);
+        fill(ctx, {
+            line,
+            target,
+            color: above,
+            scale,
+            property
+        });
+        ctx.restore();
+        ctx.save();
+        clipVertical(ctx, target, area.bottom);
+    }
+    fill(ctx, {
+        line,
+        target,
+        color: below,
+        scale,
+        property
+    });
+    ctx.restore();
+}
+function clipVertical(ctx, target, clipY) {
+    const { segments, points } = target;
+    let first = true;
+    let lineLoop = false;
+    ctx.beginPath();
+    for (const segment of segments){
+        const { start, end } = segment;
+        const firstPoint = points[start];
+        const lastPoint = points[_findSegmentEnd(start, end, points)];
+        if (first) {
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            first = false;
+        } else {
+            ctx.lineTo(firstPoint.x, clipY);
+            ctx.lineTo(firstPoint.x, firstPoint.y);
+        }
+        lineLoop = !!target.pathSegment(ctx, segment, {
+            move: lineLoop
+        });
+        if (lineLoop) ctx.closePath();
+        else ctx.lineTo(lastPoint.x, clipY);
+    }
+    ctx.lineTo(target.first().x, clipY);
+    ctx.closePath();
+    ctx.clip();
+}
+function fill(ctx, cfg) {
+    const { line, target, property, color, scale } = cfg;
+    const segments = _segments(line, target, property);
+    for (const { source: src, target: tgt, start, end } of segments){
+        const { style: { backgroundColor = color } = {} } = src;
+        const notShape = target !== true;
+        ctx.save();
+        ctx.fillStyle = backgroundColor;
+        clipBounds(ctx, scale, notShape && _getBounds(property, start, end));
+        ctx.beginPath();
+        const lineLoop = !!line.pathSegment(ctx, src);
+        let loop;
+        if (notShape) {
+            if (lineLoop) ctx.closePath();
+            else interpolatedLineTo(ctx, target, end, property);
+            const targetLoop = !!target.pathSegment(ctx, tgt, {
+                move: lineLoop,
+                reverse: true
+            });
+            loop = lineLoop && targetLoop;
+            if (!loop) interpolatedLineTo(ctx, target, start, property);
+        }
+        ctx.closePath();
+        ctx.fill(loop ? "evenodd" : "nonzero");
+        ctx.restore();
+    }
+}
+function clipBounds(ctx, scale, bounds) {
+    const { top, bottom } = scale.chart.chartArea;
+    const { property, start, end } = bounds || {};
+    if (property === "x") {
+        ctx.beginPath();
+        ctx.rect(start, top, end - start, bottom - top);
+        ctx.clip();
+    }
+}
+function interpolatedLineTo(ctx, target, point, property) {
+    const interpolatedPoint = target.interpolate(point, property);
+    if (interpolatedPoint) ctx.lineTo(interpolatedPoint.x, interpolatedPoint.y);
+}
+var index = {
+    id: "filler",
+    afterDatasetsUpdate (chart, _args, options) {
+        const count = (chart.data.datasets || []).length;
+        const sources = [];
+        let meta, i, line, source;
+        for(i = 0; i < count; ++i){
+            meta = chart.getDatasetMeta(i);
+            line = meta.dataset;
+            source = null;
+            if (line && line.options && line instanceof LineElement) source = {
+                visible: chart.isDatasetVisible(i),
+                index: i,
+                fill: _decodeFill(line, i, count),
+                chart,
+                axis: meta.controller.options.indexAxis,
+                scale: meta.vScale,
+                line
+            };
+            meta.$filler = source;
+            sources.push(source);
+        }
+        for(i = 0; i < count; ++i){
+            source = sources[i];
+            if (!source || source.fill === false) continue;
+            source.fill = _resolveTarget(sources, i, options.propagate);
+        }
+    },
+    beforeDraw (chart, _args, options) {
+        const draw = options.drawTime === "beforeDraw";
+        const metasets = chart.getSortedVisibleDatasetMetas();
+        const area = chart.chartArea;
+        for(let i = metasets.length - 1; i >= 0; --i){
+            const source = metasets[i].$filler;
+            if (!source) continue;
+            source.line.updateControlPoints(area, source.axis);
+            if (draw && source.fill) _drawfill(chart.ctx, source, area);
+        }
+    },
+    beforeDatasetsDraw (chart, _args, options) {
+        if (options.drawTime !== "beforeDatasetsDraw") return;
+        const metasets = chart.getSortedVisibleDatasetMetas();
+        for(let i = metasets.length - 1; i >= 0; --i){
+            const source = metasets[i].$filler;
+            if (_shouldApplyFill(source)) _drawfill(chart.ctx, source, chart.chartArea);
+        }
+    },
+    beforeDatasetDraw (chart, args, options) {
+        const source = args.meta.$filler;
+        if (!_shouldApplyFill(source) || options.drawTime !== "beforeDatasetDraw") return;
+        _drawfill(chart.ctx, source, chart.chartArea);
+    },
+    defaults: {
+        propagate: true,
+        drawTime: "beforeDatasetDraw"
+    }
+};
+const getBoxSize = (labelOpts, fontSize)=>{
+    let { boxHeight = fontSize, boxWidth = fontSize } = labelOpts;
+    if (labelOpts.usePointStyle) {
+        boxHeight = Math.min(boxHeight, fontSize);
+        boxWidth = labelOpts.pointStyleWidth || Math.min(boxWidth, fontSize);
+    }
+    return {
+        boxWidth,
+        boxHeight,
+        itemHeight: Math.max(fontSize, boxHeight)
+    };
+};
+const itemsEqual = (a, b)=>a !== null && b !== null && a.datasetIndex === b.datasetIndex && a.index === b.index;
+class Legend extends Element {
+    constructor(config){
+        super();
+        this._added = false;
+        this.legendHitBoxes = [];
+        this._hoveredItem = null;
+        this.doughnutMode = false;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this.legendItems = undefined;
+        this.columnSizes = undefined;
+        this.lineWidths = undefined;
+        this.maxHeight = undefined;
+        this.maxWidth = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this._margins = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
+    update(maxWidth, maxHeight, margins) {
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+        this._margins = margins;
+        this.setDimensions();
+        this.buildLabels();
+        this.fit();
+    }
+    setDimensions() {
+        if (this.isHorizontal()) {
+            this.width = this.maxWidth;
+            this.left = this._margins.left;
+            this.right = this.width;
+        } else {
+            this.height = this.maxHeight;
+            this.top = this._margins.top;
+            this.bottom = this.height;
+        }
+    }
+    buildLabels() {
+        const labelOpts = this.options.labels || {};
+        let legendItems = (0, _helpersSegmentJs.Q)(labelOpts.generateLabels, [
+            this.chart
+        ], this) || [];
+        if (labelOpts.filter) legendItems = legendItems.filter((item)=>labelOpts.filter(item, this.chart.data));
+        if (labelOpts.sort) legendItems = legendItems.sort((a, b)=>labelOpts.sort(a, b, this.chart.data));
+        if (this.options.reverse) legendItems.reverse();
+        this.legendItems = legendItems;
+    }
+    fit() {
+        const { options, ctx } = this;
+        if (!options.display) {
+            this.width = this.height = 0;
+            return;
+        }
+        const labelOpts = options.labels;
+        const labelFont = (0, _helpersSegmentJs.a0)(labelOpts.font);
+        const fontSize = labelFont.size;
+        const titleHeight = this._computeTitleHeight();
+        const { boxWidth, itemHeight } = getBoxSize(labelOpts, fontSize);
+        let width, height;
+        ctx.font = labelFont.string;
+        if (this.isHorizontal()) {
+            width = this.maxWidth;
+            height = this._fitRows(titleHeight, fontSize, boxWidth, itemHeight) + 10;
+        } else {
+            height = this.maxHeight;
+            width = this._fitCols(titleHeight, labelFont, boxWidth, itemHeight) + 10;
+        }
+        this.width = Math.min(width, options.maxWidth || this.maxWidth);
+        this.height = Math.min(height, options.maxHeight || this.maxHeight);
+    }
+    _fitRows(titleHeight, fontSize, boxWidth, itemHeight) {
+        const { ctx, maxWidth, options: { labels: { padding } } } = this;
+        const hitboxes = this.legendHitBoxes = [];
+        const lineWidths = this.lineWidths = [
+            0
+        ];
+        const lineHeight = itemHeight + padding;
+        let totalHeight = titleHeight;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        let row = -1;
+        let top = -lineHeight;
+        this.legendItems.forEach((legendItem, i)=>{
+            const itemWidth = boxWidth + fontSize / 2 + ctx.measureText(legendItem.text).width;
+            if (i === 0 || lineWidths[lineWidths.length - 1] + itemWidth + 2 * padding > maxWidth) {
+                totalHeight += lineHeight;
+                lineWidths[lineWidths.length - (i > 0 ? 0 : 1)] = 0;
+                top += lineHeight;
+                row++;
+            }
+            hitboxes[i] = {
+                left: 0,
+                top,
+                row,
+                width: itemWidth,
+                height: itemHeight
+            };
+            lineWidths[lineWidths.length - 1] += itemWidth + padding;
+        });
+        return totalHeight;
+    }
+    _fitCols(titleHeight, labelFont, boxWidth, _itemHeight) {
+        const { ctx, maxHeight, options: { labels: { padding } } } = this;
+        const hitboxes = this.legendHitBoxes = [];
+        const columnSizes = this.columnSizes = [];
+        const heightLimit = maxHeight - titleHeight;
+        let totalWidth = padding;
+        let currentColWidth = 0;
+        let currentColHeight = 0;
+        let left = 0;
+        let col = 0;
+        this.legendItems.forEach((legendItem, i)=>{
+            const { itemWidth, itemHeight } = calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight);
+            if (i > 0 && currentColHeight + itemHeight + 2 * padding > heightLimit) {
+                totalWidth += currentColWidth + padding;
+                columnSizes.push({
+                    width: currentColWidth,
+                    height: currentColHeight
+                });
+                left += currentColWidth + padding;
+                col++;
+                currentColWidth = currentColHeight = 0;
+            }
+            hitboxes[i] = {
+                left,
+                top: currentColHeight,
+                col,
+                width: itemWidth,
+                height: itemHeight
+            };
+            currentColWidth = Math.max(currentColWidth, itemWidth);
+            currentColHeight += itemHeight + padding;
+        });
+        totalWidth += currentColWidth;
+        columnSizes.push({
+            width: currentColWidth,
+            height: currentColHeight
+        });
+        return totalWidth;
+    }
+    adjustHitBoxes() {
+        if (!this.options.display) return;
+        const titleHeight = this._computeTitleHeight();
+        const { legendHitBoxes: hitboxes, options: { align, labels: { padding }, rtl } } = this;
+        const rtlHelper = (0, _helpersSegmentJs.az)(rtl, this.left, this.width);
+        if (this.isHorizontal()) {
+            let row = 0;
+            let left = (0, _helpersSegmentJs.a2)(align, this.left + padding, this.right - this.lineWidths[row]);
+            for (const hitbox of hitboxes){
+                if (row !== hitbox.row) {
+                    row = hitbox.row;
+                    left = (0, _helpersSegmentJs.a2)(align, this.left + padding, this.right - this.lineWidths[row]);
+                }
+                hitbox.top += this.top + titleHeight + padding;
+                hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(left), hitbox.width);
+                left += hitbox.width + padding;
+            }
+        } else {
+            let col = 0;
+            let top = (0, _helpersSegmentJs.a2)(align, this.top + titleHeight + padding, this.bottom - this.columnSizes[col].height);
+            for (const hitbox of hitboxes){
+                if (hitbox.col !== col) {
+                    col = hitbox.col;
+                    top = (0, _helpersSegmentJs.a2)(align, this.top + titleHeight + padding, this.bottom - this.columnSizes[col].height);
+                }
+                hitbox.top = top;
+                hitbox.left += this.left + padding;
+                hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(hitbox.left), hitbox.width);
+                top += hitbox.height + padding;
+            }
+        }
+    }
+    isHorizontal() {
+        return this.options.position === "top" || this.options.position === "bottom";
+    }
+    draw() {
+        if (this.options.display) {
+            const ctx = this.ctx;
+            (0, _helpersSegmentJs.Y)(ctx, this);
+            this._draw();
+            (0, _helpersSegmentJs.$)(ctx);
+        }
+    }
+    _draw() {
+        const { options: opts, columnSizes, lineWidths, ctx } = this;
+        const { align, labels: labelOpts } = opts;
+        const defaultColor = (0, _helpersSegmentJs.d).color;
+        const rtlHelper = (0, _helpersSegmentJs.az)(opts.rtl, this.left, this.width);
+        const labelFont = (0, _helpersSegmentJs.a0)(labelOpts.font);
+        const { padding } = labelOpts;
+        const fontSize = labelFont.size;
+        const halfFontSize = fontSize / 2;
+        let cursor;
+        this.drawTitle();
+        ctx.textAlign = rtlHelper.textAlign("left");
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 0.5;
+        ctx.font = labelFont.string;
+        const { boxWidth, boxHeight, itemHeight } = getBoxSize(labelOpts, fontSize);
+        const drawLegendBox = function(x, y, legendItem) {
+            if (isNaN(boxWidth) || boxWidth <= 0 || isNaN(boxHeight) || boxHeight < 0) return;
+            ctx.save();
+            const lineWidth = (0, _helpersSegmentJs.v)(legendItem.lineWidth, 1);
+            ctx.fillStyle = (0, _helpersSegmentJs.v)(legendItem.fillStyle, defaultColor);
+            ctx.lineCap = (0, _helpersSegmentJs.v)(legendItem.lineCap, "butt");
+            ctx.lineDashOffset = (0, _helpersSegmentJs.v)(legendItem.lineDashOffset, 0);
+            ctx.lineJoin = (0, _helpersSegmentJs.v)(legendItem.lineJoin, "miter");
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = (0, _helpersSegmentJs.v)(legendItem.strokeStyle, defaultColor);
+            ctx.setLineDash((0, _helpersSegmentJs.v)(legendItem.lineDash, []));
+            if (labelOpts.usePointStyle) {
+                const drawOptions = {
+                    radius: boxHeight * Math.SQRT2 / 2,
+                    pointStyle: legendItem.pointStyle,
+                    rotation: legendItem.rotation,
+                    borderWidth: lineWidth
+                };
+                const centerX = rtlHelper.xPlus(x, boxWidth / 2);
+                const centerY = y + halfFontSize;
+                (0, _helpersSegmentJs.aD)(ctx, drawOptions, centerX, centerY, labelOpts.pointStyleWidth && boxWidth);
+            } else {
+                const yBoxTop = y + Math.max((fontSize - boxHeight) / 2, 0);
+                const xBoxLeft = rtlHelper.leftForLtr(x, boxWidth);
+                const borderRadius = (0, _helpersSegmentJs.aw)(legendItem.borderRadius);
+                ctx.beginPath();
+                if (Object.values(borderRadius).some((v)=>v !== 0)) (0, _helpersSegmentJs.au)(ctx, {
+                    x: xBoxLeft,
+                    y: yBoxTop,
+                    w: boxWidth,
+                    h: boxHeight,
+                    radius: borderRadius
+                });
+                else ctx.rect(xBoxLeft, yBoxTop, boxWidth, boxHeight);
+                ctx.fill();
+                if (lineWidth !== 0) ctx.stroke();
+            }
+            ctx.restore();
+        };
+        const fillText = function(x, y, legendItem) {
+            (0, _helpersSegmentJs.Z)(ctx, legendItem.text, x, y + itemHeight / 2, labelFont, {
+                strikethrough: legendItem.hidden,
+                textAlign: rtlHelper.textAlign(legendItem.textAlign)
+            });
+        };
+        const isHorizontal = this.isHorizontal();
+        const titleHeight = this._computeTitleHeight();
+        if (isHorizontal) cursor = {
+            x: (0, _helpersSegmentJs.a2)(align, this.left + padding, this.right - lineWidths[0]),
+            y: this.top + padding + titleHeight,
+            line: 0
+        };
+        else cursor = {
+            x: this.left + padding,
+            y: (0, _helpersSegmentJs.a2)(align, this.top + titleHeight + padding, this.bottom - columnSizes[0].height),
+            line: 0
+        };
+        (0, _helpersSegmentJs.aA)(this.ctx, opts.textDirection);
+        const lineHeight = itemHeight + padding;
+        this.legendItems.forEach((legendItem, i)=>{
+            ctx.strokeStyle = legendItem.fontColor;
+            ctx.fillStyle = legendItem.fontColor;
+            const textWidth = ctx.measureText(legendItem.text).width;
+            const textAlign = rtlHelper.textAlign(legendItem.textAlign || (legendItem.textAlign = labelOpts.textAlign));
+            const width = boxWidth + halfFontSize + textWidth;
+            let x = cursor.x;
+            let y = cursor.y;
+            rtlHelper.setWidth(this.width);
+            if (isHorizontal) {
+                if (i > 0 && x + width + padding > this.right) {
+                    y = cursor.y += lineHeight;
+                    cursor.line++;
+                    x = cursor.x = (0, _helpersSegmentJs.a2)(align, this.left + padding, this.right - lineWidths[cursor.line]);
+                }
+            } else if (i > 0 && y + lineHeight > this.bottom) {
+                x = cursor.x = x + columnSizes[cursor.line].width + padding;
+                cursor.line++;
+                y = cursor.y = (0, _helpersSegmentJs.a2)(align, this.top + titleHeight + padding, this.bottom - columnSizes[cursor.line].height);
+            }
+            const realX = rtlHelper.x(x);
+            drawLegendBox(realX, y, legendItem);
+            x = (0, _helpersSegmentJs.aB)(textAlign, x + boxWidth + halfFontSize, isHorizontal ? x + width : this.right, opts.rtl);
+            fillText(rtlHelper.x(x), y, legendItem);
+            if (isHorizontal) cursor.x += width + padding;
+            else if (typeof legendItem.text !== "string") {
+                const fontLineHeight = labelFont.lineHeight;
+                cursor.y += calculateLegendItemHeight(legendItem, fontLineHeight) + padding;
+            } else cursor.y += lineHeight;
+        });
+        (0, _helpersSegmentJs.aC)(this.ctx, opts.textDirection);
+    }
+    drawTitle() {
+        const opts = this.options;
+        const titleOpts = opts.title;
+        const titleFont = (0, _helpersSegmentJs.a0)(titleOpts.font);
+        const titlePadding = (0, _helpersSegmentJs.E)(titleOpts.padding);
+        if (!titleOpts.display) return;
+        const rtlHelper = (0, _helpersSegmentJs.az)(opts.rtl, this.left, this.width);
+        const ctx = this.ctx;
+        const position = titleOpts.position;
+        const halfFontSize = titleFont.size / 2;
+        const topPaddingPlusHalfFontSize = titlePadding.top + halfFontSize;
+        let y;
+        let left = this.left;
+        let maxWidth = this.width;
+        if (this.isHorizontal()) {
+            maxWidth = Math.max(...this.lineWidths);
+            y = this.top + topPaddingPlusHalfFontSize;
+            left = (0, _helpersSegmentJs.a2)(opts.align, left, this.right - maxWidth);
+        } else {
+            const maxHeight = this.columnSizes.reduce((acc, size)=>Math.max(acc, size.height), 0);
+            y = topPaddingPlusHalfFontSize + (0, _helpersSegmentJs.a2)(opts.align, this.top, this.bottom - maxHeight - opts.labels.padding - this._computeTitleHeight());
+        }
+        const x = (0, _helpersSegmentJs.a2)(position, left, left + maxWidth);
+        ctx.textAlign = rtlHelper.textAlign((0, _helpersSegmentJs.a1)(position));
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = titleOpts.color;
+        ctx.fillStyle = titleOpts.color;
+        ctx.font = titleFont.string;
+        (0, _helpersSegmentJs.Z)(ctx, titleOpts.text, x, y, titleFont);
+    }
+    _computeTitleHeight() {
+        const titleOpts = this.options.title;
+        const titleFont = (0, _helpersSegmentJs.a0)(titleOpts.font);
+        const titlePadding = (0, _helpersSegmentJs.E)(titleOpts.padding);
+        return titleOpts.display ? titleFont.lineHeight + titlePadding.height : 0;
+    }
+    _getLegendItemAt(x, y) {
+        let i, hitBox, lh;
+        if ((0, _helpersSegmentJs.aj)(x, this.left, this.right) && (0, _helpersSegmentJs.aj)(y, this.top, this.bottom)) {
+            lh = this.legendHitBoxes;
+            for(i = 0; i < lh.length; ++i){
+                hitBox = lh[i];
+                if ((0, _helpersSegmentJs.aj)(x, hitBox.left, hitBox.left + hitBox.width) && (0, _helpersSegmentJs.aj)(y, hitBox.top, hitBox.top + hitBox.height)) return this.legendItems[i];
+            }
+        }
+        return null;
+    }
+    handleEvent(e) {
+        const opts = this.options;
+        if (!isListened(e.type, opts)) return;
+        const hoveredItem = this._getLegendItemAt(e.x, e.y);
+        if (e.type === "mousemove" || e.type === "mouseout") {
+            const previous = this._hoveredItem;
+            const sameItem = itemsEqual(previous, hoveredItem);
+            if (previous && !sameItem) (0, _helpersSegmentJs.Q)(opts.onLeave, [
+                e,
+                previous,
+                this
+            ], this);
+            this._hoveredItem = hoveredItem;
+            if (hoveredItem && !sameItem) (0, _helpersSegmentJs.Q)(opts.onHover, [
+                e,
+                hoveredItem,
+                this
+            ], this);
+        } else if (hoveredItem) (0, _helpersSegmentJs.Q)(opts.onClick, [
+            e,
+            hoveredItem,
+            this
+        ], this);
+    }
+}
+function calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight) {
+    const itemWidth = calculateItemWidth(legendItem, boxWidth, labelFont, ctx);
+    const itemHeight = calculateItemHeight(_itemHeight, legendItem, labelFont.lineHeight);
+    return {
+        itemWidth,
+        itemHeight
+    };
+}
+function calculateItemWidth(legendItem, boxWidth, labelFont, ctx) {
+    let legendItemText = legendItem.text;
+    if (legendItemText && typeof legendItemText !== "string") legendItemText = legendItemText.reduce((a, b)=>a.length > b.length ? a : b);
+    return boxWidth + labelFont.size / 2 + ctx.measureText(legendItemText).width;
+}
+function calculateItemHeight(_itemHeight, legendItem, fontLineHeight) {
+    let itemHeight = _itemHeight;
+    if (typeof legendItem.text !== "string") itemHeight = calculateLegendItemHeight(legendItem, fontLineHeight);
+    return itemHeight;
+}
+function calculateLegendItemHeight(legendItem, fontLineHeight) {
+    const labelHeight = legendItem.text ? legendItem.text.length : 0;
+    return fontLineHeight * labelHeight;
+}
+function isListened(type, opts) {
+    if ((type === "mousemove" || type === "mouseout") && (opts.onHover || opts.onLeave)) return true;
+    if (opts.onClick && (type === "click" || type === "mouseup")) return true;
+    return false;
+}
+var plugin_legend = {
+    id: "legend",
+    _element: Legend,
+    start (chart, _args, options) {
+        const legend = chart.legend = new Legend({
+            ctx: chart.ctx,
+            options,
+            chart
+        });
+        layouts.configure(chart, legend, options);
+        layouts.addBox(chart, legend);
+    },
+    stop (chart) {
+        layouts.removeBox(chart, chart.legend);
+        delete chart.legend;
+    },
+    beforeUpdate (chart, _args, options) {
+        const legend = chart.legend;
+        layouts.configure(chart, legend, options);
+        legend.options = options;
+    },
+    afterUpdate (chart) {
+        const legend = chart.legend;
+        legend.buildLabels();
+        legend.adjustHitBoxes();
+    },
+    afterEvent (chart, args) {
+        if (!args.replay) chart.legend.handleEvent(args.event);
+    },
+    defaults: {
+        display: true,
+        position: "top",
+        align: "center",
+        fullSize: true,
+        reverse: false,
+        weight: 1000,
+        onClick (e, legendItem, legend) {
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+            if (ci.isDatasetVisible(index)) {
+                ci.hide(index);
+                legendItem.hidden = true;
+            } else {
+                ci.show(index);
+                legendItem.hidden = false;
+            }
+        },
+        onHover: null,
+        onLeave: null,
+        labels: {
+            color: (ctx)=>ctx.chart.options.color,
+            boxWidth: 40,
+            padding: 10,
+            generateLabels (chart) {
+                const datasets = chart.data.datasets;
+                const { labels: { usePointStyle, pointStyle, textAlign, color, useBorderRadius, borderRadius } } = chart.legend.options;
+                return chart._getSortedDatasetMetas().map((meta)=>{
+                    const style = meta.controller.getStyle(usePointStyle ? 0 : undefined);
+                    const borderWidth = (0, _helpersSegmentJs.E)(style.borderWidth);
+                    return {
+                        text: datasets[meta.index].label,
+                        fillStyle: style.backgroundColor,
+                        fontColor: color,
+                        hidden: !meta.visible,
+                        lineCap: style.borderCapStyle,
+                        lineDash: style.borderDash,
+                        lineDashOffset: style.borderDashOffset,
+                        lineJoin: style.borderJoinStyle,
+                        lineWidth: (borderWidth.width + borderWidth.height) / 4,
+                        strokeStyle: style.borderColor,
+                        pointStyle: pointStyle || style.pointStyle,
+                        rotation: style.rotation,
+                        textAlign: textAlign || style.textAlign,
+                        borderRadius: useBorderRadius && (borderRadius || style.borderRadius),
+                        datasetIndex: meta.index
+                    };
+                }, this);
+            }
+        },
+        title: {
+            color: (ctx)=>ctx.chart.options.color,
+            display: false,
+            position: "center",
+            text: ""
+        }
+    },
+    descriptors: {
+        _scriptable: (name)=>!name.startsWith("on"),
+        labels: {
+            _scriptable: (name)=>![
+                    "generateLabels",
+                    "filter",
+                    "sort"
+                ].includes(name)
+        }
+    }
+};
+class Title extends Element {
+    constructor(config){
+        super();
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this._padding = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
+    update(maxWidth, maxHeight) {
+        const opts = this.options;
+        this.left = 0;
+        this.top = 0;
+        if (!opts.display) {
+            this.width = this.height = this.right = this.bottom = 0;
+            return;
+        }
+        this.width = this.right = maxWidth;
+        this.height = this.bottom = maxHeight;
+        const lineCount = (0, _helpersSegmentJs.b)(opts.text) ? opts.text.length : 1;
+        this._padding = (0, _helpersSegmentJs.E)(opts.padding);
+        const textSize = lineCount * (0, _helpersSegmentJs.a0)(opts.font).lineHeight + this._padding.height;
+        if (this.isHorizontal()) this.height = textSize;
+        else this.width = textSize;
+    }
+    isHorizontal() {
+        const pos = this.options.position;
+        return pos === "top" || pos === "bottom";
+    }
+    _drawArgs(offset) {
+        const { top, left, bottom, right, options } = this;
+        const align = options.align;
+        let rotation = 0;
+        let maxWidth, titleX, titleY;
+        if (this.isHorizontal()) {
+            titleX = (0, _helpersSegmentJs.a2)(align, left, right);
+            titleY = top + offset;
+            maxWidth = right - left;
+        } else {
+            if (options.position === "left") {
+                titleX = left + offset;
+                titleY = (0, _helpersSegmentJs.a2)(align, bottom, top);
+                rotation = (0, _helpersSegmentJs.P) * -0.5;
+            } else {
+                titleX = right - offset;
+                titleY = (0, _helpersSegmentJs.a2)(align, top, bottom);
+                rotation = (0, _helpersSegmentJs.P) * 0.5;
+            }
+            maxWidth = bottom - top;
+        }
+        return {
+            titleX,
+            titleY,
+            maxWidth,
+            rotation
+        };
+    }
+    draw() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        if (!opts.display) return;
+        const fontOpts = (0, _helpersSegmentJs.a0)(opts.font);
+        const lineHeight = fontOpts.lineHeight;
+        const offset = lineHeight / 2 + this._padding.top;
+        const { titleX, titleY, maxWidth, rotation } = this._drawArgs(offset);
+        (0, _helpersSegmentJs.Z)(ctx, opts.text, 0, 0, fontOpts, {
+            color: opts.color,
+            maxWidth,
+            rotation,
+            textAlign: (0, _helpersSegmentJs.a1)(opts.align),
+            textBaseline: "middle",
+            translation: [
+                titleX,
+                titleY
+            ]
+        });
+    }
+}
+function createTitle(chart, titleOpts) {
+    const title = new Title({
+        ctx: chart.ctx,
+        options: titleOpts,
+        chart
+    });
+    layouts.configure(chart, title, titleOpts);
+    layouts.addBox(chart, title);
+    chart.titleBlock = title;
+}
+var plugin_title = {
+    id: "title",
+    _element: Title,
+    start (chart, _args, options) {
+        createTitle(chart, options);
+    },
+    stop (chart) {
+        const titleBlock = chart.titleBlock;
+        layouts.removeBox(chart, titleBlock);
+        delete chart.titleBlock;
+    },
+    beforeUpdate (chart, _args, options) {
+        const title = chart.titleBlock;
+        layouts.configure(chart, title, options);
+        title.options = options;
+    },
+    defaults: {
+        align: "center",
+        display: false,
+        font: {
+            weight: "bold"
+        },
+        fullSize: true,
+        padding: 10,
+        position: "top",
+        text: "",
+        weight: 2000
+    },
+    defaultRoutes: {
+        color: "color"
+    },
+    descriptors: {
+        _scriptable: true,
+        _indexable: false
+    }
+};
+const map = new WeakMap();
+var plugin_subtitle = {
+    id: "subtitle",
+    start (chart, _args, options) {
+        const title = new Title({
+            ctx: chart.ctx,
+            options,
+            chart
+        });
+        layouts.configure(chart, title, options);
+        layouts.addBox(chart, title);
+        map.set(chart, title);
+    },
+    stop (chart) {
+        layouts.removeBox(chart, map.get(chart));
+        map.delete(chart);
+    },
+    beforeUpdate (chart, _args, options) {
+        const title = map.get(chart);
+        layouts.configure(chart, title, options);
+        title.options = options;
+    },
+    defaults: {
+        align: "center",
+        display: false,
+        font: {
+            weight: "normal"
+        },
+        fullSize: true,
+        padding: 0,
+        position: "top",
+        text: "",
+        weight: 1500
+    },
+    defaultRoutes: {
+        color: "color"
+    },
+    descriptors: {
+        _scriptable: true,
+        _indexable: false
+    }
+};
+const positioners = {
+    average (items) {
+        if (!items.length) return false;
+        let i, len;
+        let x = 0;
+        let y = 0;
+        let count = 0;
+        for(i = 0, len = items.length; i < len; ++i){
+            const el = items[i].element;
+            if (el && el.hasValue()) {
+                const pos = el.tooltipPosition();
+                x += pos.x;
+                y += pos.y;
+                ++count;
+            }
+        }
+        return {
+            x: x / count,
+            y: y / count
+        };
+    },
+    nearest (items, eventPosition) {
+        if (!items.length) return false;
+        let x = eventPosition.x;
+        let y = eventPosition.y;
+        let minDistance = Number.POSITIVE_INFINITY;
+        let i, len, nearestElement;
+        for(i = 0, len = items.length; i < len; ++i){
+            const el = items[i].element;
+            if (el && el.hasValue()) {
+                const center = el.getCenterPoint();
+                const d = (0, _helpersSegmentJs.aE)(eventPosition, center);
+                if (d < minDistance) {
+                    minDistance = d;
+                    nearestElement = el;
+                }
+            }
+        }
+        if (nearestElement) {
+            const tp = nearestElement.tooltipPosition();
+            x = tp.x;
+            y = tp.y;
+        }
+        return {
+            x,
+            y
+        };
+    }
+};
+function pushOrConcat(base, toPush) {
+    if (toPush) {
+        if ((0, _helpersSegmentJs.b)(toPush)) Array.prototype.push.apply(base, toPush);
+        else base.push(toPush);
+    }
+    return base;
+}
+function splitNewlines(str) {
+    if ((typeof str === "string" || str instanceof String) && str.indexOf("\n") > -1) return str.split("\n");
+    return str;
+}
+function createTooltipItem(chart, item) {
+    const { element, datasetIndex, index } = item;
+    const controller = chart.getDatasetMeta(datasetIndex).controller;
+    const { label, value } = controller.getLabelAndValue(index);
+    return {
+        chart,
+        label,
+        parsed: controller.getParsed(index),
+        raw: chart.data.datasets[datasetIndex].data[index],
+        formattedValue: value,
+        dataset: controller.getDataset(),
+        dataIndex: index,
+        datasetIndex,
+        element
+    };
+}
+function getTooltipSize(tooltip, options) {
+    const ctx = tooltip.chart.ctx;
+    const { body, footer, title } = tooltip;
+    const { boxWidth, boxHeight } = options;
+    const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
+    const titleFont = (0, _helpersSegmentJs.a0)(options.titleFont);
+    const footerFont = (0, _helpersSegmentJs.a0)(options.footerFont);
+    const titleLineCount = title.length;
+    const footerLineCount = footer.length;
+    const bodyLineItemCount = body.length;
+    const padding = (0, _helpersSegmentJs.E)(options.padding);
+    let height = padding.height;
+    let width = 0;
+    let combinedBodyLength = body.reduce((count, bodyItem)=>count + bodyItem.before.length + bodyItem.lines.length + bodyItem.after.length, 0);
+    combinedBodyLength += tooltip.beforeBody.length + tooltip.afterBody.length;
+    if (titleLineCount) height += titleLineCount * titleFont.lineHeight + (titleLineCount - 1) * options.titleSpacing + options.titleMarginBottom;
+    if (combinedBodyLength) {
+        const bodyLineHeight = options.displayColors ? Math.max(boxHeight, bodyFont.lineHeight) : bodyFont.lineHeight;
+        height += bodyLineItemCount * bodyLineHeight + (combinedBodyLength - bodyLineItemCount) * bodyFont.lineHeight + (combinedBodyLength - 1) * options.bodySpacing;
+    }
+    if (footerLineCount) height += options.footerMarginTop + footerLineCount * footerFont.lineHeight + (footerLineCount - 1) * options.footerSpacing;
+    let widthPadding = 0;
+    const maxLineWidth = function(line) {
+        width = Math.max(width, ctx.measureText(line).width + widthPadding);
+    };
+    ctx.save();
+    ctx.font = titleFont.string;
+    (0, _helpersSegmentJs.F)(tooltip.title, maxLineWidth);
+    ctx.font = bodyFont.string;
+    (0, _helpersSegmentJs.F)(tooltip.beforeBody.concat(tooltip.afterBody), maxLineWidth);
+    widthPadding = options.displayColors ? boxWidth + 2 + options.boxPadding : 0;
+    (0, _helpersSegmentJs.F)(body, (bodyItem)=>{
+        (0, _helpersSegmentJs.F)(bodyItem.before, maxLineWidth);
+        (0, _helpersSegmentJs.F)(bodyItem.lines, maxLineWidth);
+        (0, _helpersSegmentJs.F)(bodyItem.after, maxLineWidth);
+    });
+    widthPadding = 0;
+    ctx.font = footerFont.string;
+    (0, _helpersSegmentJs.F)(tooltip.footer, maxLineWidth);
+    ctx.restore();
+    width += padding.width;
+    return {
+        width,
+        height
+    };
+}
+function determineYAlign(chart, size) {
+    const { y, height } = size;
+    if (y < height / 2) return "top";
+    else if (y > chart.height - height / 2) return "bottom";
+    return "center";
+}
+function doesNotFitWithAlign(xAlign, chart, options, size) {
+    const { x, width } = size;
+    const caret = options.caretSize + options.caretPadding;
+    if (xAlign === "left" && x + width + caret > chart.width) return true;
+    if (xAlign === "right" && x - width - caret < 0) return true;
+}
+function determineXAlign(chart, options, size, yAlign) {
+    const { x, width } = size;
+    const { width: chartWidth, chartArea: { left, right } } = chart;
+    let xAlign = "center";
+    if (yAlign === "center") xAlign = x <= (left + right) / 2 ? "left" : "right";
+    else if (x <= width / 2) xAlign = "left";
+    else if (x >= chartWidth - width / 2) xAlign = "right";
+    if (doesNotFitWithAlign(xAlign, chart, options, size)) xAlign = "center";
+    return xAlign;
+}
+function determineAlignment(chart, options, size) {
+    const yAlign = size.yAlign || options.yAlign || determineYAlign(chart, size);
+    return {
+        xAlign: size.xAlign || options.xAlign || determineXAlign(chart, options, size, yAlign),
+        yAlign
+    };
+}
+function alignX(size, xAlign) {
+    let { x, width } = size;
+    if (xAlign === "right") x -= width;
+    else if (xAlign === "center") x -= width / 2;
+    return x;
+}
+function alignY(size, yAlign, paddingAndSize) {
+    let { y, height } = size;
+    if (yAlign === "top") y += paddingAndSize;
+    else if (yAlign === "bottom") y -= height + paddingAndSize;
+    else y -= height / 2;
+    return y;
+}
+function getBackgroundPoint(options, size, alignment, chart) {
+    const { caretSize, caretPadding, cornerRadius } = options;
+    const { xAlign, yAlign } = alignment;
+    const paddingAndSize = caretSize + caretPadding;
+    const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(cornerRadius);
+    let x = alignX(size, xAlign);
+    const y = alignY(size, yAlign, paddingAndSize);
+    if (yAlign === "center") {
+        if (xAlign === "left") x += paddingAndSize;
+        else if (xAlign === "right") x -= paddingAndSize;
+    } else if (xAlign === "left") x -= Math.max(topLeft, bottomLeft) + caretSize;
+    else if (xAlign === "right") x += Math.max(topRight, bottomRight) + caretSize;
+    return {
+        x: (0, _helpersSegmentJs.S)(x, 0, chart.width - size.width),
+        y: (0, _helpersSegmentJs.S)(y, 0, chart.height - size.height)
+    };
+}
+function getAlignedX(tooltip, align, options) {
+    const padding = (0, _helpersSegmentJs.E)(options.padding);
+    return align === "center" ? tooltip.x + tooltip.width / 2 : align === "right" ? tooltip.x + tooltip.width - padding.right : tooltip.x + padding.left;
+}
+function getBeforeAfterBodyLines(callback) {
+    return pushOrConcat([], splitNewlines(callback));
+}
+function createTooltipContext(parent, tooltip, tooltipItems) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        tooltip,
+        tooltipItems,
+        type: "tooltip"
+    });
+}
+function overrideCallbacks(callbacks, context) {
+    const override = context && context.dataset && context.dataset.tooltip && context.dataset.tooltip.callbacks;
+    return override ? callbacks.override(override) : callbacks;
+}
+const defaultCallbacks = {
+    beforeTitle: (0, _helpersSegmentJs.aF),
+    title (tooltipItems) {
+        if (tooltipItems.length > 0) {
+            const item = tooltipItems[0];
+            const labels = item.chart.data.labels;
+            const labelCount = labels ? labels.length : 0;
+            if (this && this.options && this.options.mode === "dataset") return item.dataset.label || "";
+            else if (item.label) return item.label;
+            else if (labelCount > 0 && item.dataIndex < labelCount) return labels[item.dataIndex];
+        }
+        return "";
+    },
+    afterTitle: (0, _helpersSegmentJs.aF),
+    beforeBody: (0, _helpersSegmentJs.aF),
+    beforeLabel: (0, _helpersSegmentJs.aF),
+    label (tooltipItem) {
+        if (this && this.options && this.options.mode === "dataset") return tooltipItem.label + ": " + tooltipItem.formattedValue || tooltipItem.formattedValue;
+        let label = tooltipItem.dataset.label || "";
+        if (label) label += ": ";
+        const value = tooltipItem.formattedValue;
+        if (!(0, _helpersSegmentJs.k)(value)) label += value;
+        return label;
+    },
+    labelColor (tooltipItem) {
+        const meta = tooltipItem.chart.getDatasetMeta(tooltipItem.datasetIndex);
+        const options = meta.controller.getStyle(tooltipItem.dataIndex);
+        return {
+            borderColor: options.borderColor,
+            backgroundColor: options.backgroundColor,
+            borderWidth: options.borderWidth,
+            borderDash: options.borderDash,
+            borderDashOffset: options.borderDashOffset,
+            borderRadius: 0
+        };
+    },
+    labelTextColor () {
+        return this.options.bodyColor;
+    },
+    labelPointStyle (tooltipItem) {
+        const meta = tooltipItem.chart.getDatasetMeta(tooltipItem.datasetIndex);
+        const options = meta.controller.getStyle(tooltipItem.dataIndex);
+        return {
+            pointStyle: options.pointStyle,
+            rotation: options.rotation
+        };
+    },
+    afterLabel: (0, _helpersSegmentJs.aF),
+    afterBody: (0, _helpersSegmentJs.aF),
+    beforeFooter: (0, _helpersSegmentJs.aF),
+    footer: (0, _helpersSegmentJs.aF),
+    afterFooter: (0, _helpersSegmentJs.aF)
+};
+function invokeCallbackWithFallback(callbacks, name, ctx, arg) {
+    const result = callbacks[name].call(ctx, arg);
+    if (typeof result === "undefined") return defaultCallbacks[name].call(ctx, arg);
+    return result;
+}
+class Tooltip extends Element {
+    static positioners = positioners;
+    constructor(config){
+        super();
+        this.opacity = 0;
+        this._active = [];
+        this._eventPosition = undefined;
+        this._size = undefined;
+        this._cachedAnimations = undefined;
+        this._tooltipItems = [];
+        this.$animations = undefined;
+        this.$context = undefined;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.dataPoints = undefined;
+        this.title = undefined;
+        this.beforeBody = undefined;
+        this.body = undefined;
+        this.afterBody = undefined;
+        this.footer = undefined;
+        this.xAlign = undefined;
+        this.yAlign = undefined;
+        this.x = undefined;
+        this.y = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this.caretX = undefined;
+        this.caretY = undefined;
+        this.labelColors = undefined;
+        this.labelPointStyles = undefined;
+        this.labelTextColors = undefined;
+    }
+    initialize(options) {
+        this.options = options;
+        this._cachedAnimations = undefined;
+        this.$context = undefined;
+    }
+    _resolveAnimations() {
+        const cached = this._cachedAnimations;
+        if (cached) return cached;
+        const chart = this.chart;
+        const options = this.options.setContext(this.getContext());
+        const opts = options.enabled && chart.options.animation && options.animations;
+        const animations = new Animations(this.chart, opts);
+        if (opts._cacheable) this._cachedAnimations = Object.freeze(animations);
+        return animations;
+    }
+    getContext() {
+        return this.$context || (this.$context = createTooltipContext(this.chart.getContext(), this, this._tooltipItems));
+    }
+    getTitle(context, options) {
+        const { callbacks } = options;
+        const beforeTitle = invokeCallbackWithFallback(callbacks, "beforeTitle", this, context);
+        const title = invokeCallbackWithFallback(callbacks, "title", this, context);
+        const afterTitle = invokeCallbackWithFallback(callbacks, "afterTitle", this, context);
+        let lines = [];
+        lines = pushOrConcat(lines, splitNewlines(beforeTitle));
+        lines = pushOrConcat(lines, splitNewlines(title));
+        lines = pushOrConcat(lines, splitNewlines(afterTitle));
+        return lines;
+    }
+    getBeforeBody(tooltipItems, options) {
+        return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, "beforeBody", this, tooltipItems));
+    }
+    getBody(tooltipItems, options) {
+        const { callbacks } = options;
+        const bodyItems = [];
+        (0, _helpersSegmentJs.F)(tooltipItems, (context)=>{
+            const bodyItem = {
+                before: [],
+                lines: [],
+                after: []
+            };
+            const scoped = overrideCallbacks(callbacks, context);
+            pushOrConcat(bodyItem.before, splitNewlines(invokeCallbackWithFallback(scoped, "beforeLabel", this, context)));
+            pushOrConcat(bodyItem.lines, invokeCallbackWithFallback(scoped, "label", this, context));
+            pushOrConcat(bodyItem.after, splitNewlines(invokeCallbackWithFallback(scoped, "afterLabel", this, context)));
+            bodyItems.push(bodyItem);
+        });
+        return bodyItems;
+    }
+    getAfterBody(tooltipItems, options) {
+        return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, "afterBody", this, tooltipItems));
+    }
+    getFooter(tooltipItems, options) {
+        const { callbacks } = options;
+        const beforeFooter = invokeCallbackWithFallback(callbacks, "beforeFooter", this, tooltipItems);
+        const footer = invokeCallbackWithFallback(callbacks, "footer", this, tooltipItems);
+        const afterFooter = invokeCallbackWithFallback(callbacks, "afterFooter", this, tooltipItems);
+        let lines = [];
+        lines = pushOrConcat(lines, splitNewlines(beforeFooter));
+        lines = pushOrConcat(lines, splitNewlines(footer));
+        lines = pushOrConcat(lines, splitNewlines(afterFooter));
+        return lines;
+    }
+    _createItems(options) {
+        const active = this._active;
+        const data = this.chart.data;
+        const labelColors = [];
+        const labelPointStyles = [];
+        const labelTextColors = [];
+        let tooltipItems = [];
+        let i, len;
+        for(i = 0, len = active.length; i < len; ++i)tooltipItems.push(createTooltipItem(this.chart, active[i]));
+        if (options.filter) tooltipItems = tooltipItems.filter((element, index, array)=>options.filter(element, index, array, data));
+        if (options.itemSort) tooltipItems = tooltipItems.sort((a, b)=>options.itemSort(a, b, data));
+        (0, _helpersSegmentJs.F)(tooltipItems, (context)=>{
+            const scoped = overrideCallbacks(options.callbacks, context);
+            labelColors.push(invokeCallbackWithFallback(scoped, "labelColor", this, context));
+            labelPointStyles.push(invokeCallbackWithFallback(scoped, "labelPointStyle", this, context));
+            labelTextColors.push(invokeCallbackWithFallback(scoped, "labelTextColor", this, context));
+        });
+        this.labelColors = labelColors;
+        this.labelPointStyles = labelPointStyles;
+        this.labelTextColors = labelTextColors;
+        this.dataPoints = tooltipItems;
+        return tooltipItems;
+    }
+    update(changed, replay) {
+        const options = this.options.setContext(this.getContext());
+        const active = this._active;
+        let properties;
+        let tooltipItems = [];
+        if (!active.length) {
+            if (this.opacity !== 0) properties = {
+                opacity: 0
+            };
+        } else {
+            const position = positioners[options.position].call(this, active, this._eventPosition);
+            tooltipItems = this._createItems(options);
+            this.title = this.getTitle(tooltipItems, options);
+            this.beforeBody = this.getBeforeBody(tooltipItems, options);
+            this.body = this.getBody(tooltipItems, options);
+            this.afterBody = this.getAfterBody(tooltipItems, options);
+            this.footer = this.getFooter(tooltipItems, options);
+            const size = this._size = getTooltipSize(this, options);
+            const positionAndSize = Object.assign({}, position, size);
+            const alignment = determineAlignment(this.chart, options, positionAndSize);
+            const backgroundPoint = getBackgroundPoint(options, positionAndSize, alignment, this.chart);
+            this.xAlign = alignment.xAlign;
+            this.yAlign = alignment.yAlign;
+            properties = {
+                opacity: 1,
+                x: backgroundPoint.x,
+                y: backgroundPoint.y,
+                width: size.width,
+                height: size.height,
+                caretX: position.x,
+                caretY: position.y
+            };
+        }
+        this._tooltipItems = tooltipItems;
+        this.$context = undefined;
+        if (properties) this._resolveAnimations().update(this, properties);
+        if (changed && options.external) options.external.call(this, {
+            chart: this.chart,
+            tooltip: this,
+            replay
+        });
+    }
+    drawCaret(tooltipPoint, ctx, size, options) {
+        const caretPosition = this.getCaretPosition(tooltipPoint, size, options);
+        ctx.lineTo(caretPosition.x1, caretPosition.y1);
+        ctx.lineTo(caretPosition.x2, caretPosition.y2);
+        ctx.lineTo(caretPosition.x3, caretPosition.y3);
+    }
+    getCaretPosition(tooltipPoint, size, options) {
+        const { xAlign, yAlign } = this;
+        const { caretSize, cornerRadius } = options;
+        const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(cornerRadius);
+        const { x: ptX, y: ptY } = tooltipPoint;
+        const { width, height } = size;
+        let x1, x2, x3, y1, y2, y3;
+        if (yAlign === "center") {
+            y2 = ptY + height / 2;
+            if (xAlign === "left") {
+                x1 = ptX;
+                x2 = x1 - caretSize;
+                y1 = y2 + caretSize;
+                y3 = y2 - caretSize;
+            } else {
+                x1 = ptX + width;
+                x2 = x1 + caretSize;
+                y1 = y2 - caretSize;
+                y3 = y2 + caretSize;
+            }
+            x3 = x1;
+        } else {
+            if (xAlign === "left") x2 = ptX + Math.max(topLeft, bottomLeft) + caretSize;
+            else if (xAlign === "right") x2 = ptX + width - Math.max(topRight, bottomRight) - caretSize;
+            else x2 = this.caretX;
+            if (yAlign === "top") {
+                y1 = ptY;
+                y2 = y1 - caretSize;
+                x1 = x2 - caretSize;
+                x3 = x2 + caretSize;
+            } else {
+                y1 = ptY + height;
+                y2 = y1 + caretSize;
+                x1 = x2 + caretSize;
+                x3 = x2 - caretSize;
+            }
+            y3 = y1;
+        }
+        return {
+            x1,
+            x2,
+            x3,
+            y1,
+            y2,
+            y3
+        };
+    }
+    drawTitle(pt, ctx, options) {
+        const title = this.title;
+        const length = title.length;
+        let titleFont, titleSpacing, i;
+        if (length) {
+            const rtlHelper = (0, _helpersSegmentJs.az)(options.rtl, this.x, this.width);
+            pt.x = getAlignedX(this, options.titleAlign, options);
+            ctx.textAlign = rtlHelper.textAlign(options.titleAlign);
+            ctx.textBaseline = "middle";
+            titleFont = (0, _helpersSegmentJs.a0)(options.titleFont);
+            titleSpacing = options.titleSpacing;
+            ctx.fillStyle = options.titleColor;
+            ctx.font = titleFont.string;
+            for(i = 0; i < length; ++i){
+                ctx.fillText(title[i], rtlHelper.x(pt.x), pt.y + titleFont.lineHeight / 2);
+                pt.y += titleFont.lineHeight + titleSpacing;
+                if (i + 1 === length) pt.y += options.titleMarginBottom - titleSpacing;
+            }
+        }
+    }
+    _drawColorBox(ctx, pt, i, rtlHelper, options) {
+        const labelColor = this.labelColors[i];
+        const labelPointStyle = this.labelPointStyles[i];
+        const { boxHeight, boxWidth } = options;
+        const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
+        const colorX = getAlignedX(this, "left", options);
+        const rtlColorX = rtlHelper.x(colorX);
+        const yOffSet = boxHeight < bodyFont.lineHeight ? (bodyFont.lineHeight - boxHeight) / 2 : 0;
+        const colorY = pt.y + yOffSet;
+        if (options.usePointStyle) {
+            const drawOptions = {
+                radius: Math.min(boxWidth, boxHeight) / 2,
+                pointStyle: labelPointStyle.pointStyle,
+                rotation: labelPointStyle.rotation,
+                borderWidth: 1
+            };
+            const centerX = rtlHelper.leftForLtr(rtlColorX, boxWidth) + boxWidth / 2;
+            const centerY = colorY + boxHeight / 2;
+            ctx.strokeStyle = options.multiKeyBackground;
+            ctx.fillStyle = options.multiKeyBackground;
+            (0, _helpersSegmentJs.at)(ctx, drawOptions, centerX, centerY);
+            ctx.strokeStyle = labelColor.borderColor;
+            ctx.fillStyle = labelColor.backgroundColor;
+            (0, _helpersSegmentJs.at)(ctx, drawOptions, centerX, centerY);
+        } else {
+            ctx.lineWidth = (0, _helpersSegmentJs.i)(labelColor.borderWidth) ? Math.max(...Object.values(labelColor.borderWidth)) : labelColor.borderWidth || 1;
+            ctx.strokeStyle = labelColor.borderColor;
+            ctx.setLineDash(labelColor.borderDash || []);
+            ctx.lineDashOffset = labelColor.borderDashOffset || 0;
+            const outerX = rtlHelper.leftForLtr(rtlColorX, boxWidth);
+            const innerX = rtlHelper.leftForLtr(rtlHelper.xPlus(rtlColorX, 1), boxWidth - 2);
+            const borderRadius = (0, _helpersSegmentJs.aw)(labelColor.borderRadius);
+            if (Object.values(borderRadius).some((v)=>v !== 0)) {
+                ctx.beginPath();
+                ctx.fillStyle = options.multiKeyBackground;
+                (0, _helpersSegmentJs.au)(ctx, {
+                    x: outerX,
+                    y: colorY,
+                    w: boxWidth,
+                    h: boxHeight,
+                    radius: borderRadius
+                });
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = labelColor.backgroundColor;
+                ctx.beginPath();
+                (0, _helpersSegmentJs.au)(ctx, {
+                    x: innerX,
+                    y: colorY + 1,
+                    w: boxWidth - 2,
+                    h: boxHeight - 2,
+                    radius: borderRadius
+                });
+                ctx.fill();
+            } else {
+                ctx.fillStyle = options.multiKeyBackground;
+                ctx.fillRect(outerX, colorY, boxWidth, boxHeight);
+                ctx.strokeRect(outerX, colorY, boxWidth, boxHeight);
+                ctx.fillStyle = labelColor.backgroundColor;
+                ctx.fillRect(innerX, colorY + 1, boxWidth - 2, boxHeight - 2);
+            }
+        }
+        ctx.fillStyle = this.labelTextColors[i];
+    }
+    drawBody(pt, ctx, options) {
+        const { body } = this;
+        const { bodySpacing, bodyAlign, displayColors, boxHeight, boxWidth, boxPadding } = options;
+        const bodyFont = (0, _helpersSegmentJs.a0)(options.bodyFont);
+        let bodyLineHeight = bodyFont.lineHeight;
+        let xLinePadding = 0;
+        const rtlHelper = (0, _helpersSegmentJs.az)(options.rtl, this.x, this.width);
+        const fillLineOfText = function(line) {
+            ctx.fillText(line, rtlHelper.x(pt.x + xLinePadding), pt.y + bodyLineHeight / 2);
+            pt.y += bodyLineHeight + bodySpacing;
+        };
+        const bodyAlignForCalculation = rtlHelper.textAlign(bodyAlign);
+        let bodyItem, textColor, lines, i, j, ilen, jlen;
+        ctx.textAlign = bodyAlign;
+        ctx.textBaseline = "middle";
+        ctx.font = bodyFont.string;
+        pt.x = getAlignedX(this, bodyAlignForCalculation, options);
+        ctx.fillStyle = options.bodyColor;
+        (0, _helpersSegmentJs.F)(this.beforeBody, fillLineOfText);
+        xLinePadding = displayColors && bodyAlignForCalculation !== "right" ? bodyAlign === "center" ? boxWidth / 2 + boxPadding : boxWidth + 2 + boxPadding : 0;
+        for(i = 0, ilen = body.length; i < ilen; ++i){
+            bodyItem = body[i];
+            textColor = this.labelTextColors[i];
+            ctx.fillStyle = textColor;
+            (0, _helpersSegmentJs.F)(bodyItem.before, fillLineOfText);
+            lines = bodyItem.lines;
+            if (displayColors && lines.length) {
+                this._drawColorBox(ctx, pt, i, rtlHelper, options);
+                bodyLineHeight = Math.max(bodyFont.lineHeight, boxHeight);
+            }
+            for(j = 0, jlen = lines.length; j < jlen; ++j){
+                fillLineOfText(lines[j]);
+                bodyLineHeight = bodyFont.lineHeight;
+            }
+            (0, _helpersSegmentJs.F)(bodyItem.after, fillLineOfText);
+        }
+        xLinePadding = 0;
+        bodyLineHeight = bodyFont.lineHeight;
+        (0, _helpersSegmentJs.F)(this.afterBody, fillLineOfText);
+        pt.y -= bodySpacing;
+    }
+    drawFooter(pt, ctx, options) {
+        const footer = this.footer;
+        const length = footer.length;
+        let footerFont, i;
+        if (length) {
+            const rtlHelper = (0, _helpersSegmentJs.az)(options.rtl, this.x, this.width);
+            pt.x = getAlignedX(this, options.footerAlign, options);
+            pt.y += options.footerMarginTop;
+            ctx.textAlign = rtlHelper.textAlign(options.footerAlign);
+            ctx.textBaseline = "middle";
+            footerFont = (0, _helpersSegmentJs.a0)(options.footerFont);
+            ctx.fillStyle = options.footerColor;
+            ctx.font = footerFont.string;
+            for(i = 0; i < length; ++i){
+                ctx.fillText(footer[i], rtlHelper.x(pt.x), pt.y + footerFont.lineHeight / 2);
+                pt.y += footerFont.lineHeight + options.footerSpacing;
+            }
+        }
+    }
+    drawBackground(pt, ctx, tooltipSize, options) {
+        const { xAlign, yAlign } = this;
+        const { x, y } = pt;
+        const { width, height } = tooltipSize;
+        const { topLeft, topRight, bottomLeft, bottomRight } = (0, _helpersSegmentJs.aw)(options.cornerRadius);
+        ctx.fillStyle = options.backgroundColor;
+        ctx.strokeStyle = options.borderColor;
+        ctx.lineWidth = options.borderWidth;
+        ctx.beginPath();
+        ctx.moveTo(x + topLeft, y);
+        if (yAlign === "top") this.drawCaret(pt, ctx, tooltipSize, options);
+        ctx.lineTo(x + width - topRight, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + topRight);
+        if (yAlign === "center" && xAlign === "right") this.drawCaret(pt, ctx, tooltipSize, options);
+        ctx.lineTo(x + width, y + height - bottomRight);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - bottomRight, y + height);
+        if (yAlign === "bottom") this.drawCaret(pt, ctx, tooltipSize, options);
+        ctx.lineTo(x + bottomLeft, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - bottomLeft);
+        if (yAlign === "center" && xAlign === "left") this.drawCaret(pt, ctx, tooltipSize, options);
+        ctx.lineTo(x, y + topLeft);
+        ctx.quadraticCurveTo(x, y, x + topLeft, y);
+        ctx.closePath();
+        ctx.fill();
+        if (options.borderWidth > 0) ctx.stroke();
+    }
+    _updateAnimationTarget(options) {
+        const chart = this.chart;
+        const anims = this.$animations;
+        const animX = anims && anims.x;
+        const animY = anims && anims.y;
+        if (animX || animY) {
+            const position = positioners[options.position].call(this, this._active, this._eventPosition);
+            if (!position) return;
+            const size = this._size = getTooltipSize(this, options);
+            const positionAndSize = Object.assign({}, position, this._size);
+            const alignment = determineAlignment(chart, options, positionAndSize);
+            const point = getBackgroundPoint(options, positionAndSize, alignment, chart);
+            if (animX._to !== point.x || animY._to !== point.y) {
+                this.xAlign = alignment.xAlign;
+                this.yAlign = alignment.yAlign;
+                this.width = size.width;
+                this.height = size.height;
+                this.caretX = position.x;
+                this.caretY = position.y;
+                this._resolveAnimations().update(this, point);
+            }
+        }
+    }
+    _willRender() {
+        return !!this.opacity;
+    }
+    draw(ctx) {
+        const options = this.options.setContext(this.getContext());
+        let opacity = this.opacity;
+        if (!opacity) return;
+        this._updateAnimationTarget(options);
+        const tooltipSize = {
+            width: this.width,
+            height: this.height
+        };
+        const pt = {
+            x: this.x,
+            y: this.y
+        };
+        opacity = Math.abs(opacity) < 1e-3 ? 0 : opacity;
+        const padding = (0, _helpersSegmentJs.E)(options.padding);
+        const hasTooltipContent = this.title.length || this.beforeBody.length || this.body.length || this.afterBody.length || this.footer.length;
+        if (options.enabled && hasTooltipContent) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            this.drawBackground(pt, ctx, tooltipSize, options);
+            (0, _helpersSegmentJs.aA)(ctx, options.textDirection);
+            pt.y += padding.top;
+            this.drawTitle(pt, ctx, options);
+            this.drawBody(pt, ctx, options);
+            this.drawFooter(pt, ctx, options);
+            (0, _helpersSegmentJs.aC)(ctx, options.textDirection);
+            ctx.restore();
+        }
+    }
+    getActiveElements() {
+        return this._active || [];
+    }
+    setActiveElements(activeElements, eventPosition) {
+        const lastActive = this._active;
+        const active = activeElements.map(({ datasetIndex, index })=>{
+            const meta = this.chart.getDatasetMeta(datasetIndex);
+            if (!meta) throw new Error("Cannot find a dataset at index " + datasetIndex);
+            return {
+                datasetIndex,
+                element: meta.data[index],
+                index
+            };
+        });
+        const changed = !(0, _helpersSegmentJs.ah)(lastActive, active);
+        const positionChanged = this._positionChanged(active, eventPosition);
+        if (changed || positionChanged) {
+            this._active = active;
+            this._eventPosition = eventPosition;
+            this._ignoreReplayEvents = true;
+            this.update(true);
+        }
+    }
+    handleEvent(e, replay, inChartArea = true) {
+        if (replay && this._ignoreReplayEvents) return false;
+        this._ignoreReplayEvents = false;
+        const options = this.options;
+        const lastActive = this._active || [];
+        const active = this._getActiveElements(e, lastActive, replay, inChartArea);
+        const positionChanged = this._positionChanged(active, e);
+        const changed = replay || !(0, _helpersSegmentJs.ah)(active, lastActive) || positionChanged;
+        if (changed) {
+            this._active = active;
+            if (options.enabled || options.external) {
+                this._eventPosition = {
+                    x: e.x,
+                    y: e.y
+                };
+                this.update(true, replay);
+            }
+        }
+        return changed;
+    }
+    _getActiveElements(e, lastActive, replay, inChartArea) {
+        const options = this.options;
+        if (e.type === "mouseout") return [];
+        if (!inChartArea) return lastActive;
+        const active = this.chart.getElementsAtEventForMode(e, options.mode, options, replay);
+        if (options.reverse) active.reverse();
+        return active;
+    }
+    _positionChanged(active, e) {
+        const { caretX, caretY, options } = this;
+        const position = positioners[options.position].call(this, active, e);
+        return position !== false && (caretX !== position.x || caretY !== position.y);
+    }
+}
+var plugin_tooltip = {
+    id: "tooltip",
+    _element: Tooltip,
+    positioners,
+    afterInit (chart, _args, options) {
+        if (options) chart.tooltip = new Tooltip({
+            chart,
+            options
+        });
+    },
+    beforeUpdate (chart, _args, options) {
+        if (chart.tooltip) chart.tooltip.initialize(options);
+    },
+    reset (chart, _args, options) {
+        if (chart.tooltip) chart.tooltip.initialize(options);
+    },
+    afterDraw (chart) {
+        const tooltip = chart.tooltip;
+        if (tooltip && tooltip._willRender()) {
+            const args = {
+                tooltip
+            };
+            if (chart.notifyPlugins("beforeTooltipDraw", {
+                ...args,
+                cancelable: true
+            }) === false) return;
+            tooltip.draw(chart.ctx);
+            chart.notifyPlugins("afterTooltipDraw", args);
+        }
+    },
+    afterEvent (chart, args) {
+        if (chart.tooltip) {
+            const useFinalPosition = args.replay;
+            if (chart.tooltip.handleEvent(args.event, useFinalPosition, args.inChartArea)) args.changed = true;
+        }
+    },
+    defaults: {
+        enabled: true,
+        external: null,
+        position: "average",
+        backgroundColor: "rgba(0,0,0,0.8)",
+        titleColor: "#fff",
+        titleFont: {
+            weight: "bold"
+        },
+        titleSpacing: 2,
+        titleMarginBottom: 6,
+        titleAlign: "left",
+        bodyColor: "#fff",
+        bodySpacing: 2,
+        bodyFont: {},
+        bodyAlign: "left",
+        footerColor: "#fff",
+        footerSpacing: 2,
+        footerMarginTop: 6,
+        footerFont: {
+            weight: "bold"
+        },
+        footerAlign: "left",
+        padding: 6,
+        caretPadding: 2,
+        caretSize: 5,
+        cornerRadius: 6,
+        boxHeight: (ctx, opts)=>opts.bodyFont.size,
+        boxWidth: (ctx, opts)=>opts.bodyFont.size,
+        multiKeyBackground: "#fff",
+        displayColors: true,
+        boxPadding: 0,
+        borderColor: "rgba(0,0,0,0)",
+        borderWidth: 0,
+        animation: {
+            duration: 400,
+            easing: "easeOutQuart"
+        },
+        animations: {
+            numbers: {
+                type: "number",
+                properties: [
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "caretX",
+                    "caretY"
+                ]
+            },
+            opacity: {
+                easing: "linear",
+                duration: 200
+            }
+        },
+        callbacks: defaultCallbacks
+    },
+    defaultRoutes: {
+        bodyFont: "font",
+        footerFont: "font",
+        titleFont: "font"
+    },
+    descriptors: {
+        _scriptable: (name)=>name !== "filter" && name !== "itemSort" && name !== "external",
+        _indexable: false,
+        callbacks: {
+            _scriptable: false,
+            _indexable: false
+        },
+        animation: {
+            _fallback: false
+        },
+        animations: {
+            _fallback: "animation"
+        }
+    },
+    additionalOptionScopes: [
+        "interaction"
+    ]
+};
+var plugins = /*#__PURE__*/ Object.freeze({
+    __proto__: null,
+    Colors: plugin_colors,
+    Decimation: plugin_decimation,
+    Filler: index,
+    Legend: plugin_legend,
+    SubTitle: plugin_subtitle,
+    Title: plugin_title,
+    Tooltip: plugin_tooltip
+});
+const addIfString = (labels, raw, index, addedLabels)=>{
+    if (typeof raw === "string") {
+        index = labels.push(raw) - 1;
+        addedLabels.unshift({
+            index,
+            label: raw
+        });
+    } else if (isNaN(raw)) index = null;
+    return index;
+};
+function findOrAddLabel(labels, raw, index, addedLabels) {
+    const first = labels.indexOf(raw);
+    if (first === -1) return addIfString(labels, raw, index, addedLabels);
+    const last = labels.lastIndexOf(raw);
+    return first !== last ? index : first;
+}
+const validIndex = (index, max)=>index === null ? null : (0, _helpersSegmentJs.S)(Math.round(index), 0, max);
+function _getLabelForValue(value) {
+    const labels = this.getLabels();
+    if (value >= 0 && value < labels.length) return labels[value];
+    return value;
+}
+class CategoryScale extends Scale {
+    static id = "category";
+    static defaults = {
+        ticks: {
+            callback: _getLabelForValue
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this._startValue = undefined;
+        this._valueRange = 0;
+        this._addedLabels = [];
+    }
+    init(scaleOptions) {
+        const added = this._addedLabels;
+        if (added.length) {
+            const labels = this.getLabels();
+            for (const { index, label } of added)if (labels[index] === label) labels.splice(index, 1);
+            this._addedLabels = [];
+        }
+        super.init(scaleOptions);
+    }
+    parse(raw, index) {
+        if ((0, _helpersSegmentJs.k)(raw)) return null;
+        const labels = this.getLabels();
+        index = isFinite(index) && labels[index] === raw ? index : findOrAddLabel(labels, raw, (0, _helpersSegmentJs.v)(index, raw), this._addedLabels);
+        return validIndex(index, labels.length - 1);
+    }
+    determineDataLimits() {
+        const { minDefined, maxDefined } = this.getUserBounds();
+        let { min, max } = this.getMinMax(true);
+        if (this.options.bounds === "ticks") {
+            if (!minDefined) min = 0;
+            if (!maxDefined) max = this.getLabels().length - 1;
+        }
+        this.min = min;
+        this.max = max;
+    }
+    buildTicks() {
+        const min = this.min;
+        const max = this.max;
+        const offset = this.options.offset;
+        const ticks = [];
+        let labels = this.getLabels();
+        labels = min === 0 && max === labels.length - 1 ? labels : labels.slice(min, max + 1);
+        this._valueRange = Math.max(labels.length - (offset ? 0 : 1), 1);
+        this._startValue = this.min - (offset ? 0.5 : 0);
+        for(let value = min; value <= max; value++)ticks.push({
+            value
+        });
+        return ticks;
+    }
+    getLabelForValue(value) {
+        return _getLabelForValue.call(this, value);
+    }
+    configure() {
+        super.configure();
+        if (!this.isHorizontal()) this._reversePixels = !this._reversePixels;
+    }
+    getPixelForValue(value) {
+        if (typeof value !== "number") value = this.parse(value);
+        return value === null ? NaN : this.getPixelForDecimal((value - this._startValue) / this._valueRange);
+    }
+    getPixelForTick(index) {
+        const ticks = this.ticks;
+        if (index < 0 || index > ticks.length - 1) return null;
+        return this.getPixelForValue(ticks[index].value);
+    }
+    getValueForPixel(pixel) {
+        return Math.round(this._startValue + this.getDecimalForPixel(pixel) * this._valueRange);
+    }
+    getBasePixel() {
+        return this.bottom;
+    }
+}
+function generateTicks$1(generationOptions, dataRange) {
+    const ticks = [];
+    const MIN_SPACING = 1e-14;
+    const { bounds, step, min, max, precision, count, maxTicks, maxDigits, includeBounds } = generationOptions;
+    const unit = step || 1;
+    const maxSpaces = maxTicks - 1;
+    const { min: rmin, max: rmax } = dataRange;
+    const minDefined = !(0, _helpersSegmentJs.k)(min);
+    const maxDefined = !(0, _helpersSegmentJs.k)(max);
+    const countDefined = !(0, _helpersSegmentJs.k)(count);
+    const minSpacing = (rmax - rmin) / (maxDigits + 1);
+    let spacing = (0, _helpersSegmentJs.aH)((rmax - rmin) / maxSpaces / unit) * unit;
+    let factor, niceMin, niceMax, numSpaces;
+    if (spacing < MIN_SPACING && !minDefined && !maxDefined) return [
+        {
+            value: rmin
+        },
+        {
+            value: rmax
+        }
+    ];
+    numSpaces = Math.ceil(rmax / spacing) - Math.floor(rmin / spacing);
+    if (numSpaces > maxSpaces) spacing = (0, _helpersSegmentJs.aH)(numSpaces * spacing / maxSpaces / unit) * unit;
+    if (!(0, _helpersSegmentJs.k)(precision)) {
+        factor = Math.pow(10, precision);
+        spacing = Math.ceil(spacing * factor) / factor;
+    }
+    if (bounds === "ticks") {
+        niceMin = Math.floor(rmin / spacing) * spacing;
+        niceMax = Math.ceil(rmax / spacing) * spacing;
+    } else {
+        niceMin = rmin;
+        niceMax = rmax;
+    }
+    if (minDefined && maxDefined && step && (0, _helpersSegmentJs.aI)((max - min) / step, spacing / 1000)) {
+        numSpaces = Math.round(Math.min((max - min) / spacing, maxTicks));
+        spacing = (max - min) / numSpaces;
+        niceMin = min;
+        niceMax = max;
+    } else if (countDefined) {
+        niceMin = minDefined ? min : niceMin;
+        niceMax = maxDefined ? max : niceMax;
+        numSpaces = count - 1;
+        spacing = (niceMax - niceMin) / numSpaces;
+    } else {
+        numSpaces = (niceMax - niceMin) / spacing;
+        if ((0, _helpersSegmentJs.aJ)(numSpaces, Math.round(numSpaces), spacing / 1000)) numSpaces = Math.round(numSpaces);
+        else numSpaces = Math.ceil(numSpaces);
+    }
+    const decimalPlaces = Math.max((0, _helpersSegmentJs.aK)(spacing), (0, _helpersSegmentJs.aK)(niceMin));
+    factor = Math.pow(10, (0, _helpersSegmentJs.k)(precision) ? decimalPlaces : precision);
+    niceMin = Math.round(niceMin * factor) / factor;
+    niceMax = Math.round(niceMax * factor) / factor;
+    let j = 0;
+    if (minDefined) {
+        if (includeBounds && niceMin !== min) {
+            ticks.push({
+                value: min
+            });
+            if (niceMin < min) j++;
+            if ((0, _helpersSegmentJs.aJ)(Math.round((niceMin + j * spacing) * factor) / factor, min, relativeLabelSize(min, minSpacing, generationOptions))) j++;
+        } else if (niceMin < min) j++;
+    }
+    for(; j < numSpaces; ++j){
+        const tickValue = Math.round((niceMin + j * spacing) * factor) / factor;
+        if (maxDefined && tickValue > max) break;
+        ticks.push({
+            value: tickValue
+        });
+    }
+    if (maxDefined && includeBounds && niceMax !== max) {
+        if (ticks.length && (0, _helpersSegmentJs.aJ)(ticks[ticks.length - 1].value, max, relativeLabelSize(max, minSpacing, generationOptions))) ticks[ticks.length - 1].value = max;
+        else ticks.push({
+            value: max
+        });
+    } else if (!maxDefined || niceMax === max) ticks.push({
+        value: niceMax
+    });
+    return ticks;
+}
+function relativeLabelSize(value, minSpacing, { horizontal, minRotation }) {
+    const rad = (0, _helpersSegmentJs.t)(minRotation);
+    const ratio = (horizontal ? Math.sin(rad) : Math.cos(rad)) || 0.001;
+    const length = 0.75 * minSpacing * ("" + value).length;
+    return Math.min(minSpacing / ratio, length);
+}
+class LinearScaleBase extends Scale {
+    constructor(cfg){
+        super(cfg);
+        this.start = undefined;
+        this.end = undefined;
+        this._startValue = undefined;
+        this._endValue = undefined;
+        this._valueRange = 0;
+    }
+    parse(raw, index) {
+        if ((0, _helpersSegmentJs.k)(raw)) return null;
+        if ((typeof raw === "number" || raw instanceof Number) && !isFinite(+raw)) return null;
+        return +raw;
+    }
+    handleTickRangeOptions() {
+        const { beginAtZero } = this.options;
+        const { minDefined, maxDefined } = this.getUserBounds();
+        let { min, max } = this;
+        const setMin = (v)=>min = minDefined ? min : v;
+        const setMax = (v)=>max = maxDefined ? max : v;
+        if (beginAtZero) {
+            const minSign = (0, _helpersSegmentJs.s)(min);
+            const maxSign = (0, _helpersSegmentJs.s)(max);
+            if (minSign < 0 && maxSign < 0) setMax(0);
+            else if (minSign > 0 && maxSign > 0) setMin(0);
+        }
+        if (min === max) {
+            let offset = max === 0 ? 1 : Math.abs(max * 0.05);
+            setMax(max + offset);
+            if (!beginAtZero) setMin(min - offset);
+        }
+        this.min = min;
+        this.max = max;
+    }
+    getTickLimit() {
+        const tickOpts = this.options.ticks;
+        let { maxTicksLimit, stepSize } = tickOpts;
+        let maxTicks;
+        if (stepSize) {
+            maxTicks = Math.ceil(this.max / stepSize) - Math.floor(this.min / stepSize) + 1;
+            if (maxTicks > 1000) {
+                console.warn(`scales.${this.id}.ticks.stepSize: ${stepSize} would result generating up to ${maxTicks} ticks. Limiting to 1000.`);
+                maxTicks = 1000;
+            }
+        } else {
+            maxTicks = this.computeTickLimit();
+            maxTicksLimit = maxTicksLimit || 11;
+        }
+        if (maxTicksLimit) maxTicks = Math.min(maxTicksLimit, maxTicks);
+        return maxTicks;
+    }
+    computeTickLimit() {
+        return Number.POSITIVE_INFINITY;
+    }
+    buildTicks() {
+        const opts = this.options;
+        const tickOpts = opts.ticks;
+        let maxTicks = this.getTickLimit();
+        maxTicks = Math.max(2, maxTicks);
+        const numericGeneratorOptions = {
+            maxTicks,
+            bounds: opts.bounds,
+            min: opts.min,
+            max: opts.max,
+            precision: tickOpts.precision,
+            step: tickOpts.stepSize,
+            count: tickOpts.count,
+            maxDigits: this._maxDigits(),
+            horizontal: this.isHorizontal(),
+            minRotation: tickOpts.minRotation || 0,
+            includeBounds: tickOpts.includeBounds !== false
+        };
+        const dataRange = this._range || this;
+        const ticks = generateTicks$1(numericGeneratorOptions, dataRange);
+        if (opts.bounds === "ticks") (0, _helpersSegmentJs.aG)(ticks, this, "value");
+        if (opts.reverse) {
+            ticks.reverse();
+            this.start = this.max;
+            this.end = this.min;
+        } else {
+            this.start = this.min;
+            this.end = this.max;
+        }
+        return ticks;
+    }
+    configure() {
+        const ticks = this.ticks;
+        let start = this.min;
+        let end = this.max;
+        super.configure();
+        if (this.options.offset && ticks.length) {
+            const offset = (end - start) / Math.max(ticks.length - 1, 1) / 2;
+            start -= offset;
+            end += offset;
+        }
+        this._startValue = start;
+        this._endValue = end;
+        this._valueRange = end - start;
+    }
+    getLabelForValue(value) {
+        return (0, _helpersSegmentJs.o)(value, this.chart.options.locale, this.options.ticks.format);
+    }
+}
+class LinearScale extends LinearScaleBase {
+    static id = "linear";
+    static defaults = {
+        ticks: {
+            callback: (0, _helpersSegmentJs.aL).formatters.numeric
+        }
+    };
+    determineDataLimits() {
+        const { min, max } = this.getMinMax(true);
+        this.min = (0, _helpersSegmentJs.g)(min) ? min : 0;
+        this.max = (0, _helpersSegmentJs.g)(max) ? max : 1;
+        this.handleTickRangeOptions();
+    }
+    computeTickLimit() {
+        const horizontal = this.isHorizontal();
+        const length = horizontal ? this.width : this.height;
+        const minRotation = (0, _helpersSegmentJs.t)(this.options.ticks.minRotation);
+        const ratio = (horizontal ? Math.sin(minRotation) : Math.cos(minRotation)) || 0.001;
+        const tickFont = this._resolveTickFontOptions(0);
+        return Math.ceil(length / Math.min(40, tickFont.lineHeight / ratio));
+    }
+    getPixelForValue(value) {
+        return value === null ? NaN : this.getPixelForDecimal((value - this._startValue) / this._valueRange);
+    }
+    getValueForPixel(pixel) {
+        return this._startValue + this.getDecimalForPixel(pixel) * this._valueRange;
+    }
+}
+const log10Floor = (v)=>Math.floor((0, _helpersSegmentJs.aM)(v));
+const changeExponent = (v, m)=>Math.pow(10, log10Floor(v) + m);
+function isMajor(tickVal) {
+    const remain = tickVal / Math.pow(10, log10Floor(tickVal));
+    return remain === 1;
+}
+function steps(min, max, rangeExp) {
+    const rangeStep = Math.pow(10, rangeExp);
+    const start = Math.floor(min / rangeStep);
+    const end = Math.ceil(max / rangeStep);
+    return end - start;
+}
+function startExp(min, max) {
+    const range = max - min;
+    let rangeExp = log10Floor(range);
+    while(steps(min, max, rangeExp) > 10)rangeExp++;
+    while(steps(min, max, rangeExp) < 10)rangeExp--;
+    return Math.min(rangeExp, log10Floor(min));
+}
+function generateTicks(generationOptions, { min, max }) {
+    min = (0, _helpersSegmentJs.O)(generationOptions.min, min);
+    const ticks = [];
+    const minExp = log10Floor(min);
+    let exp = startExp(min, max);
+    let precision = exp < 0 ? Math.pow(10, Math.abs(exp)) : 1;
+    const stepSize = Math.pow(10, exp);
+    const base = minExp > exp ? Math.pow(10, minExp) : 0;
+    const start = Math.round((min - base) * precision) / precision;
+    const offset = Math.floor((min - base) / stepSize / 10) * stepSize * 10;
+    let significand = Math.floor((start - offset) / Math.pow(10, exp));
+    let value = (0, _helpersSegmentJs.O)(generationOptions.min, Math.round((base + offset + significand * Math.pow(10, exp)) * precision) / precision);
+    while(value < max){
+        ticks.push({
+            value,
+            major: isMajor(value),
+            significand
+        });
+        if (significand >= 10) significand = significand < 15 ? 15 : 20;
+        else significand++;
+        if (significand >= 20) {
+            exp++;
+            significand = 2;
+            precision = exp >= 0 ? 1 : precision;
+        }
+        value = Math.round((base + offset + significand * Math.pow(10, exp)) * precision) / precision;
+    }
+    const lastTick = (0, _helpersSegmentJs.O)(generationOptions.max, value);
+    ticks.push({
+        value: lastTick,
+        major: isMajor(lastTick),
+        significand
+    });
+    return ticks;
+}
+class LogarithmicScale extends Scale {
+    static id = "logarithmic";
+    static defaults = {
+        ticks: {
+            callback: (0, _helpersSegmentJs.aL).formatters.logarithmic,
+            major: {
+                enabled: true
+            }
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this.start = undefined;
+        this.end = undefined;
+        this._startValue = undefined;
+        this._valueRange = 0;
+    }
+    parse(raw, index) {
+        const value = LinearScaleBase.prototype.parse.apply(this, [
+            raw,
+            index
+        ]);
+        if (value === 0) {
+            this._zero = true;
+            return undefined;
+        }
+        return (0, _helpersSegmentJs.g)(value) && value > 0 ? value : null;
+    }
+    determineDataLimits() {
+        const { min, max } = this.getMinMax(true);
+        this.min = (0, _helpersSegmentJs.g)(min) ? Math.max(0, min) : null;
+        this.max = (0, _helpersSegmentJs.g)(max) ? Math.max(0, max) : null;
+        if (this.options.beginAtZero) this._zero = true;
+        if (this._zero && this.min !== this._suggestedMin && !(0, _helpersSegmentJs.g)(this._userMin)) this.min = min === changeExponent(this.min, 0) ? changeExponent(this.min, -1) : changeExponent(this.min, 0);
+        this.handleTickRangeOptions();
+    }
+    handleTickRangeOptions() {
+        const { minDefined, maxDefined } = this.getUserBounds();
+        let min = this.min;
+        let max = this.max;
+        const setMin = (v)=>min = minDefined ? min : v;
+        const setMax = (v)=>max = maxDefined ? max : v;
+        if (min === max) {
+            if (min <= 0) {
+                setMin(1);
+                setMax(10);
+            } else {
+                setMin(changeExponent(min, -1));
+                setMax(changeExponent(max, 1));
+            }
+        }
+        if (min <= 0) setMin(changeExponent(max, -1));
+        if (max <= 0) setMax(changeExponent(min, 1));
+        this.min = min;
+        this.max = max;
+    }
+    buildTicks() {
+        const opts = this.options;
+        const generationOptions = {
+            min: this._userMin,
+            max: this._userMax
+        };
+        const ticks = generateTicks(generationOptions, this);
+        if (opts.bounds === "ticks") (0, _helpersSegmentJs.aG)(ticks, this, "value");
+        if (opts.reverse) {
+            ticks.reverse();
+            this.start = this.max;
+            this.end = this.min;
+        } else {
+            this.start = this.min;
+            this.end = this.max;
+        }
+        return ticks;
+    }
+    getLabelForValue(value) {
+        return value === undefined ? "0" : (0, _helpersSegmentJs.o)(value, this.chart.options.locale, this.options.ticks.format);
+    }
+    configure() {
+        const start = this.min;
+        super.configure();
+        this._startValue = (0, _helpersSegmentJs.aM)(start);
+        this._valueRange = (0, _helpersSegmentJs.aM)(this.max) - (0, _helpersSegmentJs.aM)(start);
+    }
+    getPixelForValue(value) {
+        if (value === undefined || value === 0) value = this.min;
+        if (value === null || isNaN(value)) return NaN;
+        return this.getPixelForDecimal(value === this.min ? 0 : ((0, _helpersSegmentJs.aM)(value) - this._startValue) / this._valueRange);
+    }
+    getValueForPixel(pixel) {
+        const decimal = this.getDecimalForPixel(pixel);
+        return Math.pow(10, this._startValue + decimal * this._valueRange);
+    }
+}
+function getTickBackdropHeight(opts) {
+    const tickOpts = opts.ticks;
+    if (tickOpts.display && opts.display) {
+        const padding = (0, _helpersSegmentJs.E)(tickOpts.backdropPadding);
+        return (0, _helpersSegmentJs.v)(tickOpts.font && tickOpts.font.size, (0, _helpersSegmentJs.d).font.size) + padding.height;
+    }
+    return 0;
+}
+function measureLabelSize(ctx, font, label) {
+    label = (0, _helpersSegmentJs.b)(label) ? label : [
+        label
+    ];
+    return {
+        w: (0, _helpersSegmentJs.aN)(ctx, font.string, label),
+        h: label.length * font.lineHeight
+    };
+}
+function determineLimits(angle, pos, size, min, max) {
+    if (angle === min || angle === max) return {
+        start: pos - size / 2,
+        end: pos + size / 2
+    };
+    else if (angle < min || angle > max) return {
+        start: pos - size,
+        end: pos
+    };
+    return {
+        start: pos,
+        end: pos + size
+    };
+}
+function fitWithPointLabels(scale) {
+    const orig = {
+        l: scale.left + scale._padding.left,
+        r: scale.right - scale._padding.right,
+        t: scale.top + scale._padding.top,
+        b: scale.bottom - scale._padding.bottom
+    };
+    const limits = Object.assign({}, orig);
+    const labelSizes = [];
+    const padding = [];
+    const valueCount = scale._pointLabels.length;
+    const pointLabelOpts = scale.options.pointLabels;
+    const additionalAngle = pointLabelOpts.centerPointLabels ? (0, _helpersSegmentJs.P) / valueCount : 0;
+    for(let i = 0; i < valueCount; i++){
+        const opts = pointLabelOpts.setContext(scale.getPointLabelContext(i));
+        padding[i] = opts.padding;
+        const pointPosition = scale.getPointPosition(i, scale.drawingArea + padding[i], additionalAngle);
+        const plFont = (0, _helpersSegmentJs.a0)(opts.font);
+        const textSize = measureLabelSize(scale.ctx, plFont, scale._pointLabels[i]);
+        labelSizes[i] = textSize;
+        const angleRadians = (0, _helpersSegmentJs.ay)(scale.getIndexAngle(i) + additionalAngle);
+        const angle = Math.round((0, _helpersSegmentJs.U)(angleRadians));
+        const hLimits = determineLimits(angle, pointPosition.x, textSize.w, 0, 180);
+        const vLimits = determineLimits(angle, pointPosition.y, textSize.h, 90, 270);
+        updateLimits(limits, orig, angleRadians, hLimits, vLimits);
+    }
+    scale.setCenterPoint(orig.l - limits.l, limits.r - orig.r, orig.t - limits.t, limits.b - orig.b);
+    scale._pointLabelItems = buildPointLabelItems(scale, labelSizes, padding);
+}
+function updateLimits(limits, orig, angle, hLimits, vLimits) {
+    const sin = Math.abs(Math.sin(angle));
+    const cos = Math.abs(Math.cos(angle));
+    let x = 0;
+    let y = 0;
+    if (hLimits.start < orig.l) {
+        x = (orig.l - hLimits.start) / sin;
+        limits.l = Math.min(limits.l, orig.l - x);
+    } else if (hLimits.end > orig.r) {
+        x = (hLimits.end - orig.r) / sin;
+        limits.r = Math.max(limits.r, orig.r + x);
+    }
+    if (vLimits.start < orig.t) {
+        y = (orig.t - vLimits.start) / cos;
+        limits.t = Math.min(limits.t, orig.t - y);
+    } else if (vLimits.end > orig.b) {
+        y = (vLimits.end - orig.b) / cos;
+        limits.b = Math.max(limits.b, orig.b + y);
+    }
+}
+function createPointLabelItem(scale, index, itemOpts) {
+    const outerDistance = scale.drawingArea;
+    const { extra, additionalAngle, padding, size } = itemOpts;
+    const pointLabelPosition = scale.getPointPosition(index, outerDistance + extra + padding, additionalAngle);
+    const angle = Math.round((0, _helpersSegmentJs.U)((0, _helpersSegmentJs.ay)(pointLabelPosition.angle + (0, _helpersSegmentJs.H))));
+    const y = yForAngle(pointLabelPosition.y, size.h, angle);
+    const textAlign = getTextAlignForAngle(angle);
+    const left = leftForTextAlign(pointLabelPosition.x, size.w, textAlign);
+    return {
+        visible: true,
+        x: pointLabelPosition.x,
+        y,
+        textAlign,
+        left,
+        top: y,
+        right: left + size.w,
+        bottom: y + size.h
+    };
+}
+function isNotOverlapped(item, area) {
+    if (!area) return true;
+    const { left, top, right, bottom } = item;
+    const apexesInArea = (0, _helpersSegmentJs.C)({
+        x: left,
+        y: top
+    }, area) || (0, _helpersSegmentJs.C)({
+        x: left,
+        y: bottom
+    }, area) || (0, _helpersSegmentJs.C)({
+        x: right,
+        y: top
+    }, area) || (0, _helpersSegmentJs.C)({
+        x: right,
+        y: bottom
+    }, area);
+    return !apexesInArea;
+}
+function buildPointLabelItems(scale, labelSizes, padding) {
+    const items = [];
+    const valueCount = scale._pointLabels.length;
+    const opts = scale.options;
+    const { centerPointLabels, display } = opts.pointLabels;
+    const itemOpts = {
+        extra: getTickBackdropHeight(opts) / 2,
+        additionalAngle: centerPointLabels ? (0, _helpersSegmentJs.P) / valueCount : 0
+    };
+    let area;
+    for(let i = 0; i < valueCount; i++){
+        itemOpts.padding = padding[i];
+        itemOpts.size = labelSizes[i];
+        const item = createPointLabelItem(scale, i, itemOpts);
+        items.push(item);
+        if (display === "auto") {
+            item.visible = isNotOverlapped(item, area);
+            if (item.visible) area = item;
+        }
+    }
+    return items;
+}
+function getTextAlignForAngle(angle) {
+    if (angle === 0 || angle === 180) return "center";
+    else if (angle < 180) return "left";
+    return "right";
+}
+function leftForTextAlign(x, w, align) {
+    if (align === "right") x -= w;
+    else if (align === "center") x -= w / 2;
+    return x;
+}
+function yForAngle(y, h, angle) {
+    if (angle === 90 || angle === 270) y -= h / 2;
+    else if (angle > 270 || angle < 90) y -= h;
+    return y;
+}
+function drawPointLabelBox(ctx, opts, item) {
+    const { left, top, right, bottom } = item;
+    const { backdropColor } = opts;
+    if (!(0, _helpersSegmentJs.k)(backdropColor)) {
+        const borderRadius = (0, _helpersSegmentJs.aw)(opts.borderRadius);
+        const padding = (0, _helpersSegmentJs.E)(opts.backdropPadding);
+        ctx.fillStyle = backdropColor;
+        const backdropLeft = left - padding.left;
+        const backdropTop = top - padding.top;
+        const backdropWidth = right - left + padding.width;
+        const backdropHeight = bottom - top + padding.height;
+        if (Object.values(borderRadius).some((v)=>v !== 0)) {
+            ctx.beginPath();
+            (0, _helpersSegmentJs.au)(ctx, {
+                x: backdropLeft,
+                y: backdropTop,
+                w: backdropWidth,
+                h: backdropHeight,
+                radius: borderRadius
+            });
+            ctx.fill();
+        } else ctx.fillRect(backdropLeft, backdropTop, backdropWidth, backdropHeight);
+    }
+}
+function drawPointLabels(scale, labelCount) {
+    const { ctx, options: { pointLabels } } = scale;
+    for(let i = labelCount - 1; i >= 0; i--){
+        const item = scale._pointLabelItems[i];
+        if (!item.visible) continue;
+        const optsAtIndex = pointLabels.setContext(scale.getPointLabelContext(i));
+        drawPointLabelBox(ctx, optsAtIndex, item);
+        const plFont = (0, _helpersSegmentJs.a0)(optsAtIndex.font);
+        const { x, y, textAlign } = item;
+        (0, _helpersSegmentJs.Z)(ctx, scale._pointLabels[i], x, y + plFont.lineHeight / 2, plFont, {
+            color: optsAtIndex.color,
+            textAlign: textAlign,
+            textBaseline: "middle"
+        });
+    }
+}
+function pathRadiusLine(scale, radius, circular, labelCount) {
+    const { ctx } = scale;
+    if (circular) ctx.arc(scale.xCenter, scale.yCenter, radius, 0, (0, _helpersSegmentJs.T));
+    else {
+        let pointPosition = scale.getPointPosition(0, radius);
+        ctx.moveTo(pointPosition.x, pointPosition.y);
+        for(let i = 1; i < labelCount; i++){
+            pointPosition = scale.getPointPosition(i, radius);
+            ctx.lineTo(pointPosition.x, pointPosition.y);
+        }
+    }
+}
+function drawRadiusLine(scale, gridLineOpts, radius, labelCount, borderOpts) {
+    const ctx = scale.ctx;
+    const circular = gridLineOpts.circular;
+    const { color, lineWidth } = gridLineOpts;
+    if (!circular && !labelCount || !color || !lineWidth || radius < 0) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.setLineDash(borderOpts.dash);
+    ctx.lineDashOffset = borderOpts.dashOffset;
+    ctx.beginPath();
+    pathRadiusLine(scale, radius, circular, labelCount);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+}
+function createPointLabelContext(parent, index, label) {
+    return (0, _helpersSegmentJs.j)(parent, {
+        label,
+        index,
+        type: "pointLabel"
+    });
+}
+class RadialLinearScale extends LinearScaleBase {
+    static id = "radialLinear";
+    static defaults = {
+        display: true,
+        animate: true,
+        position: "chartArea",
+        angleLines: {
+            display: true,
+            lineWidth: 1,
+            borderDash: [],
+            borderDashOffset: 0.0
+        },
+        grid: {
+            circular: false
+        },
+        startAngle: 0,
+        ticks: {
+            showLabelBackdrop: true,
+            callback: (0, _helpersSegmentJs.aL).formatters.numeric
+        },
+        pointLabels: {
+            backdropColor: undefined,
+            backdropPadding: 2,
+            display: true,
+            font: {
+                size: 10
+            },
+            callback (label) {
+                return label;
+            },
+            padding: 5,
+            centerPointLabels: false
+        }
+    };
+    static defaultRoutes = {
+        "angleLines.color": "borderColor",
+        "pointLabels.color": "color",
+        "ticks.color": "color"
+    };
+    static descriptors = {
+        angleLines: {
+            _fallback: "grid"
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+        this.xCenter = undefined;
+        this.yCenter = undefined;
+        this.drawingArea = undefined;
+        this._pointLabels = [];
+        this._pointLabelItems = [];
+    }
+    setDimensions() {
+        const padding = this._padding = (0, _helpersSegmentJs.E)(getTickBackdropHeight(this.options) / 2);
+        const w = this.width = this.maxWidth - padding.width;
+        const h = this.height = this.maxHeight - padding.height;
+        this.xCenter = Math.floor(this.left + w / 2 + padding.left);
+        this.yCenter = Math.floor(this.top + h / 2 + padding.top);
+        this.drawingArea = Math.floor(Math.min(w, h) / 2);
+    }
+    determineDataLimits() {
+        const { min, max } = this.getMinMax(false);
+        this.min = (0, _helpersSegmentJs.g)(min) && !isNaN(min) ? min : 0;
+        this.max = (0, _helpersSegmentJs.g)(max) && !isNaN(max) ? max : 0;
+        this.handleTickRangeOptions();
+    }
+    computeTickLimit() {
+        return Math.ceil(this.drawingArea / getTickBackdropHeight(this.options));
+    }
+    generateTickLabels(ticks) {
+        LinearScaleBase.prototype.generateTickLabels.call(this, ticks);
+        this._pointLabels = this.getLabels().map((value, index)=>{
+            const label = (0, _helpersSegmentJs.Q)(this.options.pointLabels.callback, [
+                value,
+                index
+            ], this);
+            return label || label === 0 ? label : "";
+        }).filter((v, i)=>this.chart.getDataVisibility(i));
+    }
+    fit() {
+        const opts = this.options;
+        if (opts.display && opts.pointLabels.display) fitWithPointLabels(this);
+        else this.setCenterPoint(0, 0, 0, 0);
+    }
+    setCenterPoint(leftMovement, rightMovement, topMovement, bottomMovement) {
+        this.xCenter += Math.floor((leftMovement - rightMovement) / 2);
+        this.yCenter += Math.floor((topMovement - bottomMovement) / 2);
+        this.drawingArea -= Math.min(this.drawingArea / 2, Math.max(leftMovement, rightMovement, topMovement, bottomMovement));
+    }
+    getIndexAngle(index) {
+        const angleMultiplier = (0, _helpersSegmentJs.T) / (this._pointLabels.length || 1);
+        const startAngle = this.options.startAngle || 0;
+        return (0, _helpersSegmentJs.ay)(index * angleMultiplier + (0, _helpersSegmentJs.t)(startAngle));
+    }
+    getDistanceFromCenterForValue(value) {
+        if ((0, _helpersSegmentJs.k)(value)) return NaN;
+        const scalingFactor = this.drawingArea / (this.max - this.min);
+        if (this.options.reverse) return (this.max - value) * scalingFactor;
+        return (value - this.min) * scalingFactor;
+    }
+    getValueForDistanceFromCenter(distance) {
+        if ((0, _helpersSegmentJs.k)(distance)) return NaN;
+        const scaledDistance = distance / (this.drawingArea / (this.max - this.min));
+        return this.options.reverse ? this.max - scaledDistance : this.min + scaledDistance;
+    }
+    getPointLabelContext(index) {
+        const pointLabels = this._pointLabels || [];
+        if (index >= 0 && index < pointLabels.length) {
+            const pointLabel = pointLabels[index];
+            return createPointLabelContext(this.getContext(), index, pointLabel);
+        }
+    }
+    getPointPosition(index, distanceFromCenter, additionalAngle = 0) {
+        const angle = this.getIndexAngle(index) - (0, _helpersSegmentJs.H) + additionalAngle;
+        return {
+            x: Math.cos(angle) * distanceFromCenter + this.xCenter,
+            y: Math.sin(angle) * distanceFromCenter + this.yCenter,
+            angle
+        };
+    }
+    getPointPositionForValue(index, value) {
+        return this.getPointPosition(index, this.getDistanceFromCenterForValue(value));
+    }
+    getBasePosition(index) {
+        return this.getPointPositionForValue(index || 0, this.getBaseValue());
+    }
+    getPointLabelPosition(index) {
+        const { left, top, right, bottom } = this._pointLabelItems[index];
+        return {
+            left,
+            top,
+            right,
+            bottom
+        };
+    }
+    drawBackground() {
+        const { backgroundColor, grid: { circular } } = this.options;
+        if (backgroundColor) {
+            const ctx = this.ctx;
+            ctx.save();
+            ctx.beginPath();
+            pathRadiusLine(this, this.getDistanceFromCenterForValue(this._endValue), circular, this._pointLabels.length);
+            ctx.closePath();
+            ctx.fillStyle = backgroundColor;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+    drawGrid() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        const { angleLines, grid, border } = opts;
+        const labelCount = this._pointLabels.length;
+        let i, offset, position;
+        if (opts.pointLabels.display) drawPointLabels(this, labelCount);
+        if (grid.display) this.ticks.forEach((tick, index)=>{
+            if (index !== 0) {
+                offset = this.getDistanceFromCenterForValue(tick.value);
+                const context = this.getContext(index);
+                const optsAtIndex = grid.setContext(context);
+                const optsAtIndexBorder = border.setContext(context);
+                drawRadiusLine(this, optsAtIndex, offset, labelCount, optsAtIndexBorder);
+            }
+        });
+        if (angleLines.display) {
+            ctx.save();
+            for(i = labelCount - 1; i >= 0; i--){
+                const optsAtIndex = angleLines.setContext(this.getPointLabelContext(i));
+                const { color, lineWidth } = optsAtIndex;
+                if (!lineWidth || !color) continue;
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = color;
+                ctx.setLineDash(optsAtIndex.borderDash);
+                ctx.lineDashOffset = optsAtIndex.borderDashOffset;
+                offset = this.getDistanceFromCenterForValue(opts.ticks.reverse ? this.min : this.max);
+                position = this.getPointPosition(i, offset);
+                ctx.beginPath();
+                ctx.moveTo(this.xCenter, this.yCenter);
+                ctx.lineTo(position.x, position.y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+    }
+    drawBorder() {}
+    drawLabels() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        const tickOpts = opts.ticks;
+        if (!tickOpts.display) return;
+        const startAngle = this.getIndexAngle(0);
+        let offset, width;
+        ctx.save();
+        ctx.translate(this.xCenter, this.yCenter);
+        ctx.rotate(startAngle);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        this.ticks.forEach((tick, index)=>{
+            if (index === 0 && !opts.reverse) return;
+            const optsAtIndex = tickOpts.setContext(this.getContext(index));
+            const tickFont = (0, _helpersSegmentJs.a0)(optsAtIndex.font);
+            offset = this.getDistanceFromCenterForValue(this.ticks[index].value);
+            if (optsAtIndex.showLabelBackdrop) {
+                ctx.font = tickFont.string;
+                width = ctx.measureText(tick.label).width;
+                ctx.fillStyle = optsAtIndex.backdropColor;
+                const padding = (0, _helpersSegmentJs.E)(optsAtIndex.backdropPadding);
+                ctx.fillRect(-width / 2 - padding.left, -offset - tickFont.size / 2 - padding.top, width + padding.width, tickFont.size + padding.height);
+            }
+            (0, _helpersSegmentJs.Z)(ctx, tick.label, 0, -offset, tickFont, {
+                color: optsAtIndex.color,
+                strokeColor: optsAtIndex.textStrokeColor,
+                strokeWidth: optsAtIndex.textStrokeWidth
+            });
+        });
+        ctx.restore();
+    }
+    drawTitle() {}
+}
+const INTERVALS = {
+    millisecond: {
+        common: true,
+        size: 1,
+        steps: 1000
+    },
+    second: {
+        common: true,
+        size: 1000,
+        steps: 60
+    },
+    minute: {
+        common: true,
+        size: 60000,
+        steps: 60
+    },
+    hour: {
+        common: true,
+        size: 3600000,
+        steps: 24
+    },
+    day: {
+        common: true,
+        size: 86400000,
+        steps: 30
+    },
+    week: {
+        common: false,
+        size: 604800000,
+        steps: 4
+    },
+    month: {
+        common: true,
+        size: 2.628e9,
+        steps: 12
+    },
+    quarter: {
+        common: false,
+        size: 7.884e9,
+        steps: 4
+    },
+    year: {
+        common: true,
+        size: 3.154e10
+    }
+};
+const UNITS = /* #__PURE__ */ Object.keys(INTERVALS);
+function sorter(a, b) {
+    return a - b;
+}
+function parse(scale, input) {
+    if ((0, _helpersSegmentJs.k)(input)) return null;
+    const adapter = scale._adapter;
+    const { parser, round, isoWeekday } = scale._parseOpts;
+    let value = input;
+    if (typeof parser === "function") value = parser(value);
+    if (!(0, _helpersSegmentJs.g)(value)) value = typeof parser === "string" ? adapter.parse(value, parser) : adapter.parse(value);
+    if (value === null) return null;
+    if (round) value = round === "week" && ((0, _helpersSegmentJs.x)(isoWeekday) || isoWeekday === true) ? adapter.startOf(value, "isoWeek", isoWeekday) : adapter.startOf(value, round);
+    return +value;
+}
+function determineUnitForAutoTicks(minUnit, min, max, capacity) {
+    const ilen = UNITS.length;
+    for(let i = UNITS.indexOf(minUnit); i < ilen - 1; ++i){
+        const interval = INTERVALS[UNITS[i]];
+        const factor = interval.steps ? interval.steps : Number.MAX_SAFE_INTEGER;
+        if (interval.common && Math.ceil((max - min) / (factor * interval.size)) <= capacity) return UNITS[i];
+    }
+    return UNITS[ilen - 1];
+}
+function determineUnitForFormatting(scale, numTicks, minUnit, min, max) {
+    for(let i = UNITS.length - 1; i >= UNITS.indexOf(minUnit); i--){
+        const unit = UNITS[i];
+        if (INTERVALS[unit].common && scale._adapter.diff(max, min, unit) >= numTicks - 1) return unit;
+    }
+    return UNITS[minUnit ? UNITS.indexOf(minUnit) : 0];
+}
+function determineMajorUnit(unit) {
+    for(let i = UNITS.indexOf(unit) + 1, ilen = UNITS.length; i < ilen; ++i){
+        if (INTERVALS[UNITS[i]].common) return UNITS[i];
+    }
+}
+function addTick(ticks, time, timestamps) {
+    if (!timestamps) ticks[time] = true;
+    else if (timestamps.length) {
+        const { lo, hi } = (0, _helpersSegmentJs.aP)(timestamps, time);
+        const timestamp = timestamps[lo] >= time ? timestamps[lo] : timestamps[hi];
+        ticks[timestamp] = true;
+    }
+}
+function setMajorTicks(scale, ticks, map, majorUnit) {
+    const adapter = scale._adapter;
+    const first = +adapter.startOf(ticks[0].value, majorUnit);
+    const last = ticks[ticks.length - 1].value;
+    let major, index;
+    for(major = first; major <= last; major = +adapter.add(major, 1, majorUnit)){
+        index = map[major];
+        if (index >= 0) ticks[index].major = true;
+    }
+    return ticks;
+}
+function ticksFromTimestamps(scale, values, majorUnit) {
+    const ticks = [];
+    const map = {};
+    const ilen = values.length;
+    let i, value;
+    for(i = 0; i < ilen; ++i){
+        value = values[i];
+        map[value] = i;
+        ticks.push({
+            value,
+            major: false
+        });
+    }
+    return ilen === 0 || !majorUnit ? ticks : setMajorTicks(scale, ticks, map, majorUnit);
+}
+class TimeScale extends Scale {
+    static id = "time";
+    static defaults = {
+        bounds: "data",
+        adapters: {},
+        time: {
+            parser: false,
+            unit: false,
+            round: false,
+            isoWeekday: false,
+            minUnit: "millisecond",
+            displayFormats: {}
+        },
+        ticks: {
+            source: "auto",
+            callback: false,
+            major: {
+                enabled: false
+            }
+        }
+    };
+    constructor(props){
+        super(props);
+        this._cache = {
+            data: [],
+            labels: [],
+            all: []
+        };
+        this._unit = "day";
+        this._majorUnit = undefined;
+        this._offsets = {};
+        this._normalized = false;
+        this._parseOpts = undefined;
+    }
+    init(scaleOpts, opts = {}) {
+        const time = scaleOpts.time || (scaleOpts.time = {});
+        const adapter = this._adapter = new adapters._date(scaleOpts.adapters.date);
+        adapter.init(opts);
+        (0, _helpersSegmentJs.ab)(time.displayFormats, adapter.formats());
+        this._parseOpts = {
+            parser: time.parser,
+            round: time.round,
+            isoWeekday: time.isoWeekday
+        };
+        super.init(scaleOpts);
+        this._normalized = opts.normalized;
+    }
+    parse(raw, index) {
+        if (raw === undefined) return null;
+        return parse(this, raw);
+    }
+    beforeLayout() {
+        super.beforeLayout();
+        this._cache = {
+            data: [],
+            labels: [],
+            all: []
+        };
+    }
+    determineDataLimits() {
+        const options = this.options;
+        const adapter = this._adapter;
+        const unit = options.time.unit || "day";
+        let { min, max, minDefined, maxDefined } = this.getUserBounds();
+        function _applyBounds(bounds) {
+            if (!minDefined && !isNaN(bounds.min)) min = Math.min(min, bounds.min);
+            if (!maxDefined && !isNaN(bounds.max)) max = Math.max(max, bounds.max);
+        }
+        if (!minDefined || !maxDefined) {
+            _applyBounds(this._getLabelBounds());
+            if (options.bounds !== "ticks" || options.ticks.source !== "labels") _applyBounds(this.getMinMax(false));
+        }
+        min = (0, _helpersSegmentJs.g)(min) && !isNaN(min) ? min : +adapter.startOf(Date.now(), unit);
+        max = (0, _helpersSegmentJs.g)(max) && !isNaN(max) ? max : +adapter.endOf(Date.now(), unit) + 1;
+        this.min = Math.min(min, max - 1);
+        this.max = Math.max(min + 1, max);
+    }
+    _getLabelBounds() {
+        const arr = this.getLabelTimestamps();
+        let min = Number.POSITIVE_INFINITY;
+        let max = Number.NEGATIVE_INFINITY;
+        if (arr.length) {
+            min = arr[0];
+            max = arr[arr.length - 1];
+        }
+        return {
+            min,
+            max
+        };
+    }
+    buildTicks() {
+        const options = this.options;
+        const timeOpts = options.time;
+        const tickOpts = options.ticks;
+        const timestamps = tickOpts.source === "labels" ? this.getLabelTimestamps() : this._generate();
+        if (options.bounds === "ticks" && timestamps.length) {
+            this.min = this._userMin || timestamps[0];
+            this.max = this._userMax || timestamps[timestamps.length - 1];
+        }
+        const min = this.min;
+        const max = this.max;
+        const ticks = (0, _helpersSegmentJs.aO)(timestamps, min, max);
+        this._unit = timeOpts.unit || (tickOpts.autoSkip ? determineUnitForAutoTicks(timeOpts.minUnit, this.min, this.max, this._getLabelCapacity(min)) : determineUnitForFormatting(this, ticks.length, timeOpts.minUnit, this.min, this.max));
+        this._majorUnit = !tickOpts.major.enabled || this._unit === "year" ? undefined : determineMajorUnit(this._unit);
+        this.initOffsets(timestamps);
+        if (options.reverse) ticks.reverse();
+        return ticksFromTimestamps(this, ticks, this._majorUnit);
+    }
+    afterAutoSkip() {
+        if (this.options.offsetAfterAutoskip) this.initOffsets(this.ticks.map((tick)=>+tick.value));
+    }
+    initOffsets(timestamps = []) {
+        let start = 0;
+        let end = 0;
+        let first, last;
+        if (this.options.offset && timestamps.length) {
+            first = this.getDecimalForValue(timestamps[0]);
+            if (timestamps.length === 1) start = 1 - first;
+            else start = (this.getDecimalForValue(timestamps[1]) - first) / 2;
+            last = this.getDecimalForValue(timestamps[timestamps.length - 1]);
+            if (timestamps.length === 1) end = last;
+            else end = (last - this.getDecimalForValue(timestamps[timestamps.length - 2])) / 2;
+        }
+        const limit = timestamps.length < 3 ? 0.5 : 0.25;
+        start = (0, _helpersSegmentJs.S)(start, 0, limit);
+        end = (0, _helpersSegmentJs.S)(end, 0, limit);
+        this._offsets = {
+            start,
+            end,
+            factor: 1 / (start + 1 + end)
+        };
+    }
+    _generate() {
+        const adapter = this._adapter;
+        const min = this.min;
+        const max = this.max;
+        const options = this.options;
+        const timeOpts = options.time;
+        const minor = timeOpts.unit || determineUnitForAutoTicks(timeOpts.minUnit, min, max, this._getLabelCapacity(min));
+        const stepSize = (0, _helpersSegmentJs.v)(options.ticks.stepSize, 1);
+        const weekday = minor === "week" ? timeOpts.isoWeekday : false;
+        const hasWeekday = (0, _helpersSegmentJs.x)(weekday) || weekday === true;
+        const ticks = {};
+        let first = min;
+        let time, count;
+        if (hasWeekday) first = +adapter.startOf(first, "isoWeek", weekday);
+        first = +adapter.startOf(first, hasWeekday ? "day" : minor);
+        if (adapter.diff(max, min, minor) > 100000 * stepSize) throw new Error(min + " and " + max + " are too far apart with stepSize of " + stepSize + " " + minor);
+        const timestamps = options.ticks.source === "data" && this.getDataTimestamps();
+        for(time = first, count = 0; time < max; time = +adapter.add(time, stepSize, minor), count++)addTick(ticks, time, timestamps);
+        if (time === max || options.bounds === "ticks" || count === 1) addTick(ticks, time, timestamps);
+        return Object.keys(ticks).sort(sorter).map((x)=>+x);
+    }
+    getLabelForValue(value) {
+        const adapter = this._adapter;
+        const timeOpts = this.options.time;
+        if (timeOpts.tooltipFormat) return adapter.format(value, timeOpts.tooltipFormat);
+        return adapter.format(value, timeOpts.displayFormats.datetime);
+    }
+    format(value, format) {
+        const options = this.options;
+        const formats = options.time.displayFormats;
+        const unit = this._unit;
+        const fmt = format || formats[unit];
+        return this._adapter.format(value, fmt);
+    }
+    _tickFormatFunction(time, index, ticks, format) {
+        const options = this.options;
+        const formatter = options.ticks.callback;
+        if (formatter) return (0, _helpersSegmentJs.Q)(formatter, [
+            time,
+            index,
+            ticks
+        ], this);
+        const formats = options.time.displayFormats;
+        const unit = this._unit;
+        const majorUnit = this._majorUnit;
+        const minorFormat = unit && formats[unit];
+        const majorFormat = majorUnit && formats[majorUnit];
+        const tick = ticks[index];
+        const major = majorUnit && majorFormat && tick && tick.major;
+        return this._adapter.format(time, format || (major ? majorFormat : minorFormat));
+    }
+    generateTickLabels(ticks) {
+        let i, ilen, tick;
+        for(i = 0, ilen = ticks.length; i < ilen; ++i){
+            tick = ticks[i];
+            tick.label = this._tickFormatFunction(tick.value, i, ticks);
+        }
+    }
+    getDecimalForValue(value) {
+        return value === null ? NaN : (value - this.min) / (this.max - this.min);
+    }
+    getPixelForValue(value) {
+        const offsets = this._offsets;
+        const pos = this.getDecimalForValue(value);
+        return this.getPixelForDecimal((offsets.start + pos) * offsets.factor);
+    }
+    getValueForPixel(pixel) {
+        const offsets = this._offsets;
+        const pos = this.getDecimalForPixel(pixel) / offsets.factor - offsets.end;
+        return this.min + pos * (this.max - this.min);
+    }
+    _getLabelSize(label) {
+        const ticksOpts = this.options.ticks;
+        const tickLabelWidth = this.ctx.measureText(label).width;
+        const angle = (0, _helpersSegmentJs.t)(this.isHorizontal() ? ticksOpts.maxRotation : ticksOpts.minRotation);
+        const cosRotation = Math.cos(angle);
+        const sinRotation = Math.sin(angle);
+        const tickFontSize = this._resolveTickFontOptions(0).size;
+        return {
+            w: tickLabelWidth * cosRotation + tickFontSize * sinRotation,
+            h: tickLabelWidth * sinRotation + tickFontSize * cosRotation
+        };
+    }
+    _getLabelCapacity(exampleTime) {
+        const timeOpts = this.options.time;
+        const displayFormats = timeOpts.displayFormats;
+        const format = displayFormats[timeOpts.unit] || displayFormats.millisecond;
+        const exampleLabel = this._tickFormatFunction(exampleTime, 0, ticksFromTimestamps(this, [
+            exampleTime
+        ], this._majorUnit), format);
+        const size = this._getLabelSize(exampleLabel);
+        const capacity = Math.floor(this.isHorizontal() ? this.width / size.w : this.height / size.h) - 1;
+        return capacity > 0 ? capacity : 1;
+    }
+    getDataTimestamps() {
+        let timestamps = this._cache.data || [];
+        let i, ilen;
+        if (timestamps.length) return timestamps;
+        const metas = this.getMatchingVisibleMetas();
+        if (this._normalized && metas.length) return this._cache.data = metas[0].controller.getAllParsedValues(this);
+        for(i = 0, ilen = metas.length; i < ilen; ++i)timestamps = timestamps.concat(metas[i].controller.getAllParsedValues(this));
+        return this._cache.data = this.normalize(timestamps);
+    }
+    getLabelTimestamps() {
+        const timestamps = this._cache.labels || [];
+        let i, ilen;
+        if (timestamps.length) return timestamps;
+        const labels = this.getLabels();
+        for(i = 0, ilen = labels.length; i < ilen; ++i)timestamps.push(parse(this, labels[i]));
+        return this._cache.labels = this._normalized ? timestamps : this.normalize(timestamps);
+    }
+    normalize(values) {
+        return (0, _helpersSegmentJs._)(values.sort(sorter));
+    }
+}
+function interpolate(table, val, reverse) {
+    let lo = 0;
+    let hi = table.length - 1;
+    let prevSource, nextSource, prevTarget, nextTarget;
+    if (reverse) {
+        if (val >= table[lo].pos && val <= table[hi].pos) ({ lo, hi } = (0, _helpersSegmentJs.B)(table, "pos", val));
+        ({ pos: prevSource, time: prevTarget } = table[lo]);
+        ({ pos: nextSource, time: nextTarget } = table[hi]);
+    } else {
+        if (val >= table[lo].time && val <= table[hi].time) ({ lo, hi } = (0, _helpersSegmentJs.B)(table, "time", val));
+        ({ time: prevSource, pos: prevTarget } = table[lo]);
+        ({ time: nextSource, pos: nextTarget } = table[hi]);
+    }
+    const span = nextSource - prevSource;
+    return span ? prevTarget + (nextTarget - prevTarget) * (val - prevSource) / span : prevTarget;
+}
+class TimeSeriesScale extends TimeScale {
+    static id = "timeseries";
+    static defaults = TimeScale.defaults;
+    constructor(props){
+        super(props);
+        this._table = [];
+        this._minPos = undefined;
+        this._tableRange = undefined;
+    }
+    initOffsets() {
+        const timestamps = this._getTimestampsForTable();
+        const table = this._table = this.buildLookupTable(timestamps);
+        this._minPos = interpolate(table, this.min);
+        this._tableRange = interpolate(table, this.max) - this._minPos;
+        super.initOffsets(timestamps);
+    }
+    buildLookupTable(timestamps) {
+        const { min, max } = this;
+        const items = [];
+        const table = [];
+        let i, ilen, prev, curr, next;
+        for(i = 0, ilen = timestamps.length; i < ilen; ++i){
+            curr = timestamps[i];
+            if (curr >= min && curr <= max) items.push(curr);
+        }
+        if (items.length < 2) return [
+            {
+                time: min,
+                pos: 0
+            },
+            {
+                time: max,
+                pos: 1
+            }
+        ];
+        for(i = 0, ilen = items.length; i < ilen; ++i){
+            next = items[i + 1];
+            prev = items[i - 1];
+            curr = items[i];
+            if (Math.round((next + prev) / 2) !== curr) table.push({
+                time: curr,
+                pos: i / (ilen - 1)
+            });
+        }
+        return table;
+    }
+    _generate() {
+        const min = this.min;
+        const max = this.max;
+        let timestamps = super.getDataTimestamps();
+        if (!timestamps.includes(min) || !timestamps.length) timestamps.splice(0, 0, min);
+        if (!timestamps.includes(max) || timestamps.length === 1) timestamps.push(max);
+        return timestamps.sort((a, b)=>a - b);
+    }
+    _getTimestampsForTable() {
+        let timestamps = this._cache.all || [];
+        if (timestamps.length) return timestamps;
+        const data = this.getDataTimestamps();
+        const label = this.getLabelTimestamps();
+        if (data.length && label.length) timestamps = this.normalize(data.concat(label));
+        else timestamps = data.length ? data : label;
+        timestamps = this._cache.all = timestamps;
+        return timestamps;
+    }
+    getDecimalForValue(value) {
+        return (interpolate(this._table, value) - this._minPos) / this._tableRange;
+    }
+    getValueForPixel(pixel) {
+        const offsets = this._offsets;
+        const decimal = this.getDecimalForPixel(pixel) / offsets.factor - offsets.end;
+        return interpolate(this._table, decimal * this._tableRange + this._minPos, true);
+    }
+}
+var scales = /*#__PURE__*/ Object.freeze({
+    __proto__: null,
+    CategoryScale: CategoryScale,
+    LinearScale: LinearScale,
+    LogarithmicScale: LogarithmicScale,
+    RadialLinearScale: RadialLinearScale,
+    TimeScale: TimeScale,
+    TimeSeriesScale: TimeSeriesScale
+});
+const registerables = [
+    controllers,
+    elements,
+    plugins,
+    scales
+];
+
+},{"./chunks/helpers.segment.js":"6YpJw","@kurkle/color":"jJiT4","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"6YpJw":[function(require,module,exports) {
+/*!
+ * Chart.js v4.3.2
+ * https://www.chartjs.org
+ * (c) 2023 Chart.js Contributors
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "$", ()=>unclipArea);
+parcelHelpers.export(exports, "A", ()=>_rlookupByKey);
+parcelHelpers.export(exports, "B", ()=>_lookupByKey);
+parcelHelpers.export(exports, "C", ()=>_isPointInArea);
+parcelHelpers.export(exports, "D", ()=>getAngleFromPoint);
+parcelHelpers.export(exports, "E", ()=>toPadding);
+parcelHelpers.export(exports, "F", ()=>each);
+parcelHelpers.export(exports, "G", ()=>getMaximumSize);
+parcelHelpers.export(exports, "H", ()=>HALF_PI);
+parcelHelpers.export(exports, "I", ()=>_getParentNode);
+parcelHelpers.export(exports, "J", ()=>readUsedSize);
+parcelHelpers.export(exports, "K", ()=>supportsEventListenerOptions);
+parcelHelpers.export(exports, "L", ()=>throttled);
+parcelHelpers.export(exports, "M", ()=>_isDomSupported);
+parcelHelpers.export(exports, "N", ()=>_factorize);
+parcelHelpers.export(exports, "O", ()=>finiteOrDefault);
+parcelHelpers.export(exports, "P", ()=>PI);
+parcelHelpers.export(exports, "Q", ()=>callback);
+parcelHelpers.export(exports, "R", ()=>_addGrace);
+parcelHelpers.export(exports, "S", ()=>_limitValue);
+parcelHelpers.export(exports, "T", ()=>TAU);
+parcelHelpers.export(exports, "U", ()=>toDegrees);
+parcelHelpers.export(exports, "V", ()=>_measureText);
+parcelHelpers.export(exports, "W", ()=>_int16Range);
+parcelHelpers.export(exports, "X", ()=>_alignPixel);
+parcelHelpers.export(exports, "Y", ()=>clipArea);
+parcelHelpers.export(exports, "Z", ()=>renderText);
+parcelHelpers.export(exports, "_", ()=>_arrayUnique);
+parcelHelpers.export(exports, "a", ()=>resolve);
+parcelHelpers.export(exports, "a$", ()=>fontString);
+parcelHelpers.export(exports, "a0", ()=>toFont);
+parcelHelpers.export(exports, "a1", ()=>_toLeftRightCenter);
+parcelHelpers.export(exports, "a2", ()=>_alignStartEnd);
+parcelHelpers.export(exports, "a3", ()=>overrides);
+parcelHelpers.export(exports, "a4", ()=>merge);
+parcelHelpers.export(exports, "a5", ()=>_capitalize);
+parcelHelpers.export(exports, "a6", ()=>descriptors);
+parcelHelpers.export(exports, "a7", ()=>isFunction);
+parcelHelpers.export(exports, "a8", ()=>_attachContext);
+parcelHelpers.export(exports, "a9", ()=>_createResolver);
+parcelHelpers.export(exports, "aA", ()=>overrideTextDirection);
+parcelHelpers.export(exports, "aB", ()=>_textX);
+parcelHelpers.export(exports, "aC", ()=>restoreTextDirection);
+parcelHelpers.export(exports, "aD", ()=>drawPointLegend);
+parcelHelpers.export(exports, "aE", ()=>distanceBetweenPoints);
+parcelHelpers.export(exports, "aF", ()=>noop);
+parcelHelpers.export(exports, "aG", ()=>_setMinAndMaxByKey);
+parcelHelpers.export(exports, "aH", ()=>niceNum);
+parcelHelpers.export(exports, "aI", ()=>almostWhole);
+parcelHelpers.export(exports, "aJ", ()=>almostEquals);
+parcelHelpers.export(exports, "aK", ()=>_decimalPlaces);
+parcelHelpers.export(exports, "aL", ()=>Ticks);
+parcelHelpers.export(exports, "aM", ()=>log10);
+parcelHelpers.export(exports, "aN", ()=>_longestText);
+parcelHelpers.export(exports, "aO", ()=>_filterBetween);
+parcelHelpers.export(exports, "aP", ()=>_lookup);
+parcelHelpers.export(exports, "aQ", ()=>isPatternOrGradient);
+parcelHelpers.export(exports, "aR", ()=>getHoverColor);
+parcelHelpers.export(exports, "aS", ()=>clone);
+parcelHelpers.export(exports, "aT", ()=>_merger);
+parcelHelpers.export(exports, "aU", ()=>_mergerIf);
+parcelHelpers.export(exports, "aV", ()=>_deprecated);
+parcelHelpers.export(exports, "aW", ()=>_splitKey);
+parcelHelpers.export(exports, "aX", ()=>toFontString);
+parcelHelpers.export(exports, "aY", ()=>splineCurve);
+parcelHelpers.export(exports, "aZ", ()=>splineCurveMonotone);
+parcelHelpers.export(exports, "a_", ()=>getStyle);
+parcelHelpers.export(exports, "aa", ()=>_descriptors);
+parcelHelpers.export(exports, "ab", ()=>mergeIf);
+parcelHelpers.export(exports, "ac", ()=>uid);
+parcelHelpers.export(exports, "ad", ()=>debounce);
+parcelHelpers.export(exports, "ae", ()=>retinaScale);
+parcelHelpers.export(exports, "af", ()=>clearCanvas);
+parcelHelpers.export(exports, "ag", ()=>setsEqual);
+parcelHelpers.export(exports, "ah", ()=>_elementsEqual);
+parcelHelpers.export(exports, "ai", ()=>_isClickEvent);
+parcelHelpers.export(exports, "aj", ()=>_isBetween);
+parcelHelpers.export(exports, "ak", ()=>_readValueToProps);
+parcelHelpers.export(exports, "al", ()=>_updateBezierControlPoints);
+parcelHelpers.export(exports, "am", ()=>_computeSegments);
+parcelHelpers.export(exports, "an", ()=>_boundSegments);
+parcelHelpers.export(exports, "ao", ()=>_steppedInterpolation);
+parcelHelpers.export(exports, "ap", ()=>_bezierInterpolation);
+parcelHelpers.export(exports, "aq", ()=>_pointInLine);
+parcelHelpers.export(exports, "ar", ()=>_steppedLineTo);
+parcelHelpers.export(exports, "as", ()=>_bezierCurveTo);
+parcelHelpers.export(exports, "at", ()=>drawPoint);
+parcelHelpers.export(exports, "au", ()=>addRoundedRectPath);
+parcelHelpers.export(exports, "av", ()=>toTRBL);
+parcelHelpers.export(exports, "aw", ()=>toTRBLCorners);
+parcelHelpers.export(exports, "ax", ()=>_boundSegment);
+parcelHelpers.export(exports, "ay", ()=>_normalizeAngle);
+parcelHelpers.export(exports, "az", ()=>getRtlAdapter);
+parcelHelpers.export(exports, "b", ()=>isArray);
+parcelHelpers.export(exports, "b0", ()=>toLineHeight);
+parcelHelpers.export(exports, "b1", ()=>PITAU);
+parcelHelpers.export(exports, "b2", ()=>INFINITY);
+parcelHelpers.export(exports, "b3", ()=>RAD_PER_DEG);
+parcelHelpers.export(exports, "b4", ()=>QUARTER_PI);
+parcelHelpers.export(exports, "b5", ()=>TWO_THIRDS_PI);
+parcelHelpers.export(exports, "b6", ()=>_angleDiff);
+parcelHelpers.export(exports, "c", ()=>color);
+parcelHelpers.export(exports, "d", ()=>defaults);
+parcelHelpers.export(exports, "e", ()=>effects);
+parcelHelpers.export(exports, "f", ()=>resolveObjectKey);
+parcelHelpers.export(exports, "g", ()=>isNumberFinite);
+parcelHelpers.export(exports, "h", ()=>defined);
+parcelHelpers.export(exports, "i", ()=>isObject);
+parcelHelpers.export(exports, "j", ()=>createContext);
+parcelHelpers.export(exports, "k", ()=>isNullOrUndef);
+parcelHelpers.export(exports, "l", ()=>listenArrayEvents);
+parcelHelpers.export(exports, "m", ()=>toPercentage);
+parcelHelpers.export(exports, "n", ()=>toDimension);
+parcelHelpers.export(exports, "o", ()=>formatNumber);
+parcelHelpers.export(exports, "p", ()=>_angleBetween);
+parcelHelpers.export(exports, "q", ()=>_getStartAndCountOfVisiblePoints);
+parcelHelpers.export(exports, "r", ()=>requestAnimFrame);
+parcelHelpers.export(exports, "s", ()=>sign);
+parcelHelpers.export(exports, "t", ()=>toRadians);
+parcelHelpers.export(exports, "u", ()=>unlistenArrayEvents);
+parcelHelpers.export(exports, "v", ()=>valueOrDefault);
+parcelHelpers.export(exports, "w", ()=>_scaleRangesChanged);
+parcelHelpers.export(exports, "x", ()=>isNumber);
+parcelHelpers.export(exports, "y", ()=>_parseObjectDataRadialScale);
+parcelHelpers.export(exports, "z", ()=>getRelativePosition);
+var _color = require("@kurkle/color");
+/**
+ * @namespace Chart.helpers
+ */ /**
+ * An empty function that can be used, for example, for optional callback.
+ */ function noop() {
+/* noop */ }
+/**
+ * Returns a unique id, sequentially generated from a global variable.
+ */ const uid = (()=>{
+    let id = 0;
+    return ()=>id++;
+})();
+/**
+ * Returns true if `value` is neither null nor undefined, else returns false.
+ * @param value - The value to test.
+ * @since 2.7.0
+ */ function isNullOrUndef(value) {
+    return value === null || typeof value === "undefined";
+}
+/**
+ * Returns true if `value` is an array (including typed arrays), else returns false.
+ * @param value - The value to test.
+ * @function
+ */ function isArray(value) {
+    if (Array.isArray && Array.isArray(value)) return true;
+    const type = Object.prototype.toString.call(value);
+    if (type.slice(0, 7) === "[object" && type.slice(-6) === "Array]") return true;
+    return false;
+}
+/**
+ * Returns true if `value` is an object (excluding null), else returns false.
+ * @param value - The value to test.
+ * @since 2.7.0
+ */ function isObject(value) {
+    return value !== null && Object.prototype.toString.call(value) === "[object Object]";
+}
+/**
+ * Returns true if `value` is a finite number, else returns false
+ * @param value  - The value to test.
+ */ function isNumberFinite(value) {
+    return (typeof value === "number" || value instanceof Number) && isFinite(+value);
+}
+/**
+ * Returns `value` if finite, else returns `defaultValue`.
+ * @param value - The value to return if defined.
+ * @param defaultValue - The value to return if `value` is not finite.
+ */ function finiteOrDefault(value, defaultValue) {
+    return isNumberFinite(value) ? value : defaultValue;
+}
+/**
+ * Returns `value` if defined, else returns `defaultValue`.
+ * @param value - The value to return if defined.
+ * @param defaultValue - The value to return if `value` is undefined.
+ */ function valueOrDefault(value, defaultValue) {
+    return typeof value === "undefined" ? defaultValue : value;
+}
+const toPercentage = (value, dimension)=>typeof value === "string" && value.endsWith("%") ? parseFloat(value) / 100 : +value / dimension;
+const toDimension = (value, dimension)=>typeof value === "string" && value.endsWith("%") ? parseFloat(value) / 100 * dimension : +value;
+/**
+ * Calls `fn` with the given `args` in the scope defined by `thisArg` and returns the
+ * value returned by `fn`. If `fn` is not a function, this method returns undefined.
+ * @param fn - The function to call.
+ * @param args - The arguments with which `fn` should be called.
+ * @param [thisArg] - The value of `this` provided for the call to `fn`.
+ */ function callback(fn, args, thisArg) {
+    if (fn && typeof fn.call === "function") return fn.apply(thisArg, args);
+}
+function each(loopable, fn, thisArg, reverse) {
+    let i, len, keys;
+    if (isArray(loopable)) {
+        len = loopable.length;
+        if (reverse) for(i = len - 1; i >= 0; i--)fn.call(thisArg, loopable[i], i);
+        else for(i = 0; i < len; i++)fn.call(thisArg, loopable[i], i);
+    } else if (isObject(loopable)) {
+        keys = Object.keys(loopable);
+        len = keys.length;
+        for(i = 0; i < len; i++)fn.call(thisArg, loopable[keys[i]], keys[i]);
+    }
+}
+/**
+ * Returns true if the `a0` and `a1` arrays have the same content, else returns false.
+ * @param a0 - The array to compare
+ * @param a1 - The array to compare
+ * @private
+ */ function _elementsEqual(a0, a1) {
+    let i, ilen, v0, v1;
+    if (!a0 || !a1 || a0.length !== a1.length) return false;
+    for(i = 0, ilen = a0.length; i < ilen; ++i){
+        v0 = a0[i];
+        v1 = a1[i];
+        if (v0.datasetIndex !== v1.datasetIndex || v0.index !== v1.index) return false;
+    }
+    return true;
+}
+/**
+ * Returns a deep copy of `source` without keeping references on objects and arrays.
+ * @param source - The value to clone.
+ */ function clone(source) {
+    if (isArray(source)) return source.map(clone);
+    if (isObject(source)) {
+        const target = Object.create(null);
+        const keys = Object.keys(source);
+        const klen = keys.length;
+        let k = 0;
+        for(; k < klen; ++k)target[keys[k]] = clone(source[keys[k]]);
+        return target;
+    }
+    return source;
+}
+function isValidKey(key) {
+    return [
+        "__proto__",
+        "prototype",
+        "constructor"
+    ].indexOf(key) === -1;
+}
+/**
+ * The default merger when Chart.helpers.merge is called without merger option.
+ * Note(SB): also used by mergeConfig and mergeScaleConfig as fallback.
+ * @private
+ */ function _merger(key, target, source, options) {
+    if (!isValidKey(key)) return;
+    const tval = target[key];
+    const sval = source[key];
+    if (isObject(tval) && isObject(sval)) // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    merge(tval, sval, options);
+    else target[key] = clone(sval);
+}
+function merge(target, source, options) {
+    const sources = isArray(source) ? source : [
+        source
+    ];
+    const ilen = sources.length;
+    if (!isObject(target)) return target;
+    options = options || {};
+    const merger = options.merger || _merger;
+    let current;
+    for(let i = 0; i < ilen; ++i){
+        current = sources[i];
+        if (!isObject(current)) continue;
+        const keys = Object.keys(current);
+        for(let k = 0, klen = keys.length; k < klen; ++k)merger(keys[k], target, current, options);
+    }
+    return target;
+}
+function mergeIf(target, source) {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    return merge(target, source, {
+        merger: _mergerIf
+    });
+}
+/**
+ * Merges source[key] in target[key] only if target[key] is undefined.
+ * @private
+ */ function _mergerIf(key, target, source) {
+    if (!isValidKey(key)) return;
+    const tval = target[key];
+    const sval = source[key];
+    if (isObject(tval) && isObject(sval)) mergeIf(tval, sval);
+    else if (!Object.prototype.hasOwnProperty.call(target, key)) target[key] = clone(sval);
+}
+/**
+ * @private
+ */ function _deprecated(scope, value, previous, current) {
+    if (value !== undefined) console.warn(scope + ': "' + previous + '" is deprecated. Please use "' + current + '" instead');
+}
+// resolveObjectKey resolver cache
+const keyResolvers = {
+    // Chart.helpers.core resolveObjectKey should resolve empty key to root object
+    "": (v)=>v,
+    // default resolvers
+    x: (o)=>o.x,
+    y: (o)=>o.y
+};
+/**
+ * @private
+ */ function _splitKey(key) {
+    const parts = key.split(".");
+    const keys = [];
+    let tmp = "";
+    for (const part of parts){
+        tmp += part;
+        if (tmp.endsWith("\\")) tmp = tmp.slice(0, -1) + ".";
+        else {
+            keys.push(tmp);
+            tmp = "";
+        }
+    }
+    return keys;
+}
+function _getKeyResolver(key) {
+    const keys = _splitKey(key);
+    return (obj)=>{
+        for (const k of keys){
+            if (k === "") break;
+            obj = obj && obj[k];
+        }
+        return obj;
+    };
+}
+function resolveObjectKey(obj, key) {
+    const resolver = keyResolvers[key] || (keyResolvers[key] = _getKeyResolver(key));
+    return resolver(obj);
+}
+/**
+ * @private
+ */ function _capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+const defined = (value)=>typeof value !== "undefined";
+const isFunction = (value)=>typeof value === "function";
+// Adapted from https://stackoverflow.com/questions/31128855/comparing-ecma6-sets-for-equality#31129384
+const setsEqual = (a, b)=>{
+    if (a.size !== b.size) return false;
+    for (const item of a){
+        if (!b.has(item)) return false;
+    }
+    return true;
+};
+/**
+ * @param e - The event
+ * @private
+ */ function _isClickEvent(e) {
+    return e.type === "mouseup" || e.type === "click" || e.type === "contextmenu";
+}
+/**
+ * @alias Chart.helpers.math
+ * @namespace
+ */ const PI = Math.PI;
+const TAU = 2 * PI;
+const PITAU = TAU + PI;
+const INFINITY = Number.POSITIVE_INFINITY;
+const RAD_PER_DEG = PI / 180;
+const HALF_PI = PI / 2;
+const QUARTER_PI = PI / 4;
+const TWO_THIRDS_PI = PI * 2 / 3;
+const log10 = Math.log10;
+const sign = Math.sign;
+function almostEquals(x, y, epsilon) {
+    return Math.abs(x - y) < epsilon;
+}
+/**
+ * Implementation of the nice number algorithm used in determining where axis labels will go
+ */ function niceNum(range) {
+    const roundedRange = Math.round(range);
+    range = almostEquals(range, roundedRange, range / 1000) ? roundedRange : range;
+    const niceRange = Math.pow(10, Math.floor(log10(range)));
+    const fraction = range / niceRange;
+    const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+    return niceFraction * niceRange;
+}
+/**
+ * Returns an array of factors sorted from 1 to sqrt(value)
+ * @private
+ */ function _factorize(value) {
+    const result = [];
+    const sqrt = Math.sqrt(value);
+    let i;
+    for(i = 1; i < sqrt; i++)if (value % i === 0) {
+        result.push(i);
+        result.push(value / i);
+    }
+    if (sqrt === (sqrt | 0)) result.push(sqrt);
+    result.sort((a, b)=>a - b).pop();
+    return result;
+}
+function isNumber(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+function almostWhole(x, epsilon) {
+    const rounded = Math.round(x);
+    return rounded - epsilon <= x && rounded + epsilon >= x;
+}
+/**
+ * @private
+ */ function _setMinAndMaxByKey(array, target, property) {
+    let i, ilen, value;
+    for(i = 0, ilen = array.length; i < ilen; i++){
+        value = array[i][property];
+        if (!isNaN(value)) {
+            target.min = Math.min(target.min, value);
+            target.max = Math.max(target.max, value);
+        }
+    }
+}
+function toRadians(degrees) {
+    return degrees * (PI / 180);
+}
+function toDegrees(radians) {
+    return radians * (180 / PI);
+}
+/**
+ * Returns the number of decimal places
+ * i.e. the number of digits after the decimal point, of the value of this Number.
+ * @param x - A number.
+ * @returns The number of decimal places.
+ * @private
+ */ function _decimalPlaces(x) {
+    if (!isNumberFinite(x)) return;
+    let e = 1;
+    let p = 0;
+    while(Math.round(x * e) / e !== x){
+        e *= 10;
+        p++;
+    }
+    return p;
+}
+// Gets the angle from vertical upright to the point about a centre.
+function getAngleFromPoint(centrePoint, anglePoint) {
+    const distanceFromXCenter = anglePoint.x - centrePoint.x;
+    const distanceFromYCenter = anglePoint.y - centrePoint.y;
+    const radialDistanceFromCenter = Math.sqrt(distanceFromXCenter * distanceFromXCenter + distanceFromYCenter * distanceFromYCenter);
+    let angle = Math.atan2(distanceFromYCenter, distanceFromXCenter);
+    if (angle < -0.5 * PI) angle += TAU; // make sure the returned angle is in the range of (-PI/2, 3PI/2]
+    return {
+        angle,
+        distance: radialDistanceFromCenter
+    };
+}
+function distanceBetweenPoints(pt1, pt2) {
+    return Math.sqrt(Math.pow(pt2.x - pt1.x, 2) + Math.pow(pt2.y - pt1.y, 2));
+}
+/**
+ * Shortest distance between angles, in either direction.
+ * @private
+ */ function _angleDiff(a, b) {
+    return (a - b + PITAU) % TAU - PI;
+}
+/**
+ * Normalize angle to be between 0 and 2*PI
+ * @private
+ */ function _normalizeAngle(a) {
+    return (a % TAU + TAU) % TAU;
+}
+/**
+ * @private
+ */ function _angleBetween(angle, start, end, sameAngleIsFullCircle) {
+    const a = _normalizeAngle(angle);
+    const s = _normalizeAngle(start);
+    const e = _normalizeAngle(end);
+    const angleToStart = _normalizeAngle(s - a);
+    const angleToEnd = _normalizeAngle(e - a);
+    const startToAngle = _normalizeAngle(a - s);
+    const endToAngle = _normalizeAngle(a - e);
+    return a === s || a === e || sameAngleIsFullCircle && s === e || angleToStart > angleToEnd && startToAngle < endToAngle;
+}
+/**
+ * Limit `value` between `min` and `max`
+ * @param value
+ * @param min
+ * @param max
+ * @private
+ */ function _limitValue(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+/**
+ * @param {number} value
+ * @private
+ */ function _int16Range(value) {
+    return _limitValue(value, -32768, 32767);
+}
+/**
+ * @param value
+ * @param start
+ * @param end
+ * @param [epsilon]
+ * @private
+ */ function _isBetween(value, start, end, epsilon = 1e-6) {
+    return value >= Math.min(start, end) - epsilon && value <= Math.max(start, end) + epsilon;
+}
+function _lookup(table, value, cmp) {
+    cmp = cmp || ((index)=>table[index] < value);
+    let hi = table.length - 1;
+    let lo = 0;
+    let mid;
+    while(hi - lo > 1){
+        mid = lo + hi >> 1;
+        if (cmp(mid)) lo = mid;
+        else hi = mid;
+    }
+    return {
+        lo,
+        hi
+    };
+}
+/**
+ * Binary search
+ * @param table - the table search. must be sorted!
+ * @param key - property name for the value in each entry
+ * @param value - value to find
+ * @param last - lookup last index
+ * @private
+ */ const _lookupByKey = (table, key, value, last)=>_lookup(table, value, last ? (index)=>{
+        const ti = table[index][key];
+        return ti < value || ti === value && table[index + 1][key] === value;
+    } : (index)=>table[index][key] < value);
+/**
+ * Reverse binary search
+ * @param table - the table search. must be sorted!
+ * @param key - property name for the value in each entry
+ * @param value - value to find
+ * @private
+ */ const _rlookupByKey = (table, key, value)=>_lookup(table, value, (index)=>table[index][key] >= value);
+/**
+ * Return subset of `values` between `min` and `max` inclusive.
+ * Values are assumed to be in sorted order.
+ * @param values - sorted array of values
+ * @param min - min value
+ * @param max - max value
+ */ function _filterBetween(values, min, max) {
+    let start = 0;
+    let end = values.length;
+    while(start < end && values[start] < min)start++;
+    while(end > start && values[end - 1] > max)end--;
+    return start > 0 || end < values.length ? values.slice(start, end) : values;
+}
+const arrayEvents = [
+    "push",
+    "pop",
+    "shift",
+    "splice",
+    "unshift"
+];
+function listenArrayEvents(array, listener) {
+    if (array._chartjs) {
+        array._chartjs.listeners.push(listener);
+        return;
+    }
+    Object.defineProperty(array, "_chartjs", {
+        configurable: true,
+        enumerable: false,
+        value: {
+            listeners: [
+                listener
+            ]
+        }
+    });
+    arrayEvents.forEach((key)=>{
+        const method = "_onData" + _capitalize(key);
+        const base = array[key];
+        Object.defineProperty(array, key, {
+            configurable: true,
+            enumerable: false,
+            value (...args) {
+                const res = base.apply(this, args);
+                array._chartjs.listeners.forEach((object)=>{
+                    if (typeof object[method] === "function") object[method](...args);
+                });
+                return res;
+            }
+        });
+    });
+}
+function unlistenArrayEvents(array, listener) {
+    const stub = array._chartjs;
+    if (!stub) return;
+    const listeners = stub.listeners;
+    const index = listeners.indexOf(listener);
+    if (index !== -1) listeners.splice(index, 1);
+    if (listeners.length > 0) return;
+    arrayEvents.forEach((key)=>{
+        delete array[key];
+    });
+    delete array._chartjs;
+}
+/**
+ * @param items
+ */ function _arrayUnique(items) {
+    const set = new Set(items);
+    if (set.size === items.length) return items;
+    return Array.from(set);
+}
+function fontString(pixelSize, fontStyle, fontFamily) {
+    return fontStyle + " " + pixelSize + "px " + fontFamily;
+}
+/**
+* Request animation polyfill
+*/ const requestAnimFrame = function() {
+    if (typeof window === "undefined") return function(callback) {
+        return callback();
+    };
+    return window.requestAnimationFrame;
+}();
+/**
+ * Throttles calling `fn` once per animation frame
+ * Latest arguments are used on the actual call
+ */ function throttled(fn, thisArg) {
+    let argsToUse = [];
+    let ticking = false;
+    return function(...args) {
+        // Save the args for use later
+        argsToUse = args;
+        if (!ticking) {
+            ticking = true;
+            requestAnimFrame.call(window, ()=>{
+                ticking = false;
+                fn.apply(thisArg, argsToUse);
+            });
+        }
+    };
+}
+/**
+ * Debounces calling `fn` for `delay` ms
+ */ function debounce(fn, delay) {
+    let timeout;
+    return function(...args) {
+        if (delay) {
+            clearTimeout(timeout);
+            timeout = setTimeout(fn, delay, args);
+        } else fn.apply(this, args);
+        return delay;
+    };
+}
+/**
+ * Converts 'start' to 'left', 'end' to 'right' and others to 'center'
+ * @private
+ */ const _toLeftRightCenter = (align)=>align === "start" ? "left" : align === "end" ? "right" : "center";
+/**
+ * Returns `start`, `end` or `(start + end) / 2` depending on `align`. Defaults to `center`
+ * @private
+ */ const _alignStartEnd = (align, start, end)=>align === "start" ? start : align === "end" ? end : (start + end) / 2;
+/**
+ * Returns `left`, `right` or `(left + right) / 2` depending on `align`. Defaults to `left`
+ * @private
+ */ const _textX = (align, left, right, rtl)=>{
+    const check = rtl ? "left" : "right";
+    return align === check ? right : align === "center" ? (left + right) / 2 : left;
+};
+/**
+ * Return start and count of visible points.
+ * @private
+ */ function _getStartAndCountOfVisiblePoints(meta, points, animationsDisabled) {
+    const pointCount = points.length;
+    let start = 0;
+    let count = pointCount;
+    if (meta._sorted) {
+        const { iScale, _parsed } = meta;
+        const axis = iScale.axis;
+        const { min, max, minDefined, maxDefined } = iScale.getUserBounds();
+        if (minDefined) start = _limitValue(Math.min(_lookupByKey(_parsed, axis, min).lo, animationsDisabled ? pointCount : _lookupByKey(points, axis, iScale.getPixelForValue(min)).lo), 0, pointCount - 1);
+        if (maxDefined) count = _limitValue(Math.max(_lookupByKey(_parsed, iScale.axis, max, true).hi + 1, animationsDisabled ? 0 : _lookupByKey(points, axis, iScale.getPixelForValue(max), true).hi + 1), start, pointCount) - start;
+        else count = pointCount - start;
+    }
+    return {
+        start,
+        count
+    };
+}
+/**
+ * Checks if the scale ranges have changed.
+ * @param {object} meta - dataset meta.
+ * @returns {boolean}
+ * @private
+ */ function _scaleRangesChanged(meta) {
+    const { xScale, yScale, _scaleRanges } = meta;
+    const newRanges = {
+        xmin: xScale.min,
+        xmax: xScale.max,
+        ymin: yScale.min,
+        ymax: yScale.max
+    };
+    if (!_scaleRanges) {
+        meta._scaleRanges = newRanges;
+        return true;
+    }
+    const changed = _scaleRanges.xmin !== xScale.min || _scaleRanges.xmax !== xScale.max || _scaleRanges.ymin !== yScale.min || _scaleRanges.ymax !== yScale.max;
+    Object.assign(_scaleRanges, newRanges);
+    return changed;
+}
+const atEdge = (t)=>t === 0 || t === 1;
+const elasticIn = (t, s, p)=>-(Math.pow(2, 10 * (t -= 1)) * Math.sin((t - s) * TAU / p));
+const elasticOut = (t, s, p)=>Math.pow(2, -10 * t) * Math.sin((t - s) * TAU / p) + 1;
+/**
+ * Easing functions adapted from Robert Penner's easing equations.
+ * @namespace Chart.helpers.easing.effects
+ * @see http://www.robertpenner.com/easing/
+ */ const effects = {
+    linear: (t)=>t,
+    easeInQuad: (t)=>t * t,
+    easeOutQuad: (t)=>-t * (t - 2),
+    easeInOutQuad: (t)=>(t /= 0.5) < 1 ? 0.5 * t * t : -0.5 * (--t * (t - 2) - 1),
+    easeInCubic: (t)=>t * t * t,
+    easeOutCubic: (t)=>(t -= 1) * t * t + 1,
+    easeInOutCubic: (t)=>(t /= 0.5) < 1 ? 0.5 * t * t * t : 0.5 * ((t -= 2) * t * t + 2),
+    easeInQuart: (t)=>t * t * t * t,
+    easeOutQuart: (t)=>-((t -= 1) * t * t * t - 1),
+    easeInOutQuart: (t)=>(t /= 0.5) < 1 ? 0.5 * t * t * t * t : -0.5 * ((t -= 2) * t * t * t - 2),
+    easeInQuint: (t)=>t * t * t * t * t,
+    easeOutQuint: (t)=>(t -= 1) * t * t * t * t + 1,
+    easeInOutQuint: (t)=>(t /= 0.5) < 1 ? 0.5 * t * t * t * t * t : 0.5 * ((t -= 2) * t * t * t * t + 2),
+    easeInSine: (t)=>-Math.cos(t * HALF_PI) + 1,
+    easeOutSine: (t)=>Math.sin(t * HALF_PI),
+    easeInOutSine: (t)=>-0.5 * (Math.cos(PI * t) - 1),
+    easeInExpo: (t)=>t === 0 ? 0 : Math.pow(2, 10 * (t - 1)),
+    easeOutExpo: (t)=>t === 1 ? 1 : -Math.pow(2, -10 * t) + 1,
+    easeInOutExpo: (t)=>atEdge(t) ? t : t < 0.5 ? 0.5 * Math.pow(2, 10 * (t * 2 - 1)) : 0.5 * (-Math.pow(2, -10 * (t * 2 - 1)) + 2),
+    easeInCirc: (t)=>t >= 1 ? t : -(Math.sqrt(1 - t * t) - 1),
+    easeOutCirc: (t)=>Math.sqrt(1 - (t -= 1) * t),
+    easeInOutCirc: (t)=>(t /= 0.5) < 1 ? -0.5 * (Math.sqrt(1 - t * t) - 1) : 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1),
+    easeInElastic: (t)=>atEdge(t) ? t : elasticIn(t, 0.075, 0.3),
+    easeOutElastic: (t)=>atEdge(t) ? t : elasticOut(t, 0.075, 0.3),
+    easeInOutElastic (t) {
+        const s = 0.1125;
+        const p = 0.45;
+        return atEdge(t) ? t : t < 0.5 ? 0.5 * elasticIn(t * 2, s, p) : 0.5 + 0.5 * elasticOut(t * 2 - 1, s, p);
+    },
+    easeInBack (t) {
+        const s = 1.70158;
+        return t * t * ((s + 1) * t - s);
+    },
+    easeOutBack (t) {
+        const s = 1.70158;
+        return (t -= 1) * t * ((s + 1) * t + s) + 1;
+    },
+    easeInOutBack (t) {
+        let s = 1.70158;
+        if ((t /= 0.5) < 1) return 0.5 * (t * t * (((s *= 1.525) + 1) * t - s));
+        return 0.5 * ((t -= 2) * t * (((s *= 1.525) + 1) * t + s) + 2);
+    },
+    easeInBounce: (t)=>1 - effects.easeOutBounce(1 - t),
+    easeOutBounce (t) {
+        const m = 7.5625;
+        const d = 2.75;
+        if (t < 1 / d) return m * t * t;
+        if (t < 2 / d) return m * (t -= 1.5 / d) * t + 0.75;
+        if (t < 2.5 / d) return m * (t -= 2.25 / d) * t + 0.9375;
+        return m * (t -= 2.625 / d) * t + 0.984375;
+    },
+    easeInOutBounce: (t)=>t < 0.5 ? effects.easeInBounce(t * 2) * 0.5 : effects.easeOutBounce(t * 2 - 1) * 0.5 + 0.5
+};
+function isPatternOrGradient(value) {
+    if (value && typeof value === "object") {
+        const type = value.toString();
+        return type === "[object CanvasPattern]" || type === "[object CanvasGradient]";
+    }
+    return false;
+}
+function color(value) {
+    return isPatternOrGradient(value) ? value : new (0, _color.Color)(value);
+}
+function getHoverColor(value) {
+    return isPatternOrGradient(value) ? value : new (0, _color.Color)(value).saturate(0.5).darken(0.1).hexString();
+}
+const numbers = [
+    "x",
+    "y",
+    "borderWidth",
+    "radius",
+    "tension"
+];
+const colors = [
+    "color",
+    "borderColor",
+    "backgroundColor"
+];
+function applyAnimationsDefaults(defaults) {
+    defaults.set("animation", {
+        delay: undefined,
+        duration: 1000,
+        easing: "easeOutQuart",
+        fn: undefined,
+        from: undefined,
+        loop: undefined,
+        to: undefined,
+        type: undefined
+    });
+    defaults.describe("animation", {
+        _fallback: false,
+        _indexable: false,
+        _scriptable: (name)=>name !== "onProgress" && name !== "onComplete" && name !== "fn"
+    });
+    defaults.set("animations", {
+        colors: {
+            type: "color",
+            properties: colors
+        },
+        numbers: {
+            type: "number",
+            properties: numbers
+        }
+    });
+    defaults.describe("animations", {
+        _fallback: "animation"
+    });
+    defaults.set("transitions", {
+        active: {
+            animation: {
+                duration: 400
+            }
+        },
+        resize: {
+            animation: {
+                duration: 0
+            }
+        },
+        show: {
+            animations: {
+                colors: {
+                    from: "transparent"
+                },
+                visible: {
+                    type: "boolean",
+                    duration: 0
+                }
+            }
+        },
+        hide: {
+            animations: {
+                colors: {
+                    to: "transparent"
+                },
+                visible: {
+                    type: "boolean",
+                    easing: "linear",
+                    fn: (v)=>v | 0
+                }
+            }
+        }
+    });
+}
+function applyLayoutsDefaults(defaults) {
+    defaults.set("layout", {
+        autoPadding: true,
+        padding: {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+        }
+    });
+}
+const intlCache = new Map();
+function getNumberFormat(locale, options) {
+    options = options || {};
+    const cacheKey = locale + JSON.stringify(options);
+    let formatter = intlCache.get(cacheKey);
+    if (!formatter) {
+        formatter = new Intl.NumberFormat(locale, options);
+        intlCache.set(cacheKey, formatter);
+    }
+    return formatter;
+}
+function formatNumber(num, locale, options) {
+    return getNumberFormat(locale, options).format(num);
+}
+const formatters = {
+    values (value) {
+        return isArray(value) ? value : "" + value;
+    },
+    numeric (tickValue, index, ticks) {
+        if (tickValue === 0) return "0";
+        const locale = this.chart.options.locale;
+        let notation;
+        let delta = tickValue;
+        if (ticks.length > 1) {
+            const maxTick = Math.max(Math.abs(ticks[0].value), Math.abs(ticks[ticks.length - 1].value));
+            if (maxTick < 1e-4 || maxTick > 1e+15) notation = "scientific";
+            delta = calculateDelta(tickValue, ticks);
+        }
+        const logDelta = log10(Math.abs(delta));
+        const numDecimal = isNaN(logDelta) ? 1 : Math.max(Math.min(-1 * Math.floor(logDelta), 20), 0);
+        const options = {
+            notation,
+            minimumFractionDigits: numDecimal,
+            maximumFractionDigits: numDecimal
+        };
+        Object.assign(options, this.options.ticks.format);
+        return formatNumber(tickValue, locale, options);
+    },
+    logarithmic (tickValue, index, ticks) {
+        if (tickValue === 0) return "0";
+        const remain = ticks[index].significand || tickValue / Math.pow(10, Math.floor(log10(tickValue)));
+        if ([
+            1,
+            2,
+            3,
+            5,
+            10,
+            15
+        ].includes(remain) || index > 0.8 * ticks.length) return formatters.numeric.call(this, tickValue, index, ticks);
+        return "";
+    }
+};
+function calculateDelta(tickValue, ticks) {
+    let delta = ticks.length > 3 ? ticks[2].value - ticks[1].value : ticks[1].value - ticks[0].value;
+    if (Math.abs(delta) >= 1 && tickValue !== Math.floor(tickValue)) delta = tickValue - Math.floor(tickValue);
+    return delta;
+}
+var Ticks = {
+    formatters
+};
+function applyScaleDefaults(defaults) {
+    defaults.set("scale", {
+        display: true,
+        offset: false,
+        reverse: false,
+        beginAtZero: false,
+        bounds: "ticks",
+        grace: 0,
+        grid: {
+            display: true,
+            lineWidth: 1,
+            drawOnChartArea: true,
+            drawTicks: true,
+            tickLength: 8,
+            tickWidth: (_ctx, options)=>options.lineWidth,
+            tickColor: (_ctx, options)=>options.color,
+            offset: false
+        },
+        border: {
+            display: true,
+            dash: [],
+            dashOffset: 0.0,
+            width: 1
+        },
+        title: {
+            display: false,
+            text: "",
+            padding: {
+                top: 4,
+                bottom: 4
+            }
+        },
+        ticks: {
+            minRotation: 0,
+            maxRotation: 50,
+            mirror: false,
+            textStrokeWidth: 0,
+            textStrokeColor: "",
+            padding: 3,
+            display: true,
+            autoSkip: true,
+            autoSkipPadding: 3,
+            labelOffset: 0,
+            callback: Ticks.formatters.values,
+            minor: {},
+            major: {},
+            align: "center",
+            crossAlign: "near",
+            showLabelBackdrop: false,
+            backdropColor: "rgba(255, 255, 255, 0.75)",
+            backdropPadding: 2
+        }
+    });
+    defaults.route("scale.ticks", "color", "", "color");
+    defaults.route("scale.grid", "color", "", "borderColor");
+    defaults.route("scale.border", "color", "", "borderColor");
+    defaults.route("scale.title", "color", "", "color");
+    defaults.describe("scale", {
+        _fallback: false,
+        _scriptable: (name)=>!name.startsWith("before") && !name.startsWith("after") && name !== "callback" && name !== "parser",
+        _indexable: (name)=>name !== "borderDash" && name !== "tickBorderDash" && name !== "dash"
+    });
+    defaults.describe("scales", {
+        _fallback: "scale"
+    });
+    defaults.describe("scale.ticks", {
+        _scriptable: (name)=>name !== "backdropPadding" && name !== "callback",
+        _indexable: (name)=>name !== "backdropPadding"
+    });
+}
+const overrides = Object.create(null);
+const descriptors = Object.create(null);
+function getScope$1(node, key) {
+    if (!key) return node;
+    const keys = key.split(".");
+    for(let i = 0, n = keys.length; i < n; ++i){
+        const k = keys[i];
+        node = node[k] || (node[k] = Object.create(null));
+    }
+    return node;
+}
+function set(root, scope, values) {
+    if (typeof scope === "string") return merge(getScope$1(root, scope), values);
+    return merge(getScope$1(root, ""), scope);
+}
+class Defaults {
+    constructor(_descriptors, _appliers){
+        this.animation = undefined;
+        this.backgroundColor = "rgba(0,0,0,0.1)";
+        this.borderColor = "rgba(0,0,0,0.1)";
+        this.color = "#666";
+        this.datasets = {};
+        this.devicePixelRatio = (context)=>context.chart.platform.getDevicePixelRatio();
+        this.elements = {};
+        this.events = [
+            "mousemove",
+            "mouseout",
+            "click",
+            "touchstart",
+            "touchmove"
+        ];
+        this.font = {
+            family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+            size: 12,
+            style: "normal",
+            lineHeight: 1.2,
+            weight: null
+        };
+        this.hover = {};
+        this.hoverBackgroundColor = (ctx, options)=>getHoverColor(options.backgroundColor);
+        this.hoverBorderColor = (ctx, options)=>getHoverColor(options.borderColor);
+        this.hoverColor = (ctx, options)=>getHoverColor(options.color);
+        this.indexAxis = "x";
+        this.interaction = {
+            mode: "nearest",
+            intersect: true,
+            includeInvisible: false
+        };
+        this.maintainAspectRatio = true;
+        this.onHover = null;
+        this.onClick = null;
+        this.parsing = true;
+        this.plugins = {};
+        this.responsive = true;
+        this.scale = undefined;
+        this.scales = {};
+        this.showLine = true;
+        this.drawActiveElementsOnTop = true;
+        this.describe(_descriptors);
+        this.apply(_appliers);
+    }
+    set(scope, values) {
+        return set(this, scope, values);
+    }
+    get(scope) {
+        return getScope$1(this, scope);
+    }
+    describe(scope, values) {
+        return set(descriptors, scope, values);
+    }
+    override(scope, values) {
+        return set(overrides, scope, values);
+    }
+    route(scope, name, targetScope, targetName) {
+        const scopeObject = getScope$1(this, scope);
+        const targetScopeObject = getScope$1(this, targetScope);
+        const privateName = "_" + name;
+        Object.defineProperties(scopeObject, {
+            [privateName]: {
+                value: scopeObject[name],
+                writable: true
+            },
+            [name]: {
+                enumerable: true,
+                get () {
+                    const local = this[privateName];
+                    const target = targetScopeObject[targetName];
+                    if (isObject(local)) return Object.assign({}, target, local);
+                    return valueOrDefault(local, target);
+                },
+                set (value) {
+                    this[privateName] = value;
+                }
+            }
+        });
+    }
+    apply(appliers) {
+        appliers.forEach((apply)=>apply(this));
+    }
+}
+var defaults = /* #__PURE__ */ new Defaults({
+    _scriptable: (name)=>!name.startsWith("on"),
+    _indexable: (name)=>name !== "events",
+    hover: {
+        _fallback: "interaction"
+    },
+    interaction: {
+        _scriptable: false,
+        _indexable: false
+    }
+}, [
+    applyAnimationsDefaults,
+    applyLayoutsDefaults,
+    applyScaleDefaults
+]);
+/**
+ * Converts the given font object into a CSS font string.
+ * @param font - A font object.
+ * @return The CSS font string. See https://developer.mozilla.org/en-US/docs/Web/CSS/font
+ * @private
+ */ function toFontString(font) {
+    if (!font || isNullOrUndef(font.size) || isNullOrUndef(font.family)) return null;
+    return (font.style ? font.style + " " : "") + (font.weight ? font.weight + " " : "") + font.size + "px " + font.family;
+}
+/**
+ * @private
+ */ function _measureText(ctx, data, gc, longest, string) {
+    let textWidth = data[string];
+    if (!textWidth) {
+        textWidth = data[string] = ctx.measureText(string).width;
+        gc.push(string);
+    }
+    if (textWidth > longest) longest = textWidth;
+    return longest;
+}
+/**
+ * @private
+ */ // eslint-disable-next-line complexity
+function _longestText(ctx, font, arrayOfThings, cache) {
+    cache = cache || {};
+    let data = cache.data = cache.data || {};
+    let gc = cache.garbageCollect = cache.garbageCollect || [];
+    if (cache.font !== font) {
+        data = cache.data = {};
+        gc = cache.garbageCollect = [];
+        cache.font = font;
+    }
+    ctx.save();
+    ctx.font = font;
+    let longest = 0;
+    const ilen = arrayOfThings.length;
+    let i, j, jlen, thing, nestedThing;
+    for(i = 0; i < ilen; i++){
+        thing = arrayOfThings[i];
+        // Undefined strings and arrays should not be measured
+        if (thing !== undefined && thing !== null && !isArray(thing)) longest = _measureText(ctx, data, gc, longest, thing);
+        else if (isArray(thing)) // if it is an array lets measure each element
+        // to do maybe simplify this function a bit so we can do this more recursively?
+        for(j = 0, jlen = thing.length; j < jlen; j++){
+            nestedThing = thing[j];
+            // Undefined strings and arrays should not be measured
+            if (nestedThing !== undefined && nestedThing !== null && !isArray(nestedThing)) longest = _measureText(ctx, data, gc, longest, nestedThing);
+        }
+    }
+    ctx.restore();
+    const gcLen = gc.length / 2;
+    if (gcLen > arrayOfThings.length) {
+        for(i = 0; i < gcLen; i++)delete data[gc[i]];
+        gc.splice(0, gcLen);
+    }
+    return longest;
+}
+/**
+ * Returns the aligned pixel value to avoid anti-aliasing blur
+ * @param chart - The chart instance.
+ * @param pixel - A pixel value.
+ * @param width - The width of the element.
+ * @returns The aligned pixel value.
+ * @private
+ */ function _alignPixel(chart, pixel, width) {
+    const devicePixelRatio = chart.currentDevicePixelRatio;
+    const halfWidth = width !== 0 ? Math.max(width / 2, 0.5) : 0;
+    return Math.round((pixel - halfWidth) * devicePixelRatio) / devicePixelRatio + halfWidth;
+}
+/**
+ * Clears the entire canvas.
+ */ function clearCanvas(canvas, ctx) {
+    ctx = ctx || canvas.getContext("2d");
+    ctx.save();
+    // canvas.width and canvas.height do not consider the canvas transform,
+    // while clearRect does
+    ctx.resetTransform();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+}
+function drawPoint(ctx, options, x, y) {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    drawPointLegend(ctx, options, x, y, null);
+}
+// eslint-disable-next-line complexity
+function drawPointLegend(ctx, options, x, y, w) {
+    let type, xOffset, yOffset, size, cornerRadius, width, xOffsetW, yOffsetW;
+    const style = options.pointStyle;
+    const rotation = options.rotation;
+    const radius = options.radius;
+    let rad = (rotation || 0) * RAD_PER_DEG;
+    if (style && typeof style === "object") {
+        type = style.toString();
+        if (type === "[object HTMLImageElement]" || type === "[object HTMLCanvasElement]") {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rad);
+            ctx.drawImage(style, -style.width / 2, -style.height / 2, style.width, style.height);
+            ctx.restore();
+            return;
+        }
+    }
+    if (isNaN(radius) || radius <= 0) return;
+    ctx.beginPath();
+    switch(style){
+        // Default includes circle
+        default:
+            if (w) ctx.ellipse(x, y, w / 2, radius, 0, 0, TAU);
+            else ctx.arc(x, y, radius, 0, TAU);
+            ctx.closePath();
+            break;
+        case "triangle":
+            width = w ? w / 2 : radius;
+            ctx.moveTo(x + Math.sin(rad) * width, y - Math.cos(rad) * radius);
+            rad += TWO_THIRDS_PI;
+            ctx.lineTo(x + Math.sin(rad) * width, y - Math.cos(rad) * radius);
+            rad += TWO_THIRDS_PI;
+            ctx.lineTo(x + Math.sin(rad) * width, y - Math.cos(rad) * radius);
+            ctx.closePath();
+            break;
+        case "rectRounded":
+            // NOTE: the rounded rect implementation changed to use `arc` instead of
+            // `quadraticCurveTo` since it generates better results when rect is
+            // almost a circle. 0.516 (instead of 0.5) produces results with visually
+            // closer proportion to the previous impl and it is inscribed in the
+            // circle with `radius`. For more details, see the following PRs:
+            // https://github.com/chartjs/Chart.js/issues/5597
+            // https://github.com/chartjs/Chart.js/issues/5858
+            cornerRadius = radius * 0.516;
+            size = radius - cornerRadius;
+            xOffset = Math.cos(rad + QUARTER_PI) * size;
+            xOffsetW = Math.cos(rad + QUARTER_PI) * (w ? w / 2 - cornerRadius : size);
+            yOffset = Math.sin(rad + QUARTER_PI) * size;
+            yOffsetW = Math.sin(rad + QUARTER_PI) * (w ? w / 2 - cornerRadius : size);
+            ctx.arc(x - xOffsetW, y - yOffset, cornerRadius, rad - PI, rad - HALF_PI);
+            ctx.arc(x + yOffsetW, y - xOffset, cornerRadius, rad - HALF_PI, rad);
+            ctx.arc(x + xOffsetW, y + yOffset, cornerRadius, rad, rad + HALF_PI);
+            ctx.arc(x - yOffsetW, y + xOffset, cornerRadius, rad + HALF_PI, rad + PI);
+            ctx.closePath();
+            break;
+        case "rect":
+            if (!rotation) {
+                size = Math.SQRT1_2 * radius;
+                width = w ? w / 2 : size;
+                ctx.rect(x - width, y - size, 2 * width, 2 * size);
+                break;
+            }
+            rad += QUARTER_PI;
+        /* falls through */ case "rectRot":
+            xOffsetW = Math.cos(rad) * (w ? w / 2 : radius);
+            xOffset = Math.cos(rad) * radius;
+            yOffset = Math.sin(rad) * radius;
+            yOffsetW = Math.sin(rad) * (w ? w / 2 : radius);
+            ctx.moveTo(x - xOffsetW, y - yOffset);
+            ctx.lineTo(x + yOffsetW, y - xOffset);
+            ctx.lineTo(x + xOffsetW, y + yOffset);
+            ctx.lineTo(x - yOffsetW, y + xOffset);
+            ctx.closePath();
+            break;
+        case "crossRot":
+            rad += QUARTER_PI;
+        /* falls through */ case "cross":
+            xOffsetW = Math.cos(rad) * (w ? w / 2 : radius);
+            xOffset = Math.cos(rad) * radius;
+            yOffset = Math.sin(rad) * radius;
+            yOffsetW = Math.sin(rad) * (w ? w / 2 : radius);
+            ctx.moveTo(x - xOffsetW, y - yOffset);
+            ctx.lineTo(x + xOffsetW, y + yOffset);
+            ctx.moveTo(x + yOffsetW, y - xOffset);
+            ctx.lineTo(x - yOffsetW, y + xOffset);
+            break;
+        case "star":
+            xOffsetW = Math.cos(rad) * (w ? w / 2 : radius);
+            xOffset = Math.cos(rad) * radius;
+            yOffset = Math.sin(rad) * radius;
+            yOffsetW = Math.sin(rad) * (w ? w / 2 : radius);
+            ctx.moveTo(x - xOffsetW, y - yOffset);
+            ctx.lineTo(x + xOffsetW, y + yOffset);
+            ctx.moveTo(x + yOffsetW, y - xOffset);
+            ctx.lineTo(x - yOffsetW, y + xOffset);
+            rad += QUARTER_PI;
+            xOffsetW = Math.cos(rad) * (w ? w / 2 : radius);
+            xOffset = Math.cos(rad) * radius;
+            yOffset = Math.sin(rad) * radius;
+            yOffsetW = Math.sin(rad) * (w ? w / 2 : radius);
+            ctx.moveTo(x - xOffsetW, y - yOffset);
+            ctx.lineTo(x + xOffsetW, y + yOffset);
+            ctx.moveTo(x + yOffsetW, y - xOffset);
+            ctx.lineTo(x - yOffsetW, y + xOffset);
+            break;
+        case "line":
+            xOffset = w ? w / 2 : Math.cos(rad) * radius;
+            yOffset = Math.sin(rad) * radius;
+            ctx.moveTo(x - xOffset, y - yOffset);
+            ctx.lineTo(x + xOffset, y + yOffset);
+            break;
+        case "dash":
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + Math.cos(rad) * (w ? w / 2 : radius), y + Math.sin(rad) * radius);
+            break;
+        case false:
+            ctx.closePath();
+            break;
+    }
+    ctx.fill();
+    if (options.borderWidth > 0) ctx.stroke();
+}
+/**
+ * Returns true if the point is inside the rectangle
+ * @param point - The point to test
+ * @param area - The rectangle
+ * @param margin - allowed margin
+ * @private
+ */ function _isPointInArea(point, area, margin) {
+    margin = margin || 0.5; // margin - default is to match rounded decimals
+    return !area || point && point.x > area.left - margin && point.x < area.right + margin && point.y > area.top - margin && point.y < area.bottom + margin;
+}
+function clipArea(ctx, area) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+    ctx.clip();
+}
+function unclipArea(ctx) {
+    ctx.restore();
+}
+/**
+ * @private
+ */ function _steppedLineTo(ctx, previous, target, flip, mode) {
+    if (!previous) return ctx.lineTo(target.x, target.y);
+    if (mode === "middle") {
+        const midpoint = (previous.x + target.x) / 2.0;
+        ctx.lineTo(midpoint, previous.y);
+        ctx.lineTo(midpoint, target.y);
+    } else if (mode === "after" !== !!flip) ctx.lineTo(previous.x, target.y);
+    else ctx.lineTo(target.x, previous.y);
+    ctx.lineTo(target.x, target.y);
+}
+/**
+ * @private
+ */ function _bezierCurveTo(ctx, previous, target, flip) {
+    if (!previous) return ctx.lineTo(target.x, target.y);
+    ctx.bezierCurveTo(flip ? previous.cp1x : previous.cp2x, flip ? previous.cp1y : previous.cp2y, flip ? target.cp2x : target.cp1x, flip ? target.cp2y : target.cp1y, target.x, target.y);
+}
+function setRenderOpts(ctx, opts) {
+    if (opts.translation) ctx.translate(opts.translation[0], opts.translation[1]);
+    if (!isNullOrUndef(opts.rotation)) ctx.rotate(opts.rotation);
+    if (opts.color) ctx.fillStyle = opts.color;
+    if (opts.textAlign) ctx.textAlign = opts.textAlign;
+    if (opts.textBaseline) ctx.textBaseline = opts.textBaseline;
+}
+function decorateText(ctx, x, y, line, opts) {
+    if (opts.strikethrough || opts.underline) {
+        /**
+     * Now that IE11 support has been dropped, we can use more
+     * of the TextMetrics object. The actual bounding boxes
+     * are unflagged in Chrome, Firefox, Edge, and Safari so they
+     * can be safely used.
+     * See https://developer.mozilla.org/en-US/docs/Web/API/TextMetrics#Browser_compatibility
+     */ const metrics = ctx.measureText(line);
+        const left = x - metrics.actualBoundingBoxLeft;
+        const right = x + metrics.actualBoundingBoxRight;
+        const top = y - metrics.actualBoundingBoxAscent;
+        const bottom = y + metrics.actualBoundingBoxDescent;
+        const yDecoration = opts.strikethrough ? (top + bottom) / 2 : bottom;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.beginPath();
+        ctx.lineWidth = opts.decorationWidth || 2;
+        ctx.moveTo(left, yDecoration);
+        ctx.lineTo(right, yDecoration);
+        ctx.stroke();
+    }
+}
+function drawBackdrop(ctx, opts) {
+    const oldColor = ctx.fillStyle;
+    ctx.fillStyle = opts.color;
+    ctx.fillRect(opts.left, opts.top, opts.width, opts.height);
+    ctx.fillStyle = oldColor;
+}
+/**
+ * Render text onto the canvas
+ */ function renderText(ctx, text, x, y, font, opts = {}) {
+    const lines = isArray(text) ? text : [
+        text
+    ];
+    const stroke = opts.strokeWidth > 0 && opts.strokeColor !== "";
+    let i, line;
+    ctx.save();
+    ctx.font = font.string;
+    setRenderOpts(ctx, opts);
+    for(i = 0; i < lines.length; ++i){
+        line = lines[i];
+        if (opts.backdrop) drawBackdrop(ctx, opts.backdrop);
+        if (stroke) {
+            if (opts.strokeColor) ctx.strokeStyle = opts.strokeColor;
+            if (!isNullOrUndef(opts.strokeWidth)) ctx.lineWidth = opts.strokeWidth;
+            ctx.strokeText(line, x, y, opts.maxWidth);
+        }
+        ctx.fillText(line, x, y, opts.maxWidth);
+        decorateText(ctx, x, y, line, opts);
+        y += Number(font.lineHeight);
+    }
+    ctx.restore();
+}
+/**
+ * Add a path of a rectangle with rounded corners to the current sub-path
+ * @param ctx - Context
+ * @param rect - Bounding rect
+ */ function addRoundedRectPath(ctx, rect) {
+    const { x, y, w, h, radius } = rect;
+    // top left arc
+    ctx.arc(x + radius.topLeft, y + radius.topLeft, radius.topLeft, -HALF_PI, PI, true);
+    // line from top left to bottom left
+    ctx.lineTo(x, y + h - radius.bottomLeft);
+    // bottom left arc
+    ctx.arc(x + radius.bottomLeft, y + h - radius.bottomLeft, radius.bottomLeft, PI, HALF_PI, true);
+    // line from bottom left to bottom right
+    ctx.lineTo(x + w - radius.bottomRight, y + h);
+    // bottom right arc
+    ctx.arc(x + w - radius.bottomRight, y + h - radius.bottomRight, radius.bottomRight, HALF_PI, 0, true);
+    // line from bottom right to top right
+    ctx.lineTo(x + w, y + radius.topRight);
+    // top right arc
+    ctx.arc(x + w - radius.topRight, y + radius.topRight, radius.topRight, 0, -HALF_PI, true);
+    // line from top right to top left
+    ctx.lineTo(x + radius.topLeft, y);
+}
+const LINE_HEIGHT = /^(normal|(\d+(?:\.\d+)?)(px|em|%)?)$/;
+const FONT_STYLE = /^(normal|italic|initial|inherit|unset|(oblique( -?[0-9]?[0-9]deg)?))$/;
+/**
+ * @alias Chart.helpers.options
+ * @namespace
+ */ /**
+ * Converts the given line height `value` in pixels for a specific font `size`.
+ * @param value - The lineHeight to parse (eg. 1.6, '14px', '75%', '1.6em').
+ * @param size - The font size (in pixels) used to resolve relative `value`.
+ * @returns The effective line height in pixels (size * 1.2 if value is invalid).
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
+ * @since 2.7.0
+ */ function toLineHeight(value, size) {
+    const matches = ("" + value).match(LINE_HEIGHT);
+    if (!matches || matches[1] === "normal") return size * 1.2;
+    value = +matches[2];
+    switch(matches[3]){
+        case "px":
+            return value;
+        case "%":
+            value /= 100;
+            break;
+    }
+    return size * value;
+}
+const numberOrZero = (v)=>+v || 0;
+function _readValueToProps(value, props) {
+    const ret = {};
+    const objProps = isObject(props);
+    const keys = objProps ? Object.keys(props) : props;
+    const read = isObject(value) ? objProps ? (prop)=>valueOrDefault(value[prop], value[props[prop]]) : (prop)=>value[prop] : ()=>value;
+    for (const prop of keys)ret[prop] = numberOrZero(read(prop));
+    return ret;
+}
+/**
+ * Converts the given value into a TRBL object.
+ * @param value - If a number, set the value to all TRBL component,
+ *  else, if an object, use defined properties and sets undefined ones to 0.
+ *  x / y are shorthands for same value for left/right and top/bottom.
+ * @returns The padding values (top, right, bottom, left)
+ * @since 3.0.0
+ */ function toTRBL(value) {
+    return _readValueToProps(value, {
+        top: "y",
+        right: "x",
+        bottom: "y",
+        left: "x"
+    });
+}
+/**
+ * Converts the given value into a TRBL corners object (similar with css border-radius).
+ * @param value - If a number, set the value to all TRBL corner components,
+ *  else, if an object, use defined properties and sets undefined ones to 0.
+ * @returns The TRBL corner values (topLeft, topRight, bottomLeft, bottomRight)
+ * @since 3.0.0
+ */ function toTRBLCorners(value) {
+    return _readValueToProps(value, [
+        "topLeft",
+        "topRight",
+        "bottomLeft",
+        "bottomRight"
+    ]);
+}
+/**
+ * Converts the given value into a padding object with pre-computed width/height.
+ * @param value - If a number, set the value to all TRBL component,
+ *  else, if an object, use defined properties and sets undefined ones to 0.
+ *  x / y are shorthands for same value for left/right and top/bottom.
+ * @returns The padding values (top, right, bottom, left, width, height)
+ * @since 2.7.0
+ */ function toPadding(value) {
+    const obj = toTRBL(value);
+    obj.width = obj.left + obj.right;
+    obj.height = obj.top + obj.bottom;
+    return obj;
+}
+/**
+ * Parses font options and returns the font object.
+ * @param options - A object that contains font options to be parsed.
+ * @param fallback - A object that contains fallback font options.
+ * @return The font object.
+ * @private
+ */ function toFont(options, fallback) {
+    options = options || {};
+    fallback = fallback || defaults.font;
+    let size = valueOrDefault(options.size, fallback.size);
+    if (typeof size === "string") size = parseInt(size, 10);
+    let style = valueOrDefault(options.style, fallback.style);
+    if (style && !("" + style).match(FONT_STYLE)) {
+        console.warn('Invalid font style specified: "' + style + '"');
+        style = undefined;
+    }
+    const font = {
+        family: valueOrDefault(options.family, fallback.family),
+        lineHeight: toLineHeight(valueOrDefault(options.lineHeight, fallback.lineHeight), size),
+        size,
+        style,
+        weight: valueOrDefault(options.weight, fallback.weight),
+        string: ""
+    };
+    font.string = toFontString(font);
+    return font;
+}
+/**
+ * Evaluates the given `inputs` sequentially and returns the first defined value.
+ * @param inputs - An array of values, falling back to the last value.
+ * @param context - If defined and the current value is a function, the value
+ * is called with `context` as first argument and the result becomes the new input.
+ * @param index - If defined and the current value is an array, the value
+ * at `index` become the new input.
+ * @param info - object to return information about resolution in
+ * @param info.cacheable - Will be set to `false` if option is not cacheable.
+ * @since 2.7.0
+ */ function resolve(inputs, context, index, info) {
+    let cacheable = true;
+    let i, ilen, value;
+    for(i = 0, ilen = inputs.length; i < ilen; ++i){
+        value = inputs[i];
+        if (value === undefined) continue;
+        if (context !== undefined && typeof value === "function") {
+            value = value(context);
+            cacheable = false;
+        }
+        if (index !== undefined && isArray(value)) {
+            value = value[index % value.length];
+            cacheable = false;
+        }
+        if (value !== undefined) {
+            if (info && !cacheable) info.cacheable = false;
+            return value;
+        }
+    }
+}
+/**
+ * @param minmax
+ * @param grace
+ * @param beginAtZero
+ * @private
+ */ function _addGrace(minmax, grace, beginAtZero) {
+    const { min, max } = minmax;
+    const change = toDimension(grace, (max - min) / 2);
+    const keepZero = (value, add)=>beginAtZero && value === 0 ? 0 : value + add;
+    return {
+        min: keepZero(min, -Math.abs(change)),
+        max: keepZero(max, change)
+    };
+}
+function createContext(parentContext, context) {
+    return Object.assign(Object.create(parentContext), context);
+}
+/**
+ * Creates a Proxy for resolving raw values for options.
+ * @param scopes - The option scopes to look for values, in resolution order
+ * @param prefixes - The prefixes for values, in resolution order.
+ * @param rootScopes - The root option scopes
+ * @param fallback - Parent scopes fallback
+ * @param getTarget - callback for getting the target for changed values
+ * @returns Proxy
+ * @private
+ */ function _createResolver(scopes, prefixes = [
+    ""
+], rootScopes, fallback, getTarget = ()=>scopes[0]) {
+    const finalRootScopes = rootScopes || scopes;
+    if (typeof fallback === "undefined") fallback = _resolve("_fallback", scopes);
+    const cache = {
+        [Symbol.toStringTag]: "Object",
+        _cacheable: true,
+        _scopes: scopes,
+        _rootScopes: finalRootScopes,
+        _fallback: fallback,
+        _getTarget: getTarget,
+        override: (scope)=>_createResolver([
+                scope,
+                ...scopes
+            ], prefixes, finalRootScopes, fallback)
+    };
+    return new Proxy(cache, {
+        /**
+     * A trap for the delete operator.
+     */ deleteProperty (target, prop) {
+            delete target[prop]; // remove from cache
+            delete target._keys; // remove cached keys
+            delete scopes[0][prop]; // remove from top level scope
+            return true;
+        },
+        /**
+     * A trap for getting property values.
+     */ get (target, prop) {
+            return _cached(target, prop, ()=>_resolveWithPrefixes(prop, prefixes, scopes, target));
+        },
+        /**
+     * A trap for Object.getOwnPropertyDescriptor.
+     * Also used by Object.hasOwnProperty.
+     */ getOwnPropertyDescriptor (target, prop) {
+            return Reflect.getOwnPropertyDescriptor(target._scopes[0], prop);
+        },
+        /**
+     * A trap for Object.getPrototypeOf.
+     */ getPrototypeOf () {
+            return Reflect.getPrototypeOf(scopes[0]);
+        },
+        /**
+     * A trap for the in operator.
+     */ has (target, prop) {
+            return getKeysFromAllScopes(target).includes(prop);
+        },
+        /**
+     * A trap for Object.getOwnPropertyNames and Object.getOwnPropertySymbols.
+     */ ownKeys (target) {
+            return getKeysFromAllScopes(target);
+        },
+        /**
+     * A trap for setting property values.
+     */ set (target, prop, value) {
+            const storage = target._storage || (target._storage = getTarget());
+            target[prop] = storage[prop] = value; // set to top level scope + cache
+            delete target._keys; // remove cached keys
+            return true;
+        }
+    });
+}
+/**
+ * Returns an Proxy for resolving option values with context.
+ * @param proxy - The Proxy returned by `_createResolver`
+ * @param context - Context object for scriptable/indexable options
+ * @param subProxy - The proxy provided for scriptable options
+ * @param descriptorDefaults - Defaults for descriptors
+ * @private
+ */ function _attachContext(proxy, context, subProxy, descriptorDefaults) {
+    const cache = {
+        _cacheable: false,
+        _proxy: proxy,
+        _context: context,
+        _subProxy: subProxy,
+        _stack: new Set(),
+        _descriptors: _descriptors(proxy, descriptorDefaults),
+        setContext: (ctx)=>_attachContext(proxy, ctx, subProxy, descriptorDefaults),
+        override: (scope)=>_attachContext(proxy.override(scope), context, subProxy, descriptorDefaults)
+    };
+    return new Proxy(cache, {
+        /**
+     * A trap for the delete operator.
+     */ deleteProperty (target, prop) {
+            delete target[prop]; // remove from cache
+            delete proxy[prop]; // remove from proxy
+            return true;
+        },
+        /**
+     * A trap for getting property values.
+     */ get (target, prop, receiver) {
+            return _cached(target, prop, ()=>_resolveWithContext(target, prop, receiver));
+        },
+        /**
+     * A trap for Object.getOwnPropertyDescriptor.
+     * Also used by Object.hasOwnProperty.
+     */ getOwnPropertyDescriptor (target, prop) {
+            return target._descriptors.allKeys ? Reflect.has(proxy, prop) ? {
+                enumerable: true,
+                configurable: true
+            } : undefined : Reflect.getOwnPropertyDescriptor(proxy, prop);
+        },
+        /**
+     * A trap for Object.getPrototypeOf.
+     */ getPrototypeOf () {
+            return Reflect.getPrototypeOf(proxy);
+        },
+        /**
+     * A trap for the in operator.
+     */ has (target, prop) {
+            return Reflect.has(proxy, prop);
+        },
+        /**
+     * A trap for Object.getOwnPropertyNames and Object.getOwnPropertySymbols.
+     */ ownKeys () {
+            return Reflect.ownKeys(proxy);
+        },
+        /**
+     * A trap for setting property values.
+     */ set (target, prop, value) {
+            proxy[prop] = value; // set to proxy
+            delete target[prop]; // remove from cache
+            return true;
+        }
+    });
+}
+/**
+ * @private
+ */ function _descriptors(proxy, defaults = {
+    scriptable: true,
+    indexable: true
+}) {
+    const { _scriptable = defaults.scriptable, _indexable = defaults.indexable, _allKeys = defaults.allKeys } = proxy;
+    return {
+        allKeys: _allKeys,
+        scriptable: _scriptable,
+        indexable: _indexable,
+        isScriptable: isFunction(_scriptable) ? _scriptable : ()=>_scriptable,
+        isIndexable: isFunction(_indexable) ? _indexable : ()=>_indexable
+    };
+}
+const readKey = (prefix, name)=>prefix ? prefix + _capitalize(name) : name;
+const needsSubResolver = (prop, value)=>isObject(value) && prop !== "adapters" && (Object.getPrototypeOf(value) === null || value.constructor === Object);
+function _cached(target, prop, resolve) {
+    if (Object.prototype.hasOwnProperty.call(target, prop)) return target[prop];
+    const value = resolve();
+    // cache the resolved value
+    target[prop] = value;
+    return value;
+}
+function _resolveWithContext(target, prop, receiver) {
+    const { _proxy, _context, _subProxy, _descriptors: descriptors } = target;
+    let value = _proxy[prop]; // resolve from proxy
+    // resolve with context
+    if (isFunction(value) && descriptors.isScriptable(prop)) value = _resolveScriptable(prop, value, target, receiver);
+    if (isArray(value) && value.length) value = _resolveArray(prop, value, target, descriptors.isIndexable);
+    if (needsSubResolver(prop, value)) // if the resolved value is an object, create a sub resolver for it
+    value = _attachContext(value, _context, _subProxy && _subProxy[prop], descriptors);
+    return value;
+}
+function _resolveScriptable(prop, getValue, target, receiver) {
+    const { _proxy, _context, _subProxy, _stack } = target;
+    if (_stack.has(prop)) throw new Error("Recursion detected: " + Array.from(_stack).join("->") + "->" + prop);
+    _stack.add(prop);
+    let value = getValue(_context, _subProxy || receiver);
+    _stack.delete(prop);
+    if (needsSubResolver(prop, value)) // When scriptable option returns an object, create a resolver on that.
+    value = createSubResolver(_proxy._scopes, _proxy, prop, value);
+    return value;
+}
+function _resolveArray(prop, value, target, isIndexable) {
+    const { _proxy, _context, _subProxy, _descriptors: descriptors } = target;
+    if (typeof _context.index !== "undefined" && isIndexable(prop)) return value[_context.index % value.length];
+    else if (isObject(value[0])) {
+        // Array of objects, return array or resolvers
+        const arr = value;
+        const scopes = _proxy._scopes.filter((s)=>s !== arr);
+        value = [];
+        for (const item of arr){
+            const resolver = createSubResolver(scopes, _proxy, prop, item);
+            value.push(_attachContext(resolver, _context, _subProxy && _subProxy[prop], descriptors));
+        }
+    }
+    return value;
+}
+function resolveFallback(fallback, prop, value) {
+    return isFunction(fallback) ? fallback(prop, value) : fallback;
+}
+const getScope = (key, parent)=>key === true ? parent : typeof key === "string" ? resolveObjectKey(parent, key) : undefined;
+function addScopes(set, parentScopes, key, parentFallback, value) {
+    for (const parent of parentScopes){
+        const scope = getScope(key, parent);
+        if (scope) {
+            set.add(scope);
+            const fallback = resolveFallback(scope._fallback, key, value);
+            if (typeof fallback !== "undefined" && fallback !== key && fallback !== parentFallback) // When we reach the descriptor that defines a new _fallback, return that.
+            // The fallback will resume to that new scope.
+            return fallback;
+        } else if (scope === false && typeof parentFallback !== "undefined" && key !== parentFallback) // Fallback to `false` results to `false`, when falling back to different key.
+        // For example `interaction` from `hover` or `plugins.tooltip` and `animation` from `animations`
+        return null;
+    }
+    return false;
+}
+function createSubResolver(parentScopes, resolver, prop, value) {
+    const rootScopes = resolver._rootScopes;
+    const fallback = resolveFallback(resolver._fallback, prop, value);
+    const allScopes = [
+        ...parentScopes,
+        ...rootScopes
+    ];
+    const set = new Set();
+    set.add(value);
+    let key = addScopesFromKey(set, allScopes, prop, fallback || prop, value);
+    if (key === null) return false;
+    if (typeof fallback !== "undefined" && fallback !== prop) {
+        key = addScopesFromKey(set, allScopes, fallback, key, value);
+        if (key === null) return false;
+    }
+    return _createResolver(Array.from(set), [
+        ""
+    ], rootScopes, fallback, ()=>subGetTarget(resolver, prop, value));
+}
+function addScopesFromKey(set, allScopes, key, fallback, item) {
+    while(key)key = addScopes(set, allScopes, key, fallback, item);
+    return key;
+}
+function subGetTarget(resolver, prop, value) {
+    const parent = resolver._getTarget();
+    if (!(prop in parent)) parent[prop] = {};
+    const target = parent[prop];
+    if (isArray(target) && isObject(value)) // For array of objects, the object is used to store updated values
+    return value;
+    return target || {};
+}
+function _resolveWithPrefixes(prop, prefixes, scopes, proxy) {
+    let value;
+    for (const prefix of prefixes){
+        value = _resolve(readKey(prefix, prop), scopes);
+        if (typeof value !== "undefined") return needsSubResolver(prop, value) ? createSubResolver(scopes, proxy, prop, value) : value;
+    }
+}
+function _resolve(key, scopes) {
+    for (const scope of scopes){
+        if (!scope) continue;
+        const value = scope[key];
+        if (typeof value !== "undefined") return value;
+    }
+}
+function getKeysFromAllScopes(target) {
+    let keys = target._keys;
+    if (!keys) keys = target._keys = resolveKeysFromAllScopes(target._scopes);
+    return keys;
+}
+function resolveKeysFromAllScopes(scopes) {
+    const set = new Set();
+    for (const scope of scopes)for (const key of Object.keys(scope).filter((k)=>!k.startsWith("_")))set.add(key);
+    return Array.from(set);
+}
+function _parseObjectDataRadialScale(meta, data, start, count) {
+    const { iScale } = meta;
+    const { key = "r" } = this._parsing;
+    const parsed = new Array(count);
+    let i, ilen, index, item;
+    for(i = 0, ilen = count; i < ilen; ++i){
+        index = i + start;
+        item = data[index];
+        parsed[i] = {
+            r: iScale.parse(resolveObjectKey(item, key), index)
+        };
+    }
+    return parsed;
+}
+const EPSILON = Number.EPSILON || 1e-14;
+const getPoint = (points, i)=>i < points.length && !points[i].skip && points[i];
+const getValueAxis = (indexAxis)=>indexAxis === "x" ? "y" : "x";
+function splineCurve(firstPoint, middlePoint, afterPoint, t) {
+    // Props to Rob Spencer at scaled innovation for his post on splining between points
+    // http://scaledinnovation.com/analytics/splines/aboutSplines.html
+    // This function must also respect "skipped" points
+    const previous = firstPoint.skip ? middlePoint : firstPoint;
+    const current = middlePoint;
+    const next = afterPoint.skip ? middlePoint : afterPoint;
+    const d01 = distanceBetweenPoints(current, previous);
+    const d12 = distanceBetweenPoints(next, current);
+    let s01 = d01 / (d01 + d12);
+    let s12 = d12 / (d01 + d12);
+    // If all points are the same, s01 & s02 will be inf
+    s01 = isNaN(s01) ? 0 : s01;
+    s12 = isNaN(s12) ? 0 : s12;
+    const fa = t * s01; // scaling factor for triangle Ta
+    const fb = t * s12;
+    return {
+        previous: {
+            x: current.x - fa * (next.x - previous.x),
+            y: current.y - fa * (next.y - previous.y)
+        },
+        next: {
+            x: current.x + fb * (next.x - previous.x),
+            y: current.y + fb * (next.y - previous.y)
+        }
+    };
+}
+/**
+ * Adjust tangents to ensure monotonic properties
+ */ function monotoneAdjust(points, deltaK, mK) {
+    const pointsLen = points.length;
+    let alphaK, betaK, tauK, squaredMagnitude, pointCurrent;
+    let pointAfter = getPoint(points, 0);
+    for(let i = 0; i < pointsLen - 1; ++i){
+        pointCurrent = pointAfter;
+        pointAfter = getPoint(points, i + 1);
+        if (!pointCurrent || !pointAfter) continue;
+        if (almostEquals(deltaK[i], 0, EPSILON)) {
+            mK[i] = mK[i + 1] = 0;
+            continue;
+        }
+        alphaK = mK[i] / deltaK[i];
+        betaK = mK[i + 1] / deltaK[i];
+        squaredMagnitude = Math.pow(alphaK, 2) + Math.pow(betaK, 2);
+        if (squaredMagnitude <= 9) continue;
+        tauK = 3 / Math.sqrt(squaredMagnitude);
+        mK[i] = alphaK * tauK * deltaK[i];
+        mK[i + 1] = betaK * tauK * deltaK[i];
+    }
+}
+function monotoneCompute(points, mK, indexAxis = "x") {
+    const valueAxis = getValueAxis(indexAxis);
+    const pointsLen = points.length;
+    let delta, pointBefore, pointCurrent;
+    let pointAfter = getPoint(points, 0);
+    for(let i = 0; i < pointsLen; ++i){
+        pointBefore = pointCurrent;
+        pointCurrent = pointAfter;
+        pointAfter = getPoint(points, i + 1);
+        if (!pointCurrent) continue;
+        const iPixel = pointCurrent[indexAxis];
+        const vPixel = pointCurrent[valueAxis];
+        if (pointBefore) {
+            delta = (iPixel - pointBefore[indexAxis]) / 3;
+            pointCurrent[`cp1${indexAxis}`] = iPixel - delta;
+            pointCurrent[`cp1${valueAxis}`] = vPixel - delta * mK[i];
+        }
+        if (pointAfter) {
+            delta = (pointAfter[indexAxis] - iPixel) / 3;
+            pointCurrent[`cp2${indexAxis}`] = iPixel + delta;
+            pointCurrent[`cp2${valueAxis}`] = vPixel + delta * mK[i];
+        }
+    }
+}
+/**
+ * This function calculates Bézier control points in a similar way than |splineCurve|,
+ * but preserves monotonicity of the provided data and ensures no local extremums are added
+ * between the dataset discrete points due to the interpolation.
+ * See : https://en.wikipedia.org/wiki/Monotone_cubic_interpolation
+ */ function splineCurveMonotone(points, indexAxis = "x") {
+    const valueAxis = getValueAxis(indexAxis);
+    const pointsLen = points.length;
+    const deltaK = Array(pointsLen).fill(0);
+    const mK = Array(pointsLen);
+    // Calculate slopes (deltaK) and initialize tangents (mK)
+    let i, pointBefore, pointCurrent;
+    let pointAfter = getPoint(points, 0);
+    for(i = 0; i < pointsLen; ++i){
+        pointBefore = pointCurrent;
+        pointCurrent = pointAfter;
+        pointAfter = getPoint(points, i + 1);
+        if (!pointCurrent) continue;
+        if (pointAfter) {
+            const slopeDelta = pointAfter[indexAxis] - pointCurrent[indexAxis];
+            // In the case of two points that appear at the same x pixel, slopeDeltaX is 0
+            deltaK[i] = slopeDelta !== 0 ? (pointAfter[valueAxis] - pointCurrent[valueAxis]) / slopeDelta : 0;
+        }
+        mK[i] = !pointBefore ? deltaK[i] : !pointAfter ? deltaK[i - 1] : sign(deltaK[i - 1]) !== sign(deltaK[i]) ? 0 : (deltaK[i - 1] + deltaK[i]) / 2;
+    }
+    monotoneAdjust(points, deltaK, mK);
+    monotoneCompute(points, mK, indexAxis);
+}
+function capControlPoint(pt, min, max) {
+    return Math.max(Math.min(pt, max), min);
+}
+function capBezierPoints(points, area) {
+    let i, ilen, point, inArea, inAreaPrev;
+    let inAreaNext = _isPointInArea(points[0], area);
+    for(i = 0, ilen = points.length; i < ilen; ++i){
+        inAreaPrev = inArea;
+        inArea = inAreaNext;
+        inAreaNext = i < ilen - 1 && _isPointInArea(points[i + 1], area);
+        if (!inArea) continue;
+        point = points[i];
+        if (inAreaPrev) {
+            point.cp1x = capControlPoint(point.cp1x, area.left, area.right);
+            point.cp1y = capControlPoint(point.cp1y, area.top, area.bottom);
+        }
+        if (inAreaNext) {
+            point.cp2x = capControlPoint(point.cp2x, area.left, area.right);
+            point.cp2y = capControlPoint(point.cp2y, area.top, area.bottom);
+        }
+    }
+}
+/**
+ * @private
+ */ function _updateBezierControlPoints(points, options, area, loop, indexAxis) {
+    let i, ilen, point, controlPoints;
+    // Only consider points that are drawn in case the spanGaps option is used
+    if (options.spanGaps) points = points.filter((pt)=>!pt.skip);
+    if (options.cubicInterpolationMode === "monotone") splineCurveMonotone(points, indexAxis);
+    else {
+        let prev = loop ? points[points.length - 1] : points[0];
+        for(i = 0, ilen = points.length; i < ilen; ++i){
+            point = points[i];
+            controlPoints = splineCurve(prev, point, points[Math.min(i + 1, ilen - (loop ? 0 : 1)) % ilen], options.tension);
+            point.cp1x = controlPoints.previous.x;
+            point.cp1y = controlPoints.previous.y;
+            point.cp2x = controlPoints.next.x;
+            point.cp2y = controlPoints.next.y;
+            prev = point;
+        }
+    }
+    if (options.capBezierPoints) capBezierPoints(points, area);
+}
+/**
+ * Note: typedefs are auto-exported, so use a made-up `dom` namespace where
+ * necessary to avoid duplicates with `export * from './helpers`; see
+ * https://github.com/microsoft/TypeScript/issues/46011
+ * @typedef { import('../core/core.controller.js').default } dom.Chart
+ * @typedef { import('../../types').ChartEvent } ChartEvent
+ */ /**
+ * @private
+ */ function _isDomSupported() {
+    return typeof window !== "undefined" && typeof document !== "undefined";
+}
+/**
+ * @private
+ */ function _getParentNode(domNode) {
+    let parent = domNode.parentNode;
+    if (parent && parent.toString() === "[object ShadowRoot]") parent = parent.host;
+    return parent;
+}
+/**
+ * convert max-width/max-height values that may be percentages into a number
+ * @private
+ */ function parseMaxStyle(styleValue, node, parentProperty) {
+    let valueInPixels;
+    if (typeof styleValue === "string") {
+        valueInPixels = parseInt(styleValue, 10);
+        if (styleValue.indexOf("%") !== -1) // percentage * size in dimension
+        valueInPixels = valueInPixels / 100 * node.parentNode[parentProperty];
+    } else valueInPixels = styleValue;
+    return valueInPixels;
+}
+const getComputedStyle = (element)=>element.ownerDocument.defaultView.getComputedStyle(element, null);
+function getStyle(el, property) {
+    return getComputedStyle(el).getPropertyValue(property);
+}
+const positions = [
+    "top",
+    "right",
+    "bottom",
+    "left"
+];
+function getPositionedStyle(styles, style, suffix) {
+    const result = {};
+    suffix = suffix ? "-" + suffix : "";
+    for(let i = 0; i < 4; i++){
+        const pos = positions[i];
+        result[pos] = parseFloat(styles[style + "-" + pos + suffix]) || 0;
+    }
+    result.width = result.left + result.right;
+    result.height = result.top + result.bottom;
+    return result;
+}
+const useOffsetPos = (x, y, target)=>(x > 0 || y > 0) && (!target || !target.shadowRoot);
+/**
+ * @param e
+ * @param canvas
+ * @returns Canvas position
+ */ function getCanvasPosition(e, canvas) {
+    const touches = e.touches;
+    const source = touches && touches.length ? touches[0] : e;
+    const { offsetX, offsetY } = source;
+    let box = false;
+    let x, y;
+    if (useOffsetPos(offsetX, offsetY, e.target)) {
+        x = offsetX;
+        y = offsetY;
+    } else {
+        const rect = canvas.getBoundingClientRect();
+        x = source.clientX - rect.left;
+        y = source.clientY - rect.top;
+        box = true;
+    }
+    return {
+        x,
+        y,
+        box
+    };
+}
+/**
+ * Gets an event's x, y coordinates, relative to the chart area
+ * @param event
+ * @param chart
+ * @returns x and y coordinates of the event
+ */ function getRelativePosition(event, chart) {
+    if ("native" in event) return event;
+    const { canvas, currentDevicePixelRatio } = chart;
+    const style = getComputedStyle(canvas);
+    const borderBox = style.boxSizing === "border-box";
+    const paddings = getPositionedStyle(style, "padding");
+    const borders = getPositionedStyle(style, "border", "width");
+    const { x, y, box } = getCanvasPosition(event, canvas);
+    const xOffset = paddings.left + (box && borders.left);
+    const yOffset = paddings.top + (box && borders.top);
+    let { width, height } = chart;
+    if (borderBox) {
+        width -= paddings.width + borders.width;
+        height -= paddings.height + borders.height;
+    }
+    return {
+        x: Math.round((x - xOffset) / width * canvas.width / currentDevicePixelRatio),
+        y: Math.round((y - yOffset) / height * canvas.height / currentDevicePixelRatio)
+    };
+}
+function getContainerSize(canvas, width, height) {
+    let maxWidth, maxHeight;
+    if (width === undefined || height === undefined) {
+        const container = _getParentNode(canvas);
+        if (!container) {
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+        } else {
+            const rect = container.getBoundingClientRect(); // this is the border box of the container
+            const containerStyle = getComputedStyle(container);
+            const containerBorder = getPositionedStyle(containerStyle, "border", "width");
+            const containerPadding = getPositionedStyle(containerStyle, "padding");
+            width = rect.width - containerPadding.width - containerBorder.width;
+            height = rect.height - containerPadding.height - containerBorder.height;
+            maxWidth = parseMaxStyle(containerStyle.maxWidth, container, "clientWidth");
+            maxHeight = parseMaxStyle(containerStyle.maxHeight, container, "clientHeight");
+        }
+    }
+    return {
+        width,
+        height,
+        maxWidth: maxWidth || INFINITY,
+        maxHeight: maxHeight || INFINITY
+    };
+}
+const round1 = (v)=>Math.round(v * 10) / 10;
+// eslint-disable-next-line complexity
+function getMaximumSize(canvas, bbWidth, bbHeight, aspectRatio) {
+    const style = getComputedStyle(canvas);
+    const margins = getPositionedStyle(style, "margin");
+    const maxWidth = parseMaxStyle(style.maxWidth, canvas, "clientWidth") || INFINITY;
+    const maxHeight = parseMaxStyle(style.maxHeight, canvas, "clientHeight") || INFINITY;
+    const containerSize = getContainerSize(canvas, bbWidth, bbHeight);
+    let { width, height } = containerSize;
+    if (style.boxSizing === "content-box") {
+        const borders = getPositionedStyle(style, "border", "width");
+        const paddings = getPositionedStyle(style, "padding");
+        width -= paddings.width + borders.width;
+        height -= paddings.height + borders.height;
+    }
+    width = Math.max(0, width - margins.width);
+    height = Math.max(0, aspectRatio ? width / aspectRatio : height - margins.height);
+    width = round1(Math.min(width, maxWidth, containerSize.maxWidth));
+    height = round1(Math.min(height, maxHeight, containerSize.maxHeight));
+    if (width && !height) // https://github.com/chartjs/Chart.js/issues/4659
+    // If the canvas has width, but no height, default to aspectRatio of 2 (canvas default)
+    height = round1(width / 2);
+    const maintainHeight = bbWidth !== undefined || bbHeight !== undefined;
+    if (maintainHeight && aspectRatio && containerSize.height && height > containerSize.height) {
+        height = containerSize.height;
+        width = round1(Math.floor(height * aspectRatio));
+    }
+    return {
+        width,
+        height
+    };
+}
+/**
+ * @param chart
+ * @param forceRatio
+ * @param forceStyle
+ * @returns True if the canvas context size or transformation has changed.
+ */ function retinaScale(chart, forceRatio, forceStyle) {
+    const pixelRatio = forceRatio || 1;
+    const deviceHeight = Math.floor(chart.height * pixelRatio);
+    const deviceWidth = Math.floor(chart.width * pixelRatio);
+    chart.height = Math.floor(chart.height);
+    chart.width = Math.floor(chart.width);
+    const canvas = chart.canvas;
+    // If no style has been set on the canvas, the render size is used as display size,
+    // making the chart visually bigger, so let's enforce it to the "correct" values.
+    // See https://github.com/chartjs/Chart.js/issues/3575
+    if (canvas.style && (forceStyle || !canvas.style.height && !canvas.style.width)) {
+        canvas.style.height = `${chart.height}px`;
+        canvas.style.width = `${chart.width}px`;
+    }
+    if (chart.currentDevicePixelRatio !== pixelRatio || canvas.height !== deviceHeight || canvas.width !== deviceWidth) {
+        chart.currentDevicePixelRatio = pixelRatio;
+        canvas.height = deviceHeight;
+        canvas.width = deviceWidth;
+        chart.ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        return true;
+    }
+    return false;
+}
+/**
+ * Detects support for options object argument in addEventListener.
+ * https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Safely_detecting_option_support
+ * @private
+ */ const supportsEventListenerOptions = function() {
+    let passiveSupported = false;
+    try {
+        const options = {
+            get passive () {
+                passiveSupported = true;
+                return false;
+            }
+        };
+        window.addEventListener("test", null, options);
+        window.removeEventListener("test", null, options);
+    } catch (e) {
+    // continue regardless of error
+    }
+    return passiveSupported;
+}();
+/**
+ * The "used" size is the final value of a dimension property after all calculations have
+ * been performed. This method uses the computed style of `element` but returns undefined
+ * if the computed style is not expressed in pixels. That can happen in some cases where
+ * `element` has a size relative to its parent and this last one is not yet displayed,
+ * for example because of `display: none` on a parent node.
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/used_value
+ * @returns Size in pixels or undefined if unknown.
+ */ function readUsedSize(element, property) {
+    const value = getStyle(element, property);
+    const matches = value && value.match(/^(\d+)(\.\d+)?px$/);
+    return matches ? +matches[1] : undefined;
+}
+/**
+ * @private
+ */ function _pointInLine(p1, p2, t, mode) {
+    return {
+        x: p1.x + t * (p2.x - p1.x),
+        y: p1.y + t * (p2.y - p1.y)
+    };
+}
+/**
+ * @private
+ */ function _steppedInterpolation(p1, p2, t, mode) {
+    return {
+        x: p1.x + t * (p2.x - p1.x),
+        y: mode === "middle" ? t < 0.5 ? p1.y : p2.y : mode === "after" ? t < 1 ? p1.y : p2.y : t > 0 ? p2.y : p1.y
+    };
+}
+/**
+ * @private
+ */ function _bezierInterpolation(p1, p2, t, mode) {
+    const cp1 = {
+        x: p1.cp2x,
+        y: p1.cp2y
+    };
+    const cp2 = {
+        x: p2.cp1x,
+        y: p2.cp1y
+    };
+    const a = _pointInLine(p1, cp1, t);
+    const b = _pointInLine(cp1, cp2, t);
+    const c = _pointInLine(cp2, p2, t);
+    const d = _pointInLine(a, b, t);
+    const e = _pointInLine(b, c, t);
+    return _pointInLine(d, e, t);
+}
+const getRightToLeftAdapter = function(rectX, width) {
+    return {
+        x (x) {
+            return rectX + rectX + width - x;
+        },
+        setWidth (w) {
+            width = w;
+        },
+        textAlign (align) {
+            if (align === "center") return align;
+            return align === "right" ? "left" : "right";
+        },
+        xPlus (x, value) {
+            return x - value;
+        },
+        leftForLtr (x, itemWidth) {
+            return x - itemWidth;
+        }
+    };
+};
+const getLeftToRightAdapter = function() {
+    return {
+        x (x) {
+            return x;
+        },
+        setWidth (w) {},
+        textAlign (align) {
+            return align;
+        },
+        xPlus (x, value) {
+            return x + value;
+        },
+        leftForLtr (x, _itemWidth) {
+            return x;
+        }
+    };
+};
+function getRtlAdapter(rtl, rectX, width) {
+    return rtl ? getRightToLeftAdapter(rectX, width) : getLeftToRightAdapter();
+}
+function overrideTextDirection(ctx, direction) {
+    let style, original;
+    if (direction === "ltr" || direction === "rtl") {
+        style = ctx.canvas.style;
+        original = [
+            style.getPropertyValue("direction"),
+            style.getPropertyPriority("direction")
+        ];
+        style.setProperty("direction", direction, "important");
+        ctx.prevTextDirection = original;
+    }
+}
+function restoreTextDirection(ctx, original) {
+    if (original !== undefined) {
+        delete ctx.prevTextDirection;
+        ctx.canvas.style.setProperty("direction", original[0], original[1]);
+    }
+}
+function propertyFn(property) {
+    if (property === "angle") return {
+        between: _angleBetween,
+        compare: _angleDiff,
+        normalize: _normalizeAngle
+    };
+    return {
+        between: _isBetween,
+        compare: (a, b)=>a - b,
+        normalize: (x)=>x
+    };
+}
+function normalizeSegment({ start, end, count, loop, style }) {
+    return {
+        start: start % count,
+        end: end % count,
+        loop: loop && (end - start + 1) % count === 0,
+        style
+    };
+}
+function getSegment(segment, points, bounds) {
+    const { property, start: startBound, end: endBound } = bounds;
+    const { between, normalize } = propertyFn(property);
+    const count = points.length;
+    let { start, end, loop } = segment;
+    let i, ilen;
+    if (loop) {
+        start += count;
+        end += count;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            if (!between(normalize(points[start % count][property]), startBound, endBound)) break;
+            start--;
+            end--;
+        }
+        start %= count;
+        end %= count;
+    }
+    if (end < start) end += count;
+    return {
+        start,
+        end,
+        loop,
+        style: segment.style
+    };
+}
+function _boundSegment(segment, points, bounds) {
+    if (!bounds) return [
+        segment
+    ];
+    const { property, start: startBound, end: endBound } = bounds;
+    const count = points.length;
+    const { compare, between, normalize } = propertyFn(property);
+    const { start, end, loop, style } = getSegment(segment, points, bounds);
+    const result = [];
+    let inside = false;
+    let subStart = null;
+    let value, point, prevValue;
+    const startIsBefore = ()=>between(startBound, prevValue, value) && compare(startBound, prevValue) !== 0;
+    const endIsBefore = ()=>compare(endBound, value) === 0 || between(endBound, prevValue, value);
+    const shouldStart = ()=>inside || startIsBefore();
+    const shouldStop = ()=>!inside || endIsBefore();
+    for(let i = start, prev = start; i <= end; ++i){
+        point = points[i % count];
+        if (point.skip) continue;
+        value = normalize(point[property]);
+        if (value === prevValue) continue;
+        inside = between(value, startBound, endBound);
+        if (subStart === null && shouldStart()) subStart = compare(value, startBound) === 0 ? i : prev;
+        if (subStart !== null && shouldStop()) {
+            result.push(normalizeSegment({
+                start: subStart,
+                end: i,
+                loop,
+                count,
+                style
+            }));
+            subStart = null;
+        }
+        prev = i;
+        prevValue = value;
+    }
+    if (subStart !== null) result.push(normalizeSegment({
+        start: subStart,
+        end,
+        loop,
+        count,
+        style
+    }));
+    return result;
+}
+function _boundSegments(line, bounds) {
+    const result = [];
+    const segments = line.segments;
+    for(let i = 0; i < segments.length; i++){
+        const sub = _boundSegment(segments[i], line.points, bounds);
+        if (sub.length) result.push(...sub);
+    }
+    return result;
+}
+function findStartAndEnd(points, count, loop, spanGaps) {
+    let start = 0;
+    let end = count - 1;
+    if (loop && !spanGaps) while(start < count && !points[start].skip)start++;
+    while(start < count && points[start].skip)start++;
+    start %= count;
+    if (loop) end += start;
+    while(end > start && points[end % count].skip)end--;
+    end %= count;
+    return {
+        start,
+        end
+    };
+}
+function solidSegments(points, start, max, loop) {
+    const count = points.length;
+    const result = [];
+    let last = start;
+    let prev = points[start];
+    let end;
+    for(end = start + 1; end <= max; ++end){
+        const cur = points[end % count];
+        if (cur.skip || cur.stop) {
+            if (!prev.skip) {
+                loop = false;
+                result.push({
+                    start: start % count,
+                    end: (end - 1) % count,
+                    loop
+                });
+                start = last = cur.stop ? end : null;
+            }
+        } else {
+            last = end;
+            if (prev.skip) start = end;
+        }
+        prev = cur;
+    }
+    if (last !== null) result.push({
+        start: start % count,
+        end: last % count,
+        loop
+    });
+    return result;
+}
+function _computeSegments(line, segmentOptions) {
+    const points = line.points;
+    const spanGaps = line.options.spanGaps;
+    const count = points.length;
+    if (!count) return [];
+    const loop = !!line._loop;
+    const { start, end } = findStartAndEnd(points, count, loop, spanGaps);
+    if (spanGaps === true) return splitByStyles(line, [
+        {
+            start,
+            end,
+            loop
+        }
+    ], points, segmentOptions);
+    const max = end < start ? end + count : end;
+    const completeLoop = !!line._fullLoop && start === 0 && end === count - 1;
+    return splitByStyles(line, solidSegments(points, start, max, completeLoop), points, segmentOptions);
+}
+function splitByStyles(line, segments, points, segmentOptions) {
+    if (!segmentOptions || !segmentOptions.setContext || !points) return segments;
+    return doSplitByStyles(line, segments, points, segmentOptions);
+}
+function doSplitByStyles(line, segments, points, segmentOptions) {
+    const chartContext = line._chart.getContext();
+    const baseStyle = readStyle(line.options);
+    const { _datasetIndex: datasetIndex, options: { spanGaps } } = line;
+    const count = points.length;
+    const result = [];
+    let prevStyle = baseStyle;
+    let start = segments[0].start;
+    let i = start;
+    function addStyle(s, e, l, st) {
+        const dir = spanGaps ? -1 : 1;
+        if (s === e) return;
+        s += count;
+        while(points[s % count].skip)s -= dir;
+        while(points[e % count].skip)e += dir;
+        if (s % count !== e % count) {
+            result.push({
+                start: s % count,
+                end: e % count,
+                loop: l,
+                style: st
+            });
+            prevStyle = st;
+            start = e % count;
+        }
+    }
+    for (const segment of segments){
+        start = spanGaps ? start : segment.start;
+        let prev = points[start % count];
+        let style;
+        for(i = start + 1; i <= segment.end; i++){
+            const pt = points[i % count];
+            style = readStyle(segmentOptions.setContext(createContext(chartContext, {
+                type: "segment",
+                p0: prev,
+                p1: pt,
+                p0DataIndex: (i - 1) % count,
+                p1DataIndex: i % count,
+                datasetIndex
+            })));
+            if (styleChanged(style, prevStyle)) addStyle(start, i - 1, segment.loop, prevStyle);
+            prev = pt;
+            prevStyle = style;
+        }
+        if (start < i - 1) addStyle(start, i - 1, segment.loop, prevStyle);
+    }
+    return result;
+}
+function readStyle(options) {
+    return {
+        backgroundColor: options.backgroundColor,
+        borderCapStyle: options.borderCapStyle,
+        borderDash: options.borderDash,
+        borderDashOffset: options.borderDashOffset,
+        borderJoinStyle: options.borderJoinStyle,
+        borderWidth: options.borderWidth,
+        borderColor: options.borderColor
+    };
+}
+function styleChanged(style, prevStyle) {
+    if (!prevStyle) return false;
+    const cache = [];
+    const replacer = function(key, value) {
+        if (!isPatternOrGradient(value)) return value;
+        if (!cache.includes(value)) cache.push(value);
+        return cache.indexOf(value);
+    };
+    return JSON.stringify(style, replacer) !== JSON.stringify(prevStyle, replacer);
+}
+
+},{"@kurkle/color":"jJiT4","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"jJiT4":[function(require,module,exports) {
+/*!
+ * @kurkle/color v0.3.2
+ * https://github.com/kurkle/color#readme
+ * (c) 2023 Jukka Kurkela
+ * Released under the MIT License
+ */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Color", ()=>Color);
+parcelHelpers.export(exports, "b2n", ()=>b2n);
+parcelHelpers.export(exports, "b2p", ()=>b2p);
+parcelHelpers.export(exports, "default", ()=>index_esm);
+parcelHelpers.export(exports, "hexParse", ()=>hexParse);
+parcelHelpers.export(exports, "hexString", ()=>hexString);
+parcelHelpers.export(exports, "hsl2rgb", ()=>hsl2rgb);
+parcelHelpers.export(exports, "hslString", ()=>hslString);
+parcelHelpers.export(exports, "hsv2rgb", ()=>hsv2rgb);
+parcelHelpers.export(exports, "hueParse", ()=>hueParse);
+parcelHelpers.export(exports, "hwb2rgb", ()=>hwb2rgb);
+parcelHelpers.export(exports, "lim", ()=>lim);
+parcelHelpers.export(exports, "n2b", ()=>n2b);
+parcelHelpers.export(exports, "n2p", ()=>n2p);
+parcelHelpers.export(exports, "nameParse", ()=>nameParse);
+parcelHelpers.export(exports, "p2b", ()=>p2b);
+parcelHelpers.export(exports, "rgb2hsl", ()=>rgb2hsl);
+parcelHelpers.export(exports, "rgbParse", ()=>rgbParse);
+parcelHelpers.export(exports, "rgbString", ()=>rgbString);
+parcelHelpers.export(exports, "rotate", ()=>rotate);
+parcelHelpers.export(exports, "round", ()=>round);
+function round(v) {
+    return v + 0.5 | 0;
+}
+const lim = (v, l, h)=>Math.max(Math.min(v, h), l);
+function p2b(v) {
+    return lim(round(v * 2.55), 0, 255);
+}
+function b2p(v) {
+    return lim(round(v / 2.55), 0, 100);
+}
+function n2b(v) {
+    return lim(round(v * 255), 0, 255);
+}
+function b2n(v) {
+    return lim(round(v / 2.55) / 100, 0, 1);
+}
+function n2p(v) {
+    return lim(round(v * 100), 0, 100);
+}
+const map$1 = {
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    A: 10,
+    B: 11,
+    C: 12,
+    D: 13,
+    E: 14,
+    F: 15,
+    a: 10,
+    b: 11,
+    c: 12,
+    d: 13,
+    e: 14,
+    f: 15
+};
+const hex = [
+    ..."0123456789ABCDEF"
+];
+const h1 = (b)=>hex[b & 0xF];
+const h2 = (b)=>hex[(b & 0xF0) >> 4] + hex[b & 0xF];
+const eq = (b)=>(b & 0xF0) >> 4 === (b & 0xF);
+const isShort = (v)=>eq(v.r) && eq(v.g) && eq(v.b) && eq(v.a);
+function hexParse(str) {
+    var len = str.length;
+    var ret;
+    if (str[0] === "#") {
+        if (len === 4 || len === 5) ret = {
+            r: 255 & map$1[str[1]] * 17,
+            g: 255 & map$1[str[2]] * 17,
+            b: 255 & map$1[str[3]] * 17,
+            a: len === 5 ? map$1[str[4]] * 17 : 255
+        };
+        else if (len === 7 || len === 9) ret = {
+            r: map$1[str[1]] << 4 | map$1[str[2]],
+            g: map$1[str[3]] << 4 | map$1[str[4]],
+            b: map$1[str[5]] << 4 | map$1[str[6]],
+            a: len === 9 ? map$1[str[7]] << 4 | map$1[str[8]] : 255
+        };
+    }
+    return ret;
+}
+const alpha = (a, f)=>a < 255 ? f(a) : "";
+function hexString(v) {
+    var f = isShort(v) ? h1 : h2;
+    return v ? "#" + f(v.r) + f(v.g) + f(v.b) + alpha(v.a, f) : undefined;
+}
+const HUE_RE = /^(hsla?|hwb|hsv)\(\s*([-+.e\d]+)(?:deg)?[\s,]+([-+.e\d]+)%[\s,]+([-+.e\d]+)%(?:[\s,]+([-+.e\d]+)(%)?)?\s*\)$/;
+function hsl2rgbn(h, s, l) {
+    const a = s * Math.min(l, 1 - l);
+    const f = (n, k = (n + h / 30) % 12)=>l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return [
+        f(0),
+        f(8),
+        f(4)
+    ];
+}
+function hsv2rgbn(h, s, v) {
+    const f = (n, k = (n + h / 60) % 6)=>v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+    return [
+        f(5),
+        f(3),
+        f(1)
+    ];
+}
+function hwb2rgbn(h, w, b) {
+    const rgb = hsl2rgbn(h, 1, 0.5);
+    let i;
+    if (w + b > 1) {
+        i = 1 / (w + b);
+        w *= i;
+        b *= i;
+    }
+    for(i = 0; i < 3; i++){
+        rgb[i] *= 1 - w - b;
+        rgb[i] += w;
+    }
+    return rgb;
+}
+function hueValue(r, g, b, d, max) {
+    if (r === max) return (g - b) / d + (g < b ? 6 : 0);
+    if (g === max) return (b - r) / d + 2;
+    return (r - g) / d + 4;
+}
+function rgb2hsl(v) {
+    const range = 255;
+    const r = v.r / range;
+    const g = v.g / range;
+    const b = v.b / range;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    let h, s, d;
+    if (max !== min) {
+        d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        h = hueValue(r, g, b, d, max);
+        h = h * 60 + 0.5;
+    }
+    return [
+        h | 0,
+        s || 0,
+        l
+    ];
+}
+function calln(f, a, b, c) {
+    return (Array.isArray(a) ? f(a[0], a[1], a[2]) : f(a, b, c)).map(n2b);
+}
+function hsl2rgb(h, s, l) {
+    return calln(hsl2rgbn, h, s, l);
+}
+function hwb2rgb(h, w, b) {
+    return calln(hwb2rgbn, h, w, b);
+}
+function hsv2rgb(h, s, v) {
+    return calln(hsv2rgbn, h, s, v);
+}
+function hue(h) {
+    return (h % 360 + 360) % 360;
+}
+function hueParse(str) {
+    const m = HUE_RE.exec(str);
+    let a = 255;
+    let v;
+    if (!m) return;
+    if (m[5] !== v) a = m[6] ? p2b(+m[5]) : n2b(+m[5]);
+    const h = hue(+m[2]);
+    const p1 = +m[3] / 100;
+    const p2 = +m[4] / 100;
+    if (m[1] === "hwb") v = hwb2rgb(h, p1, p2);
+    else if (m[1] === "hsv") v = hsv2rgb(h, p1, p2);
+    else v = hsl2rgb(h, p1, p2);
+    return {
+        r: v[0],
+        g: v[1],
+        b: v[2],
+        a: a
+    };
+}
+function rotate(v, deg) {
+    var h = rgb2hsl(v);
+    h[0] = hue(h[0] + deg);
+    h = hsl2rgb(h);
+    v.r = h[0];
+    v.g = h[1];
+    v.b = h[2];
+}
+function hslString(v) {
+    if (!v) return;
+    const a = rgb2hsl(v);
+    const h = a[0];
+    const s = n2p(a[1]);
+    const l = n2p(a[2]);
+    return v.a < 255 ? `hsla(${h}, ${s}%, ${l}%, ${b2n(v.a)})` : `hsl(${h}, ${s}%, ${l}%)`;
+}
+const map = {
+    x: "dark",
+    Z: "light",
+    Y: "re",
+    X: "blu",
+    W: "gr",
+    V: "medium",
+    U: "slate",
+    A: "ee",
+    T: "ol",
+    S: "or",
+    B: "ra",
+    C: "lateg",
+    D: "ights",
+    R: "in",
+    Q: "turquois",
+    E: "hi",
+    P: "ro",
+    O: "al",
+    N: "le",
+    M: "de",
+    L: "yello",
+    F: "en",
+    K: "ch",
+    G: "arks",
+    H: "ea",
+    I: "ightg",
+    J: "wh"
+};
+const names$1 = {
+    OiceXe: "f0f8ff",
+    antiquewEte: "faebd7",
+    aqua: "ffff",
+    aquamarRe: "7fffd4",
+    azuY: "f0ffff",
+    beige: "f5f5dc",
+    bisque: "ffe4c4",
+    black: "0",
+    blanKedOmond: "ffebcd",
+    Xe: "ff",
+    XeviTet: "8a2be2",
+    bPwn: "a52a2a",
+    burlywood: "deb887",
+    caMtXe: "5f9ea0",
+    KartYuse: "7fff00",
+    KocTate: "d2691e",
+    cSO: "ff7f50",
+    cSnflowerXe: "6495ed",
+    cSnsilk: "fff8dc",
+    crimson: "dc143c",
+    cyan: "ffff",
+    xXe: "8b",
+    xcyan: "8b8b",
+    xgTMnPd: "b8860b",
+    xWay: "a9a9a9",
+    xgYF: "6400",
+    xgYy: "a9a9a9",
+    xkhaki: "bdb76b",
+    xmagFta: "8b008b",
+    xTivegYF: "556b2f",
+    xSange: "ff8c00",
+    xScEd: "9932cc",
+    xYd: "8b0000",
+    xsOmon: "e9967a",
+    xsHgYF: "8fbc8f",
+    xUXe: "483d8b",
+    xUWay: "2f4f4f",
+    xUgYy: "2f4f4f",
+    xQe: "ced1",
+    xviTet: "9400d3",
+    dAppRk: "ff1493",
+    dApskyXe: "bfff",
+    dimWay: "696969",
+    dimgYy: "696969",
+    dodgerXe: "1e90ff",
+    fiYbrick: "b22222",
+    flSOwEte: "fffaf0",
+    foYstWAn: "228b22",
+    fuKsia: "ff00ff",
+    gaRsbSo: "dcdcdc",
+    ghostwEte: "f8f8ff",
+    gTd: "ffd700",
+    gTMnPd: "daa520",
+    Way: "808080",
+    gYF: "8000",
+    gYFLw: "adff2f",
+    gYy: "808080",
+    honeyMw: "f0fff0",
+    hotpRk: "ff69b4",
+    RdianYd: "cd5c5c",
+    Rdigo: "4b0082",
+    ivSy: "fffff0",
+    khaki: "f0e68c",
+    lavFMr: "e6e6fa",
+    lavFMrXsh: "fff0f5",
+    lawngYF: "7cfc00",
+    NmoncEffon: "fffacd",
+    ZXe: "add8e6",
+    ZcSO: "f08080",
+    Zcyan: "e0ffff",
+    ZgTMnPdLw: "fafad2",
+    ZWay: "d3d3d3",
+    ZgYF: "90ee90",
+    ZgYy: "d3d3d3",
+    ZpRk: "ffb6c1",
+    ZsOmon: "ffa07a",
+    ZsHgYF: "20b2aa",
+    ZskyXe: "87cefa",
+    ZUWay: "778899",
+    ZUgYy: "778899",
+    ZstAlXe: "b0c4de",
+    ZLw: "ffffe0",
+    lime: "ff00",
+    limegYF: "32cd32",
+    lRF: "faf0e6",
+    magFta: "ff00ff",
+    maPon: "800000",
+    VaquamarRe: "66cdaa",
+    VXe: "cd",
+    VScEd: "ba55d3",
+    VpurpN: "9370db",
+    VsHgYF: "3cb371",
+    VUXe: "7b68ee",
+    VsprRggYF: "fa9a",
+    VQe: "48d1cc",
+    VviTetYd: "c71585",
+    midnightXe: "191970",
+    mRtcYam: "f5fffa",
+    mistyPse: "ffe4e1",
+    moccasR: "ffe4b5",
+    navajowEte: "ffdead",
+    navy: "80",
+    Tdlace: "fdf5e6",
+    Tive: "808000",
+    TivedBb: "6b8e23",
+    Sange: "ffa500",
+    SangeYd: "ff4500",
+    ScEd: "da70d6",
+    pOegTMnPd: "eee8aa",
+    pOegYF: "98fb98",
+    pOeQe: "afeeee",
+    pOeviTetYd: "db7093",
+    papayawEp: "ffefd5",
+    pHKpuff: "ffdab9",
+    peru: "cd853f",
+    pRk: "ffc0cb",
+    plum: "dda0dd",
+    powMrXe: "b0e0e6",
+    purpN: "800080",
+    YbeccapurpN: "663399",
+    Yd: "ff0000",
+    Psybrown: "bc8f8f",
+    PyOXe: "4169e1",
+    saddNbPwn: "8b4513",
+    sOmon: "fa8072",
+    sandybPwn: "f4a460",
+    sHgYF: "2e8b57",
+    sHshell: "fff5ee",
+    siFna: "a0522d",
+    silver: "c0c0c0",
+    skyXe: "87ceeb",
+    UXe: "6a5acd",
+    UWay: "708090",
+    UgYy: "708090",
+    snow: "fffafa",
+    sprRggYF: "ff7f",
+    stAlXe: "4682b4",
+    tan: "d2b48c",
+    teO: "8080",
+    tEstN: "d8bfd8",
+    tomato: "ff6347",
+    Qe: "40e0d0",
+    viTet: "ee82ee",
+    JHt: "f5deb3",
+    wEte: "ffffff",
+    wEtesmoke: "f5f5f5",
+    Lw: "ffff00",
+    LwgYF: "9acd32"
+};
+function unpack() {
+    const unpacked = {};
+    const keys = Object.keys(names$1);
+    const tkeys = Object.keys(map);
+    let i, j, k, ok, nk;
+    for(i = 0; i < keys.length; i++){
+        ok = nk = keys[i];
+        for(j = 0; j < tkeys.length; j++){
+            k = tkeys[j];
+            nk = nk.replace(k, map[k]);
+        }
+        k = parseInt(names$1[ok], 16);
+        unpacked[nk] = [
+            k >> 16 & 0xFF,
+            k >> 8 & 0xFF,
+            k & 0xFF
+        ];
+    }
+    return unpacked;
+}
+let names;
+function nameParse(str) {
+    if (!names) {
+        names = unpack();
+        names.transparent = [
+            0,
+            0,
+            0,
+            0
+        ];
+    }
+    const a = names[str.toLowerCase()];
+    return a && {
+        r: a[0],
+        g: a[1],
+        b: a[2],
+        a: a.length === 4 ? a[3] : 255
+    };
+}
+const RGB_RE = /^rgba?\(\s*([-+.\d]+)(%)?[\s,]+([-+.e\d]+)(%)?[\s,]+([-+.e\d]+)(%)?(?:[\s,/]+([-+.e\d]+)(%)?)?\s*\)$/;
+function rgbParse(str) {
+    const m = RGB_RE.exec(str);
+    let a = 255;
+    let r, g, b;
+    if (!m) return;
+    if (m[7] !== r) {
+        const v = +m[7];
+        a = m[8] ? p2b(v) : lim(v * 255, 0, 255);
+    }
+    r = +m[1];
+    g = +m[3];
+    b = +m[5];
+    r = 255 & (m[2] ? p2b(r) : lim(r, 0, 255));
+    g = 255 & (m[4] ? p2b(g) : lim(g, 0, 255));
+    b = 255 & (m[6] ? p2b(b) : lim(b, 0, 255));
+    return {
+        r: r,
+        g: g,
+        b: b,
+        a: a
+    };
+}
+function rgbString(v) {
+    return v && (v.a < 255 ? `rgba(${v.r}, ${v.g}, ${v.b}, ${b2n(v.a)})` : `rgb(${v.r}, ${v.g}, ${v.b})`);
+}
+const to = (v)=>v <= 0.0031308 ? v * 12.92 : Math.pow(v, 1.0 / 2.4) * 1.055 - 0.055;
+const from = (v)=>v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+function interpolate(rgb1, rgb2, t) {
+    const r = from(b2n(rgb1.r));
+    const g = from(b2n(rgb1.g));
+    const b = from(b2n(rgb1.b));
+    return {
+        r: n2b(to(r + t * (from(b2n(rgb2.r)) - r))),
+        g: n2b(to(g + t * (from(b2n(rgb2.g)) - g))),
+        b: n2b(to(b + t * (from(b2n(rgb2.b)) - b))),
+        a: rgb1.a + t * (rgb2.a - rgb1.a)
+    };
+}
+function modHSL(v, i, ratio) {
+    if (v) {
+        let tmp = rgb2hsl(v);
+        tmp[i] = Math.max(0, Math.min(tmp[i] + tmp[i] * ratio, i === 0 ? 360 : 1));
+        tmp = hsl2rgb(tmp);
+        v.r = tmp[0];
+        v.g = tmp[1];
+        v.b = tmp[2];
+    }
+}
+function clone(v, proto) {
+    return v ? Object.assign(proto || {}, v) : v;
+}
+function fromObject(input) {
+    var v = {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255
+    };
+    if (Array.isArray(input)) {
+        if (input.length >= 3) {
+            v = {
+                r: input[0],
+                g: input[1],
+                b: input[2],
+                a: 255
+            };
+            if (input.length > 3) v.a = n2b(input[3]);
+        }
+    } else {
+        v = clone(input, {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 1
+        });
+        v.a = n2b(v.a);
+    }
+    return v;
+}
+function functionParse(str) {
+    if (str.charAt(0) === "r") return rgbParse(str);
+    return hueParse(str);
+}
+class Color {
+    constructor(input){
+        if (input instanceof Color) return input;
+        const type = typeof input;
+        let v;
+        if (type === "object") v = fromObject(input);
+        else if (type === "string") v = hexParse(input) || nameParse(input) || functionParse(input);
+        this._rgb = v;
+        this._valid = !!v;
+    }
+    get valid() {
+        return this._valid;
+    }
+    get rgb() {
+        var v = clone(this._rgb);
+        if (v) v.a = b2n(v.a);
+        return v;
+    }
+    set rgb(obj) {
+        this._rgb = fromObject(obj);
+    }
+    rgbString() {
+        return this._valid ? rgbString(this._rgb) : undefined;
+    }
+    hexString() {
+        return this._valid ? hexString(this._rgb) : undefined;
+    }
+    hslString() {
+        return this._valid ? hslString(this._rgb) : undefined;
+    }
+    mix(color, weight) {
+        if (color) {
+            const c1 = this.rgb;
+            const c2 = color.rgb;
+            let w2;
+            const p = weight === w2 ? 0.5 : weight;
+            const w = 2 * p - 1;
+            const a = c1.a - c2.a;
+            const w1 = ((w * a === -1 ? w : (w + a) / (1 + w * a)) + 1) / 2.0;
+            w2 = 1 - w1;
+            c1.r = 0xFF & w1 * c1.r + w2 * c2.r + 0.5;
+            c1.g = 0xFF & w1 * c1.g + w2 * c2.g + 0.5;
+            c1.b = 0xFF & w1 * c1.b + w2 * c2.b + 0.5;
+            c1.a = p * c1.a + (1 - p) * c2.a;
+            this.rgb = c1;
+        }
+        return this;
+    }
+    interpolate(color, t) {
+        if (color) this._rgb = interpolate(this._rgb, color._rgb, t);
+        return this;
+    }
+    clone() {
+        return new Color(this.rgb);
+    }
+    alpha(a) {
+        this._rgb.a = n2b(a);
+        return this;
+    }
+    clearer(ratio) {
+        const rgb = this._rgb;
+        rgb.a *= 1 - ratio;
+        return this;
+    }
+    greyscale() {
+        const rgb = this._rgb;
+        const val = round(rgb.r * 0.3 + rgb.g * 0.59 + rgb.b * 0.11);
+        rgb.r = rgb.g = rgb.b = val;
+        return this;
+    }
+    opaquer(ratio) {
+        const rgb = this._rgb;
+        rgb.a *= 1 + ratio;
+        return this;
+    }
+    negate() {
+        const v = this._rgb;
+        v.r = 255 - v.r;
+        v.g = 255 - v.g;
+        v.b = 255 - v.b;
+        return this;
+    }
+    lighten(ratio) {
+        modHSL(this._rgb, 2, ratio);
+        return this;
+    }
+    darken(ratio) {
+        modHSL(this._rgb, 2, -ratio);
+        return this;
+    }
+    saturate(ratio) {
+        modHSL(this._rgb, 1, ratio);
+        return this;
+    }
+    desaturate(ratio) {
+        modHSL(this._rgb, 1, -ratio);
+        return this;
+    }
+    rotate(deg) {
+        rotate(this._rgb, deg);
+        return this;
+    }
+}
+function index_esm(input) {
+    return new Color(input);
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"2lgZC":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewLineupChange = ()=>{
+    const tables = document.querySelectorAll(".table");
+    tables.forEach((table)=>{
+        const tableHeads = table.querySelectorAll("thead");
+        const playerRows = table.querySelector("tbody").querySelectorAll("tr");
+        tableHeads.forEach((head)=>{
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+        });
+        playerRows.forEach((playerRow, index)=>{
+            const playerColumns = playerRow.querySelectorAll("td");
+            if (playerColumns.length > 2) {
+                const player = {
+                    name: playerColumns[1].textContent,
+                    skills: {
+                        goalie: playerColumns[4].textContent,
+                        defence: playerColumns[5].textContent,
+                        offence: playerColumns[6].textContent,
+                        shooting: playerColumns[7].textContent,
+                        passing: playerColumns[8].textContent,
+                        technical: playerColumns[9].textContent,
+                        aggression: playerColumns[10].textContent
+                    },
+                    experience: parseInt(playerColumns[11].textContent)
+                };
+                const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+                const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+                const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+                const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+                playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+                playerRow.appendChild((0, _renderJs.renderTableCell)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), `${rowClass}td2`));
+                const ratingTd = document.createElement("td");
+                ratingTd.classList.add(`${rowClass}td1`);
+                ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+                playerRow.appendChild(ratingTd);
+            } else playerColumns[1].colSpan = 16;
+        });
+    });
+};
+exports.default = viewLineupChange;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"3H7rA":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewLineupChange = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            name: playerColumns[2].textContent,
+            skills: {
+                goalie: playerColumns[playerColumns.length - 10].textContent,
+                defence: playerColumns[playerColumns.length - 9].textContent,
+                offence: playerColumns[playerColumns.length - 8].textContent,
+                shooting: playerColumns[playerColumns.length - 7].textContent,
+                passing: playerColumns[playerColumns.length - 6].textContent,
+                technical: playerColumns[playerColumns.length - 5].textContent,
+                aggression: playerColumns[playerColumns.length - 4].textContent
+            },
+            experience: parseInt(playerColumns[playerColumns.length - 3].textContent)
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    });
+};
+exports.default = viewLineupChange;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"89fpl":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+/**
+ * View Functions
+ */ const viewMarket = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Pos", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Sk", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Rating", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Grd", "th2"));
+    });
+    const getSkill = (column)=>{
+        return parseInt([].reduce.call(column.childNodes, (a, b)=>{
+            return a + (b.nodeType === 3 ? b.textContent : "");
+        }, ""));
+    };
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[1].textContent,
+            careerLongitivity: Array.from(playerColumns[4].textContent)[0],
+            skills: {
+                goalie: getSkill(playerColumns[5]),
+                defence: getSkill(playerColumns[6]),
+                offence: getSkill(playerColumns[7]),
+                shooting: getSkill(playerColumns[8]),
+                passing: getSkill(playerColumns[9]),
+                technical: getSkill(playerColumns[10]),
+                aggression: getSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
+            },
+            experience: parseInt(playerColumns[12].textContent),
+            overall: playerColumns[13].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+        const bestPotential = (0, _calculationsJs.calculateBestPotential)((0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings)));
+        const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewMarket;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"1zmuv":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _render = require("~/src/render");
+const extractSkill = (el)=>{
+    const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+    return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
+const viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                goalie: extractSkill(playerColumns[5]),
+                defence: extractSkill(playerColumns[6]),
+                offence: extractSkill(playerColumns[7]),
+                shooting: extractSkill(playerColumns[8]),
+                passing: extractSkill(playerColumns[9]),
+                technical: extractSkill(playerColumns[10]),
+                aggression: extractSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
+            }
+        };
+        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
+        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewTraining;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"4uAmO":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _render = require("~/src/render");
+const extractSkill = (el)=>{
+    const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+    return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
+const viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                goalie: extractSkill(playerColumns[6]),
+                defence: extractSkill(playerColumns[7]),
+                offence: extractSkill(playerColumns[8]),
+                shooting: extractSkill(playerColumns[9]),
+                passing: extractSkill(playerColumns[10]),
+                technical: extractSkill(playerColumns[11]),
+                aggression: extractSkill(playerColumns[12])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                offence: parseInt(playerQualities[2].textContent),
+                shooting: parseInt(playerQualities[3].textContent),
+                passing: parseInt(playerQualities[4].textContent),
+                technical: parseInt(playerQualities[5].textContent),
+                aggression: parseInt(playerQualities[6].textContent)
+            }
+        };
+        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
+        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewTraining;
+
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"3cZG7":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+exports.default = multilangRoutes = {
+    playersOverview: [
+        "/en/overview-of-players",
+        "/lv/speletaju-parskats"
+    ],
+    playerProfile: [
+        "/en/player",
+        "/lv/speletajs"
+    ],
+    playerTraining: [
+        "/en/players-practice",
+        "/lv/speletaju-trenini"
+    ],
+    lines: [
+        "/en/lines",
+        "/lv/mainas"
+    ],
+    editLine: [
+        "/en/edit-line",
+        "/lv/rediget-mainu"
+    ],
+    nextGame: [
+        "/en/next-game",
+        "/lv/nakosa-spele"
+    ],
+    market: [
+        "/en/market",
+        "/lv/tirgus"
+    ],
+    trainingCamp: [
+        "/en/training-camp",
+        "/lv/treninnometne"
+    ]
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"mJRmF":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _viewPlayerList = require("./views/viewPlayerList");
+var _viewPlayerListDefault = parcelHelpers.interopDefault(_viewPlayerList);
+var _viewPlayerProfile = require("./views/viewPlayerProfile");
+var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
+var _viewLineup = require("./views/viewLineup");
+var _viewLineupDefault = parcelHelpers.interopDefault(_viewLineup);
+// import viewLineupChange from "./views/viewLineupChange";
+var _viewMarket = require("./views/viewMarket");
+var _viewMarketDefault = parcelHelpers.interopDefault(_viewMarket);
+var _viewTraining = require("./views/viewTraining");
+var _viewTrainingDefault = parcelHelpers.interopDefault(_viewTraining);
+/**
+ * Run View Functions
+ */ const initSoccer = ()=>{
+    if (window.location.href.includes("speletaju-parskats")) (0, _viewPlayerListDefault.default)();
+    if (window.location.href.includes("speletajs")) (0, _viewPlayerProfileDefault.default)();
+    if (window.location.href.includes("sastavs") || window.location.href.includes("izkartojuma-versija")) (0, _viewLineupDefault.default)();
+    if (window.location.href.includes("speletaju-trenini")) (0, _viewTrainingDefault.default)();
+    // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
+    if (window.location.href.includes("speletaju-tirgus")) (0, _viewMarketDefault.default)();
+};
+exports.default = initSoccer;
+
+},{"./views/viewPlayerList":"lRSRi","./views/viewPlayerProfile":"8mBnL","./views/viewLineup":"2pq5S","./views/viewMarket":"7EdSH","./views/viewTraining":"jh5gj","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"lRSRi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerList = ()=>{
+    const mainContent = document.getElementsByClassName("main_content");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[2].textContent,
+            careerLongitivity: Array.from(playerColumns[5].textContent)[0],
+            skills: {
+                goalie: playerColumns[6].textContent,
+                defence: playerColumns[7].textContent,
+                midfield: playerColumns[8].textContent,
+                offence: playerColumns[9].textContent,
+                shooting: playerColumns[10].textContent,
+                passing: playerColumns[11].textContent,
+                technical: playerColumns[12].textContent,
+                speed: playerColumns[13].textContent,
+                heading: playerColumns[14].textContent
+            },
+            experience: parseInt(playerColumns[15].textContent),
+            overall: playerColumns[16].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    });
+    const filterByPositions = (pos)=>{
+        if (pos === "All") {
+            document.querySelectorAll(".player-row").forEach((row)=>{
+                row.style.display = "table-row";
+            });
+            return;
+        }
+        document.querySelectorAll(".player-row").forEach((row)=>{
+            row.style.display = "none";
+        });
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
+            row.style.display = "table-row";
+        });
+    };
+    const positionFilter = document.createElement("div");
+    positionFilter.classList.add("position-filter");
+    positionFilter.classList.add("white_box");
+    const positionButtonAll = (0, _renderJs.renderButton)(`All (${playerRows.length})`);
+    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
+    positionFilter.append(positionButtonAll);
+    (0, _settings.positionSettings).forEach((pos)=>{
+        const positionButton = (0, _renderJs.renderButton)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
+        positionFilter.append(positionButton);
+    });
+    mainContent[0].prepend(positionFilter);
+};
+exports.default = viewPlayerList;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"50AAe":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
+parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
+const ratios = {
+    main: 1,
+    high: 0.75,
+    medium: 0.5,
+    low: 0.25
+};
+const positionSettings = [
+    {
+        name: "GK",
+        ratios: {
+            goalie: ratios.main,
+            technical: ratios.high,
+            speed: ratios.high,
+            passing: ratios.low,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "SD",
+        ratios: {
+            defence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CD",
+        ratios: {
+            defence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.medium,
+            passing: ratios.medium,
+            heading: ratios.medium
+        }
+    },
+    {
+        name: "SM",
+        ratios: {
+            midfield: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CM",
+        ratios: {
+            midfield: ratios.main,
+            technical: ratios.high,
+            speed: ratios.low,
+            passing: ratios.high,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "SF",
+        ratios: {
+            offence: ratios.main,
+            technical: ratios.high,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CF",
+        ratios: {
+            offence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.low,
+            heading: ratios.low
+        }
+    }
+];
+const ratingSettings = {
+    low: 300,
+    medium: 600,
+    high: 900
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"8mBnL":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerProfile = ()=>{
+    const playerTable = document.getElementById("table-1");
+    const player = {
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#defense").textContent),
+            midfield: parseInt(playerTable.querySelector("#midfield").textContent),
+            offence: parseInt(playerTable.querySelector("#attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            speed: parseInt(playerTable.querySelector("#speed").textContent),
+            heading: parseInt(playerTable.querySelector("#heading").textContent)
+        },
+        qualities: {
+            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+            midfield: parseInt(playerTable.querySelector("#kva_midfield").textContent),
+            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
+            speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
+            heading: parseInt(playerTable.querySelector("#kva_heading").textContent)
+        },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    const positions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+    const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
+    const contentColumn = document.querySelector(".column_left");
+    /**
+   * Ability Box
+   */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience)}</div>
+  <div>(${bestPosition.level})</div>`;
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, _renderJs.renderComparison)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), (0, _settings.ratingSettings)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
+    /**
+   * Potential Box
+   */ const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+    const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+    const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential);
+    potentialBox.appendChild(potentialBadge);
+    const potentialDescription = (0, _renderJs.renderPotential)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
+    contentColumn.appendChild(potentialBox);
+};
+exports.default = viewPlayerProfile;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"2pq5S":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewLineupChange = ()=>{
+    const tables = document.querySelectorAll(".table");
+    const players = [];
+    tables.forEach((table)=>{
+        const tableHeads = table.querySelectorAll("thead");
+        const playerRows = table.querySelector("tbody").querySelectorAll("tr");
+        tableHeads.forEach((head)=>{
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+        });
+        playerRows.forEach((playerRow, index)=>{
+            const playerColumns = playerRow.querySelectorAll("td");
+            if (playerColumns.length > 2) {
+                const player = {
+                    id: playerColumns[1].querySelectorAll("a")[1].getAttribute("href").match(/\d/g).join(""),
+                    name: playerColumns[1].textContent,
+                    skills: {
+                        goalie: playerColumns[4].textContent,
+                        defence: playerColumns[5].textContent,
+                        midfield: playerColumns[6].textContent,
+                        offence: playerColumns[7].textContent,
+                        shooting: playerColumns[8].textContent,
+                        passing: playerColumns[9].textContent,
+                        technical: playerColumns[10].textContent,
+                        speed: playerColumns[11].textContent,
+                        heading: playerColumns[12].textContent
+                    },
+                    experience: parseInt(playerColumns[13].textContent)
+                };
+                players.push(player);
+                const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+                const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+                const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+                const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+                playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+                playerRow.appendChild((0, _renderJs.renderTableCell)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), `${rowClass}td2`));
+                const ratingTd = document.createElement("td");
+                ratingTd.classList.add(`${rowClass}td1`);
+                ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+                playerRow.appendChild(ratingTd);
+            } else playerColumns[1].colSpan = 16;
+        });
+    });
+    const formationEl = document.querySelector("#lineup");
+    const formationSlots = formationEl.querySelectorAll(".player_slot");
+    const findPosition = (formationId)=>{
+        const formationPositions = {
+            GK: [
+                0
+            ],
+            SD: [
+                11,
+                12,
+                21,
+                22,
+                16,
+                17,
+                26,
+                27
+            ],
+            CD: [
+                13,
+                14,
+                15,
+                23,
+                24,
+                25
+            ],
+            CM: [
+                33,
+                34,
+                35,
+                43,
+                44,
+                45,
+                53,
+                54,
+                55
+            ],
+            SM: [
+                31,
+                32,
+                41,
+                42,
+                51,
+                52,
+                36,
+                37,
+                46,
+                47,
+                56,
+                57
+            ],
+            CF: [
+                63,
+                64,
+                65,
+                73,
+                74,
+                75
+            ],
+            SF: [
+                61,
+                62,
+                71,
+                72,
+                66,
+                67,
+                76,
+                77
+            ]
+        };
+        let position;
+        for (const [key, value] of Object.entries(formationPositions))if (value.includes(parseInt(formationId))) position = key;
+        return position;
+    };
+    const findPlayer = (playerId)=>{
+        return players.find((player)=>player.id === playerId);
+    };
+    const showFormationRankings = ()=>{
+        formationSlots.forEach((slot)=>{
+            const id = slot.getAttribute("id");
+            const player = slot.querySelector(".player");
+            if (player) {
+                const position = findPosition(id);
+                const playerId = player.getAttribute("id").substring(12);
+                const playerData = findPlayer(playerId);
+                const playerSkills = (0, _calculationsJs.calculatePositionsSkills)(playerData, (0, _settings.positionSettings));
+                const captionEl = player.querySelector(".lineup_spot_caption");
+                const skill = (0, _calculationsJs.calculateSkillWithExp)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
+                if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
+                captionEl.appendChild((0, _renderJs.renderComparison)(skill, (0, _settings.ratingSettings)));
+            }
+        });
+    };
+    showFormationRankings();
+    const fieldEl = document.querySelector("#lineup .lineup_field");
+    const config = {
+        attributes: false,
+        childList: true,
+        subtree: true
+    };
+    const callback = (mutationList, observer)=>{
+        observer.disconnect();
+        showFormationRankings();
+        observer.observe(fieldEl, config);
+    };
+    const observer = new MutationObserver(callback);
+    observer.observe(fieldEl, config);
+};
+exports.default = viewLineupChange;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"7EdSH":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+/**
+ * View Functions
+ */ const viewMarket = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Pos", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Sk", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Rating", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Grd", "th2"));
+    });
+    const getSkill = (column)=>{
+        return parseInt([].reduce.call(column.childNodes, (a, b)=>{
+            return a + (b.nodeType === 3 ? b.textContent : "");
+        }, ""));
+    };
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[1].textContent,
+            careerLongitivity: Array.from(playerColumns[3].textContent)[0],
+            skills: {
+                goalie: getSkill(playerColumns[4]),
+                defence: getSkill(playerColumns[5]),
+                midfield: getSkill(playerColumns[6]),
+                offence: getSkill(playerColumns[7]),
+                shooting: getSkill(playerColumns[8]),
+                passing: getSkill(playerColumns[9]),
+                technical: getSkill(playerColumns[10]),
+                speed: getSkill(playerColumns[11]),
+                heading: getSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                midfield: parseInt(playerQualities[2].textContent),
+                offence: parseInt(playerQualities[3].textContent),
+                shooting: parseInt(playerQualities[4].textContent),
+                passing: parseInt(playerQualities[5].textContent),
+                technical: parseInt(playerQualities[6].textContent),
+                speed: parseInt(playerQualities[7].textContent),
+                heading: parseInt(playerQualities[7].textContent)
+            },
+            experience: parseInt(playerColumns[13].textContent),
+            overall: playerColumns[14].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+        const bestPotential = (0, _calculationsJs.calculateBestPotential)((0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings)));
+        const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewMarket;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"jh5gj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _render = require("~/src/render");
+const extractSkill = (el)=>{
+    const skill = el.querySelector("span:first-child");
+    return parseInt(skill.textContent);
+};
+const viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                goalie: extractSkill(playerColumns[5]),
+                defence: extractSkill(playerColumns[6]),
+                midfield: extractSkill(playerColumns[7]),
+                offence: extractSkill(playerColumns[8]),
+                shooting: extractSkill(playerColumns[9]),
+                passing: extractSkill(playerColumns[10]),
+                technical: extractSkill(playerColumns[11]),
+                speed: extractSkill(playerColumns[12]),
+                heading: extractSkill(playerColumns[13])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                midfield: parseInt(playerQualities[2].textContent),
+                offence: parseInt(playerQualities[3].textContent),
+                shooting: parseInt(playerQualities[4].textContent),
+                passing: parseInt(playerQualities[5].textContent),
+                technical: parseInt(playerQualities[6].textContent),
+                speed: parseInt(playerQualities[7].textContent),
+                heading: parseInt(playerQualities[8].textContent)
+            }
+        };
+        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
+        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewTraining;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"5Tlaz":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _routes = require("./routes");
+var _routesDefault = parcelHelpers.interopDefault(_routes);
+// import viewPlayerList from "./views/viewPlayerList";
+var _viewPlayerProfile = require("./views/viewPlayerProfile");
+var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
+// import viewLineup from "./views/viewLineup";
+// import viewLineupChange from "./views/viewLineupChange";
+// import viewMarket from "./views/viewMarket";
+// import viewTraining from "./views/viewTraining";
+// import viewTrainingCamp from "./views/viewTrainingCamp";
+const viewPlayerList = ()=>{
+    console.log("view player list");
+};
+/**
+ * Run View Functions
+ */ const initBasketball = ()=>{
+    console.log("init basketball");
+    const getRoute = (inputUrl)=>{
+        const urlRegex = /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
+        const match = inputUrl.match(urlRegex);
+        return match[1];
+    };
+    const url = window.location.href;
+    if ((0, _routesDefault.default).playersOverview.includes(getRoute(url))) viewPlayerList();
+    if ((0, _routesDefault.default).playerProfile.includes(getRoute(url))) (0, _viewPlayerProfileDefault.default)();
+// if (routes.playerTraining.includes(getRoute(url))) viewTraining();
+// if (routes.lines.includes(getRoute(url))) viewLineup();
+// if (routes.editLine.includes(getRoute(url))) viewLineupChange();
+// if (routes.market.includes(getRoute(url))) viewMarket();
+// if (routes.trainingCamp.includes(getRoute(url))) viewTrainingCamp();
+// TODO: Create next game view
+// if (routes.nextGame.includes(getRoute(url))) viewNextGame();
+};
+exports.default = initBasketball;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU","./routes":"3LAg2","./views/viewPlayerProfile":"1XLC7"}],"3LAg2":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+exports.default = multilangRoutes = {
+    playersOverview: [
+        "/en/overview-of-players",
+        "/lv/speletaja-parskats"
+    ],
+    playerProfile: [
+        "/en/player-profile",
+        "/lv/speletaja-profils"
+    ]
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}],"1XLC7":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+const viewPlayerProfile = ()=>{
+    console.log("player profile");
+    const playerTable = document.getElementById("table-1");
+    if (!playerTable) return new Error("Player table not found");
+    const player = {
+        age: parseInt(playerTable.querySelector("#age").textContent),
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            blocking: parseInt(playerTable.querySelector("#block").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            speed: parseInt(playerTable.querySelector("#speed").textContent),
+            aggression: parseInt(playerTable.querySelector("#aggressivity").textContent),
+            jumping: parseInt(playerTable.querySelector("#leaping").textContent)
+        },
+        qualities: {
+            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
+            blocking: parseInt(playerTable.querySelector("#kva_block").textContent),
+            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
+            speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
+            aggression: parseInt(playerTable.querySelector("#kva_aggressivity").textContent),
+            jumping: parseInt(playerTable.querySelector("#kva_leaping").textContent)
+        },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    console.log(player);
+    const positions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+};
+exports.default = viewPlayerProfile;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU","../settings":"kAwjD","~/src/calculations.js":"6mg5U"}],"kAwjD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
+parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
+const positionSettings = [
+    {
+        name: "PG",
+        ratios: {
+            goalie: 1,
+            technical: 0.5,
+            passing: 0.5
+        }
+    },
+    {
+        name: "SG",
+        ratios: {
+            defence: 1,
+            passing: 0.5,
+            aggression: 0.5
+        },
+        bonus: {
+            technical: 0.5
+        }
+    },
+    {
+        name: "SF",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            aggression: 0.5
+        },
+        bonus: {
+            shooting: 0.75
+        }
+    },
+    {
+        name: "PF",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            passing: 0.5
+        },
+        bonus: {
+            shooting: 0.5
+        }
+    },
+    {
+        name: "C",
+        ratios: {
+            offence: 1,
+            technical: 0.5,
+            passing: 0.5
+        },
+        bonus: {
+            shooting: 0.5
+        }
+    }
+];
+const ratingSettings = {
+    low: 500,
+    medium: 1000,
+    high: 1500
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"5oERU"}]},["dr3gM","fZBAS"], "fZBAS", "parcelRequire94c2")
+
 //# sourceMappingURL=main.js.map
