@@ -1,4 +1,4 @@
-export default multilangRoutes = {
+export default {
   playersOverview: ["/en/overview-of-players", "/lv/speletaju-parskats"],
   playerProfile: ["/en/player", "/lv/speletajs"],
   playerTraining: ["/en/players-practice", "/lv/speletaju-trenini"],
