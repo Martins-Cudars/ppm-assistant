@@ -1,5 +1,4 @@
-import { positionSettings } from "../settings";
-import { calculatePositionsSkills } from "~/src/calculations.js";
+import { calculatePositionsSkills } from "../calculations/positionsSkills";
 
 const viewPlayerProfile = () => {
   console.log("player profile");
@@ -12,6 +11,7 @@ const viewPlayerProfile = () => {
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span").textContent)[0]
     ),
+    height: parseInt(playerTable.querySelector("#vyska").textContent),
     skills: {
       shooting: parseInt(playerTable.querySelector("#shooting").textContent),
       blocking: parseInt(playerTable.querySelector("#block").textContent),
@@ -48,7 +48,9 @@ const viewPlayerProfile = () => {
 
   console.log(player);
 
-  const positions = calculatePositionsSkills(player, positionSettings);
+  const positions = calculatePositionsSkills(player);
+
+  console.log(positions);
 };
 
 export default viewPlayerProfile;

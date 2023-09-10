@@ -1,62 +1,93 @@
-const positionSettings = [
+enum Ratio {
+  verylow = 0.2,
+  low = 0.4,
+  medium = 0.6,
+  high = 0.8,
+  veryhigh = 1,
+}
+
+interface PositionSetting {
+  name: "PG" | "SG" | "SF" | "PF" | "C";
+  ratios: {
+    shooting?: number;
+    blocking?: number;
+    passing?: number;
+    technical?: number;
+    speed?: number;
+    aggression?: number;
+    jumping?: number;
+  };
+  minHeight: number;
+  maxHeight: number;
+}
+
+const positionSettings: PositionSetting[] = [
   {
     name: "PG",
     ratios: {
-      goalie: 1,
-      technical: 0.5,
-      passing: 0.5,
+      passing: Ratio.veryhigh,
+      technical: Ratio.high,
+      speed: Ratio.high,
+      aggression: Ratio.verylow,
+      jumping: Ratio.verylow,
     },
+    minHeight: 175,
+    maxHeight: 190,
   },
   {
     name: "SG",
     ratios: {
-      defence: 1,
-      passing: 0.5,
-      aggression: 0.5,
+      passing: Ratio.high,
+      technical: Ratio.high,
+      speed: Ratio.medium,
+      aggression: Ratio.low,
+      jumping: Ratio.low,
     },
-    bonus: {
-      technical: 0.5,
-    },
+    minHeight: 185,
+    maxHeight: 200,
   },
   {
     name: "SF",
     ratios: {
-      offence: 1,
-      technical: 0.5,
-      aggression: 0.5,
+      passing: Ratio.medium,
+      technical: Ratio.medium,
+      speed: Ratio.medium,
+      aggression: Ratio.medium,
+      jumping: Ratio.medium,
     },
-    bonus: {
-      shooting: 0.75,
-    },
+    minHeight: 190,
+    maxHeight: 205,
   },
   {
     name: "PF",
     ratios: {
-      offence: 1,
-      technical: 0.5,
-      passing: 0.5,
+      passing: Ratio.low,
+      technical: Ratio.low,
+      speed: Ratio.medium,
+      aggression: Ratio.high,
+      jumping: Ratio.high,
     },
-    bonus: {
-      shooting: 0.5,
-    },
+    minHeight: 200,
+    maxHeight: 215,
   },
   {
     name: "C",
     ratios: {
-      offence: 1,
-      technical: 0.5,
-      passing: 0.5,
+      passing: Ratio.verylow,
+      technical: Ratio.low,
+      speed: Ratio.low,
+      aggression: Ratio.veryhigh,
+      jumping: Ratio.veryhigh,
     },
-    bonus: {
-      shooting: 0.5,
-    },
+    minHeight: 205,
+    maxHeight: 220,
   },
 ];
 
 const ratingSettings = {
-  low: 500,
-  medium: 1000,
-  high: 1500,
+  low: 300,
+  medium: 600,
+  high: 900,
 };
 
 export { positionSettings, ratingSettings };
