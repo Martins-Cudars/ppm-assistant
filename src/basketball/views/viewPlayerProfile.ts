@@ -15,7 +15,6 @@ import {
 } from "~/src/render.js";
 
 const viewPlayerProfile = () => {
-  console.log("player profile");
   const playerTable = document.getElementById("table-1");
 
   if (!playerTable) return new Error("Player table not found");
@@ -66,12 +65,8 @@ const viewPlayerProfile = () => {
     overall: playerTable.querySelector("#index_skill")!.textContent!,
   };
 
-  console.log(player);
-
   const positions = calculatePositionsSkills(player);
   const bestPosition = calculateBestPosition(positions);
-
-  console.log(positions);
 
   const contentColumn = document.querySelector(".column_left");
 
@@ -131,6 +126,38 @@ const viewPlayerProfile = () => {
   abilityBox.appendChild(allPositions);
 
   contentColumn.appendChild(abilityBox);
+
+  /**
+   * Potential Box
+   */
+  const potentialBox = document.createElement("div");
+  potentialBox.classList.add("player-profile");
+  potentialBox.classList.add("player-profile--potential");
+
+  const potentials = calculatePositionsQualities(player, positionSettings);
+  const bestPotential = potentials.find(
+    (el) => el.position === bestPosition.position
+  );
+
+  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  potentialBox.appendChild(potentialBadge);
+
+  const potentialDescription = renderPotential(bestPotential);
+  potentialBox.appendChild(potentialDescription);
+
+  const allPotentials = document.createElement("div");
+  allPotentials.classList.add("potential__positions");
+
+  let potentialList = ``;
+
+  potentials.forEach((potential) => {
+    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+  });
+
+  allPotentials.innerHTML = potentialList;
+  potentialBox.appendChild(allPotentials);
+
+  contentColumn.appendChild(potentialBox);
 };
 
 export default viewPlayerProfile;
