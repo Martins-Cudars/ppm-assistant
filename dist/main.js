@@ -15642,7 +15642,7 @@ const viewPlayerList = ()=>{
 };
 exports.default = initBasketball;
 
-},{"./routes":"3LAg2","./views/viewPlayerProfile":"1XLC7","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"3LAg2":[function(require,module,exports) {
+},{"./routes":"3LAg2","./views/viewPlayerProfile":"8zHTS","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"3LAg2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 exports.default = multilangRoutes = {
@@ -15656,10 +15656,13 @@ exports.default = multilangRoutes = {
     ]
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"1XLC7":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"8zHTS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
 var _positionsSkills = require("../calculations/positionsSkills");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
 const viewPlayerProfile = ()=>{
     console.log("player profile");
     const playerTable = document.getElementById("table-1");
@@ -15691,11 +15694,44 @@ const viewPlayerProfile = ()=>{
     };
     console.log(player);
     const positions = (0, _positionsSkills.calculatePositionsSkills)(player);
+    const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
     console.log(positions);
+    const contentColumn = document.querySelector(".column_left");
+    // If content column is not found, return
+    if (!contentColumn) return new Error("Content column not found");
+    /**
+     * Ability Box
+     */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience)}</div>
+   <div>(${bestPosition.level})</div>`;
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, _renderJs.renderComparison)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), (0, _settings.ratingSettings)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
 };
 exports.default = viewPlayerProfile;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","../calculations/positionsSkills":"iFsmd"}],"iFsmd":[function(require,module,exports) {
+},{"../calculations/positionsSkills":"iFsmd","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","../settings":"kAwjD"}],"iFsmd":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
@@ -15707,11 +15743,16 @@ const calculatePositionsSkills = (player)=>{
     const positionSkills = [];
     (0, _settings.positionSettings).forEach((position)=>{
         const skills = [];
-        for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
+        const ratios = [];
+        for (const [key, value] of Object.entries(position.ratios)){
+            skills.push(parseInt(player.skills[key]) / value);
+            ratios.push(value);
+        }
         const baseSkill = Math.min(...skills);
+        const maxMultiplier = Math.max(...ratios);
         positionSkills.push({
             position: position.name,
-            level: Math.round(baseSkill * calculateHeightModifier(player.height, position.minHeight, position.maxHeight))
+            level: Math.round(baseSkill * maxMultiplier * calculateHeightModifier(player.height, position.minHeight, position.maxHeight))
         });
     });
     return positionSkills;
