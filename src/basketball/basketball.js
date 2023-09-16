@@ -1,6 +1,6 @@
 import routes from "./routes";
 
-// import viewPlayerList from "./views/viewPlayerList";
+import viewPlayerList from "./views/viewPlayerList";
 import viewPlayerProfile from "./views/viewPlayerProfile";
 // import viewLineup from "./views/viewLineup";
 // import viewLineupChange from "./views/viewLineupChange";

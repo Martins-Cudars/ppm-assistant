@@ -91,7 +91,6 @@ const viewPlayerList = () => {
         row.style.display = "table-row";
       });
   };
-  
 
   const positionFilter = document.createElement("div");
   positionFilter.classList.add("position-filter");
@@ -101,11 +100,14 @@ const viewPlayerList = () => {
   positionFilter.append(positionButtonAll);
 
   positionSettings.forEach((pos) => {
-    const positionButton = renderButton(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+    const positionButton = renderButton(
+      `${pos.name} (${
+        document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length
+      })`
+    );
     positionButton.addEventListener("click", () => filterByPositions(pos.name));
-    positionFilter.append(positionButton)
+    positionFilter.append(positionButton);
   });
-
 
   mainContent[0].prepend(positionFilter);
 };
