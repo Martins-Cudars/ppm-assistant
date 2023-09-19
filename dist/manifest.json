@@ -16,7 +16,8 @@
       ],
       "matches": [
         "https://hockey.powerplaymanager.com/*",
-        "https://soccer.powerplaymanager.com/*"
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
       ]
     }
   ],
@@ -24,11 +25,18 @@
     {
       "matches": [
         "https://hockey.powerplaymanager.com/*",
-        "https://soccer.powerplaymanager.com/*"
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
       ],
-      "css": ["styles.css"],
-      "js": ["main.js"]
+      "css": [
+        "styles.css"
+      ],
+      "js": [
+        "main.js"
+      ]
     }
   ],
-  "permissions": ["storage"]
+  "permissions": [
+    "storage"
+  ]
 }
