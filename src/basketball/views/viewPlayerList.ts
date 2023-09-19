@@ -1,4 +1,4 @@
-import { positionSettings, ratingSettings } from "../settings";
+import { ratingSettings } from "../settings";
 import { calculatePositionsSkills } from "../calculations/positionsSkills";
 import {
   calculateBestPosition,
@@ -37,24 +37,24 @@ const viewPlayerList = () => {
     const player = {
       name: playerColumns[0].textContent,
       age: playerColumns[4].textContent,
-      careerLongitivity: Array.from(playerColumns[7].textContent)[0],
+      careerLongitivity: Array.from(playerColumns[7].textContent!)[0],
       skills: {
-        shooting: parseInt(playerColumns[8].textContent),
-        blocking: parseInt(playerColumns[9].textContent),
-        passing: parseInt(playerColumns[10].textContent),
-        technical: parseInt(playerColumns[11].textContent),
-        speed: parseInt(playerColumns[12].textContent),
-        aggression: parseInt(playerColumns[13].textContent),
-        jumping: parseInt(playerColumns[14].textContent),
+        shooting: parseInt(playerColumns[8].textContent!),
+        blocking: parseInt(playerColumns[9].textContent!),
+        passing: parseInt(playerColumns[10].textContent!),
+        technical: parseInt(playerColumns[11].textContent!),
+        speed: parseInt(playerColumns[12].textContent!),
+        aggression: parseInt(playerColumns[13].textContent!),
+        jumping: parseInt(playerColumns[14].textContent!),
       },
 
-      experience: parseInt(playerColumns[15].textContent),
-      overall: parseInt(playerColumns[16].textContent),
-      height: parseInt(playerColumns[17].textContent),
+      experience: parseInt(playerColumns[15].textContent!),
+      overall: parseInt(playerColumns[16].textContent!),
+      height: parseInt(playerColumns[17].textContent!),
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
+    const skills = calculatePositionsSkills(player);
     const bestPosition = calculateBestPosition(skills);
 
     playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);

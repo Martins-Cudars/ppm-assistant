@@ -15609,13 +15609,15 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _routes = require("./routes");
 var _routesDefault = parcelHelpers.interopDefault(_routes);
-// import viewPlayerList from "./views/viewPlayerList";
+var _viewPlayerList = require("./views/viewPlayerList");
+var _viewPlayerListDefault = parcelHelpers.interopDefault(_viewPlayerList);
 var _viewPlayerProfile = require("./views/viewPlayerProfile");
 var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
 // import viewLineup from "./views/viewLineup";
 // import viewLineupChange from "./views/viewLineupChange";
 // import viewMarket from "./views/viewMarket";
-// import viewTraining from "./views/viewTraining";
+var _viewTraining = require("./views/viewTraining");
+var _viewTrainingDefault = parcelHelpers.interopDefault(_viewTraining);
 // import viewTrainingCamp from "./views/viewTrainingCamp";
 const viewPlayerList = ()=>{
     console.log("view player list");
@@ -15630,9 +15632,9 @@ const viewPlayerList = ()=>{
         return match[1];
     };
     const url = window.location.href;
-    if ((0, _routesDefault.default).playersOverview.includes(getRoute(url))) viewPlayerList();
+    if ((0, _routesDefault.default).playersOverview.includes(getRoute(url))) (0, _viewPlayerListDefault.default)();
     if ((0, _routesDefault.default).playerProfile.includes(getRoute(url))) (0, _viewPlayerProfileDefault.default)();
-// if (routes.playerTraining.includes(getRoute(url))) viewTraining();
+    if ((0, _routesDefault.default).playerTraining.includes(getRoute(url))) (0, _viewTrainingDefault.default)();
 // if (routes.lines.includes(getRoute(url))) viewLineup();
 // if (routes.editLine.includes(getRoute(url))) viewLineupChange();
 // if (routes.market.includes(getRoute(url))) viewMarket();
@@ -15642,7 +15644,7 @@ const viewPlayerList = ()=>{
 };
 exports.default = initBasketball;
 
-},{"./routes":"3LAg2","./views/viewPlayerProfile":"8zHTS","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"3LAg2":[function(require,module,exports) {
+},{"./routes":"3LAg2","./views/viewPlayerProfile":"8zHTS","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","./views/viewPlayerList":"gDzBD","./views/viewTraining":"1tefY"}],"3LAg2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 exports.default = multilangRoutes = {
@@ -15653,6 +15655,10 @@ exports.default = multilangRoutes = {
     playerProfile: [
         "/en/player-profile",
         "/lv/speletaja-profils"
+    ],
+    playerTraining: [
+        "/en/players-practice",
+        "/lv/speletaju-trenini"
     ]
 };
 
@@ -15664,7 +15670,6 @@ var _positionsSkills = require("../calculations/positionsSkills");
 var _calculationsJs = require("~/src/calculations.js");
 var _renderJs = require("~/src/render.js");
 const viewPlayerProfile = ()=>{
-    console.log("player profile");
     const playerTable = document.getElementById("table-1");
     if (!playerTable) return new Error("Player table not found");
     const player = {
@@ -15692,10 +15697,8 @@ const viewPlayerProfile = ()=>{
         experience: parseInt(playerTable.querySelector("#experience").textContent),
         overall: playerTable.querySelector("#index_skill").textContent
     };
-    console.log(player);
     const positions = (0, _positionsSkills.calculatePositionsSkills)(player);
     const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
-    console.log(positions);
     const contentColumn = document.querySelector(".column_left");
     // If content column is not found, return
     if (!contentColumn) return new Error("Content column not found");
@@ -15728,37 +15731,30 @@ const viewPlayerProfile = ()=>{
     abilityBox.appendChild(abilityDescription);
     abilityBox.appendChild(allPositions);
     contentColumn.appendChild(abilityBox);
+    /**
+     * Potential Box
+     */ const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+    const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+    const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential);
+    potentialBox.appendChild(potentialBadge);
+    const potentialDescription = (0, _renderJs.renderPotential)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
+    contentColumn.appendChild(potentialBox);
 };
 exports.default = viewPlayerProfile;
 
-},{"../calculations/positionsSkills":"iFsmd","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","../settings":"kAwjD"}],"iFsmd":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
-var _settings = require("../settings");
-const calculateHeightModifier = (height, minHeight, maxHeight)=>{
-    return height < minHeight ? 1 - (minHeight - height) * 0.03 : height > maxHeight ? 1 - (height - maxHeight) * 0.03 : 1;
-};
-const calculatePositionsSkills = (player)=>{
-    const positionSkills = [];
-    (0, _settings.positionSettings).forEach((position)=>{
-        const skills = [];
-        const ratios = [];
-        for (const [key, value] of Object.entries(position.ratios)){
-            skills.push(parseInt(player.skills[key]) / value);
-            ratios.push(value);
-        }
-        const baseSkill = Math.min(...skills);
-        const maxMultiplier = Math.max(...ratios);
-        positionSkills.push({
-            position: position.name,
-            level: Math.round(baseSkill * maxMultiplier * calculateHeightModifier(player.height, position.minHeight, position.maxHeight))
-        });
-    });
-    return positionSkills;
-};
-
-},{"../settings":"kAwjD","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kAwjD":[function(require,module,exports) {
+},{"../settings":"kAwjD","../calculations/positionsSkills":"iFsmd","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kAwjD":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
@@ -15839,6 +15835,139 @@ const ratingSettings = {
     high: 900
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}]},["7KqDl","fZBAS"], "fZBAS", "parcelRequire94c2")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"iFsmd":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
+var _settings = require("../settings");
+const calculateHeightModifier = (height, minHeight, maxHeight)=>{
+    return height < minHeight ? 1 - (minHeight - height) * 0.03 : height > maxHeight ? 1 - (height - maxHeight) * 0.03 : 1;
+};
+const calculatePositionsSkills = (player)=>{
+    const positionSkills = [];
+    (0, _settings.positionSettings).forEach((position)=>{
+        const skills = [];
+        const ratios = [];
+        for (const [key, value] of Object.entries(position.ratios)){
+            skills.push(parseInt(player.skills[key]) / value);
+            ratios.push(value);
+        }
+        const baseSkill = Math.min(...skills);
+        const maxMultiplier = Math.max(...ratios);
+        positionSkills.push({
+            position: position.name,
+            level: Math.round(baseSkill * maxMultiplier * calculateHeightModifier(player.height, position.minHeight, position.maxHeight))
+        });
+    });
+    return positionSkills;
+};
+
+},{"../settings":"kAwjD","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"gDzBD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _positionsSkills = require("../calculations/positionsSkills");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerList = ()=>{
+    console.log("viewPlayerList");
+    const mainContent = document.getElementsByClassName("main_content");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[4].textContent,
+            careerLongitivity: Array.from(playerColumns[7].textContent)[0],
+            skills: {
+                shooting: parseInt(playerColumns[8].textContent),
+                blocking: parseInt(playerColumns[9].textContent),
+                passing: parseInt(playerColumns[10].textContent),
+                technical: parseInt(playerColumns[11].textContent),
+                speed: parseInt(playerColumns[12].textContent),
+                aggression: parseInt(playerColumns[13].textContent),
+                jumping: parseInt(playerColumns[14].textContent)
+            },
+            experience: parseInt(playerColumns[15].textContent),
+            overall: parseInt(playerColumns[16].textContent),
+            height: parseInt(playerColumns[17].textContent)
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _positionsSkills.calculatePositionsSkills)(player);
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    });
+};
+exports.default = viewPlayerList;
+
+},{"../settings":"kAwjD","../calculations/positionsSkills":"iFsmd","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"1tefY":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _render = require("~/src/render");
+const extractSkill = (el)=>{
+    const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
+    return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+};
+const viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                shooting: extractSkill(playerColumns[8]),
+                blocking: extractSkill(playerColumns[9]),
+                passing: extractSkill(playerColumns[10]),
+                technical: extractSkill(playerColumns[11]),
+                speed: extractSkill(playerColumns[12]),
+                aggression: extractSkill(playerColumns[13]),
+                jumping: extractSkill(playerColumns[14])
+            },
+            qualities: {
+                shooting: parseInt(playerQualities[0].textContent),
+                blocking: parseInt(playerQualities[1].textContent),
+                passing: parseInt(playerQualities[2].textContent),
+                technical: parseInt(playerQualities[3].textContent),
+                speed: parseInt(playerQualities[4].textContent),
+                aggression: parseInt(playerQualities[6].textContent),
+                jumping: parseInt(playerQualities[5].textContent)
+            }
+        };
+        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
+        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewTraining;
+
+},{"../settings":"kAwjD","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}]},["7KqDl","fZBAS"], "fZBAS", "parcelRequire94c2")
 
 //# sourceMappingURL=main.js.map
