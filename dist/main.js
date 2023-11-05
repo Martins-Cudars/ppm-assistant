@@ -15853,10 +15853,10 @@ const calculatePositionsSkills = (player)=>{
             ratios.push(value);
         }
         const baseSkill = Math.min(...skills);
-        const maxMultiplier = Math.max(...ratios);
+        const heightModifier = calculateHeightModifier(player.height, position.minHeight, position.maxHeight);
         positionSkills.push({
             position: position.name,
-            level: Math.round(baseSkill * maxMultiplier * calculateHeightModifier(player.height, position.minHeight, position.maxHeight))
+            level: Math.round(baseSkill * heightModifier)
         });
     });
     return positionSkills;
