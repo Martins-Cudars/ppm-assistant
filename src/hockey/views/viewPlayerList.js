@@ -97,6 +97,7 @@ const viewPlayerList = () => {
   positionFilter.classList.add("white_box");
 
   const positionButtonAll = renderButton(`All (${playerRows.length})`);
+  positionButtonAll.addEventListener("click", () => filterByPositions("All"));
   positionFilter.append(positionButtonAll);
 
   positionSettings.forEach((pos) => {
