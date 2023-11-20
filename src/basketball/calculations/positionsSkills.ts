@@ -11,13 +11,14 @@ const calculateHeightModifier = (
   maxHeight: number
 ) => {
   return height < minHeight
-    ? 1 - (minHeight - height) * 0.03
+    ? 1 - (minHeight - height) * 0.025
     : height > maxHeight
-    ? 1 - (height - maxHeight) * 0.03
+    ? 1 - (height - maxHeight) * 0.025
     : 1;
 };
 
 const calculatePositionsSkills = (player: any): PositionSkill[] => {
+  console.log("nmm");
   const positionSkills: PositionSkill[] = [];
 
   positionSettings.forEach((position) => {
