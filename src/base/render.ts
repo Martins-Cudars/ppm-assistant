@@ -1,17 +1,17 @@
 import { potentialGrade } from "@/base/utilities";
 
-import { PositionPotential } from "@/types/Position";
+import { PositionPotential, RatingSettings } from "@/types/Position";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
   const cell = document.createElement("td");
   cell.classList.add(cssClass);
-  cell.textContent = content;
+  cell.textContent = content.toString();
   return cell;
 };
 
 const renderComparison = (
   skill: number,
-  ratingSettings: any
+  ratingSettings: RatingSettings
 ): HTMLDivElement => {
   let ratingPercentage;
 
