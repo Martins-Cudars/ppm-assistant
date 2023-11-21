@@ -1,4 +1,4 @@
-import { HockeyPositionSetting } from "@/types/Position";
+import { HockeyPositionSetting, RatingSettings } from "@/types/Position";
 
 enum Ratio {
   main = 1,
@@ -51,7 +51,7 @@ const positionSettings: HockeyPositionSetting[] = [
   },
 ];
 
-const ratingSettings = {
+const ratingSettings: RatingSettings = {
   low: 500,
   medium: 1000,
   high: 1500,
