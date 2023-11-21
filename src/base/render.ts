@@ -1,4 +1,4 @@
-import { potentialGrade } from "./utilities.js";
+import { potentialGrade } from "@/base/utilities";
 
 const renderTableCell = (content: string, cssClass: string) => {
   const cell = document.createElement("td");
@@ -67,7 +67,7 @@ const renderPotential = (bestPotential) => {
   return potential;
 };
 
-const renderPotentialBadge = (potential, size) => {
+const renderPotentialBadge = (potential: number, size = "medium") => {
   const badge = document.createElement("div");
   badge.classList.add("potential__badge");
 

@@ -13,8 +13,6 @@ import viewTraining from "./views/viewTraining";
  */
 
 const initBasketball = () => {
-  console.log("init basketball");
-
   const getRoute = (inputUrl: any) => {
     const urlRegex =
       /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;

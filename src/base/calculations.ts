@@ -1,12 +1,8 @@
+import { HockeyPositionSetting } from "@/types/Position";
+
 interface Player {
   skills: { [key: string]: number };
   qualities: { [key: string]: number };
-}
-
-interface PositionSetting {
-  name: string;
-  ratios: { [key: string]: number };
-  bonus?: { [key: string]: number };
 }
 
 interface PositionSkill {
@@ -21,7 +17,7 @@ interface PositionPotential {
 
 const calculatePositionsSkills = (
   player: Player,
-  positionSettings: PositionSetting[]
+  positionSettings: HockeyPositionSetting[]
 ): PositionSkill[] => {
   const positionSkills: PositionSkill[] = [];
 
@@ -51,7 +47,7 @@ const calculateSkillWithExp = (skill: number, experience: number): number => {
 
 const calculatePositionsQualities = (
   player: Player,
-  positionSettings: PositionSetting[]
+  positionSettings: HockeyPositionSetting[]
 ): PositionPotential[] => {
   const positionPotentials: PositionPotential[] = [];
 

@@ -13,47 +13,67 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
+// import { PositionSetting } from "@/types/Position";
+
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
+  const playerInfo = document.querySelector(".player_info");
 
   // If player table is not found, return
   if (!playerTable) return new Error("Player table not found");
+  if (!playerInfo) return new Error("Player info not found");
+
+  // URL of the image to find
+  const scoutedImgUrl: string =
+    "https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png";
+
+  // Use querySelector to find the image
+  const isScouted = playerInfo.querySelector(`img[src="${scoutedImgUrl}"]`);
+
+  if (!isScouted) return new Error("Player is not scouted");
 
   const player = {
-    age: parseInt(playerTable.querySelector("#age").textContent),
+    age: parseInt(playerTable.querySelector("#age")!.textContent!),
+    name: playerInfo.querySelector(".link_name")!.textContent,
     careerLongitivity: parseInt(
-      Array.from(playerTable.querySelector("#life_time span").textContent)[0]
+      Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
     ),
     skills: {
-      goalie: parseInt(playerTable.querySelector("#goalie").textContent),
-      defence: parseInt(playerTable.querySelector("#defense").textContent),
-      offence: parseInt(playerTable.querySelector("#attack").textContent),
-      shooting: parseInt(playerTable.querySelector("#shooting").textContent),
-      passing: parseInt(playerTable.querySelector("#passing").textContent),
+      goalie: parseInt(playerTable.querySelector("#goalie")!.textContent!),
+      defence: parseInt(playerTable.querySelector("#defense")!.textContent!),
+      offence: parseInt(playerTable.querySelector("#attack")!.textContent!),
+      shooting: parseInt(playerTable.querySelector("#shooting")!.textContent!),
+      passing: parseInt(playerTable.querySelector("#passing")!.textContent!),
       technical: parseInt(
-        playerTable.querySelector("#technique_attribute").textContent
+        playerTable.querySelector("#technique_attribute")!.textContent!
       ),
       aggression: parseInt(
-        playerTable.querySelector("#aggressive").textContent
+        playerTable.querySelector("#aggressive")!.textContent!
       ),
     },
     qualities: {
-      goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
-      defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
-      offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
-      shooting: parseInt(
-        playerTable.querySelector("#kva_shooting").textContent
+      goalie: parseInt(playerTable.querySelector("#kva_goalie")!.textContent!),
+      defence: parseInt(
+        playerTable.querySelector("#kva_defense")!.textContent!
       ),
-      passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+      offence: parseInt(playerTable.querySelector("#kva_attack")!.textContent!),
+      shooting: parseInt(
+        playerTable.querySelector("#kva_shooting")!.textContent!
+      ),
+      passing: parseInt(
+        playerTable.querySelector("#kva_passing")!.textContent!
+      ),
       technical: parseInt(
-        playerTable.querySelector("#technique_quality").textContent
+        playerTable.querySelector("#technique_quality")!.textContent!
       ),
       aggression: parseInt(
-        playerTable.querySelector("#kva_aggressive").textContent
+        playerTable.querySelector("#kva_aggressive")!.textContent!
       ),
     },
-    experience: parseInt(playerTable.querySelector("#experience").textContent),
-    overall: playerTable.querySelector("#index_skill").textContent,
+    experience: parseInt(
+      playerTable.querySelector("#experience")!.textContent!
+    ),
+    overall: parseInt(playerTable.querySelector("#index_skill")!.textContent!),
   };
 
   const positions = calculatePositionsSkills(player, positionSettings);

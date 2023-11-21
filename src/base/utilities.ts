@@ -1,4 +1,9 @@
-const potentialGrade = (potential: number) => {
+type Grade = {
+  label: string;
+  class: string;
+};
+
+const potentialGrade = (potential: number): Grade => {
   if (!potential || potential === null) return { label: "?", class: "unknown" };
 
   if (potential >= 95) return { label: "A+", class: "a-plus" };
@@ -10,6 +15,8 @@ const potentialGrade = (potential: number) => {
   if (potential >= 60) return { label: "D+", class: "d-plus" };
   if (potential >= 50) return { label: "D", class: "d" };
   if (potential < 50) return { label: "F", class: "f" };
+
+  return { label: "?", class: "unknown" };
 };
 
 export { potentialGrade };

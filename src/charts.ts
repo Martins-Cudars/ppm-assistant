@@ -13,7 +13,7 @@ const getCurrentSeasonDay = () => {
   const match = regex.exec(dayString);
 
   if (!match || !match[1]) {
-    console.log("error getting current season day");
+    console.error("error getting current season day");
     return 1;
   }
 
@@ -31,11 +31,7 @@ const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
   const seasonDay = 1;
   const seasonProgress = calculateSeasonProgress(seasonDay);
 
-  console.log(`current seasonProgress: ${seasonProgress}`);
-
   let positionRatio = 1;
-
-  console.log(position);
 
   // adjust ratio for Goalies, because they only need 2 skill points per ability compared to
   // other positions which need 2.5 skill points per ability
@@ -74,8 +70,6 @@ const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
     };
   });
 
-  console.log(newPredictData);
-
   return newPredictData;
 };
 
@@ -96,14 +90,6 @@ const renderPotentialChart = (data, el) => {
     x: Math.round((data.age + seasonProgress) * 10) / 10,
     y: calculateSkillWithExp(data.skill, data.exp),
   });
-
-  console.log(playerSkillArr);
-
-  console.log(
-    predictData.map((row) => {
-      return { x: row.age, y: row.skill };
-    })
-  );
 
   const chartConfig = {
     type: "line",
