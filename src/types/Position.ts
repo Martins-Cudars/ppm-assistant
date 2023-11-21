@@ -3,6 +3,16 @@ export type Grade = {
   class: string;
 };
 
+export type PositionSkill = {
+  position: string;
+  level: number;
+};
+
+export type PositionPotential = {
+  position: string;
+  potential: number;
+};
+
 interface HockeySkills {
   goalie?: number;
   defence?: number;

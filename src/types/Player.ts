@@ -1,14 +1,14 @@
-interface Player {
+interface HockeyPlayer {
   age: number;
   name: string;
   careerLongitivity: number;
-  skills: Skills;
-  qualities: Qualities;
+  skills: HockeySkills;
+  qualities: HockeyQualities;
   experience: number;
   overall: number;
 }
 
-interface Skills {
+interface HockeySkills {
   goalie: number;
   defence: number;
   offence: number;
@@ -18,7 +18,7 @@ interface Skills {
   aggression: number;
 }
 
-interface Qualities {
+interface HockeyQualities {
   goalie: number;
   defence: number;
   offence: number;

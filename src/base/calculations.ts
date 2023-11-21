@@ -1,18 +1,12 @@
-import { HockeyPositionSetting } from "@/types/Position";
+import {
+  PositionSkill,
+  PositionPotential,
+  HockeyPositionSetting,
+} from "@/types/Position";
 
 interface Player {
   skills: { [key: string]: number };
   qualities: { [key: string]: number };
-}
-
-interface PositionSkill {
-  position: string;
-  level: number;
-}
-
-interface PositionPotential {
-  position: string;
-  potential: number;
 }
 
 const calculatePositionsSkills = (

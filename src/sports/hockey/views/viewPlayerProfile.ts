@@ -1,5 +1,4 @@
 import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
-import { renderPotentialChart } from "@/charts";
 
 import {
   calculatePositionsSkills,
@@ -7,11 +6,14 @@ import {
   calculateSkillWithExp,
   calculatePositionsQualities,
 } from "@/base/calculations";
+import { renderPotentialChart } from "@/charts";
 import {
   renderComparison,
   renderPotential,
   renderPotentialBadge,
 } from "@/base/render";
+
+import { HockeyPlayer } from "@/types/Player";
 
 // import { PositionSetting } from "@/types/Position";
 
@@ -23,16 +25,11 @@ const viewPlayerProfile = () => {
   if (!playerTable) return new Error("Player table not found");
   if (!playerInfo) return new Error("Player info not found");
 
-  // URL of the image to find
-  const scoutedImgUrl: string =
-    "https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png";
+  const statsVisible = playerTable.querySelector("#goalie") ? true : false; // If goalie stat is found, player is scouted
+  if (!statsVisible)
+    return new Error("Player is not scouted or is not on the market");
 
-  // Use querySelector to find the image
-  const isScouted = playerInfo.querySelector(`img[src="${scoutedImgUrl}"]`);
-
-  if (!isScouted) return new Error("Player is not scouted");
-
-  const player = {
+  const player: HockeyPlayer = {
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
     name: playerInfo.querySelector(".link_name")!.textContent,
     careerLongitivity: parseInt(
@@ -149,7 +146,7 @@ const viewPlayerProfile = () => {
     (el) => el.position === bestPosition.position
   );
 
-  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
   potentialBox.appendChild(potentialBadge);
 
   const potentialDescription = renderPotential(bestPotential);
@@ -191,7 +188,7 @@ const viewPlayerProfile = () => {
 
   chartBox.appendChild(chartCanvas);
 
-  document.querySelector(".profile_player_center").appendChild(chartBox);
+  document.querySelector(".profile_player_center")!.appendChild(chartBox);
 };
 
 export default viewPlayerProfile;
