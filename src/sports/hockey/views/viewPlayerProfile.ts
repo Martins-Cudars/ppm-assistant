@@ -31,7 +31,7 @@ const viewPlayerProfile = () => {
 
   const player: HockeyPlayer = {
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
-    name: playerInfo.querySelector(".link_name")!.textContent,
+    name: playerInfo.querySelector(".link_name")!.textContent!,
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
     ),
