@@ -3,6 +3,5 @@ yarn.lock
 .parcel-cache
 dist.crx
 dist.pem
-/dist/main.js
-/dist/main.js.map
+/dist
 ```

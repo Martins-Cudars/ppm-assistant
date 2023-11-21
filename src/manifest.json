@@ -1,0 +1,45 @@
+{
+  "name": "PPM Assistant",
+  "description": "Extends PPM with usefull comparisons, skill calculations etc",
+  "version": "2.0",
+  "manifest_version": 3,
+  "icons": {
+    "128": "icon_128.png"
+  },
+  "action": {
+    "default_popup": "index.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/star-diamond.svg",
+        "icons/star-gold.svg",
+        "icons/star-silver.svg",
+        "icons/star-empty.svg"
+      ],
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "js": [
+        "main.js"
+      ]
+    }
+  ],
+  "permissions": [
+    "storage"
+  ]
+}
