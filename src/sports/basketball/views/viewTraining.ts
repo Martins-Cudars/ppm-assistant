@@ -9,8 +9,8 @@ import {
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 
 const extractSkill = (cell: HTMLTableCellElement) => {
-  const qualityElStart = cell.innerHTML.indexOf('<span class="kva">');
-  return parseInt(cell.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+  const skill = cell.querySelector("span:first-child");
+  return parseInt(skill!.textContent!);
 };
 
 const viewTraining = () => {
@@ -53,6 +53,8 @@ const viewTraining = () => {
         jumping: parseInt(playerQualities[5].textContent!),
       },
     };
+
+    console.log(player);
 
     const playerPositions = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(playerPositions);
