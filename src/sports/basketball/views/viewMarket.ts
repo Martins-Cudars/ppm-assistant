@@ -12,7 +12,7 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
-const viewPlayerList = () => {
+const viewMarket = () => {
   const table = document.getElementById("table-1");
   if (!table) {
     console.error("Table with id 'table-1' not found");
@@ -134,4 +134,4 @@ const viewPlayerList = () => {
   });
 };
 
-export default viewPlayerList;
+export default viewMarket;
