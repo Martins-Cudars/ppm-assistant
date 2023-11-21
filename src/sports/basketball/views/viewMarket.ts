@@ -45,15 +45,11 @@ const viewMarket = () => {
     }
   });
 
-  const getSkill = (column) => {
+  const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
-      [].reduce.call(
-        column.childNodes,
-        (a, b) => {
-          return a + (b.nodeType === 3 ? b.textContent : "");
-        },
-        ""
-      )
+      Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
+        return a + (b.nodeType === 3 ? b.textContent || "" : "");
+      }, "")
     );
   };
 
@@ -67,7 +63,7 @@ const viewMarket = () => {
       name: playerColumns[0].querySelectorAll("a")[1].textContent,
       age: parseInt(playerColumns[1]!.textContent!),
       careerLongitivity: parseInt(
-        Array.from(playerColumns[4].querySelector("span").textContent!)[0]
+        Array.from(playerColumns[4]!.querySelector("span")!.textContent!)[0]
       ),
       skills: {
         shooting: getSkill(playerColumns[5]),
@@ -79,13 +75,13 @@ const viewMarket = () => {
         jumping: getSkill(playerColumns[11]),
       },
       qualities: {
-        shooting: parseInt(playerQualities[0].textContent),
-        blocking: parseInt(playerQualities[1].textContent),
-        passing: parseInt(playerQualities[2].textContent),
-        technical: parseInt(playerQualities[3].textContent),
-        speed: parseInt(playerQualities[4].textContent),
-        aggression: parseInt(playerQualities[5].textContent),
-        jumping: parseInt(playerQualities[6].textContent),
+        shooting: parseInt(playerQualities[0].textContent!),
+        blocking: parseInt(playerQualities[1].textContent!),
+        passing: parseInt(playerQualities[2].textContent!),
+        technical: parseInt(playerQualities[3].textContent!),
+        speed: parseInt(playerQualities[4].textContent!),
+        aggression: parseInt(playerQualities[5].textContent!),
+        jumping: parseInt(playerQualities[6].textContent!),
       },
 
       experience: parseInt(playerColumns[12].textContent!),
