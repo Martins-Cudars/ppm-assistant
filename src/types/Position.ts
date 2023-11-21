@@ -28,3 +28,15 @@ export interface HockeyPositionSetting {
   ratios: HockeySkills;
   bonus?: HockeySkills;
 }
+
+export interface SoccerPositionSetting {
+  name: any;
+  ratios?: any;
+  bonus?: any;
+}
+
+export interface BasketballPositionSetting {
+  name: any;
+  ratios?: any;
+  bonus?: any;
+}
