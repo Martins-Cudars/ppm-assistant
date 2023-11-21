@@ -10,7 +10,8 @@
     "dev": "vite build --watch && cp src/manifest.json dist/",
     "build": "vite build && cp src/manifest.json dist/",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.252",
