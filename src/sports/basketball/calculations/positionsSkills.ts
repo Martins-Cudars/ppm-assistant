@@ -18,7 +18,6 @@ const calculateHeightModifier = (
 };
 
 const calculatePositionsSkills = (player: any): PositionSkill[] => {
-  console.log("nmm");
   const positionSkills: PositionSkill[] = [];
 
   positionSettings.forEach((position) => {

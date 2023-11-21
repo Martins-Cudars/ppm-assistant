@@ -1,79 +1,93 @@
-const ratios = {
-  main: 1,
-  high: 0.75,
-  medium: 0.5,
-  low: 0.25,
-};
+enum Ratio {
+  main = 1,
+  high = 0.75,
+  medium = 0.5,
+  low = 0.25,
+}
 
-const positionSettings = [
+interface PositionSetting {
+  name: "GK" | "SD" | "CD" | "SM" | "CM" | "SF" | "CF";
+  ratios: {
+    goalie?: number;
+    defence?: number;
+    midfield?: number;
+    offence?: number;
+    technical?: number;
+    speed?: number;
+    passing?: number;
+    heading?: number;
+  };
+}
+
+const positionSettings: PositionSetting[] = [
   {
     name: "GK",
     ratios: {
-      goalie: ratios.main,
-      technical: ratios.high,
-      speed: ratios.high,
-      passing: ratios.low,
-      heading: ratios.low,
+      goalie: Ratio.main,
+      technical: Ratio.high,
+      speed: Ratio.high,
+      passing: Ratio.low,
+      heading: Ratio.low,
     },
   },
   {
     name: "SD",
     ratios: {
-      defence: ratios.main,
-      technical: ratios.medium,
-      speed: ratios.high,
-      passing: ratios.medium,
-      heading: ratios.low,
+      defence: Ratio.main,
+      technical: Ratio.medium,
+      speed: Ratio.high,
+      passing: Ratio.medium,
+      heading: Ratio.low,
     },
   },
   {
     name: "CD",
     ratios: {
-      defence: ratios.main,
-      technical: ratios.medium,
-      speed: ratios.medium,
-      passing: ratios.medium,
-      heading: ratios.medium,
+      defence: Ratio.main,
+      technical: Ratio.medium,
+      speed: Ratio.medium,
+      passing: Ratio.medium,
+      heading: Ratio.medium,
     },
   },
   {
     name: "SM",
     ratios: {
-      midfield: ratios.main,
-      technical: ratios.medium,
-      speed: ratios.high,
-      passing: ratios.medium,
-      heading: ratios.low,
+      midfield: Ratio.main,
+      technical: Ratio.medium,
+      speed: Ratio.high,
+      passing: Ratio.medium,
+      heading: Ratio.low,
     },
   },
   {
     name: "CM",
     ratios: {
-      midfield: ratios.main,
-      technical: ratios.high,
-      speed: ratios.low,
-      passing: ratios.high,
-      heading: ratios.low,
+      midfield: Ratio.main,
+      technical: Ratio.high,
+      speed: Ratio.low,
+      passing: Ratio.high,
+      heading: Ratio.low,
     },
   },
   {
     name: "SF",
     ratios: {
-      offence: ratios.main,
-      technical: ratios.high,
-      speed: ratios.high,
-      passing: ratios.medium,
-      heading: ratios.low,
+      offence: Ratio.main,
+      technical: Ratio.high,
+      speed: Ratio.high,
+      passing: Ratio.medium,
+      heading: Ratio.low,
     },
   },
   {
     name: "CF",
     ratios: {
-      offence: ratios.main,
-      technical: ratios.medium,
-      speed: ratios.high,
-      passing: ratios.low,
-      heading: ratios.low,
+      offence: Ratio.main,
+      technical: Ratio.medium,
+      speed: Ratio.high,
+      passing: Ratio.low,
+      heading: Ratio.low,
     },
   },
 ];
