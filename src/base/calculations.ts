@@ -6,9 +6,11 @@ import {
   BasketballPositionSetting,
 } from "@/types/Position";
 
-interface Player {
-  skills: { [key: string]: number };
-  qualities: { [key: string]: number };
+interface Skills {
+  [key: string]: number;
+}
+interface Qualities {
+  [key: string]: number;
 }
 
 type PositionSettings =
@@ -17,7 +19,7 @@ type PositionSettings =
   | BasketballPositionSetting[];
 
 const calculatePositionsSkills = (
-  player: Player,
+  player: { skills: Skills },
   positionSettings: PositionSettings
 ): PositionSkill[] => {
   const positionSkills: PositionSkill[] = [];
@@ -49,7 +51,7 @@ const calculateSkillWithExp = (skill: number, experience: number): number => {
 };
 
 const calculatePositionsQualities = (
-  player: Player,
+  player: { qualities: Qualities },
   positionSettings: PositionSettings
 ): PositionPotential[] => {
   const positionPotentials: PositionPotential[] = [];
