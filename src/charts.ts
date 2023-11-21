@@ -1,14 +1,29 @@
 import Chart from "chart.js/auto";
+import { ChartConfiguration } from "chart.js";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { calculateSkillWithExp } from "@/base/calculations";
+
+import { ChartData } from "@/types/Chart";
 
 // TODO: Improve calculations by using player age, career longitivity, current training level, etc.
 
 const getCurrentSeasonDay = () => {
   const teamInfoEl = document.querySelector(".top_info_team");
+
+  if (!teamInfoEl) {
+    console.error("error getting current season day");
+    return 1;
+  }
+
   const dayEl = teamInfoEl.querySelectorAll(".link_r");
 
   const dayString = dayEl[dayEl.length - 1].textContent;
+
+  if (!dayString) {
+    console.error("error getting current season day");
+    return 1;
+  }
+
   const regex = /\((\d+)\//g;
   const match = regex.exec(dayString);
 
@@ -21,13 +36,13 @@ const getCurrentSeasonDay = () => {
   return parseInt(match[1]);
 };
 
-const calculateSeasonProgress = (seasonDay) => {
+const calculateSeasonProgress = (seasonDay: number) => {
   return seasonDay / 112;
 };
 
 // TODO: Refactor this function
 // this might be unnecessary code, it's current only use is to adjust the ratio for Goalies
-const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
+const recalculatePredictDataAccordingToSeasonDay = (position: string) => {
   const seasonDay = 1;
   const seasonProgress = calculateSeasonProgress(seasonDay);
 
@@ -73,7 +88,7 @@ const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
   return newPredictData;
 };
 
-const renderPotentialChart = (data, el) => {
+const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
   const predictData = recalculatePredictDataAccordingToSeasonDay(data.position);
 
   const seasonDay = getCurrentSeasonDay();
@@ -104,7 +119,6 @@ const renderPotentialChart = (data, el) => {
           },
           min: 15,
           max: 40,
-
           ticks: {
             stepSize: 1,
           },
@@ -112,7 +126,6 @@ const renderPotentialChart = (data, el) => {
       },
     },
     data: {
-      // labels: predictData.map((row) => parseInt(row.age)),
       datasets: [
         {
           label: "Perfect Player Skill",
@@ -152,7 +165,7 @@ const renderPotentialChart = (data, el) => {
     },
   };
 
-  const chart = new Chart(el, chartConfig);
+  const chart = new Chart(el, chartConfig as ChartConfiguration);
   chart.resize(590, 300);
 
   return chart;
