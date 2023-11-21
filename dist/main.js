@@ -585,7 +585,775 @@ if (window.location.href.includes("hockey.powerplaymanager.com")) (0, _hockeyTsD
 if (window.location.href.includes("soccer.powerplaymanager.com")) (0, _soccerJsDefault.default)();
 if (window.location.href.includes("basketball.powerplaymanager.com")) (0, _basketballDefault.default)();
 
-},{"~/src/hockey/hockey.ts":"IGQ3R","~/src/soccer/soccer.js":"mJRmF","./basketball/basketball":"5Tlaz","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"IGQ3R":[function(require,module,exports) {
+},{"~/src/soccer/soccer.js":"mJRmF","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","~/src/hockey/hockey.ts":"IGQ3R","./basketball/basketball":"5Tlaz"}],"mJRmF":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _viewPlayerList = require("./views/viewPlayerList");
+var _viewPlayerListDefault = parcelHelpers.interopDefault(_viewPlayerList);
+var _viewPlayerProfile = require("./views/viewPlayerProfile");
+var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
+var _viewLineup = require("./views/viewLineup");
+var _viewLineupDefault = parcelHelpers.interopDefault(_viewLineup);
+// import viewLineupChange from "./views/viewLineupChange";
+var _viewMarket = require("./views/viewMarket");
+var _viewMarketDefault = parcelHelpers.interopDefault(_viewMarket);
+var _viewTraining = require("./views/viewTraining");
+var _viewTrainingDefault = parcelHelpers.interopDefault(_viewTraining);
+/**
+ * Run View Functions
+ */ const initSoccer = ()=>{
+    if (window.location.href.includes("speletaju-parskats")) (0, _viewPlayerListDefault.default)();
+    if (window.location.href.includes("speletajs")) (0, _viewPlayerProfileDefault.default)();
+    if (window.location.href.includes("sastavs") || window.location.href.includes("izkartojuma-versija")) (0, _viewLineupDefault.default)();
+    if (window.location.href.includes("speletaju-trenini")) (0, _viewTrainingDefault.default)();
+    // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
+    if (window.location.href.includes("speletaju-tirgus")) (0, _viewMarketDefault.default)();
+};
+exports.default = initSoccer;
+
+},{"./views/viewPlayerList":"lRSRi","./views/viewPlayerProfile":"8mBnL","./views/viewLineup":"2pq5S","./views/viewMarket":"7EdSH","./views/viewTraining":"jh5gj","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"lRSRi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerList = ()=>{
+    const mainContent = document.getElementsByClassName("main_content");
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[2].textContent,
+            careerLongitivity: Array.from(playerColumns[5].textContent)[0],
+            skills: {
+                goalie: playerColumns[6].textContent,
+                defence: playerColumns[7].textContent,
+                midfield: playerColumns[8].textContent,
+                offence: playerColumns[9].textContent,
+                shooting: playerColumns[10].textContent,
+                passing: playerColumns[11].textContent,
+                technical: playerColumns[12].textContent,
+                speed: playerColumns[13].textContent,
+                heading: playerColumns[14].textContent
+            },
+            experience: parseInt(playerColumns[15].textContent),
+            overall: playerColumns[16].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    });
+    const filterByPositions = (pos)=>{
+        if (pos === "All") {
+            document.querySelectorAll(".player-row").forEach((row)=>{
+                row.style.display = "table-row";
+            });
+            return;
+        }
+        document.querySelectorAll(".player-row").forEach((row)=>{
+            row.style.display = "none";
+        });
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
+            row.style.display = "table-row";
+        });
+    };
+    const positionFilter = document.createElement("div");
+    positionFilter.classList.add("position-filter");
+    positionFilter.classList.add("white_box");
+    const positionButtonAll = (0, _renderJs.renderButton)(`All (${playerRows.length})`);
+    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
+    positionFilter.append(positionButtonAll);
+    (0, _settings.positionSettings).forEach((pos)=>{
+        const positionButton = (0, _renderJs.renderButton)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
+        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
+        positionFilter.append(positionButton);
+    });
+    mainContent[0].prepend(positionFilter);
+};
+exports.default = viewPlayerList;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"50AAe":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
+parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
+const ratios = {
+    main: 1,
+    high: 0.75,
+    medium: 0.5,
+    low: 0.25
+};
+const positionSettings = [
+    {
+        name: "GK",
+        ratios: {
+            goalie: ratios.main,
+            technical: ratios.high,
+            speed: ratios.high,
+            passing: ratios.low,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "SD",
+        ratios: {
+            defence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CD",
+        ratios: {
+            defence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.medium,
+            passing: ratios.medium,
+            heading: ratios.medium
+        }
+    },
+    {
+        name: "SM",
+        ratios: {
+            midfield: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CM",
+        ratios: {
+            midfield: ratios.main,
+            technical: ratios.high,
+            speed: ratios.low,
+            passing: ratios.high,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "SF",
+        ratios: {
+            offence: ratios.main,
+            technical: ratios.high,
+            speed: ratios.high,
+            passing: ratios.medium,
+            heading: ratios.low
+        }
+    },
+    {
+        name: "CF",
+        ratios: {
+            offence: ratios.main,
+            technical: ratios.medium,
+            speed: ratios.high,
+            passing: ratios.low,
+            heading: ratios.low
+        }
+    }
+];
+const ratingSettings = {
+    low: 300,
+    medium: 600,
+    high: 900
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kaHqt":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"6mg5U":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
+parcelHelpers.export(exports, "calculateBestPosition", ()=>calculateBestPosition);
+parcelHelpers.export(exports, "calculateSkillWithExp", ()=>calculateSkillWithExp);
+parcelHelpers.export(exports, "calculatePositionsQualities", ()=>calculatePositionsQualities);
+parcelHelpers.export(exports, "calculateBestPotential", ()=>calculateBestPotential);
+const calculatePositionsSkills = (player, positionSettings)=>{
+    const positionSkills = [];
+    positionSettings.forEach((position)=>{
+        const skills = [];
+        for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
+        positionSkills.push({
+            position: position.name,
+            level: Math.round(Math.min(...skills))
+        });
+    });
+    return positionSkills;
+};
+const calculateBestPosition = (skills)=>{
+    return skills.sort((a, b)=>b.level - a.level)[0];
+};
+const calculateSkillWithExp = (skill, experience)=>{
+    return Math.round(skill * (1 + experience / 500));
+};
+const calculatePositionsQualities = (player, positionSettings)=>{
+    const positionPotentials = [];
+    positionSettings.forEach((position)=>{
+        let qualities = 0;
+        let modifier = 0;
+        for (const [key, value] of Object.entries(position.ratios)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
+        }
+        if (position.bonus) for (const [key, value] of Object.entries(position.bonus)){
+            qualities += player.qualities[key] * value;
+            modifier += value;
+        }
+        positionPotentials.push({
+            position: position.name,
+            potential: Math.round(Math.min(qualities / modifier))
+        });
+    });
+    return positionPotentials;
+};
+const calculateBestPotential = (potentials)=>{
+    return potentials.sort((a, b)=>b.potential - a.potential)[0];
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"5eDoo":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "renderTableCell", ()=>renderTableCell);
+parcelHelpers.export(exports, "renderComparison", ()=>renderComparison);
+parcelHelpers.export(exports, "renderPotential", ()=>renderPotential);
+parcelHelpers.export(exports, "renderPotentialBadge", ()=>renderPotentialBadge);
+parcelHelpers.export(exports, "renderTrainableSkill", ()=>renderTrainableSkill);
+parcelHelpers.export(exports, "renderButton", ()=>renderButton);
+var _utilitiesJs = require("./utilities.js");
+const renderTableCell = (content, cssClass)=>{
+    const cell = document.createElement("td");
+    cell.classList.add(cssClass);
+    cell.textContent = content;
+    return cell;
+};
+const renderComparison = (skill, ratingSettings)=>{
+    let ratingPercentage;
+    const ratingOuter = document.createElement("div");
+    const ratingInner = document.createElement("div");
+    ratingOuter.classList.add("rating");
+    ratingInner.classList.add("rating__inner");
+    if (skill < ratingSettings.low) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-empty.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
+        ratingPercentage = Math.min(skill / ratingSettings.low * 100, 100);
+    } else if (skill < ratingSettings.medium) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
+        ratingPercentage = Math.min((skill - ratingSettings.low) / (ratingSettings.medium - ratingSettings.low) * 100, 100);
+    } else if (skill >= ratingSettings.medium) {
+        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
+        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-diamond.svg")})`;
+        ratingPercentage = Math.min((skill - ratingSettings.medium) / (ratingSettings.high - ratingSettings.medium) * 100, 100);
+    }
+    ratingInner.style.width = `${ratingPercentage}%`;
+    ratingOuter.appendChild(ratingInner);
+    return ratingOuter;
+};
+const renderPotential = (bestPotential)=>{
+    const potential = document.createElement("div");
+    potential.classList.add("potential__text");
+    potential.textContent = `Best potential position is ${bestPotential.position} with ${Math.round(bestPotential.potential)}`;
+    return potential;
+};
+const renderPotentialBadge = (potential, size)=>{
+    const badge = document.createElement("div");
+    badge.classList.add("potential__badge");
+    if (size) badge.classList.add(`potential__badge--${size}`);
+    const potentialObj = (0, _utilitiesJs.potentialGrade)(potential);
+    badge.classList.add(`potential__badge--${potentialObj.class}`);
+    badge.textContent = potentialObj.label;
+    return badge;
+};
+const renderTrainableSkill = (trainableSkill)=>{
+    const trainableSkillElement = document.createElement("div");
+    trainableSkillElement.classList.add("trainable-skill");
+    trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
+    return trainableSkillElement;
+};
+const renderButton = (text)=>{
+    const button = document.createElement("button");
+    button.innerText = text;
+    return button;
+};
+
+},{"./utilities.js":"ivR0u","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"ivR0u":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "potentialGrade", ()=>potentialGrade);
+const potentialGrade = (potential)=>{
+    if (!potential || potential === null) return {
+        label: "?",
+        class: "unknown"
+    };
+    if (potential >= 95) return {
+        label: "A+",
+        class: "a-plus"
+    };
+    if (potential >= 90) return {
+        label: "A",
+        class: "a"
+    };
+    if (potential >= 85) return {
+        label: "B+",
+        class: "b-plus"
+    };
+    if (potential >= 80) return {
+        label: "B",
+        class: "b"
+    };
+    if (potential >= 75) return {
+        label: "C+",
+        class: "c-plus"
+    };
+    if (potential >= 70) return {
+        label: "C",
+        class: "c"
+    };
+    if (potential >= 60) return {
+        label: "D+",
+        class: "d-plus"
+    };
+    if (potential >= 50) return {
+        label: "D",
+        class: "d"
+    };
+    if (potential < 50) return {
+        label: "F",
+        class: "f"
+    };
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"8mBnL":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerProfile = ()=>{
+    const playerTable = document.getElementById("table-1");
+    const player = {
+        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
+        skills: {
+            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#defense").textContent),
+            midfield: parseInt(playerTable.querySelector("#midfield").textContent),
+            offence: parseInt(playerTable.querySelector("#attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
+            speed: parseInt(playerTable.querySelector("#speed").textContent),
+            heading: parseInt(playerTable.querySelector("#heading").textContent)
+        },
+        qualities: {
+            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
+            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
+            midfield: parseInt(playerTable.querySelector("#kva_midfield").textContent),
+            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
+            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
+            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
+            speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
+            heading: parseInt(playerTable.querySelector("#kva_heading").textContent)
+        },
+        experience: parseInt(playerTable.querySelector("#experience").textContent),
+        overall: playerTable.querySelector("#index_skill").textContent
+    };
+    const positions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+    const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
+    const contentColumn = document.querySelector(".column_left");
+    /**
+   * Ability Box
+   */ const abilityBox = document.createElement("div");
+    abilityBox.classList.add("player-profile");
+    abilityBox.classList.add("player-profile--ability");
+    const position = document.createElement("div");
+    position.classList.add("ability__position");
+    position.textContent = bestPosition.position;
+    const allPositions = document.createElement("div");
+    allPositions.classList.add("ability__positions");
+    let positionList = ``;
+    positions.forEach((position)=>{
+        positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
+    });
+    allPositions.innerHTML = positionList;
+    abilityBox.appendChild(position);
+    const abilityDescription = document.createElement("div");
+    abilityDescription.classList.add("ability__text");
+    const abilityValue = document.createElement("div");
+    abilityValue.innerHTML = `<div>${(0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience)}</div>
+  <div>(${bestPosition.level})</div>`;
+    const comparison = document.createElement("div");
+    comparison.classList.add("comparison");
+    comparison.appendChild((0, _renderJs.renderComparison)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), (0, _settings.ratingSettings)));
+    abilityDescription.appendChild(abilityValue);
+    abilityDescription.appendChild(comparison);
+    abilityBox.appendChild(abilityDescription);
+    abilityBox.appendChild(allPositions);
+    contentColumn.appendChild(abilityBox);
+    /**
+   * Potential Box
+   */ const potentialBox = document.createElement("div");
+    potentialBox.classList.add("player-profile");
+    potentialBox.classList.add("player-profile--potential");
+    const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+    const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+    const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential);
+    potentialBox.appendChild(potentialBadge);
+    const potentialDescription = (0, _renderJs.renderPotential)(bestPotential);
+    potentialBox.appendChild(potentialDescription);
+    const allPotentials = document.createElement("div");
+    allPotentials.classList.add("potential__positions");
+    let potentialList = ``;
+    potentials.forEach((potential)=>{
+        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    });
+    allPotentials.innerHTML = potentialList;
+    potentialBox.appendChild(allPotentials);
+    contentColumn.appendChild(potentialBox);
+};
+exports.default = viewPlayerProfile;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"2pq5S":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewLineupChange = ()=>{
+    const tables = document.querySelectorAll(".table");
+    const players = [];
+    tables.forEach((table)=>{
+        const tableHeads = table.querySelectorAll("thead");
+        const playerRows = table.querySelector("tbody").querySelectorAll("tr");
+        tableHeads.forEach((head)=>{
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+        });
+        playerRows.forEach((playerRow, index)=>{
+            const playerColumns = playerRow.querySelectorAll("td");
+            if (playerColumns.length > 2) {
+                const player = {
+                    id: playerColumns[1].querySelectorAll("a")[1].getAttribute("href").match(/\d/g).join(""),
+                    name: playerColumns[1].textContent,
+                    skills: {
+                        goalie: playerColumns[4].textContent,
+                        defence: playerColumns[5].textContent,
+                        midfield: playerColumns[6].textContent,
+                        offence: playerColumns[7].textContent,
+                        shooting: playerColumns[8].textContent,
+                        passing: playerColumns[9].textContent,
+                        technical: playerColumns[10].textContent,
+                        speed: playerColumns[11].textContent,
+                        heading: playerColumns[12].textContent
+                    },
+                    experience: parseInt(playerColumns[13].textContent)
+                };
+                players.push(player);
+                const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+                const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+                const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+                const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+                playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+                playerRow.appendChild((0, _renderJs.renderTableCell)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), `${rowClass}td2`));
+                const ratingTd = document.createElement("td");
+                ratingTd.classList.add(`${rowClass}td1`);
+                ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+                playerRow.appendChild(ratingTd);
+            } else playerColumns[1].colSpan = 16;
+        });
+    });
+    const formationEl = document.querySelector("#lineup");
+    const formationSlots = formationEl.querySelectorAll(".player_slot");
+    const findPosition = (formationId)=>{
+        const formationPositions = {
+            GK: [
+                0
+            ],
+            SD: [
+                11,
+                12,
+                21,
+                22,
+                16,
+                17,
+                26,
+                27
+            ],
+            CD: [
+                13,
+                14,
+                15,
+                23,
+                24,
+                25
+            ],
+            CM: [
+                33,
+                34,
+                35,
+                43,
+                44,
+                45,
+                53,
+                54,
+                55
+            ],
+            SM: [
+                31,
+                32,
+                41,
+                42,
+                51,
+                52,
+                36,
+                37,
+                46,
+                47,
+                56,
+                57
+            ],
+            CF: [
+                63,
+                64,
+                65,
+                73,
+                74,
+                75
+            ],
+            SF: [
+                61,
+                62,
+                71,
+                72,
+                66,
+                67,
+                76,
+                77
+            ]
+        };
+        let position;
+        for (const [key, value] of Object.entries(formationPositions))if (value.includes(parseInt(formationId))) position = key;
+        return position;
+    };
+    const findPlayer = (playerId)=>{
+        return players.find((player)=>player.id === playerId);
+    };
+    const showFormationRankings = ()=>{
+        formationSlots.forEach((slot)=>{
+            const id = slot.getAttribute("id");
+            const player = slot.querySelector(".player");
+            if (player) {
+                const position = findPosition(id);
+                const playerId = player.getAttribute("id").substring(12);
+                const playerData = findPlayer(playerId);
+                const playerSkills = (0, _calculationsJs.calculatePositionsSkills)(playerData, (0, _settings.positionSettings));
+                const captionEl = player.querySelector(".lineup_spot_caption");
+                const skill = (0, _calculationsJs.calculateSkillWithExp)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
+                if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
+                captionEl.appendChild((0, _renderJs.renderComparison)(skill, (0, _settings.ratingSettings)));
+            }
+        });
+    };
+    showFormationRankings();
+    const fieldEl = document.querySelector("#lineup .lineup_field");
+    const config = {
+        attributes: false,
+        childList: true,
+        subtree: true
+    };
+    const callback = (mutationList, observer)=>{
+        observer.disconnect();
+        showFormationRankings();
+        observer.observe(fieldEl, config);
+    };
+    const observer = new MutationObserver(callback);
+    observer.observe(fieldEl, config);
+};
+exports.default = viewLineupChange;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"7EdSH":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+/**
+ * View Functions
+ */ const viewMarket = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Pos", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Sk", "th2"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Rating", "th1"));
+        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Grd", "th2"));
+    });
+    const getSkill = (column)=>{
+        return parseInt([].reduce.call(column.childNodes, (a, b)=>{
+            return a + (b.nodeType === 3 ? b.textContent : "");
+        }, ""));
+    };
+    playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[1].textContent,
+            careerLongitivity: Array.from(playerColumns[3].textContent)[0],
+            skills: {
+                goalie: getSkill(playerColumns[4]),
+                defence: getSkill(playerColumns[5]),
+                midfield: getSkill(playerColumns[6]),
+                offence: getSkill(playerColumns[7]),
+                shooting: getSkill(playerColumns[8]),
+                passing: getSkill(playerColumns[9]),
+                technical: getSkill(playerColumns[10]),
+                speed: getSkill(playerColumns[11]),
+                heading: getSkill(playerColumns[11])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                midfield: parseInt(playerQualities[2].textContent),
+                offence: parseInt(playerQualities[3].textContent),
+                shooting: parseInt(playerQualities[4].textContent),
+                passing: parseInt(playerQualities[5].textContent),
+                technical: parseInt(playerQualities[6].textContent),
+                speed: parseInt(playerQualities[7].textContent),
+                heading: parseInt(playerQualities[7].textContent)
+            },
+            experience: parseInt(playerColumns[13].textContent),
+            overall: playerColumns[14].textContent
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+        const bestPotential = (0, _calculationsJs.calculateBestPotential)((0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings)));
+        const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td2`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewMarket;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"jh5gj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _calculationsJs = require("~/src/calculations.js");
+var _render = require("~/src/render");
+const extractSkill = (el)=>{
+    const skill = el.querySelector("span:first-child");
+    return parseInt(skill.textContent);
+};
+const viewTraining = ()=>{
+    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
+    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
+    });
+    playerRows.forEach((playerRow, index)=>{
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const playerQualities = playerRow.querySelectorAll(".kva");
+        const playerColumns = playerRow.querySelectorAll("td");
+        const player = {
+            skills: {
+                goalie: extractSkill(playerColumns[5]),
+                defence: extractSkill(playerColumns[6]),
+                midfield: extractSkill(playerColumns[7]),
+                offence: extractSkill(playerColumns[8]),
+                shooting: extractSkill(playerColumns[9]),
+                passing: extractSkill(playerColumns[10]),
+                technical: extractSkill(playerColumns[11]),
+                speed: extractSkill(playerColumns[12]),
+                heading: extractSkill(playerColumns[13])
+            },
+            qualities: {
+                goalie: parseInt(playerQualities[0].textContent),
+                defence: parseInt(playerQualities[1].textContent),
+                midfield: parseInt(playerQualities[2].textContent),
+                offence: parseInt(playerQualities[3].textContent),
+                shooting: parseInt(playerQualities[4].textContent),
+                passing: parseInt(playerQualities[5].textContent),
+                technical: parseInt(playerQualities[6].textContent),
+                speed: parseInt(playerQualities[7].textContent),
+                heading: parseInt(playerQualities[8].textContent)
+            }
+        };
+        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
+        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
+        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
+        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
+        const potentialTd = document.createElement("td");
+        potentialTd.classList.add(`${rowClass}td1`);
+        potentialTd.classList.add("td-center");
+        potentialTd.appendChild(potentialBadge);
+        playerRow.appendChild(potentialTd);
+    });
+};
+exports.default = viewTraining;
+
+},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"IGQ3R":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _routes = require("./routes");
@@ -666,37 +1434,7 @@ exports.default = {
     ]
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kaHqt":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"cz51W":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"cz51W":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _settings = require("../settings");
@@ -760,6 +1498,7 @@ const viewPlayerList = ()=>{
     positionFilter.classList.add("position-filter");
     positionFilter.classList.add("white_box");
     const positionButtonAll = (0, _renderJs.renderButton)(`All (${playerRows.length})`);
+    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
     positionFilter.append(positionButtonAll);
     (0, _settings.positionSettings).forEach((pos)=>{
         const positionButton = (0, _renderJs.renderButton)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
@@ -956,169 +1695,6 @@ const playerGrowthPrediction = [
         exp: 278
     }
 ];
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"6mg5U":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
-parcelHelpers.export(exports, "calculateBestPosition", ()=>calculateBestPosition);
-parcelHelpers.export(exports, "calculateSkillWithExp", ()=>calculateSkillWithExp);
-parcelHelpers.export(exports, "calculatePositionsQualities", ()=>calculatePositionsQualities);
-parcelHelpers.export(exports, "calculateBestPotential", ()=>calculateBestPotential);
-const calculatePositionsSkills = (player, positionSettings)=>{
-    const positionSkills = [];
-    positionSettings.forEach((position)=>{
-        const skills = [];
-        for (const [key, value] of Object.entries(position.ratios))skills.push(parseInt(player.skills[key]) / value);
-        positionSkills.push({
-            position: position.name,
-            level: Math.round(Math.min(...skills))
-        });
-    });
-    return positionSkills;
-};
-const calculateBestPosition = (skills)=>{
-    return skills.sort((a, b)=>b.level - a.level)[0];
-};
-const calculateSkillWithExp = (skill, experience)=>{
-    return Math.round(skill * (1 + experience / 500));
-};
-const calculatePositionsQualities = (player, positionSettings)=>{
-    const positionPotentials = [];
-    positionSettings.forEach((position)=>{
-        let qualities = 0;
-        let modifier = 0;
-        for (const [key, value] of Object.entries(position.ratios)){
-            qualities += player.qualities[key] * value;
-            modifier += value;
-        }
-        if (position.bonus) for (const [key, value] of Object.entries(position.bonus)){
-            qualities += player.qualities[key] * value;
-            modifier += value;
-        }
-        positionPotentials.push({
-            position: position.name,
-            potential: Math.round(Math.min(qualities / modifier))
-        });
-    });
-    return positionPotentials;
-};
-const calculateBestPotential = (potentials)=>{
-    return potentials.sort((a, b)=>b.potential - a.potential)[0];
-};
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"5eDoo":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "renderTableCell", ()=>renderTableCell);
-parcelHelpers.export(exports, "renderComparison", ()=>renderComparison);
-parcelHelpers.export(exports, "renderPotential", ()=>renderPotential);
-parcelHelpers.export(exports, "renderPotentialBadge", ()=>renderPotentialBadge);
-parcelHelpers.export(exports, "renderTrainableSkill", ()=>renderTrainableSkill);
-parcelHelpers.export(exports, "renderButton", ()=>renderButton);
-var _utilitiesJs = require("./utilities.js");
-const renderTableCell = (content, cssClass)=>{
-    const cell = document.createElement("td");
-    cell.classList.add(cssClass);
-    cell.textContent = content;
-    return cell;
-};
-const renderComparison = (skill, ratingSettings)=>{
-    let ratingPercentage;
-    const ratingOuter = document.createElement("div");
-    const ratingInner = document.createElement("div");
-    ratingOuter.classList.add("rating");
-    ratingInner.classList.add("rating__inner");
-    if (skill < ratingSettings.low) {
-        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-empty.svg")})`;
-        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
-        ratingPercentage = Math.min(skill / ratingSettings.low * 100, 100);
-    } else if (skill < ratingSettings.medium) {
-        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-silver.svg")})`;
-        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
-        ratingPercentage = Math.min((skill - ratingSettings.low) / (ratingSettings.medium - ratingSettings.low) * 100, 100);
-    } else if (skill >= ratingSettings.medium) {
-        ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-gold.svg")})`;
-        ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL("icons/star-diamond.svg")})`;
-        ratingPercentage = Math.min((skill - ratingSettings.medium) / (ratingSettings.high - ratingSettings.medium) * 100, 100);
-    }
-    ratingInner.style.width = `${ratingPercentage}%`;
-    ratingOuter.appendChild(ratingInner);
-    return ratingOuter;
-};
-const renderPotential = (bestPotential)=>{
-    const potential = document.createElement("div");
-    potential.classList.add("potential__text");
-    potential.textContent = `Best potential position is ${bestPotential.position} with ${Math.round(bestPotential.potential)}`;
-    return potential;
-};
-const renderPotentialBadge = (potential, size)=>{
-    const badge = document.createElement("div");
-    badge.classList.add("potential__badge");
-    if (size) badge.classList.add(`potential__badge--${size}`);
-    const potentialObj = (0, _utilitiesJs.potentialGrade)(potential);
-    badge.classList.add(`potential__badge--${potentialObj.class}`);
-    badge.textContent = potentialObj.label;
-    return badge;
-};
-const renderTrainableSkill = (trainableSkill)=>{
-    const trainableSkillElement = document.createElement("div");
-    trainableSkillElement.classList.add("trainable-skill");
-    trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
-    return trainableSkillElement;
-};
-const renderButton = (text)=>{
-    const button = document.createElement("button");
-    button.innerText = text;
-    return button;
-};
-
-},{"./utilities.js":"ivR0u","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"ivR0u":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "potentialGrade", ()=>potentialGrade);
-const potentialGrade = (potential)=>{
-    if (!potential || potential === null) return {
-        label: "?",
-        class: "unknown"
-    };
-    if (potential >= 95) return {
-        label: "A+",
-        class: "a-plus"
-    };
-    if (potential >= 90) return {
-        label: "A",
-        class: "a"
-    };
-    if (potential >= 85) return {
-        label: "B+",
-        class: "b-plus"
-    };
-    if (potential >= 80) return {
-        label: "B",
-        class: "b"
-    };
-    if (potential >= 75) return {
-        label: "C+",
-        class: "c-plus"
-    };
-    if (potential >= 70) return {
-        label: "C",
-        class: "c"
-    };
-    if (potential >= 60) return {
-        label: "D+",
-        class: "d-plus"
-    };
-    if (potential >= 50) return {
-        label: "D",
-        class: "d"
-    };
-    if (potential < 50) return {
-        label: "F",
-        class: "f"
-    };
-};
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"dW5Ci":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -15029,582 +15605,7 @@ const viewTraining = ()=>{
 };
 exports.default = viewTraining;
 
-},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"mJRmF":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _viewPlayerList = require("./views/viewPlayerList");
-var _viewPlayerListDefault = parcelHelpers.interopDefault(_viewPlayerList);
-var _viewPlayerProfile = require("./views/viewPlayerProfile");
-var _viewPlayerProfileDefault = parcelHelpers.interopDefault(_viewPlayerProfile);
-var _viewLineup = require("./views/viewLineup");
-var _viewLineupDefault = parcelHelpers.interopDefault(_viewLineup);
-// import viewLineupChange from "./views/viewLineupChange";
-var _viewMarket = require("./views/viewMarket");
-var _viewMarketDefault = parcelHelpers.interopDefault(_viewMarket);
-var _viewTraining = require("./views/viewTraining");
-var _viewTrainingDefault = parcelHelpers.interopDefault(_viewTraining);
-/**
- * Run View Functions
- */ const initSoccer = ()=>{
-    if (window.location.href.includes("speletaju-parskats")) (0, _viewPlayerListDefault.default)();
-    if (window.location.href.includes("speletajs")) (0, _viewPlayerProfileDefault.default)();
-    if (window.location.href.includes("sastavs") || window.location.href.includes("izkartojuma-versija")) (0, _viewLineupDefault.default)();
-    if (window.location.href.includes("speletaju-trenini")) (0, _viewTrainingDefault.default)();
-    // if (window.location.href.includes("rediget-mainu")) viewLineupChange();
-    if (window.location.href.includes("speletaju-tirgus")) (0, _viewMarketDefault.default)();
-};
-exports.default = initSoccer;
-
-},{"./views/viewPlayerList":"lRSRi","./views/viewPlayerProfile":"8mBnL","./views/viewLineup":"2pq5S","./views/viewMarket":"7EdSH","./views/viewTraining":"jh5gj","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"lRSRi":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _calculationsJs = require("~/src/calculations.js");
-var _renderJs = require("~/src/render.js");
-const viewPlayerList = ()=>{
-    const mainContent = document.getElementsByClassName("main_content");
-    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
-    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
-    tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
-    });
-    playerRows.forEach((playerRow, index)=>{
-        const playerColumns = playerRow.querySelectorAll("td");
-        playerRow.classList.add(`player-row`);
-        const player = {
-            name: playerColumns[0].textContent,
-            age: playerColumns[2].textContent,
-            careerLongitivity: Array.from(playerColumns[5].textContent)[0],
-            skills: {
-                goalie: playerColumns[6].textContent,
-                defence: playerColumns[7].textContent,
-                midfield: playerColumns[8].textContent,
-                offence: playerColumns[9].textContent,
-                shooting: playerColumns[10].textContent,
-                passing: playerColumns[11].textContent,
-                technical: playerColumns[12].textContent,
-                speed: playerColumns[13].textContent,
-                heading: playerColumns[14].textContent
-            },
-            experience: parseInt(playerColumns[15].textContent),
-            overall: playerColumns[16].textContent
-        };
-        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
-        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
-        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
-        playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
-        const ratingTd = document.createElement("td");
-        ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
-        playerRow.appendChild(ratingTd);
-    });
-    const filterByPositions = (pos)=>{
-        if (pos === "All") {
-            document.querySelectorAll(".player-row").forEach((row)=>{
-                row.style.display = "table-row";
-            });
-            return;
-        }
-        document.querySelectorAll(".player-row").forEach((row)=>{
-            row.style.display = "none";
-        });
-        document.querySelectorAll(`.position-${pos.toLowerCase()}`).forEach((row)=>{
-            row.style.display = "table-row";
-        });
-    };
-    const positionFilter = document.createElement("div");
-    positionFilter.classList.add("position-filter");
-    positionFilter.classList.add("white_box");
-    const positionButtonAll = (0, _renderJs.renderButton)(`All (${playerRows.length})`);
-    positionButtonAll.addEventListener("click", ()=>filterByPositions("All"));
-    positionFilter.append(positionButtonAll);
-    (0, _settings.positionSettings).forEach((pos)=>{
-        const positionButton = (0, _renderJs.renderButton)(`${pos.name} (${document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length})`);
-        positionButton.addEventListener("click", ()=>filterByPositions(pos.name));
-        positionFilter.append(positionButton);
-    });
-    mainContent[0].prepend(positionFilter);
-};
-exports.default = viewPlayerList;
-
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"50AAe":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
-parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
-const ratios = {
-    main: 1,
-    high: 0.75,
-    medium: 0.5,
-    low: 0.25
-};
-const positionSettings = [
-    {
-        name: "GK",
-        ratios: {
-            goalie: ratios.main,
-            technical: ratios.high,
-            speed: ratios.high,
-            passing: ratios.low,
-            heading: ratios.low
-        }
-    },
-    {
-        name: "SD",
-        ratios: {
-            defence: ratios.main,
-            technical: ratios.medium,
-            speed: ratios.high,
-            passing: ratios.medium,
-            heading: ratios.low
-        }
-    },
-    {
-        name: "CD",
-        ratios: {
-            defence: ratios.main,
-            technical: ratios.medium,
-            speed: ratios.medium,
-            passing: ratios.medium,
-            heading: ratios.medium
-        }
-    },
-    {
-        name: "SM",
-        ratios: {
-            midfield: ratios.main,
-            technical: ratios.medium,
-            speed: ratios.high,
-            passing: ratios.medium,
-            heading: ratios.low
-        }
-    },
-    {
-        name: "CM",
-        ratios: {
-            midfield: ratios.main,
-            technical: ratios.high,
-            speed: ratios.low,
-            passing: ratios.high,
-            heading: ratios.low
-        }
-    },
-    {
-        name: "SF",
-        ratios: {
-            offence: ratios.main,
-            technical: ratios.high,
-            speed: ratios.high,
-            passing: ratios.medium,
-            heading: ratios.low
-        }
-    },
-    {
-        name: "CF",
-        ratios: {
-            offence: ratios.main,
-            technical: ratios.medium,
-            speed: ratios.high,
-            passing: ratios.low,
-            heading: ratios.low
-        }
-    }
-];
-const ratingSettings = {
-    low: 300,
-    medium: 600,
-    high: 900
-};
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"8mBnL":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _calculationsJs = require("~/src/calculations.js");
-var _renderJs = require("~/src/render.js");
-const viewPlayerProfile = ()=>{
-    const playerTable = document.getElementById("table-1");
-    const player = {
-        careerLongitivity: parseInt(Array.from(playerTable.querySelector("#life_time span").textContent)[0]),
-        skills: {
-            goalie: parseInt(playerTable.querySelector("#goalie").textContent),
-            defence: parseInt(playerTable.querySelector("#defense").textContent),
-            midfield: parseInt(playerTable.querySelector("#midfield").textContent),
-            offence: parseInt(playerTable.querySelector("#attack").textContent),
-            shooting: parseInt(playerTable.querySelector("#shooting").textContent),
-            passing: parseInt(playerTable.querySelector("#passing").textContent),
-            technical: parseInt(playerTable.querySelector("#technique_attribute").textContent),
-            speed: parseInt(playerTable.querySelector("#speed").textContent),
-            heading: parseInt(playerTable.querySelector("#heading").textContent)
-        },
-        qualities: {
-            goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
-            defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
-            midfield: parseInt(playerTable.querySelector("#kva_midfield").textContent),
-            offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
-            shooting: parseInt(playerTable.querySelector("#kva_shooting").textContent),
-            passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
-            technical: parseInt(playerTable.querySelector("#technique_quality").textContent),
-            speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
-            heading: parseInt(playerTable.querySelector("#kva_heading").textContent)
-        },
-        experience: parseInt(playerTable.querySelector("#experience").textContent),
-        overall: playerTable.querySelector("#index_skill").textContent
-    };
-    const positions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
-    const bestPosition = (0, _calculationsJs.calculateBestPosition)(positions);
-    const contentColumn = document.querySelector(".column_left");
-    /**
-   * Ability Box
-   */ const abilityBox = document.createElement("div");
-    abilityBox.classList.add("player-profile");
-    abilityBox.classList.add("player-profile--ability");
-    const position = document.createElement("div");
-    position.classList.add("ability__position");
-    position.textContent = bestPosition.position;
-    const allPositions = document.createElement("div");
-    allPositions.classList.add("ability__positions");
-    let positionList = ``;
-    positions.forEach((position)=>{
-        positionList += `<div>${position.position} ${(0, _calculationsJs.calculateSkillWithExp)(position.level, player.experience)}</div>`;
-    });
-    allPositions.innerHTML = positionList;
-    abilityBox.appendChild(position);
-    const abilityDescription = document.createElement("div");
-    abilityDescription.classList.add("ability__text");
-    const abilityValue = document.createElement("div");
-    abilityValue.innerHTML = `<div>${(0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience)}</div>
-  <div>(${bestPosition.level})</div>`;
-    const comparison = document.createElement("div");
-    comparison.classList.add("comparison");
-    comparison.appendChild((0, _renderJs.renderComparison)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), (0, _settings.ratingSettings)));
-    abilityDescription.appendChild(abilityValue);
-    abilityDescription.appendChild(comparison);
-    abilityBox.appendChild(abilityDescription);
-    abilityBox.appendChild(allPositions);
-    contentColumn.appendChild(abilityBox);
-    /**
-   * Potential Box
-   */ const potentialBox = document.createElement("div");
-    potentialBox.classList.add("player-profile");
-    potentialBox.classList.add("player-profile--potential");
-    const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
-    const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
-    const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential);
-    potentialBox.appendChild(potentialBadge);
-    const potentialDescription = (0, _renderJs.renderPotential)(bestPotential);
-    potentialBox.appendChild(potentialDescription);
-    const allPotentials = document.createElement("div");
-    allPotentials.classList.add("potential__positions");
-    let potentialList = ``;
-    potentials.forEach((potential)=>{
-        potentialList += `<div>${potential.position} ${potential.potential}</div>`;
-    });
-    allPotentials.innerHTML = potentialList;
-    potentialBox.appendChild(allPotentials);
-    contentColumn.appendChild(potentialBox);
-};
-exports.default = viewPlayerProfile;
-
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"2pq5S":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _calculationsJs = require("~/src/calculations.js");
-var _renderJs = require("~/src/render.js");
-const viewLineupChange = ()=>{
-    const tables = document.querySelectorAll(".table");
-    const players = [];
-    tables.forEach((table)=>{
-        const tableHeads = table.querySelectorAll("thead");
-        const playerRows = table.querySelector("tbody").querySelectorAll("tr");
-        tableHeads.forEach((head)=>{
-            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
-            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
-            head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
-        });
-        playerRows.forEach((playerRow, index)=>{
-            const playerColumns = playerRow.querySelectorAll("td");
-            if (playerColumns.length > 2) {
-                const player = {
-                    id: playerColumns[1].querySelectorAll("a")[1].getAttribute("href").match(/\d/g).join(""),
-                    name: playerColumns[1].textContent,
-                    skills: {
-                        goalie: playerColumns[4].textContent,
-                        defence: playerColumns[5].textContent,
-                        midfield: playerColumns[6].textContent,
-                        offence: playerColumns[7].textContent,
-                        shooting: playerColumns[8].textContent,
-                        passing: playerColumns[9].textContent,
-                        technical: playerColumns[10].textContent,
-                        speed: playerColumns[11].textContent,
-                        heading: playerColumns[12].textContent
-                    },
-                    experience: parseInt(playerColumns[13].textContent)
-                };
-                players.push(player);
-                const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-                const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
-                const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
-                const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
-                playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
-                playerRow.appendChild((0, _renderJs.renderTableCell)((0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience), `${rowClass}td2`));
-                const ratingTd = document.createElement("td");
-                ratingTd.classList.add(`${rowClass}td1`);
-                ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
-                playerRow.appendChild(ratingTd);
-            } else playerColumns[1].colSpan = 16;
-        });
-    });
-    const formationEl = document.querySelector("#lineup");
-    const formationSlots = formationEl.querySelectorAll(".player_slot");
-    const findPosition = (formationId)=>{
-        const formationPositions = {
-            GK: [
-                0
-            ],
-            SD: [
-                11,
-                12,
-                21,
-                22,
-                16,
-                17,
-                26,
-                27
-            ],
-            CD: [
-                13,
-                14,
-                15,
-                23,
-                24,
-                25
-            ],
-            CM: [
-                33,
-                34,
-                35,
-                43,
-                44,
-                45,
-                53,
-                54,
-                55
-            ],
-            SM: [
-                31,
-                32,
-                41,
-                42,
-                51,
-                52,
-                36,
-                37,
-                46,
-                47,
-                56,
-                57
-            ],
-            CF: [
-                63,
-                64,
-                65,
-                73,
-                74,
-                75
-            ],
-            SF: [
-                61,
-                62,
-                71,
-                72,
-                66,
-                67,
-                76,
-                77
-            ]
-        };
-        let position;
-        for (const [key, value] of Object.entries(formationPositions))if (value.includes(parseInt(formationId))) position = key;
-        return position;
-    };
-    const findPlayer = (playerId)=>{
-        return players.find((player)=>player.id === playerId);
-    };
-    const showFormationRankings = ()=>{
-        formationSlots.forEach((slot)=>{
-            const id = slot.getAttribute("id");
-            const player = slot.querySelector(".player");
-            if (player) {
-                const position = findPosition(id);
-                const playerId = player.getAttribute("id").substring(12);
-                const playerData = findPlayer(playerId);
-                const playerSkills = (0, _calculationsJs.calculatePositionsSkills)(playerData, (0, _settings.positionSettings));
-                const captionEl = player.querySelector(".lineup_spot_caption");
-                const skill = (0, _calculationsJs.calculateSkillWithExp)(playerSkills.find((skill)=>skill.position === position).level, playerData.experience);
-                if (captionEl.querySelector(".rating")) captionEl.querySelector(".rating").remove();
-                captionEl.appendChild((0, _renderJs.renderComparison)(skill, (0, _settings.ratingSettings)));
-            }
-        });
-    };
-    showFormationRankings();
-    const fieldEl = document.querySelector("#lineup .lineup_field");
-    const config = {
-        attributes: false,
-        childList: true,
-        subtree: true
-    };
-    const callback = (mutationList, observer)=>{
-        observer.disconnect();
-        showFormationRankings();
-        observer.observe(fieldEl, config);
-    };
-    const observer = new MutationObserver(callback);
-    observer.observe(fieldEl, config);
-};
-exports.default = viewLineupChange;
-
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"7EdSH":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _calculationsJs = require("~/src/calculations.js");
-var _renderJs = require("~/src/render.js");
-/**
- * View Functions
- */ const viewMarket = ()=>{
-    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
-    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
-    tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Pos", "th1"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Sk", "th2"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Rating", "th1"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("Grd", "th2"));
-    });
-    const getSkill = (column)=>{
-        return parseInt([].reduce.call(column.childNodes, (a, b)=>{
-            return a + (b.nodeType === 3 ? b.textContent : "");
-        }, ""));
-    };
-    playerRows.forEach((playerRow, index)=>{
-        const playerColumns = playerRow.querySelectorAll("td");
-        const playerQualities = playerRow.querySelectorAll(".kva");
-        const player = {
-            name: playerColumns[0].textContent,
-            age: playerColumns[1].textContent,
-            careerLongitivity: Array.from(playerColumns[3].textContent)[0],
-            skills: {
-                goalie: getSkill(playerColumns[4]),
-                defence: getSkill(playerColumns[5]),
-                midfield: getSkill(playerColumns[6]),
-                offence: getSkill(playerColumns[7]),
-                shooting: getSkill(playerColumns[8]),
-                passing: getSkill(playerColumns[9]),
-                technical: getSkill(playerColumns[10]),
-                speed: getSkill(playerColumns[11]),
-                heading: getSkill(playerColumns[11])
-            },
-            qualities: {
-                goalie: parseInt(playerQualities[0].textContent),
-                defence: parseInt(playerQualities[1].textContent),
-                midfield: parseInt(playerQualities[2].textContent),
-                offence: parseInt(playerQualities[3].textContent),
-                shooting: parseInt(playerQualities[4].textContent),
-                passing: parseInt(playerQualities[5].textContent),
-                technical: parseInt(playerQualities[6].textContent),
-                speed: parseInt(playerQualities[7].textContent),
-                heading: parseInt(playerQualities[7].textContent)
-            },
-            experience: parseInt(playerColumns[13].textContent),
-            overall: playerColumns[14].textContent
-        };
-        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
-        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
-        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
-        const ratingTd = document.createElement("td");
-        ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
-        playerRow.appendChild(ratingTd);
-        const bestPotential = (0, _calculationsJs.calculateBestPotential)((0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings)));
-        const potentialBadge = (0, _renderJs.renderPotentialBadge)(bestPotential.potential, "small");
-        const potentialTd = document.createElement("td");
-        potentialTd.classList.add(`${rowClass}td2`);
-        potentialTd.classList.add("td-center");
-        potentialTd.appendChild(potentialBadge);
-        playerRow.appendChild(potentialTd);
-    });
-};
-exports.default = viewMarket;
-
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"jh5gj":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _calculationsJs = require("~/src/calculations.js");
-var _render = require("~/src/render");
-const extractSkill = (el)=>{
-    const skill = el.querySelector("span:first-child");
-    return parseInt(skill.textContent);
-};
-const viewTraining = ()=>{
-    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
-    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
-    tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, _render.renderTableCell)("Grd", "th1"));
-    });
-    playerRows.forEach((playerRow, index)=>{
-        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const playerQualities = playerRow.querySelectorAll(".kva");
-        const playerColumns = playerRow.querySelectorAll("td");
-        const player = {
-            skills: {
-                goalie: extractSkill(playerColumns[5]),
-                defence: extractSkill(playerColumns[6]),
-                midfield: extractSkill(playerColumns[7]),
-                offence: extractSkill(playerColumns[8]),
-                shooting: extractSkill(playerColumns[9]),
-                passing: extractSkill(playerColumns[10]),
-                technical: extractSkill(playerColumns[11]),
-                speed: extractSkill(playerColumns[12]),
-                heading: extractSkill(playerColumns[13])
-            },
-            qualities: {
-                goalie: parseInt(playerQualities[0].textContent),
-                defence: parseInt(playerQualities[1].textContent),
-                midfield: parseInt(playerQualities[2].textContent),
-                offence: parseInt(playerQualities[3].textContent),
-                shooting: parseInt(playerQualities[4].textContent),
-                passing: parseInt(playerQualities[5].textContent),
-                technical: parseInt(playerQualities[6].textContent),
-                speed: parseInt(playerQualities[7].textContent),
-                heading: parseInt(playerQualities[8].textContent)
-            }
-        };
-        const playerPositions = (0, _calculationsJs.calculatePositionsSkills)(player, (0, _settings.positionSettings));
-        const bestPosition = (0, _calculationsJs.calculateBestPosition)(playerPositions);
-        const potentials = (0, _calculationsJs.calculatePositionsQualities)(player, (0, _settings.positionSettings));
-        const bestPotential = potentials.find((el)=>el.position === bestPosition.position);
-        const potentialBadge = (0, _render.renderPotentialBadge)(bestPotential.potential, "small");
-        const potentialTd = document.createElement("td");
-        potentialTd.classList.add(`${rowClass}td1`);
-        potentialTd.classList.add("td-center");
-        potentialTd.appendChild(potentialBadge);
-        playerRow.appendChild(potentialTd);
-    });
-};
-exports.default = viewTraining;
-
-},{"../settings":"50AAe","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"5Tlaz":[function(require,module,exports) {
+},{"../settings":"aAEvc","~/src/calculations.js":"6mg5U","~/src/render":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"5Tlaz":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _routes = require("./routes");
@@ -15644,7 +15645,7 @@ const viewPlayerList = ()=>{
 };
 exports.default = initBasketball;
 
-},{"./routes":"3LAg2","./views/viewPlayerProfile":"8zHTS","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt","./views/viewPlayerList":"gDzBD","./views/viewTraining":"1tefY"}],"3LAg2":[function(require,module,exports) {
+},{"./routes":"3LAg2","./views/viewPlayerList":"gDzBD","./views/viewPlayerProfile":"8zHTS","./views/viewTraining":"1tefY","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"3LAg2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 exports.default = multilangRoutes = {
@@ -15662,7 +15663,184 @@ exports.default = multilangRoutes = {
     ]
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"8zHTS":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"gDzBD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _settings = require("../settings");
+var _positionsSkills = require("../calculations/positionsSkills");
+var _calculationsJs = require("~/src/calculations.js");
+var _renderJs = require("~/src/render.js");
+const viewPlayerList = ()=>{
+    var _a;
+    const mainContent = document.getElementsByClassName("main_content");
+    const table = document.getElementById("table-1");
+    if (!table) {
+        console.error("Table with id 'table-1' not found");
+        return;
+    }
+    const tableHeads = table.querySelectorAll("thead");
+    const tableFoots = table.querySelectorAll("tfoot");
+    const playerRows = (_a = table.querySelector("tbody")) === null || _a === void 0 ? void 0 : _a.querySelectorAll("tr");
+    tableHeads.forEach((head)=>{
+        const row = head.querySelector("tr");
+        if (row) {
+            row.appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+            row.appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+            row.appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+        }
+    });
+    tableFoots.forEach((foot)=>{
+        const row = foot.querySelector("tr");
+        if (row) {
+            row.appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
+            row.appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
+            row.appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
+        }
+    }, playerRows === null || playerRows === void 0 ? void 0 : playerRows.forEach((playerRow, index)=>{
+        const playerColumns = playerRow.querySelectorAll("td");
+        playerRow.classList.add(`player-row`);
+        const player = {
+            name: playerColumns[0].textContent,
+            age: playerColumns[4].textContent,
+            careerLongitivity: Array.from(playerColumns[7].textContent)[0],
+            skills: {
+                shooting: parseInt(playerColumns[8].textContent),
+                blocking: parseInt(playerColumns[9].textContent),
+                passing: parseInt(playerColumns[10].textContent),
+                technical: parseInt(playerColumns[11].textContent),
+                speed: parseInt(playerColumns[12].textContent),
+                aggression: parseInt(playerColumns[13].textContent),
+                jumping: parseInt(playerColumns[14].textContent)
+            },
+            experience: parseInt(playerColumns[15].textContent),
+            overall: parseInt(playerColumns[16].textContent),
+            height: parseInt(playerColumns[17].textContent)
+        };
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+        const skills = (0, _positionsSkills.calculatePositionsSkills)(player);
+        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
+        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
+        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
+        const ratingTd = document.createElement("td");
+        ratingTd.classList.add(`${rowClass}td1`);
+        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
+        playerRow.appendChild(ratingTd);
+    }));
+};
+exports.default = viewPlayerList;
+
+},{"../settings":"kAwjD","../calculations/positionsSkills":"iFsmd","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kAwjD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
+parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
+var Ratio;
+(function(Ratio) {
+    Ratio[Ratio["verylow"] = 0.2] = "verylow";
+    Ratio[Ratio["low"] = 0.4] = "low";
+    Ratio[Ratio["medium"] = 0.6] = "medium";
+    Ratio[Ratio["high"] = 0.8] = "high";
+    Ratio[Ratio["veryhigh"] = 1] = "veryhigh";
+})(Ratio || (Ratio = {}));
+const positionSettings = [
+    {
+        name: "PG",
+        ratios: {
+            passing: Ratio.veryhigh,
+            technical: Ratio.high,
+            speed: Ratio.high,
+            aggression: Ratio.verylow,
+            jumping: Ratio.verylow
+        },
+        minHeight: 175,
+        maxHeight: 190
+    },
+    {
+        name: "SG",
+        ratios: {
+            passing: Ratio.high,
+            technical: Ratio.high,
+            speed: Ratio.medium,
+            aggression: Ratio.low,
+            jumping: Ratio.low
+        },
+        minHeight: 185,
+        maxHeight: 200
+    },
+    {
+        name: "SF",
+        ratios: {
+            passing: Ratio.medium,
+            technical: Ratio.medium,
+            speed: Ratio.medium,
+            aggression: Ratio.medium,
+            jumping: Ratio.medium
+        },
+        minHeight: 190,
+        maxHeight: 205
+    },
+    {
+        name: "PF",
+        ratios: {
+            passing: Ratio.low,
+            technical: Ratio.low,
+            speed: Ratio.medium,
+            aggression: Ratio.high,
+            jumping: Ratio.high
+        },
+        minHeight: 200,
+        maxHeight: 215
+    },
+    {
+        name: "C",
+        ratios: {
+            passing: Ratio.verylow,
+            technical: Ratio.low,
+            speed: Ratio.low,
+            aggression: Ratio.veryhigh,
+            jumping: Ratio.veryhigh
+        },
+        minHeight: 205,
+        maxHeight: 220
+    }
+];
+const ratingSettings = {
+    low: 300,
+    medium: 600,
+    high: 900
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"iFsmd":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
+var _settings = require("../settings");
+const calculateHeightModifier = (height, minHeight, maxHeight)=>{
+    return height < minHeight ? 1 - (minHeight - height) * 0.025 : height > maxHeight ? 1 - (height - maxHeight) * 0.025 : 1;
+};
+const calculatePositionsSkills = (player)=>{
+    console.log("nmm");
+    const positionSkills = [];
+    (0, _settings.positionSettings).forEach((position)=>{
+        const skills = [];
+        const ratios = [];
+        for (const [key, value] of Object.entries(position.ratios)){
+            skills.push(parseInt(player.skills[key]) / value);
+            ratios.push(value);
+        }
+        const baseSkill = Math.min(...skills);
+        const heightModifier = calculateHeightModifier(player.height, position.minHeight, position.maxHeight);
+        positionSkills.push({
+            position: position.name,
+            level: Math.round(baseSkill * heightModifier)
+        });
+    });
+    return positionSkills;
+};
+
+},{"../settings":"kAwjD","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"8zHTS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _settings = require("../settings");
@@ -15753,166 +15931,6 @@ const viewPlayerProfile = ()=>{
     contentColumn.appendChild(potentialBox);
 };
 exports.default = viewPlayerProfile;
-
-},{"../settings":"kAwjD","../calculations/positionsSkills":"iFsmd","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"kAwjD":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "positionSettings", ()=>positionSettings);
-parcelHelpers.export(exports, "ratingSettings", ()=>ratingSettings);
-var Ratio;
-(function(Ratio) {
-    Ratio[Ratio["verylow"] = 0.2] = "verylow";
-    Ratio[Ratio["low"] = 0.4] = "low";
-    Ratio[Ratio["medium"] = 0.6] = "medium";
-    Ratio[Ratio["high"] = 0.8] = "high";
-    Ratio[Ratio["veryhigh"] = 1] = "veryhigh";
-})(Ratio || (Ratio = {}));
-const positionSettings = [
-    {
-        name: "PG",
-        ratios: {
-            passing: Ratio.veryhigh,
-            technical: Ratio.high,
-            speed: Ratio.high,
-            aggression: Ratio.verylow,
-            jumping: Ratio.verylow
-        },
-        minHeight: 175,
-        maxHeight: 190
-    },
-    {
-        name: "SG",
-        ratios: {
-            passing: Ratio.high,
-            technical: Ratio.high,
-            speed: Ratio.medium,
-            aggression: Ratio.low,
-            jumping: Ratio.low
-        },
-        minHeight: 185,
-        maxHeight: 200
-    },
-    {
-        name: "SF",
-        ratios: {
-            passing: Ratio.medium,
-            technical: Ratio.medium,
-            speed: Ratio.medium,
-            aggression: Ratio.medium,
-            jumping: Ratio.medium
-        },
-        minHeight: 190,
-        maxHeight: 205
-    },
-    {
-        name: "PF",
-        ratios: {
-            passing: Ratio.low,
-            technical: Ratio.low,
-            speed: Ratio.medium,
-            aggression: Ratio.high,
-            jumping: Ratio.high
-        },
-        minHeight: 200,
-        maxHeight: 215
-    },
-    {
-        name: "C",
-        ratios: {
-            passing: Ratio.verylow,
-            technical: Ratio.low,
-            speed: Ratio.low,
-            aggression: Ratio.veryhigh,
-            jumping: Ratio.veryhigh
-        },
-        minHeight: 205,
-        maxHeight: 220
-    }
-];
-const ratingSettings = {
-    low: 300,
-    medium: 600,
-    high: 900
-};
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"iFsmd":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "calculatePositionsSkills", ()=>calculatePositionsSkills);
-var _settings = require("../settings");
-const calculateHeightModifier = (height, minHeight, maxHeight)=>{
-    return height < minHeight ? 1 - (minHeight - height) * 0.03 : height > maxHeight ? 1 - (height - maxHeight) * 0.03 : 1;
-};
-const calculatePositionsSkills = (player)=>{
-    const positionSkills = [];
-    (0, _settings.positionSettings).forEach((position)=>{
-        const skills = [];
-        const ratios = [];
-        for (const [key, value] of Object.entries(position.ratios)){
-            skills.push(parseInt(player.skills[key]) / value);
-            ratios.push(value);
-        }
-        const baseSkill = Math.min(...skills);
-        const heightModifier = calculateHeightModifier(player.height, position.minHeight, position.maxHeight);
-        positionSkills.push({
-            position: position.name,
-            level: Math.round(baseSkill * heightModifier)
-        });
-    });
-    return positionSkills;
-};
-
-},{"../settings":"kAwjD","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"gDzBD":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _settings = require("../settings");
-var _positionsSkills = require("../calculations/positionsSkills");
-var _calculationsJs = require("~/src/calculations.js");
-var _renderJs = require("~/src/render.js");
-const viewPlayerList = ()=>{
-    console.log("viewPlayerList");
-    const mainContent = document.getElementsByClassName("main_content");
-    const tableHeads = document.getElementById("table-1").querySelectorAll("thead");
-    const playerRows = document.getElementById("table-1").querySelector("tbody").querySelectorAll("tr");
-    tableHeads.forEach((head)=>{
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("POS", "th1"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("SK", "th2"));
-        head.querySelector("tr").appendChild((0, _renderJs.renderTableCell)("RATING", "th1"));
-    });
-    playerRows.forEach((playerRow, index)=>{
-        const playerColumns = playerRow.querySelectorAll("td");
-        playerRow.classList.add(`player-row`);
-        const player = {
-            name: playerColumns[0].textContent,
-            age: playerColumns[4].textContent,
-            careerLongitivity: Array.from(playerColumns[7].textContent)[0],
-            skills: {
-                shooting: parseInt(playerColumns[8].textContent),
-                blocking: parseInt(playerColumns[9].textContent),
-                passing: parseInt(playerColumns[10].textContent),
-                technical: parseInt(playerColumns[11].textContent),
-                speed: parseInt(playerColumns[12].textContent),
-                aggression: parseInt(playerColumns[13].textContent),
-                jumping: parseInt(playerColumns[14].textContent)
-            },
-            experience: parseInt(playerColumns[15].textContent),
-            overall: parseInt(playerColumns[16].textContent),
-            height: parseInt(playerColumns[17].textContent)
-        };
-        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = (0, _positionsSkills.calculatePositionsSkills)(player);
-        const bestPosition = (0, _calculationsJs.calculateBestPosition)(skills);
-        playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-        const bestSkillWithExp = (0, _calculationsJs.calculateSkillWithExp)(bestPosition.level, player.experience);
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestPosition.position, `${rowClass}td1`));
-        playerRow.appendChild((0, _renderJs.renderTableCell)(bestSkillWithExp, `${rowClass}td2`));
-        const ratingTd = document.createElement("td");
-        ratingTd.classList.add(`${rowClass}td1`);
-        ratingTd.appendChild((0, _renderJs.renderComparison)(bestSkillWithExp, (0, _settings.ratingSettings)));
-        playerRow.appendChild(ratingTd);
-    });
-};
-exports.default = viewPlayerList;
 
 },{"../settings":"kAwjD","../calculations/positionsSkills":"iFsmd","~/src/calculations.js":"6mg5U","~/src/render.js":"5eDoo","@parcel/transformer-js/src/esmodule-helpers.js":"kaHqt"}],"1tefY":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");

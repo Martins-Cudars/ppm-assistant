@@ -11,26 +11,39 @@ import {
 } from "~/src/render.js";
 
 const viewPlayerList = () => {
-  console.log("viewPlayerList");
-
   const mainContent = document.getElementsByClassName("main_content");
 
-  const tableHeads = document
-    .getElementById("table-1")!
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
+  if (!table) {
+    console.error("Table with id 'table-1' not found");
+    return;
+  }
 
-  const playerRows = document
-    .getElementById("table-1")!
-    .querySelector("tbody")!
-    .querySelectorAll("tr");
+  const tableHeads = table.querySelectorAll("thead");
+  const tableFoots = table.querySelectorAll("tfoot");
+  const playerRows = table.querySelector("tbody")?.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+    const row = head.querySelector("tr");
+
+    if (row) {
+      row.appendChild(renderTableCell("POS", "th1"));
+      row.appendChild(renderTableCell("SK", "th2"));
+      row.appendChild(renderTableCell("RATING", "th1"));
+    }
   });
 
-  playerRows.forEach((playerRow, index) => {
+  tableFoots.forEach((foot) => {
+    const row = foot.querySelector("tr");
+
+    if (row) {
+      row.appendChild(renderTableCell("POS", "th1"));
+      row.appendChild(renderTableCell("SK", "th2"));
+      row.appendChild(renderTableCell("RATING", "th1"));
+    }
+  }
+
+  playerRows?.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
     playerRow.classList.add(`player-row`);
 
@@ -72,7 +85,6 @@ const viewPlayerList = () => {
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
     ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
-
     playerRow.appendChild(ratingTd);
   });
 };
