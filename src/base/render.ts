@@ -1,13 +1,18 @@
-import { potentialGrade } from "./utilities.js";
+import { potentialGrade } from "@/base/utilities";
 
-const renderTableCell = (content: string, cssClass: string) => {
+import { PositionPotential } from "@/types/Position";
+
+const renderTableCell = (content: string | number, cssClass: string) => {
   const cell = document.createElement("td");
   cell.classList.add(cssClass);
   cell.textContent = content;
   return cell;
 };
 
-const renderComparison = (skill: number, ratingSettings: any) => {
+const renderComparison = (
+  skill: number,
+  ratingSettings: any
+): HTMLDivElement => {
   let ratingPercentage;
 
   const ratingOuter = document.createElement("div");
@@ -58,7 +63,7 @@ const renderComparison = (skill: number, ratingSettings: any) => {
   return ratingOuter;
 };
 
-const renderPotential = (bestPotential) => {
+const renderPotential = (bestPotential: PositionPotential): HTMLDivElement => {
   const potential = document.createElement("div");
   potential.classList.add("potential__text");
   potential.textContent = `Best potential position is ${
@@ -67,7 +72,10 @@ const renderPotential = (bestPotential) => {
   return potential;
 };
 
-const renderPotentialBadge = (potential, size) => {
+const renderPotentialBadge = (
+  potential: number,
+  size = "medium"
+): HTMLDivElement => {
   const badge = document.createElement("div");
   badge.classList.add("potential__badge");
 
@@ -83,15 +91,7 @@ const renderPotentialBadge = (potential, size) => {
   return badge;
 };
 
-const renderTrainableSkill = (trainableSkill: any) => {
-  const trainableSkillElement = document.createElement("div");
-  trainableSkillElement.classList.add("trainable-skill");
-  trainableSkillElement.textContent = `Trainable skill is ${trainableSkill.minimumSkill.skill} with ${trainableSkill.minimumSkill.ability}, needs to improve by ${trainableSkill.difference}`;
-
-  return trainableSkillElement;
-};
-
-const renderButton = (text: string) => {
+const renderButton = (text: string): HTMLButtonElement => {
   const button = document.createElement("button");
   button.innerText = text;
   return button;
@@ -102,6 +102,5 @@ export {
   renderComparison,
   renderPotential,
   renderPotentialBadge,
-  renderTrainableSkill,
   renderButton,
 };
