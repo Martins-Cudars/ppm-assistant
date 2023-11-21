@@ -8,9 +8,9 @@ import {
 
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 
-const extractSkill = (el) => {
-  const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
-  return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
+const extractSkill = (cell: HTMLTableCellElement) => {
+  const qualityElStart = cell.innerHTML.indexOf('<span class="kva">');
+  return parseInt(cell.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
 };
 
 const viewTraining = () => {
@@ -44,13 +44,13 @@ const viewTraining = () => {
         jumping: extractSkill(playerColumns[14]),
       },
       qualities: {
-        shooting: parseInt(playerQualities[0].textContent),
-        blocking: parseInt(playerQualities[1].textContent),
-        passing: parseInt(playerQualities[2].textContent),
-        technical: parseInt(playerQualities[3].textContent),
-        speed: parseInt(playerQualities[4].textContent),
-        aggression: parseInt(playerQualities[6].textContent),
-        jumping: parseInt(playerQualities[5].textContent),
+        shooting: parseInt(playerQualities[0].textContent!),
+        blocking: parseInt(playerQualities[1].textContent!),
+        passing: parseInt(playerQualities[2].textContent!),
+        technical: parseInt(playerQualities[3].textContent!),
+        speed: parseInt(playerQualities[4].textContent!),
+        aggression: parseInt(playerQualities[6].textContent!),
+        jumping: parseInt(playerQualities[5].textContent!),
       },
     };
 
@@ -63,7 +63,7 @@ const viewTraining = () => {
     );
 
     const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
+      bestPotential!.potential,
       "small"
     );
     const potentialTd = document.createElement("td");
