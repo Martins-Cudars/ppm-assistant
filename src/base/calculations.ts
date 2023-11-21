@@ -1,27 +1,24 @@
+import {
+  PositionSkill,
+  PositionPotential,
+  HockeyPositionSetting,
+  SoccerPositionSetting,
+  BasketballPositionSetting,
+} from "@/types/Position";
+
 interface Player {
   skills: { [key: string]: number };
   qualities: { [key: string]: number };
 }
 
-interface PositionSetting {
-  name: string;
-  ratios: { [key: string]: number };
-  bonus?: { [key: string]: number };
-}
-
-interface PositionSkill {
-  position: string;
-  level: number;
-}
-
-interface PositionPotential {
-  position: string;
-  potential: number;
-}
+type PositionSettings =
+  | HockeyPositionSetting[]
+  | SoccerPositionSetting[]
+  | BasketballPositionSetting[];
 
 const calculatePositionsSkills = (
   player: Player,
-  positionSettings: PositionSetting[]
+  positionSettings: PositionSettings
 ): PositionSkill[] => {
   const positionSkills: PositionSkill[] = [];
 
@@ -29,7 +26,9 @@ const calculatePositionsSkills = (
     const skills: number[] = [];
 
     for (const [key, value] of Object.entries(position.ratios)) {
-      skills.push(Math.round(parseInt(player.skills[key].toString()) / value));
+      skills.push(
+        Math.round(parseInt(player.skills[key].toString()) / (value as number))
+      );
     }
 
     positionSkills.push({
@@ -51,7 +50,7 @@ const calculateSkillWithExp = (skill: number, experience: number): number => {
 
 const calculatePositionsQualities = (
   player: Player,
-  positionSettings: PositionSetting[]
+  positionSettings: PositionSettings
 ): PositionPotential[] => {
   const positionPotentials: PositionPotential[] = [];
 
@@ -60,14 +59,16 @@ const calculatePositionsQualities = (
     let modifier = 0;
 
     for (const [key, value] of Object.entries(position.ratios)) {
-      qualities += player.qualities[key] * value;
-      modifier += value;
+      const ratioValue = value as number; // Type assertion to specify 'value' as number
+      qualities += player.qualities[key] * ratioValue;
+      modifier += ratioValue;
     }
 
     if (position.bonus) {
       for (const [key, value] of Object.entries(position.bonus)) {
-        qualities += player.qualities[key] * value;
-        modifier += value;
+        const bonusValue = value as number; // Type assertion to specify 'value' as number
+        qualities += player.qualities[key] * bonusValue;
+        modifier += bonusValue;
       }
     }
 

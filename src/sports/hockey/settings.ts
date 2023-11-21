@@ -1,43 +1,52 @@
-const positionSettings = [
+import { HockeyPositionSetting } from "@/types/Position";
+
+enum Ratio {
+  main = 1,
+  veryhigh = 0.75,
+  high = 0.5,
+  medium = 0.25,
+}
+
+const positionSettings: HockeyPositionSetting[] = [
   {
     name: "G",
     ratios: {
-      goalie: 1,
-      technical: 0.5,
-      passing: 0.5,
+      goalie: Ratio.main,
+      technical: Ratio.high,
+      passing: Ratio.high,
     },
   },
   {
     name: "D",
     ratios: {
-      defence: 1,
-      passing: 0.5,
-      aggression: 0.5,
+      defence: Ratio.main,
+      passing: Ratio.high,
+      aggression: Ratio.high,
     },
     bonus: {
-      technical: 0.5,
+      technical: Ratio.high,
     },
   },
   {
     name: "W",
     ratios: {
-      offence: 1,
-      technical: 0.5,
-      aggression: 0.5,
+      offence: Ratio.main,
+      technical: Ratio.high,
+      aggression: Ratio.high,
     },
     bonus: {
-      shooting: 0.75,
+      shooting: Ratio.veryhigh,
     },
   },
   {
     name: "C",
     ratios: {
-      offence: 1,
-      technical: 0.5,
-      passing: 0.5,
+      offence: Ratio.main,
+      technical: Ratio.high,
+      passing: Ratio.high,
     },
     bonus: {
-      shooting: 0.5,
+      shooting: Ratio.high,
     },
   },
 ];
