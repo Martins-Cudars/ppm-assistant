@@ -35,8 +35,11 @@ jobs:
       - name: Build project
         run: pnpm build
 
+      - name: Zip dist directory
+        run: zip -r dist.zip dist/
+
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: dist/
+          name: dist-zip
+          path: dist.zip
