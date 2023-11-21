@@ -1,4 +1,4 @@
-interface HockeyPlayer {
+export interface HockeyPlayer {
   age: number;
   name: string;
   careerLongitivity: number;
@@ -8,7 +8,7 @@ interface HockeyPlayer {
   overall: number;
 }
 
-interface HockeySkills {
+export interface HockeySkills {
   goalie: number;
   defence: number;
   offence: number;
@@ -18,7 +18,7 @@ interface HockeySkills {
   aggression: number;
 }
 
-interface HockeyQualities {
+export interface HockeyQualities {
   goalie: number;
   defence: number;
   offence: number;
