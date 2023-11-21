@@ -149,7 +149,7 @@ const viewPlayerProfile = () => {
   const potentialBadge = renderPotentialBadge(bestPotential!.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential);
+  const potentialDescription = renderPotential(bestPotential!);
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");

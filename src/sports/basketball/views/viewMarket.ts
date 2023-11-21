@@ -12,6 +12,8 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
+import { BasketballPlayer } from "@/types/Player";
+
 const viewMarket = () => {
   const table = document.getElementById("table-1");
   if (!table) {
@@ -59,8 +61,8 @@ const viewMarket = () => {
 
     playerRow.classList.add(`player-row`);
 
-    const player = {
-      name: playerColumns[0].querySelectorAll("a")[1].textContent,
+    const player: BasketballPlayer = {
+      name: playerColumns[0].querySelectorAll("a")[1].textContent!,
       age: parseInt(playerColumns[1]!.textContent!),
       careerLongitivity: parseInt(
         Array.from(playerColumns[4]!.querySelector("span")!.textContent!)[0]
@@ -88,8 +90,6 @@ const viewMarket = () => {
       overall: parseInt(playerColumns[13].textContent!),
       height: parseInt(playerColumns[14].textContent!),
     };
-
-    console.log(player);
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
     const skills = calculatePositionsSkills(player);

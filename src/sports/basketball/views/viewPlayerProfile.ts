@@ -13,12 +13,17 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
+import { BasketballPlayer } from "@/types/Player";
+
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
+  const playerInfo = document.querySelector(".player_info");
 
   if (!playerTable) return new Error("Player table not found");
+  if (!playerInfo) return new Error("Player info not found");
 
-  const player = {
+  const player: BasketballPlayer = {
+    name: playerInfo.querySelectorAll("a")[1]!.textContent!,
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
@@ -61,7 +66,7 @@ const viewPlayerProfile = () => {
     experience: parseInt(
       playerTable.querySelector("#experience")!.textContent!
     ),
-    overall: playerTable.querySelector("#index_skill")!.textContent!,
+    overall: parseInt(playerTable.querySelector("#index_skill")!.textContent!),
   };
 
   const positions = calculatePositionsSkills(player);
