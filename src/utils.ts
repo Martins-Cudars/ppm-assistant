@@ -1,3 +1,5 @@
+import { GrowthPrediction } from "@/types/GrowthData";
+
 export const getCurrentSeasonDay = () => {
   const teamInfoEl = document.querySelector(".top_info_team");
 
@@ -31,7 +33,7 @@ export const calculateSeasonProgress = (seasonDay: number) => {
 };
 
 export const recalculatePredictDataAccordingToSeasonDay = (
-  playerGrowthPrediction: any,
+  playerGrowthPrediction: GrowthPrediction,
   position?: string,
   day?: number
 ) => {
