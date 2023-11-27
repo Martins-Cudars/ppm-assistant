@@ -1,10 +1,13 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/hockey/settings";
 import {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
 } from "@/base/calculations";
-import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import {
   renderTableCell,
   renderComparison,

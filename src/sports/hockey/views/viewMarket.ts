@@ -1,4 +1,9 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/hockey/settings";
+
 import {
   calculatePositionsSkills,
   calculateBestPosition,
@@ -10,7 +15,12 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
+  renderRelativeSkill,
 } from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
 
 /**
  * View Functions
@@ -33,7 +43,15 @@ const viewMarket = () => {
     head.querySelector("tr")!.appendChild(renderTableCell("Sk", "th2"));
     head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
     head.querySelector("tr")!.appendChild(renderTableCell("Grd", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Rel", "th1"));
   });
+
+  const seasonDay = getCurrentSeasonDay();
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
 
   const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
@@ -49,7 +67,7 @@ const viewMarket = () => {
 
     const player = {
       name: playerColumns[0].textContent,
-      age: playerColumns[1].textContent,
+      age: parseInt(playerColumns[1].textContent!),
       careerLongitivity: Array.from(playerColumns[4].textContent!)[0],
       skills: {
         goalie: getSkill(playerColumns[5]),
@@ -108,6 +126,24 @@ const viewMarket = () => {
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
+
+    const relativeCell = document.createElement("td");
+
+    // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
+    const skillRecalculated =
+      bestPosition.position === "G"
+        ? bestSkillWithExp / 1.25
+        : bestSkillWithExp;
+
+    const relativeSkill = renderRelativeSkill(
+      player.age,
+      skillRecalculated,
+      predictData
+    );
+    relativeCell.classList.add(`${rowClass}td2`);
+    relativeCell.appendChild(relativeSkill);
+
+    playerRow.appendChild(relativeCell);
   });
 };
 
