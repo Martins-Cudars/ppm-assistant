@@ -23,7 +23,6 @@ export const getCurrentSeasonDay = () => {
     return 1;
   }
 
-  console.log(`current season day: ${match[1]}`);
   return parseInt(match[1]);
 };
 
