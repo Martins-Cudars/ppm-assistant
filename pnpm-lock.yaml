@@ -10,6 +10,9 @@ dependencies:
     version: 4.3.0
 
 devDependencies:
+  '@types/chart.js':
+    specifier: ^2.9.41
+    version: 2.9.41
   '@types/chrome':
     specifier: ^0.0.252
     version: 0.0.252
@@ -414,6 +417,12 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@types/chart.js@2.9.41:
+    resolution: {integrity: sha512-3dvkDvueckY83UyUXtJMalYoH6faOLkWQoaTlJgB4Djde3oORmNP0Jw85HtzTuXyliUHcdp704s0mZFQKio/KQ==}
+    dependencies:
+      moment: 2.29.4
+    dev: true
 
   /@types/chrome@0.0.252:
     resolution: {integrity: sha512-bnVY4Vtz01Dd/KDAn6LgxhGPqBMMxvqjUe3PdbP65/aBvyh3Fuw2qgKooiPFHRVT8uL7SJC0n7EAWcXAjCC+Ug==}
@@ -1101,6 +1110,10 @@ packages:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
     dependencies:
       brace-expansion: 1.1.11
+    dev: true
+
+  /moment@2.29.4:
+    resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
     dev: true
 
   /ms@2.1.2:

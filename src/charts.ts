@@ -1,80 +1,22 @@
 import Chart from "chart.js/auto";
+import { ChartConfiguration } from "chart.js";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { calculateSkillWithExp } from "@/base/calculations";
+import {
+  getCurrentSeasonDay,
+  calculateSeasonProgress,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
+
+import { ChartData } from "@/types/Chart";
 
 // TODO: Improve calculations by using player age, career longitivity, current training level, etc.
 
-const getCurrentSeasonDay = () => {
-  const teamInfoEl = document.querySelector(".top_info_team");
-  const dayEl = teamInfoEl.querySelectorAll(".link_r");
-
-  const dayString = dayEl[dayEl.length - 1].textContent;
-  const regex = /\((\d+)\//g;
-  const match = regex.exec(dayString);
-
-  if (!match || !match[1]) {
-    console.error("error getting current season day");
-    return 1;
-  }
-
-  console.log(`current season day: ${match[1]}`);
-  return parseInt(match[1]);
-};
-
-const calculateSeasonProgress = (seasonDay) => {
-  return seasonDay / 112;
-};
-
-// TODO: Refactor this function
-// this might be unnecessary code, it's current only use is to adjust the ratio for Goalies
-const recalculatePredictDataAccordingToSeasonDay = (position = null) => {
-  const seasonDay = 1;
-  const seasonProgress = calculateSeasonProgress(seasonDay);
-
-  let positionRatio = 1;
-
-  // adjust ratio for Goalies, because they only need 2 skill points per ability compared to
-  // other positions which need 2.5 skill points per ability
-  if (position && position === "G") {
-    positionRatio = 1.25;
-  }
-
-  const predictData = playerGrowthPrediction.map((row) => {
-    return {
-      ...row,
-      skill: Math.round(row.skill * positionRatio),
-    };
-  });
-
-  const newPredictData = predictData.map((row) => {
-    const newSkill = Math.round(
-      row.skill +
-        seasonProgress *
-          (predictData[row.age - 14]
-            ? predictData[row.age - 14].skill - row.skill
-            : -40)
-    );
-
-    const newExp = Math.round(
-      row.exp +
-        seasonProgress *
-          (predictData[row.age - 14]
-            ? predictData[row.age - 14].exp - row.exp
-            : 10)
-    );
-
-    return {
-      age: row.age,
-      skill: newSkill,
-      exp: newExp,
-    };
-  });
-
-  return newPredictData;
-};
-
-const renderPotentialChart = (data, el) => {
-  const predictData = recalculatePredictDataAccordingToSeasonDay(data.position);
+const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    data.position
+  );
 
   const seasonDay = getCurrentSeasonDay();
   const seasonProgress = calculateSeasonProgress(seasonDay);
@@ -95,6 +37,7 @@ const renderPotentialChart = (data, el) => {
     type: "line",
     options: {
       responsive: false,
+      aspectRatio: 1.5,
       scales: {
         x: {
           type: "linear",
@@ -104,15 +47,18 @@ const renderPotentialChart = (data, el) => {
           },
           min: 15,
           max: 40,
-
           ticks: {
             stepSize: 1,
           },
         },
       },
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
     },
     data: {
-      // labels: predictData.map((row) => parseInt(row.age)),
       datasets: [
         {
           label: "Perfect Player Skill",
@@ -152,8 +98,8 @@ const renderPotentialChart = (data, el) => {
     },
   };
 
-  const chart = new Chart(el, chartConfig);
-  chart.resize(590, 300);
+  const chart = new Chart(el, chartConfig as ChartConfiguration);
+  chart.resize(590, 400);
 
   return chart;
 };

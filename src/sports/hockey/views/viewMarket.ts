@@ -1,4 +1,9 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/hockey/settings";
+
 import {
   calculatePositionsSkills,
   calculateBestPosition,
@@ -10,38 +15,50 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
+  renderRelativeSkill,
 } from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
 
 /**
  * View Functions
  */
 
 const viewMarket = () => {
-  const tableHeads = document
-    .getElementById("table-1")
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
 
-  const playerRows = document
-    .getElementById("table-1")
-    .querySelector("tbody")
-    .querySelectorAll("tr");
+  if (!table) {
+    return new Error("Table with id 'table-1' not found");
+  }
+
+  const tableHeads = table.querySelectorAll("thead");
+  const tableBody = table.querySelector("tbody");
+
+  const playerRows = tableBody!.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("Pos", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("Sk", "th2"));
-    head.querySelector("tr").appendChild(renderTableCell("Rating", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("Grd", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Pos", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Sk", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Grd", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Rel", "th1"));
   });
 
-  const getSkill = (column) => {
+  const seasonDay = getCurrentSeasonDay();
+
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
+
+  const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
-      [].reduce.call(
-        column.childNodes,
-        (a, b) => {
-          return a + (b.nodeType === 3 ? b.textContent : "");
-        },
-        ""
-      )
+      Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
+        return a + (b.nodeType === 3 ? b.textContent || "" : "");
+      }, "")
     );
   };
 
@@ -51,8 +68,8 @@ const viewMarket = () => {
 
     const player = {
       name: playerColumns[0].textContent,
-      age: playerColumns[1].textContent,
-      careerLongitivity: Array.from(playerColumns[4].textContent)[0],
+      age: parseInt(playerColumns[1].textContent!),
+      careerLongitivity: Array.from(playerColumns[4].textContent!)[0],
       skills: {
         goalie: getSkill(playerColumns[5]),
         defence: getSkill(playerColumns[6]),
@@ -63,16 +80,16 @@ const viewMarket = () => {
         aggression: getSkill(playerColumns[11]),
       },
       qualities: {
-        goalie: parseInt(playerQualities[0].textContent),
-        defence: parseInt(playerQualities[1].textContent),
-        offence: parseInt(playerQualities[2].textContent),
-        shooting: parseInt(playerQualities[3].textContent),
-        passing: parseInt(playerQualities[4].textContent),
-        technical: parseInt(playerQualities[5].textContent),
-        aggression: parseInt(playerQualities[6].textContent),
+        goalie: parseInt(playerQualities[0].textContent!),
+        defence: parseInt(playerQualities[1].textContent!),
+        offence: parseInt(playerQualities[2].textContent!),
+        shooting: parseInt(playerQualities[3].textContent!),
+        passing: parseInt(playerQualities[4].textContent!),
+        technical: parseInt(playerQualities[5].textContent!),
+        aggression: parseInt(playerQualities[6].textContent!),
       },
-      experience: parseInt(playerColumns[12].textContent),
-      overall: playerColumns[13].textContent,
+      experience: parseInt(playerColumns[12].textContent!),
+      overall: parseInt(playerColumns[13].textContent!),
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
@@ -110,6 +127,24 @@ const viewMarket = () => {
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
+
+    const relativeCell = document.createElement("td");
+
+    // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
+    const skillRecalculated =
+      bestPosition.position === "G"
+        ? bestSkillWithExp / 1.25
+        : bestSkillWithExp;
+
+    const relativeSkill = renderRelativeSkill(
+      player.age,
+      skillRecalculated,
+      predictData
+    );
+    relativeCell.classList.add(`${rowClass}td2`);
+    relativeCell.appendChild(relativeSkill);
+
+    playerRow.appendChild(relativeCell);
   });
 };
 

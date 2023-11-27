@@ -3,6 +3,12 @@ export type Grade = {
   class: string;
 };
 
+export type RatingSettings = {
+  low: number;
+  medium: number;
+  high: number;
+};
+
 export type PositionSkill = {
   position: string;
   level: number;

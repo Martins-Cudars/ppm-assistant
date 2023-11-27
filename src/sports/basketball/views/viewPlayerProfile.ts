@@ -13,12 +13,17 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
+import { BasketballPlayer } from "@/types/Player";
+
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
+  const playerInfo = document.querySelector(".player_info");
 
   if (!playerTable) return new Error("Player table not found");
+  if (!playerInfo) return new Error("Player info not found");
 
-  const player = {
+  const player: BasketballPlayer = {
+    name: playerInfo.querySelectorAll("a")[1]!.textContent!,
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
@@ -61,7 +66,7 @@ const viewPlayerProfile = () => {
     experience: parseInt(
       playerTable.querySelector("#experience")!.textContent!
     ),
-    overall: playerTable.querySelector("#index_skill")!.textContent!,
+    overall: parseInt(playerTable.querySelector("#index_skill")!.textContent!),
   };
 
   const positions = calculatePositionsSkills(player);
@@ -134,14 +139,15 @@ const viewPlayerProfile = () => {
   potentialBox.classList.add("player-profile--potential");
 
   const potentials = calculatePositionsQualities(player, positionSettings);
+
   const bestPotential = potentials.find(
     (el) => el.position === bestPosition.position
   );
 
-  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential);
+  const potentialDescription = renderPotential(bestPotential!);
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");
