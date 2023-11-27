@@ -228,7 +228,8 @@
   font-weight: 700;
 }
 
-.relative-skill--100 {
+.relative-skill--100,
+.relative-skill--95 {
   color: var(--rank-a-plus);
 }
 
@@ -236,32 +237,41 @@
   color: var(--rank-a);
 }
 
-.relative-skill--80 {
+.relative-skill--85 {
   color: var(--rank-b-plus);
 }
 
-.relative-skill--70 {
+.relative-skill--80 {
   color: var(--rank-b);
 }
 
-.relative-skill--60 {
+.relative-skill--75,
+.relative-skill--70 {
   color: var(--rank-c-plus);
 }
 
-.relative-skill--50 {
+.relative-skill--65,
+.relative-skill--60 {
   color: var(--rank-c);
 }
 
-.relative-skill--40 {
+.relative-skill--55,
+.relative-skill--50 {
   color: var(--rank-d-plus);
 }
 
-.relative-skill--30 {
+.relative-skill--45,
+.relative-skill--40 {
   color: var(--rank-d);
 }
 
+.relative-skill--35,
+.relative-skill--30,
+.relative-skill--25,
 .relative-skill--20,
+.relative-skill--15,
 .relative-skill--10,
+.relative-skill--5,
 .relative-skill--0 {
   color: var(--rank-f);
 }
