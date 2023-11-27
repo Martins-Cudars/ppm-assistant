@@ -4,6 +4,7 @@ import {
   calculateRelativeSkill,
 } from "@/base/calculations";
 import { PositionPotential, RatingSettings } from "@/types/Position";
+import { GrowthPrediction } from "@/types/GrowthData";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
   const cell = document.createElement("td");
@@ -97,7 +98,7 @@ const renderPotentialBadge = (
 const renderRelativeSkill = (
   playerAge: number,
   playerSkillWithExp: number,
-  playerGrowthPrediction: any
+  playerGrowthPrediction: GrowthPrediction
 ): HTMLElement => {
   const relativeSkill = calculateRelativeSkill(
     playerAge,
