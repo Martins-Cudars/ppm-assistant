@@ -1,4 +1,8 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/hockey/settings";
 
 import {
   calculatePositionsSkills,
@@ -11,7 +15,12 @@ import {
   renderComparison,
   renderPotential,
   renderPotentialBadge,
+  renderRelativeSkill,
 } from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
 
 import { HockeyPlayer } from "@/types/Player";
 
@@ -29,9 +38,17 @@ const viewPlayerProfile = () => {
   if (!statsVisible)
     return new Error("Player is not scouted or is not on the market");
 
+  /** Calculate predictions */
+  const seasonDay = getCurrentSeasonDay();
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
+
   const player: HockeyPlayer = {
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
-    name: playerInfo.querySelector(".link_name")!.textContent,
+    name: playerInfo.querySelector(".link_name")!.textContent!,
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
     ),
@@ -110,21 +127,18 @@ const viewPlayerProfile = () => {
   const abilityDescription = document.createElement("div");
   abilityDescription.classList.add("ability__text");
 
-  const abilityValue = document.createElement("div");
-  abilityValue.innerHTML = `<div>${calculateSkillWithExp(
+  const bestSkillWithExp = calculateSkillWithExp(
     bestPosition.level,
     player.experience
-  )}</div>
+  );
+
+  const abilityValue = document.createElement("div");
+  abilityValue.innerHTML = `<div>${bestSkillWithExp}</div>
    <div>(${bestPosition.level})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
-  comparison.appendChild(
-    renderComparison(
-      calculateSkillWithExp(bestPosition.level, player.experience),
-      ratingSettings
-    )
-  );
+  comparison.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
 
   abilityDescription.appendChild(abilityValue);
   abilityDescription.appendChild(comparison);
@@ -149,7 +163,7 @@ const viewPlayerProfile = () => {
   const potentialBadge = renderPotentialBadge(bestPotential!.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential);
+  const potentialDescription = renderPotential(bestPotential!);
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");
@@ -165,6 +179,25 @@ const viewPlayerProfile = () => {
   potentialBox.appendChild(allPotentials);
 
   contentColumn.appendChild(potentialBox);
+
+  const relativeEl = document.createElement("div");
+  relativeEl.classList.add("player-profile");
+  relativeEl.classList.add("player-profile--relative");
+
+  // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
+  const skillRecalculated =
+    bestPosition.position === "G" ? bestSkillWithExp / 1.25 : bestSkillWithExp;
+
+  const relativeSkill = renderRelativeSkill(
+    player.age,
+    skillRecalculated,
+    predictData
+  );
+
+  relativeEl.innerHTML = `<div class="relative__title">Relative skill</div>`;
+
+  relativeEl.appendChild(relativeSkill);
+  contentColumn.appendChild(relativeEl);
 
   /**
    * Add chart

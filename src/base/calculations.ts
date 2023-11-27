@@ -6,10 +6,10 @@ import {
   BasketballPositionSetting,
 } from "@/types/Position";
 
-interface Player {
-  skills: { [key: string]: number };
-  qualities: { [key: string]: number };
-}
+import { HockeyPlayer, SoccerPlayer, BasketballPlayer } from "@/types/Player";
+import { GrowthPrediction, GrowthPredictionItem } from "@/types/GrowthData";
+
+type Player = HockeyPlayer | SoccerPlayer | BasketballPlayer;
 
 type PositionSettings =
   | HockeyPositionSetting[]
@@ -87,10 +87,32 @@ const calculateBestPotential = (
   return potentials.sort((a, b) => b.potential - a.potential)[0];
 };
 
+const calculateRelativeSkill = (
+  playerAge: number,
+  playerSkillWithExp: number,
+  playerGrowthPrediction: GrowthPrediction
+): number => {
+  const predictionByAge = playerGrowthPrediction.find(
+    (row: GrowthPredictionItem) => row.age === playerAge
+  );
+
+  if (!predictionByAge) {
+    return 0;
+  }
+
+  const predictionWithXp = calculateSkillWithExp(
+    predictionByAge.skill,
+    predictionByAge.exp
+  );
+
+  return Math.round((playerSkillWithExp / predictionWithXp) * 100);
+};
+
 export {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
   calculatePositionsQualities,
   calculateBestPotential,
+  calculateRelativeSkill,
 };

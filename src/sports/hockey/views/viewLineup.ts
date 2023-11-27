@@ -11,12 +11,17 @@ const viewLineupChange = () => {
 
   tables.forEach((table) => {
     const tableHeads = table.querySelectorAll("thead");
-    const playerRows = table.querySelector("tbody").querySelectorAll("tr");
+    const tableBody = table.querySelector("tbody");
+
+    if (!tableHeads || !tableBody)
+      return new Error("Table head / body not found");
+
+    const playerRows = tableBody.querySelectorAll("tr");
 
     tableHeads.forEach((head) => {
-      head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
-      head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
-      head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
+      head.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+      head.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+      head.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
     });
 
     playerRows.forEach((playerRow, index) => {
@@ -24,17 +29,17 @@ const viewLineupChange = () => {
 
       if (playerColumns.length > 2) {
         const player = {
-          name: playerColumns[1].textContent,
+          name: playerColumns[1].textContent!,
           skills: {
-            goalie: playerColumns[4].textContent,
-            defence: playerColumns[5].textContent,
-            offence: playerColumns[6].textContent,
-            shooting: playerColumns[7].textContent,
-            passing: playerColumns[8].textContent,
-            technical: playerColumns[9].textContent,
-            aggression: playerColumns[10].textContent,
+            goalie: parseInt(playerColumns[4].textContent!),
+            defence: parseInt(playerColumns[5].textContent!),
+            offence: parseInt(playerColumns[6].textContent!),
+            shooting: parseInt(playerColumns[7].textContent!),
+            passing: parseInt(playerColumns[8].textContent!),
+            technical: parseInt(playerColumns[9].textContent!),
+            aggression: parseInt(playerColumns[10].textContent!),
           },
-          experience: parseInt(playerColumns[11].textContent),
+          experience: parseInt(playerColumns[11].textContent!),
         };
 
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";

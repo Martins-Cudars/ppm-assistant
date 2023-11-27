@@ -11,51 +11,63 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
-const viewPlayerProfile = () => {
-  const playerTable = document.getElementById("table-1");
+import { SoccerPlayer } from "@/types/Player";
 
-  const player = {
+const viewPlayerProfile = () => {
+  const table = document.getElementById("table-1");
+  const playerInfo = document.querySelector(".player_info");
+
+  if (!table) return new Error("Player table not found");
+  if (!playerInfo) return new Error("Player info not found");
+
+  const statsVisible = table.querySelector("#goalie") ? true : false; // If goalie stat is found, player is scouted
+
+  if (!statsVisible)
+    return new Error("Player is not scouted or is not on the market");
+
+  const player: SoccerPlayer = {
+    name: playerInfo.querySelectorAll("a")[2]!.textContent!,
+    age: parseInt(table.querySelector("#age")!.textContent!),
     careerLongitivity: parseInt(
-      Array.from(playerTable.querySelector("#life_time span").textContent)[0]
+      Array.from(table.querySelector("#life_time span")!.textContent!)[0]
     ),
     skills: {
-      goalie: parseInt(playerTable.querySelector("#goalie").textContent),
-      defence: parseInt(playerTable.querySelector("#defense").textContent),
-      midfield: parseInt(playerTable.querySelector("#midfield").textContent),
-      offence: parseInt(playerTable.querySelector("#attack").textContent),
-      shooting: parseInt(playerTable.querySelector("#shooting").textContent),
-      passing: parseInt(playerTable.querySelector("#passing").textContent),
+      goalie: parseInt(table.querySelector("#goalie")!.textContent!),
+      defence: parseInt(table.querySelector("#defense")!.textContent!),
+      midfield: parseInt(table.querySelector("#midfield")!.textContent!),
+      offence: parseInt(table.querySelector("#attack")!.textContent!),
+      shooting: parseInt(table.querySelector("#shooting")!.textContent!),
+      passing: parseInt(table.querySelector("#passing")!.textContent!),
       technical: parseInt(
-        playerTable.querySelector("#technique_attribute").textContent
+        table.querySelector("#technique_attribute")!.textContent!
       ),
-      speed: parseInt(playerTable.querySelector("#speed").textContent),
-      heading: parseInt(playerTable.querySelector("#heading").textContent),
+      speed: parseInt(table.querySelector("#speed")!.textContent!),
+      heading: parseInt(table.querySelector("#heading")!.textContent!),
     },
     qualities: {
-      goalie: parseInt(playerTable.querySelector("#kva_goalie").textContent),
-      defence: parseInt(playerTable.querySelector("#kva_defense").textContent),
-      midfield: parseInt(
-        playerTable.querySelector("#kva_midfield").textContent
-      ),
-      offence: parseInt(playerTable.querySelector("#kva_attack").textContent),
-      shooting: parseInt(
-        playerTable.querySelector("#kva_shooting").textContent
-      ),
-      passing: parseInt(playerTable.querySelector("#kva_passing").textContent),
+      goalie: parseInt(table.querySelector("#kva_goalie")!.textContent!),
+      defence: parseInt(table.querySelector("#kva_defense")!.textContent!),
+      midfield: parseInt(table.querySelector("#kva_midfield")!.textContent!),
+      offence: parseInt(table.querySelector("#kva_attack")!.textContent!),
+      shooting: parseInt(table.querySelector("#kva_shooting")!.textContent!),
+      passing: parseInt(table.querySelector("#kva_passing")!.textContent!),
       technical: parseInt(
-        playerTable.querySelector("#technique_quality").textContent
+        table.querySelector("#technique_quality")!.textContent!
       ),
-      speed: parseInt(playerTable.querySelector("#kva_speed").textContent),
-      heading: parseInt(playerTable.querySelector("#kva_heading").textContent),
+      speed: parseInt(table.querySelector("#kva_speed")!.textContent!),
+      heading: parseInt(table.querySelector("#kva_heading")!.textContent!),
     },
-    experience: parseInt(playerTable.querySelector("#experience").textContent),
-    overall: playerTable.querySelector("#index_skill").textContent,
+    experience: parseInt(table.querySelector("#experience")!.textContent!),
+    overall: parseInt(table.querySelector("#index_skill")!.textContent!),
   };
 
   const positions = calculatePositionsSkills(player, positionSettings);
   const bestPosition = calculateBestPosition(positions);
 
   const contentColumn = document.querySelector(".column_left");
+
+  // If content column is not found, return
+  if (!contentColumn) return new Error("Content column not found");
 
   /**
    * Ability Box
@@ -124,10 +136,10 @@ const viewPlayerProfile = () => {
     (el) => el.position === bestPosition.position
   );
 
-  const potentialBadge = renderPotentialBadge(bestPotential.potential);
+  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential);
+  const potentialDescription = renderPotential(bestPotential!);
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");

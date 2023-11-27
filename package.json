@@ -7,13 +7,14 @@
   },
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "dev": "vite build --watch && cp src/manifest.json dist/",
-    "build": "vite build && cp src/manifest.json dist/",
+    "dev": "vite build --watch",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/chart.js": "^2.9.41",
     "@types/chrome": "^0.0.252",
     "@types/node": "^20.9.3",
     "@typescript-eslint/eslint-plugin": "^6.12.0",

@@ -1,17 +1,18 @@
 import { potentialGrade } from "@/base/utilities";
-
-import { PositionPotential } from "@/types/Position";
+import { calculateRelativeSkill } from "@/base/calculations";
+import { PositionPotential, RatingSettings } from "@/types/Position";
+import { GrowthPrediction } from "@/types/GrowthData";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
   const cell = document.createElement("td");
   cell.classList.add(cssClass);
-  cell.textContent = content;
+  cell.textContent = content.toString();
   return cell;
 };
 
 const renderComparison = (
   skill: number,
-  ratingSettings: any
+  ratingSettings: RatingSettings
 ): HTMLDivElement => {
   let ratingPercentage;
 
@@ -91,6 +92,27 @@ const renderPotentialBadge = (
   return badge;
 };
 
+const renderRelativeSkill = (
+  playerAge: number,
+  playerSkillWithExp: number,
+  playerGrowthPrediction: GrowthPrediction
+): HTMLElement => {
+  const relativeSkill = calculateRelativeSkill(
+    playerAge,
+    playerSkillWithExp,
+    playerGrowthPrediction
+  );
+
+  // floor relative skill to 5s
+  const relativeSkillRounded = Math.floor(relativeSkill / 5) * 5;
+
+  const relativeSkillEl = document.createElement("div");
+  relativeSkillEl.classList.add("relative-skill");
+  relativeSkillEl.classList.add(`relative-skill--${relativeSkillRounded}`);
+  relativeSkillEl.innerText = relativeSkill.toString() + "%";
+  return relativeSkillEl;
+};
+
 const renderButton = (text: string): HTMLButtonElement => {
   const button = document.createElement("button");
   button.innerText = text;
@@ -102,5 +124,6 @@ export {
   renderComparison,
   renderPotential,
   renderPotentialBadge,
+  renderRelativeSkill,
   renderButton,
 };

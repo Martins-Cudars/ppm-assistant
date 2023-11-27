@@ -12,6 +12,8 @@ import {
   renderPotentialBadge,
 } from "@/base/render";
 
+import { BasketballPlayer } from "@/types/Player";
+
 const viewMarket = () => {
   const table = document.getElementById("table-1");
   if (!table) {
@@ -45,15 +47,11 @@ const viewMarket = () => {
     }
   });
 
-  const getSkill = (column) => {
+  const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
-      [].reduce.call(
-        column.childNodes,
-        (a, b) => {
-          return a + (b.nodeType === 3 ? b.textContent : "");
-        },
-        ""
-      )
+      Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
+        return a + (b.nodeType === 3 ? b.textContent || "" : "");
+      }, "")
     );
   };
 
@@ -63,11 +61,11 @@ const viewMarket = () => {
 
     playerRow.classList.add(`player-row`);
 
-    const player = {
-      name: playerColumns[0].querySelectorAll("a")[1].textContent,
+    const player: BasketballPlayer = {
+      name: playerColumns[0].querySelectorAll("a")[1].textContent!,
       age: parseInt(playerColumns[1]!.textContent!),
       careerLongitivity: parseInt(
-        Array.from(playerColumns[4].querySelector("span").textContent!)[0]
+        Array.from(playerColumns[4]!.querySelector("span")!.textContent!)[0]
       ),
       skills: {
         shooting: getSkill(playerColumns[5]),
@@ -79,21 +77,19 @@ const viewMarket = () => {
         jumping: getSkill(playerColumns[11]),
       },
       qualities: {
-        shooting: parseInt(playerQualities[0].textContent),
-        blocking: parseInt(playerQualities[1].textContent),
-        passing: parseInt(playerQualities[2].textContent),
-        technical: parseInt(playerQualities[3].textContent),
-        speed: parseInt(playerQualities[4].textContent),
-        aggression: parseInt(playerQualities[5].textContent),
-        jumping: parseInt(playerQualities[6].textContent),
+        shooting: parseInt(playerQualities[0].textContent!),
+        blocking: parseInt(playerQualities[1].textContent!),
+        passing: parseInt(playerQualities[2].textContent!),
+        technical: parseInt(playerQualities[3].textContent!),
+        speed: parseInt(playerQualities[4].textContent!),
+        aggression: parseInt(playerQualities[5].textContent!),
+        jumping: parseInt(playerQualities[6].textContent!),
       },
 
       experience: parseInt(playerColumns[12].textContent!),
       overall: parseInt(playerColumns[13].textContent!),
       height: parseInt(playerColumns[14].textContent!),
     };
-
-    console.log(player);
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
     const skills = calculatePositionsSkills(player);
