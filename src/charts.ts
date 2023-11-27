@@ -37,6 +37,7 @@ const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
     type: "line",
     options: {
       responsive: false,
+      aspectRatio: 1.5,
       scales: {
         x: {
           type: "linear",
@@ -49,6 +50,11 @@ const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
           ticks: {
             stepSize: 1,
           },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
         },
       },
     },
@@ -93,7 +99,7 @@ const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
   };
 
   const chart = new Chart(el, chartConfig as ChartConfiguration);
-  chart.resize(590, 300);
+  chart.resize(590, 400);
 
   return chart;
 };

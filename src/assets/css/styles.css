@@ -214,8 +214,9 @@
 }
 
 .player-chart {
+  padding-top: 12px;
   width: 590px;
-  height: 300px;
+  height: 393px;
 }
 
 .player-chart__canvas {
