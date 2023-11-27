@@ -26,9 +26,14 @@ export default defineConfig({
         this.addWatchFile(path.resolve(__dirname, "src/manifest.json"));
       },
       writeBundle() {
-        fs.copyFileSync(
-          path.resolve(__dirname, "src/manifest.json"),
-          path.resolve(__dirname, "dist/manifest.json")
+        try {
+          fs.copyFileSync(
+            path.resolve(__dirname, "src/manifest.json"),
+            path.resolve(__dirname, "dist/manifest.json")
+          );
+        } catch (error) {
+            console.error('Failed to copy manifest.json:', error);
+        }
         );
       },
     },
