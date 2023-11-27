@@ -7,6 +7,7 @@ import {
 } from "@/types/Position";
 
 import { HockeyPlayer, SoccerPlayer, BasketballPlayer } from "@/types/Player";
+import { GrowthPrediction, GrowthPredictionItem } from "@/types/GrowthData";
 
 type Player = HockeyPlayer | SoccerPlayer | BasketballPlayer;
 
@@ -89,10 +90,10 @@ const calculateBestPotential = (
 const calculateRelativeSkill = (
   playerAge: number,
   playerSkillWithExp: number,
-  playerGrowthPrediction: any
+  playerGrowthPrediction: GrowthPrediction
 ): number => {
   const predictionByAge = playerGrowthPrediction.find(
-    (row: any) => row.age === playerAge
+    (row: GrowthPredictionItem) => row.age === playerAge
   );
 
   if (!predictionByAge) {

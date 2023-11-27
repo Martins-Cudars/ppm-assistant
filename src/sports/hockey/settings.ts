@@ -1,4 +1,5 @@
 import { HockeyPositionSetting, RatingSettings } from "@/types/Position";
+import { GrowthPrediction } from "@/types/GrowthData";
 
 enum Ratio {
   main = 1,
@@ -57,7 +58,7 @@ const ratingSettings: RatingSettings = {
   high: 1500,
 };
 
-const playerGrowthPrediction = [
+const playerGrowthPrediction: GrowthPrediction = [
   { age: 15, skill: 87, exp: 8 },
   { age: 16, skill: 170, exp: 16 },
   { age: 17, skill: 252, exp: 24 },
