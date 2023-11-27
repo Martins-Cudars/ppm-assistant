@@ -32,7 +32,7 @@ export default defineConfig({
             path.resolve(__dirname, "dist/manifest.json")
           );
         } catch (error) {
-            console.error('Failed to copy manifest.json:', error);
+          console.error('Failed to copy manifest.json:', error);
         }
         );
       },
