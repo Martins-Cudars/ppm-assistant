@@ -47,6 +47,7 @@ const viewMarket = () => {
   });
 
   const seasonDay = getCurrentSeasonDay();
+
   const predictData = recalculatePredictDataAccordingToSeasonDay(
     playerGrowthPrediction,
     undefined,
