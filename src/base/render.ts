@@ -103,8 +103,12 @@ const renderRelativeSkill = (
     playerGrowthPrediction
   );
 
+  // round relative skill to 10s
+  const relativeSkillRounded = Math.round(relativeSkill / 10) * 10;
+
   const relativeSkillEl = document.createElement("div");
   relativeSkillEl.classList.add("relative-skill");
+  relativeSkillEl.classList.add(`relative-skill--${relativeSkillRounded}`);
   relativeSkillEl.innerText = relativeSkill.toString() + "%";
   return relativeSkillEl;
 };

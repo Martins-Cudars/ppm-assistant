@@ -222,3 +222,46 @@
 .player-chart__canvas {
   width: 100%;
 }
+
+/** Relative Skills */
+.relative-skill {
+  font-weight: 700;
+}
+
+.relative-skill--100 {
+  color: var(--rank-a-plus);
+}
+
+.relative-skill--90 {
+  color: var(--rank-a);
+}
+
+.relative-skill--80 {
+  color: var(--rank-b-plus);
+}
+
+.relative-skill--70 {
+  color: var(--rank-b);
+}
+
+.relative-skill--60 {
+  color: var(--rank-c-plus);
+}
+
+.relative-skill--50 {
+  color: var(--rank-c);
+}
+
+.relative-skill--40 {
+  color: var(--rank-d-plus);
+}
+
+.relative-skill--30 {
+  color: var(--rank-d);
+}
+
+.relative-skill--20,
+.relative-skill-10,
+.relative-skill-0 {
+  color: var(--rank-f);
+}
