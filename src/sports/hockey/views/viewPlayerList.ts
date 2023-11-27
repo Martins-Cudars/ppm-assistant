@@ -4,7 +4,17 @@ import {
   calculateBestPosition,
   calculateSkillWithExp,
 } from "@/base/calculations";
-import { renderTableCell, renderComparison, renderButton } from "@/base/render";
+import { playerGrowthPrediction } from "@/sports/hockey/settings";
+import {
+  renderTableCell,
+  renderComparison,
+  renderRelativeSkill,
+  renderButton,
+} from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
 
 const viewPlayerList = () => {
   const mainContent = document.getElementsByClassName("main_content");
@@ -20,10 +30,19 @@ const viewPlayerList = () => {
   const playerRows = tableBody!.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Pos", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Skill", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Relative", "th2"));
   });
+
+  /** Calculate predictions */
+  const seasonDay = getCurrentSeasonDay();
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
@@ -31,7 +50,7 @@ const viewPlayerList = () => {
 
     const player = {
       name: playerColumns[0].textContent,
-      age: playerColumns[2].textContent,
+      age: parseInt(playerColumns[2].textContent!),
       careerLongitivity: parseInt(Array.from(playerColumns[5].textContent!)[0]),
       skills: {
         goalie: parseInt(playerColumns[6].textContent!),
@@ -68,6 +87,24 @@ const viewPlayerList = () => {
     ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
 
     playerRow.appendChild(ratingTd);
+
+    const relativeCell = document.createElement("td");
+
+    // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
+    const skillRecalculated =
+      bestPosition.position === "G"
+        ? bestSkillWithExp / 1.25
+        : bestSkillWithExp;
+
+    const relativeSkill = renderRelativeSkill(
+      player.age,
+      skillRecalculated,
+      predictData
+    );
+    relativeCell.classList.add(`${rowClass}td2`);
+    relativeCell.appendChild(relativeSkill);
+
+    playerRow.appendChild(relativeCell);
   });
 
   const filterByPositions = (pos: string) => {

@@ -7,8 +7,8 @@
   },
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "dev": "vite build --watch && cp src/manifest.json dist/",
-    "build": "vite build && cp src/manifest.json dist/",
+    "dev": "vite build --watch",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"

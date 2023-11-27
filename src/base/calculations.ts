@@ -86,10 +86,32 @@ const calculateBestPotential = (
   return potentials.sort((a, b) => b.potential - a.potential)[0];
 };
 
+const calculateRelativeSkill = (
+  playerAge: number,
+  playerSkillWithExp: number,
+  playerGrowthPrediction: any
+): number => {
+  const predictionByAge = playerGrowthPrediction.find(
+    (row: any) => row.age === playerAge
+  );
+
+  if (!predictionByAge) {
+    return 0;
+  }
+
+  const predictionWithXp = calculateSkillWithExp(
+    predictionByAge.skill,
+    predictionByAge.exp
+  );
+
+  return Math.round((playerSkillWithExp / predictionWithXp) * 100);
+};
+
 export {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
   calculatePositionsQualities,
   calculateBestPotential,
+  calculateRelativeSkill,
 };

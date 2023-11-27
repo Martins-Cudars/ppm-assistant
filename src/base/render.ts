@@ -1,5 +1,8 @@
 import { potentialGrade } from "@/base/utilities";
-
+import {
+  calculateSkillWithExp,
+  calculateRelativeSkill,
+} from "@/base/calculations";
 import { PositionPotential, RatingSettings } from "@/types/Position";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
@@ -91,6 +94,23 @@ const renderPotentialBadge = (
   return badge;
 };
 
+const renderRelativeSkill = (
+  playerAge: number,
+  playerSkillWithExp: number,
+  playerGrowthPrediction: any
+): HTMLElement => {
+  const relativeSkill = calculateRelativeSkill(
+    playerAge,
+    playerSkillWithExp,
+    playerGrowthPrediction
+  );
+
+  const relativeSkillEl = document.createElement("div");
+  relativeSkillEl.classList.add("relative-skill");
+  relativeSkillEl.innerText = relativeSkill.toString() + "%";
+  return relativeSkillEl;
+};
+
 const renderButton = (text: string): HTMLButtonElement => {
   const button = document.createElement("button");
   button.innerText = text;
@@ -102,5 +122,6 @@ export {
   renderComparison,
   renderPotential,
   renderPotentialBadge,
+  renderRelativeSkill,
   renderButton,
 };

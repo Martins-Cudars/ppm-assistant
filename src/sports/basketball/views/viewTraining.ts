@@ -54,8 +54,6 @@ const viewTraining = () => {
       },
     };
 
-    console.log(player);
-
     const playerPositions = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(playerPositions);
     const potentials = calculatePositionsQualities(player, positionSettings);
