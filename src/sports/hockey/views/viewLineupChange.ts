@@ -7,19 +7,20 @@ import {
 import { renderTableCell, renderComparison } from "@/base/render";
 
 const viewLineupChange = () => {
-  const tableHeads = document
-    .getElementById("table-1")
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
 
-  const playerRows = document
-    .getElementById("table-1")
-    .querySelector("tbody")
-    .querySelectorAll("tr");
+  if (!table) {
+    return new Error("Table with id 'table-1' not found");
+  }
+
+  const tableHeads = table.querySelectorAll("thead");
+
+  const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+    head.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
   });
 
   playerRows.forEach((playerRow, index) => {
@@ -28,15 +29,23 @@ const viewLineupChange = () => {
     const player = {
       name: playerColumns[2].textContent,
       skills: {
-        goalie: playerColumns[playerColumns.length - 10].textContent,
-        defence: playerColumns[playerColumns.length - 9].textContent,
-        offence: playerColumns[playerColumns.length - 8].textContent,
-        shooting: playerColumns[playerColumns.length - 7].textContent,
-        passing: playerColumns[playerColumns.length - 6].textContent,
-        technical: playerColumns[playerColumns.length - 5].textContent,
-        aggression: playerColumns[playerColumns.length - 4].textContent,
+        goalie: parseInt(playerColumns[playerColumns.length - 10].textContent!),
+        defence: parseInt(playerColumns[playerColumns.length - 9].textContent!),
+        offence: parseInt(playerColumns[playerColumns.length - 8].textContent!),
+        shooting: parseInt(
+          playerColumns[playerColumns.length - 7].textContent!
+        ),
+        passing: parseInt(playerColumns[playerColumns.length - 6].textContent!),
+        technical: parseInt(
+          playerColumns[playerColumns.length - 5].textContent!
+        ),
+        aggression: parseInt(
+          playerColumns[playerColumns.length - 4].textContent!
+        ),
       },
-      experience: parseInt(playerColumns[playerColumns.length - 3].textContent),
+      experience: parseInt(
+        playerColumns[playerColumns.length - 3].textContent!
+      ),
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
