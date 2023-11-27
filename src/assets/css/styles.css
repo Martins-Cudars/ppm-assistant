@@ -261,7 +261,7 @@
 }
 
 .relative-skill--20,
-.relative-skill-10,
-.relative-skill-0 {
+.relative-skill--10,
+.relative-skill--0 {
   color: var(--rank-f);
 }
