@@ -37,16 +37,20 @@ const viewPlayerList = () => {
     seasonDay
   );
 
-  const tableHeads = table.querySelectorAll("thead");
+  const tableHead = table.querySelector("thead")!;
+  const tableFoot = table.querySelector("tfoot")!;
 
   const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
 
-  tableHeads.forEach((head) => {
-    head.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("Relative", "th2"));
-  });
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
+
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
