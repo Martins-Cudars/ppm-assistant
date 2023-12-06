@@ -135,6 +135,5 @@ const generatePlayerGrowthData = () => {
 };
 
 const playerGrowthPrediction = generatePlayerGrowthData();
-console.log(playerGrowthPrediction);
 
 export { positionSettings, ratingSettings, playerGrowthPrediction };

@@ -58,7 +58,7 @@ const ratingSettings: RatingSettings = {
   high: 1500,
 };
 
-const playerGrowthPrediction = [
+const playerGrowthPrediction: GrowthPrediction = [
   { age: 15, skill: 87, exp: 0 },
   { age: 16, skill: 170, exp: 8 },
   { age: 17, skill: 252, exp: 16 },

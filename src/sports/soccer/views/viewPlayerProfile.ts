@@ -215,6 +215,7 @@ const viewPlayerProfile = () => {
       position: bestPosition.position,
       exp: player.experience,
     },
+    predictData,
     chartCanvas
   );
 
