@@ -26,7 +26,7 @@ const viewPlayerProfile = () => {
     return new Error("Player is not scouted or is not on the market");
 
   const player: SoccerPlayer = {
-    name: playerInfo.querySelectorAll("a")[2]!.textContent!,
+    name: playerInfo.querySelectorAll("a")[1]!.textContent!,
     age: parseInt(table.querySelector("#age")!.textContent!),
     careerLongitivity: parseInt(
       Array.from(table.querySelector("#life_time span")!.textContent!)[0]
