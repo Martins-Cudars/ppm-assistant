@@ -1,51 +1,79 @@
-import { positionSettings, ratingSettings } from "../settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/soccer/settings";
 import {
   calculatePositionsSkills,
   calculateBestPosition,
   calculateSkillWithExp,
 } from "@/base/calculations";
-import { renderTableCell, renderComparison, renderButton } from "@/base/render";
+import {
+  renderTableCell,
+  renderComparison,
+  renderButton,
+  renderRelativeSkill,
+} from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
+import { SoccerPlayer } from "@/types/Player";
 
 const viewPlayerList = () => {
   const mainContent = document.getElementsByClassName("main_content");
 
-  const tableHeads = document
-    .getElementById("table-1")
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
 
-  const playerRows = document
-    .getElementById("table-1")
-    .querySelector("tbody")
-    .querySelectorAll("tr");
+  if (!table) {
+    return new Error("Table with id 'table-1' not found");
+  }
 
-  tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("POS", "th1"));
-    head.querySelector("tr").appendChild(renderTableCell("SK", "th2"));
-    head.querySelector("tr").appendChild(renderTableCell("RATING", "th1"));
-  });
+  /** Calculate predictions */
+  const seasonDay = getCurrentSeasonDay();
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
+
+  const tableHead = table.querySelector("thead")!;
+  const tableFoot = table.querySelector("tfoot")!;
+
+  const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
+
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+  tableHead.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
+
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
+  tableFoot.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
     playerRow.classList.add(`player-row`);
 
-    const player = {
-      name: playerColumns[0].textContent,
-      age: playerColumns[2].textContent,
-      careerLongitivity: Array.from(playerColumns[5].textContent)[0],
+    const player: SoccerPlayer = {
+      name: playerColumns[0].textContent!,
+      age: parseInt(playerColumns[2].textContent!),
+      careerLongitivity: parseInt(Array.from(playerColumns[5].textContent!)[0]),
       skills: {
-        goalie: playerColumns[6].textContent,
-        defence: playerColumns[7].textContent,
-        midfield: playerColumns[8].textContent,
-        offence: playerColumns[9].textContent,
-        shooting: playerColumns[10].textContent,
-        passing: playerColumns[11].textContent,
-        technical: playerColumns[12].textContent,
-        speed: playerColumns[13].textContent,
-        heading: playerColumns[14].textContent,
+        goalie: parseInt(playerColumns[6].textContent!),
+        defence: parseInt(playerColumns[7].textContent!),
+        midfield: parseInt(playerColumns[8].textContent!),
+        offence: parseInt(playerColumns[9].textContent!),
+        shooting: parseInt(playerColumns[10].textContent!),
+        passing: parseInt(playerColumns[11].textContent!),
+        technical: parseInt(playerColumns[12].textContent!),
+        speed: parseInt(playerColumns[13].textContent!),
+        heading: parseInt(playerColumns[14].textContent!),
       },
 
-      experience: parseInt(playerColumns[15].textContent),
-      overall: playerColumns[16].textContent,
+      experience: parseInt(playerColumns[15].textContent!),
+      overall: parseInt(playerColumns[16].textContent!),
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
@@ -71,6 +99,18 @@ const viewPlayerList = () => {
     ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
 
     playerRow.appendChild(ratingTd);
+
+    const relativeCell = document.createElement("td");
+
+    const relativeSkill = renderRelativeSkill(
+      player.age,
+      bestSkillWithExp,
+      predictData
+    );
+    relativeCell.classList.add(`${rowClass}td2`);
+    relativeCell.appendChild(relativeSkill);
+
+    playerRow.appendChild(relativeCell);
   });
 
   const filterByPositions = (pos) => {

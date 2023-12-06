@@ -98,4 +98,42 @@ const ratingSettings = {
   high: 900,
 };
 
-export { positionSettings, ratingSettings };
+const generatePlayerGrowthData = () => {
+  const playerGrowthData = [];
+  let skill = 80;
+  let exp = 0;
+
+  for (let age = 15; age <= 40; age++) {
+    if (age <= 18) {
+      skill = skill + 60;
+      exp = exp + 6;
+    } else if (age <= 21) {
+      skill = skill + 50;
+      exp = exp + 8;
+    } else if (age <= 24) {
+      skill = skill + 40;
+      exp = exp + 10;
+    } else if (age <= 27) {
+      skill = skill + 30;
+      exp = exp + 10;
+    } else if (age <= 30) {
+      skill = skill + 15;
+      exp = exp + 12;
+    } else if (age <= 35) {
+      skill = skill - 10;
+      exp = exp + 12;
+    } else {
+      skill = skill - 20;
+      exp = exp + 12;
+    }
+
+    if (skill > 655) skill = 655;
+    playerGrowthData.push({ age, skill, exp });
+  }
+
+  return playerGrowthData;
+};
+
+const playerGrowthPrediction = generatePlayerGrowthData();
+
+export { positionSettings, ratingSettings, playerGrowthPrediction };

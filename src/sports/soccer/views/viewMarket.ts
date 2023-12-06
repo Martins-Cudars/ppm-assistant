@@ -1,4 +1,8 @@
-import { positionSettings, ratingSettings } from "@/sports/soccer/settings";
+import {
+  positionSettings,
+  ratingSettings,
+  playerGrowthPrediction,
+} from "@/sports/soccer/settings";
 import {
   calculatePositionsSkills,
   calculateBestPosition,
@@ -10,7 +14,12 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
+  renderRelativeSkill,
 } from "@/base/render";
+import {
+  getCurrentSeasonDay,
+  recalculatePredictDataAccordingToSeasonDay,
+} from "@/utils";
 
 /**
  * View Functions
@@ -30,7 +39,16 @@ const viewMarket = () => {
     head.querySelector("tr")!.appendChild(renderTableCell("Sk", "th2"));
     head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
     head.querySelector("tr")!.appendChild(renderTableCell("Grd", "th2"));
+    head.querySelector("tr")!.appendChild(renderTableCell("Rel", "th1"));
   });
+
+  const seasonDay = getCurrentSeasonDay();
+
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
 
   const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
@@ -46,7 +64,7 @@ const viewMarket = () => {
 
     const player = {
       name: playerColumns[0].textContent,
-      age: playerColumns[1].textContent,
+      age: parseInt(playerColumns[1].textContent!),
       careerLongitivity: Array.from(playerColumns[3].textContent!)[0],
       skills: {
         goalie: getSkill(playerColumns[4]),
@@ -109,6 +127,18 @@ const viewMarket = () => {
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
+
+    const relativeCell = document.createElement("td");
+
+    const relativeSkill = renderRelativeSkill(
+      player.age,
+      bestSkillWithExp,
+      predictData
+    );
+    relativeCell.classList.add(`${rowClass}td2`);
+    relativeCell.appendChild(relativeSkill);
+
+    playerRow.appendChild(relativeCell);
   });
 };
 

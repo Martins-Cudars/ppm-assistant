@@ -27,6 +27,14 @@ const viewPlayerList = () => {
     return new Error("Table with id 'table-1' not found");
   }
 
+  /** Calculate predictions */
+  const seasonDay = getCurrentSeasonDay();
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    undefined,
+    seasonDay
+  );
+
   const tableHeads = table.querySelectorAll("thead");
   const tableBody = table.querySelector("tbody");
 
@@ -38,14 +46,6 @@ const viewPlayerList = () => {
     head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
     head.querySelector("tr")!.appendChild(renderTableCell("Relative", "th2"));
   });
-
-  /** Calculate predictions */
-  const seasonDay = getCurrentSeasonDay();
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
