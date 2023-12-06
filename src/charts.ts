@@ -1,6 +1,6 @@
 import Chart from "chart.js/auto";
 import { ChartConfiguration } from "chart.js";
-import { playerGrowthPrediction } from "@/sports/hockey/settings";
+
 import { calculateSkillWithExp } from "@/base/calculations";
 import {
   getCurrentSeasonDay,
@@ -12,7 +12,11 @@ import { ChartData } from "@/types/Chart";
 
 // TODO: Improve calculations by using player age, career longitivity, current training level, etc.
 
-const renderPotentialChart = (data: ChartData, el: HTMLCanvasElement) => {
+const renderPotentialChart = (
+  data: ChartData,
+  playerGrowthPrediction,
+  el: HTMLCanvasElement
+) => {
   const predictData = recalculatePredictDataAccordingToSeasonDay(
     playerGrowthPrediction,
     data.position
