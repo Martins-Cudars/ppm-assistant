@@ -5,20 +5,29 @@
   --green: #90ab57;
   --green2: #225c39;
 
-  --rank-a-plus: #1458a5;
-  --rank-a: #0c3f7a;
-  --rank-b-plus: #88df76;
-  --rank-b: #61a354;
-  --rank-c-plus: #e2cd47;
-  --rank-c: #96930a;
-  --rank-d-plus: #f79606;
-  --rank-d: #dd6617;
-  --rank-f: #b30000;
-}
+  /* A Grades (Blue) */
+  --rank-a-plus: #1458a5; /* Dark Blue */
+  --rank-a: #0c3f7a; /* Deeper Blue */
+  --rank-a-minus: #08355c; /* Deepest Blue */
 
-/**
-* Utilities
-*/
+  /* B Grades (Green) */
+  --rank-b-plus: #88df76; /* Bright Green */
+  --rank-b: #61a354; /* Medium Green */
+  --rank-b-minus: #498142; /* Darker Green */
+
+  /* C Grades (Yellow) */
+  --rank-c-plus: #e2cd47; /* Bright Yellow */
+  --rank-c: #c4b22a; /* Mustard Yellow */
+  --rank-c-minus: #a49b0f; /* Darker Yellow */
+
+  /* D Grades (Orange) */
+  --rank-d-plus: #f79606; /* Bright Orange */
+  --rank-d: #dd6617; /* Deeper Orange */
+  --rank-d-minus: #c45509; /* Darker Orange */
+
+  /* F Grade (Red) */
+  --rank-f: #b30000; /* Dark Red */
+}
 
 .td-center {
   text-align: -webkit-center;
