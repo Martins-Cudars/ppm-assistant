@@ -1,3 +1,7 @@
+/**
+ * Position
+ */
+
 export type Grade = {
   label: string;
   class: string;
@@ -19,6 +23,10 @@ export type PositionPotential = {
   potential: number;
 };
 
+/**
+ * Hockey
+ */
+
 interface HockeySkills {
   goalie?: number;
   defence?: number;
@@ -35,12 +43,33 @@ export interface HockeyPositionSetting {
   bonus?: HockeySkills;
 }
 
-export interface SoccerPositionSetting {
-  name: any;
-  ratios?: any;
-  bonus?: any;
+/**
+ * Soccer
+ */
+
+interface SoccerSkills {
+  goalie?: number;
+  defence?: number;
+  midfield?: number;
+  offence?: number;
+  shooting?: number;
+  technical?: number;
+  speed?: number;
+  passing?: number;
+  heading?: number;
 }
 
+export interface SoccerPositionSetting {
+  name: "GK" | "SD" | "CD" | "SM" | "CM" | "DM" | "SF" | "CF";
+  ratios: SoccerSkills;
+  bonus?: SoccerSkills;
+}
+
+/**
+ * Basketball
+ */
+
+// TODO: Add Basketball skills
 export interface BasketballPositionSetting {
   name: any;
   ratios?: any;

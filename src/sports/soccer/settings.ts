@@ -1,3 +1,5 @@
+import { SoccerPositionSetting } from "@/types/Position";
+
 enum Ratio {
   main = 1,
   high = 0.75,
@@ -5,21 +7,7 @@ enum Ratio {
   low = 0.25,
 }
 
-interface PositionSetting {
-  name: "GK" | "SD" | "CD" | "SM" | "CM" | "SF" | "CF";
-  ratios: {
-    goalie?: number;
-    defence?: number;
-    midfield?: number;
-    offence?: number;
-    technical?: number;
-    speed?: number;
-    passing?: number;
-    heading?: number;
-  };
-}
-
-const positionSettings: PositionSetting[] = [
+const positionSettings: SoccerPositionSetting[] = [
   {
     name: "GK",
     ratios: {
@@ -39,6 +27,9 @@ const positionSettings: PositionSetting[] = [
       passing: Ratio.medium,
       heading: Ratio.low,
     },
+    bonus: {
+      shooting: Ratio.low,
+    },
   },
   {
     name: "CD",
@@ -48,6 +39,9 @@ const positionSettings: PositionSetting[] = [
       speed: Ratio.medium,
       passing: Ratio.medium,
       heading: Ratio.medium,
+    },
+    bonus: {
+      shooting: Ratio.low,
     },
   },
   {
@@ -59,6 +53,9 @@ const positionSettings: PositionSetting[] = [
       passing: Ratio.medium,
       heading: Ratio.low,
     },
+    bonus: {
+      shooting: Ratio.medium,
+    },
   },
   {
     name: "CM",
@@ -68,6 +65,9 @@ const positionSettings: PositionSetting[] = [
       speed: Ratio.low,
       passing: Ratio.high,
       heading: Ratio.low,
+    },
+    bonus: {
+      shooting: Ratio.medium,
     },
   },
   {
@@ -79,6 +79,9 @@ const positionSettings: PositionSetting[] = [
       passing: Ratio.medium,
       heading: Ratio.low,
     },
+    bonus: {
+      shooting: Ratio.high,
+    },
   },
   {
     name: "CF",
@@ -89,6 +92,9 @@ const positionSettings: PositionSetting[] = [
       passing: Ratio.low,
       heading: Ratio.low,
     },
+    bonus: {
+      shooting: Ratio.high,
+    },
   },
 ];
 
@@ -98,36 +104,41 @@ const ratingSettings = {
   high: 900,
 };
 
+const getSkillAndExpIncrement = (
+  age: number
+): { skillIncrement: number; expIncrement: number } => {
+  if (age <= 18) {
+    return { skillIncrement: 65, expIncrement: 6 };
+  } else if (age <= 21) {
+    return { skillIncrement: 55, expIncrement: 8 };
+  } else if (age <= 24) {
+    return { skillIncrement: 40, expIncrement: 10 };
+  } else if (age <= 27) {
+    return { skillIncrement: 30, expIncrement: 10 };
+  } else if (age <= 30) {
+    return { skillIncrement: 0, expIncrement: 12 };
+  } else if (age <= 32) {
+    return { skillIncrement: -10, expIncrement: 12 };
+  } else if (age <= 35) {
+    return { skillIncrement: -20, expIncrement: 12 };
+  } else {
+    return { skillIncrement: -20, expIncrement: 12 };
+  }
+};
+
 const generatePlayerGrowthData = () => {
   const playerGrowthData = [];
-  let skill = 80;
+  let skill = 30;
   let exp = 0;
 
   for (let age = 15; age <= 40; age++) {
-    if (age <= 18) {
-      skill = skill + 60;
-      exp = exp + 6;
-    } else if (age <= 21) {
-      skill = skill + 50;
-      exp = exp + 8;
-    } else if (age <= 24) {
-      skill = skill + 40;
-      exp = exp + 10;
-    } else if (age <= 27) {
-      skill = skill + 30;
-      exp = exp + 10;
-    } else if (age <= 30) {
-      skill = skill + 15;
-      exp = exp + 12;
-    } else if (age <= 35) {
-      skill = skill - 10;
-      exp = exp + 12;
-    } else {
-      skill = skill - 20;
-      exp = exp + 12;
-    }
+    const { skillIncrement, expIncrement } = getSkillAndExpIncrement(age);
+    skill += skillIncrement;
+    exp += expIncrement;
 
+    // Cap the skill at 655
     if (skill > 655) skill = 655;
+
     playerGrowthData.push({ age, skill, exp });
   }
 

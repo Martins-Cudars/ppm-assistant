@@ -67,9 +67,9 @@ const renderComparison = (
 const renderPotential = (bestPotential: PositionPotential): HTMLDivElement => {
   const potential = document.createElement("div");
   potential.classList.add("potential__text");
-  potential.textContent = `Best potential position is ${
+  potential.textContent = `Current position (${
     bestPotential.position
-  } with ${Math.round(bestPotential.potential)}`;
+  }) training quality is ${Math.round(bestPotential.potential)}`;
   return potential;
 };
 
