@@ -22,11 +22,24 @@ import {
   recalculatePredictDataAccordingToSeasonDay,
 } from "@/utils";
 
+import db from "@/db/db";
+
 import { HockeyPlayer } from "@/types/Player";
 
 // import { PositionSetting } from "@/types/Position";
 
 const viewPlayerProfile = () => {
+  // test db
+  db.addPlayer({
+    name: "test",
+    age: 10,
+    updatedAt: new Date(),
+  });
+
+  db.getPlayer("test", (player) => {
+    console.log(player);
+  });
+
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
 
