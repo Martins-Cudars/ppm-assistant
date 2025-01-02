@@ -125,7 +125,12 @@ const viewLineupChange = () => {
           positionSettings
         );
 
-        const captionEl = player.querySelector(".lineup_spot_caption");
+        const captionEl = player.querySelector(".lineup_spot_caption")!;
+        // create a wrapper for the caption element to add padding
+
+        const captionElWrapper = document.createElement("div");
+        captionElWrapper.classList.add("lineup_spot_caption_wrapper");
+
         const skill = calculateSkillWithExp(
           playerSkills.find((skill) => skill.position === position).level,
           playerData.experience
@@ -135,7 +140,8 @@ const viewLineupChange = () => {
           captionEl.querySelector(".rating").remove();
         }
 
-        captionEl.appendChild(renderComparison(skill, ratingSettings));
+        captionElWrapper.appendChild(renderComparison(skill, ratingSettings));
+        captionEl.appendChild(captionElWrapper);
       }
     });
   };
