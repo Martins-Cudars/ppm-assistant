@@ -3,7 +3,7 @@ import routes from "./routes";
 import viewPlayerList from "./views/viewPlayerList";
 import viewPlayerProfile from "./views/viewPlayerProfile";
 // import viewLineup from "./views/viewLineup";
-// import viewLineupChange from "./views/viewLineupChange";
+import viewLineup from "./views/viewLineup";
 import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 // import viewTrainingCamp from "./views/viewTrainingCamp";
@@ -25,7 +25,7 @@ const initBasketball = () => {
   if (routes.playersOverview.includes(getRoute(url))) viewPlayerList();
   if (routes.playerProfile.includes(getRoute(url))) viewPlayerProfile();
   if (routes.playerTraining.includes(getRoute(url))) viewTraining();
-  // if (routes.lines.includes(getRoute(url))) viewLineup();
+  if (routes.lines.includes(getRoute(url))) viewLineup();
   // if (routes.editLine.includes(getRoute(url))) viewLineupChange();
   if (routes.market.includes(getRoute(url))) viewMarket();
   // if (routes.trainingCamp.includes(getRoute(url))) viewTrainingCamp();

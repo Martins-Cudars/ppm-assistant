@@ -16,8 +16,8 @@ const renderComparison = (
 ): HTMLDivElement => {
   let ratingPercentage;
 
-  const ratingOuter = document.createElement("div");
-  const ratingInner = document.createElement("div");
+  const ratingOuter = document.createElement("span");
+  const ratingInner = document.createElement("span");
 
   ratingOuter.classList.add("rating");
   ratingInner.classList.add("rating__inner");
