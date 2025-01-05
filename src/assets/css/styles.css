@@ -168,6 +168,7 @@
 }
 
 .rating {
+  display: block;
   width: 80px;
   height: 29px;
   background-repeat: repeat-x;
@@ -192,6 +193,7 @@
 }
 
 .rating__inner {
+  display: block;
   height: 29px;
   background-repeat: repeat-x;
   background-size: 16px;
@@ -211,6 +213,23 @@
 
 .lineup_spot_caption_wrapper {
   padding: 0 5px;
+}
+
+.lineup_spot_caption_wrapper--basketball {
+  background-color: rgba(0, 0, 0, 0.45);
+  position: absolute;
+  bottom: -18px;
+  border: solid 2px #000000;
+  border-radius: 5px;
+}
+
+.lineup_spot_caption_wrapper--basketball.lineup_spot_caption_wrapper--basketball
+  .rating {
+  height: 12px;
+}
+
+.lineup_field .lineup_spot_caption div {
+  min-width: 40px;
 }
 
 .lineup_spot_caption .rating {

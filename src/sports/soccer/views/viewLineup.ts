@@ -136,8 +136,8 @@ const viewLineupChange = () => {
           playerData.experience
         );
 
-        if (captionEl.querySelector(".rating")) {
-          captionEl.querySelector(".rating").remove();
+        if (captionEl.querySelector(".lineup_spot_caption_wrapper")) {
+          captionEl.querySelector(".lineup_spot_caption_wrapper").remove();
         }
 
         captionElWrapper.appendChild(renderComparison(skill, ratingSettings));
