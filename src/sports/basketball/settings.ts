@@ -17,6 +17,10 @@ interface PositionSetting {
     aggression?: number;
     jumping?: number;
   };
+  bonus?: {
+    shooting?: number;
+    blocking?: number;
+  };
   minHeight: number;
   maxHeight: number;
 }
@@ -31,6 +35,10 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.verylow,
       jumping: Ratio.verylow,
     },
+    bonus: {
+      shooting: Ratio.medium,
+      blocking: Ratio.verylow,
+    },
     minHeight: 175,
     maxHeight: 190,
   },
@@ -42,6 +50,10 @@ const positionSettings: PositionSetting[] = [
       speed: Ratio.medium,
       aggression: Ratio.low,
       jumping: Ratio.low,
+    },
+    bonus: {
+      shooting: Ratio.high,
+      blocking: Ratio.low,
     },
     minHeight: 185,
     maxHeight: 200,
@@ -55,6 +67,10 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.medium,
       jumping: Ratio.medium,
     },
+    bonus: {
+      shooting: Ratio.medium,
+      blocking: Ratio.low,
+    },
     minHeight: 190,
     maxHeight: 205,
   },
@@ -67,6 +83,10 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.high,
       jumping: Ratio.high,
     },
+    bonus: {
+      shooting: Ratio.low,
+      blocking: Ratio.medium,
+    },
     minHeight: 200,
     maxHeight: 215,
   },
@@ -78,6 +98,10 @@ const positionSettings: PositionSetting[] = [
       speed: Ratio.low,
       aggression: Ratio.veryhigh,
       jumping: Ratio.veryhigh,
+    },
+    bonus: {
+      shooting: Ratio.verylow,
+      blocking: Ratio.high,
     },
     minHeight: 205,
     maxHeight: 220,
