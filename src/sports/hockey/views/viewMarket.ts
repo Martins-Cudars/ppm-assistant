@@ -132,15 +132,9 @@ const viewMarket = () => {
 
     const relativeCell = document.createElement("td");
 
-    // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
-    const skillRecalculated =
-      bestPosition.position === "G"
-        ? bestSkillWithExp / 1.25
-        : bestSkillWithExp;
-
     const relativeSkill = renderRelativeSkill(
       player.age,
-      skillRecalculated,
+      bestSkillWithExp,
       predictData
     );
     relativeCell.classList.add(`${rowClass}td2`);
