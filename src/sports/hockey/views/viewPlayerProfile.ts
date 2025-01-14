@@ -24,8 +24,6 @@ import {
 
 import { HockeyPlayer } from "@/types/Player";
 
-// import { PositionSetting } from "@/types/Position";
-
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
@@ -40,11 +38,6 @@ const viewPlayerProfile = () => {
 
   /** Calculate predictions */
   const seasonDay = getCurrentSeasonDay();
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
 
   const player: HockeyPlayer = {
     age: parseInt(playerTable.querySelector("#age")!.textContent!),
@@ -92,6 +85,12 @@ const viewPlayerProfile = () => {
 
   const positions = calculatePositionsSkills(player, positionSettings);
   const bestPosition = calculateBestPosition(positions);
+
+  const predictData = recalculatePredictDataAccordingToSeasonDay(
+    playerGrowthPrediction,
+    bestPosition.position,
+    seasonDay
+  );
 
   const contentColumn = document.querySelector(".column_left");
 
@@ -184,13 +183,9 @@ const viewPlayerProfile = () => {
   relativeEl.classList.add("player-profile");
   relativeEl.classList.add("player-profile--relative");
 
-  // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
-  const skillRecalculated =
-    bestPosition.position === "G" ? bestSkillWithExp / 1.25 : bestSkillWithExp;
-
   const relativeSkill = renderRelativeSkill(
     player.age,
-    skillRecalculated,
+    bestSkillWithExp,
     predictData
   );
 
