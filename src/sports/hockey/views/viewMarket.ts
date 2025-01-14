@@ -48,12 +48,6 @@ const viewMarket = () => {
 
   const seasonDay = getCurrentSeasonDay();
 
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
-
   const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
       Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
@@ -100,6 +94,12 @@ const viewMarket = () => {
       player.experience
     );
 
+    const predictData = recalculatePredictDataAccordingToSeasonDay(
+      playerGrowthPrediction,
+      bestPosition.position,
+      seasonDay
+    );
+
     playerRow.appendChild(
       renderTableCell(bestPosition.position, `${rowClass}td1`)
     );
@@ -108,7 +108,9 @@ const viewMarket = () => {
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
+    ratingTd.appendChild(
+      renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
+    );
 
     playerRow.appendChild(ratingTd);
 

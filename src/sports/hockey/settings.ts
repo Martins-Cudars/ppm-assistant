@@ -16,6 +16,7 @@ const positionSettings: HockeyPositionSetting[] = [
       technical: Ratio.high,
       passing: Ratio.high,
     },
+    positionRatio: 0.73,
   },
   {
     name: "D",
@@ -27,6 +28,7 @@ const positionSettings: HockeyPositionSetting[] = [
     bonus: {
       technical: Ratio.high,
     },
+    positionRatio: 0.85,
   },
   {
     name: "W",
@@ -38,6 +40,7 @@ const positionSettings: HockeyPositionSetting[] = [
     bonus: {
       shooting: Ratio.veryhigh,
     },
+    positionRatio: 1.0,
   },
   {
     name: "C",
@@ -49,6 +52,7 @@ const positionSettings: HockeyPositionSetting[] = [
     bonus: {
       shooting: Ratio.high,
     },
+    positionRatio: 1.0,
   },
 ];
 
