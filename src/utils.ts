@@ -1,3 +1,5 @@
+import { positionSettings } from "@/sports/hockey/settings";
+
 import { GrowthPrediction } from "@/types/GrowthData";
 
 export const getCurrentSeasonDay = () => {
@@ -34,24 +36,19 @@ export const calculateSeasonProgress = (seasonDay: number) => {
 
 export const recalculatePredictDataAccordingToSeasonDay = (
   playerGrowthPrediction: GrowthPrediction,
-  position?: string,
+  position: string,
   day?: number
 ) => {
   const seasonDay = day || 1;
   const seasonProgress = calculateSeasonProgress(seasonDay);
 
-  let positionRatio = 1;
-
-  // adjust ratio for Goalies, because they only need 2 skill points per ability compared to
-  // other positions which need 2.5 skill points per ability
-  if (position && position === "G") {
-    positionRatio = 1.25;
-  }
+  const positionRatio =
+    positionSettings.find((pos) => pos.name === position)?.positionRatio ?? 1;
 
   const predictData = playerGrowthPrediction.map((row) => {
     return {
       ...row,
-      skill: Math.round(row.skill * positionRatio),
+      skill: Math.round(row.skill / positionRatio),
     };
   });
 

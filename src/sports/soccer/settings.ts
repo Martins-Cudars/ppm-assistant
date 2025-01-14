@@ -17,6 +17,7 @@ const positionSettings: SoccerPositionSetting[] = [
       passing: Ratio.low,
       heading: Ratio.low,
     },
+    positionRatio: 1,
   },
   {
     name: "SD",
@@ -30,6 +31,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.low,
     },
+    positionRatio: 1,
   },
   {
     name: "CD",
@@ -43,6 +45,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.low,
     },
+    positionRatio: 1,
   },
   {
     name: "SM",
@@ -56,6 +59,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.medium,
     },
+    positionRatio: 1,
   },
   {
     name: "CM",
@@ -69,6 +73,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.medium,
     },
+    positionRatio: 1,
   },
   {
     name: "SF",
@@ -82,6 +87,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.high,
     },
+    positionRatio: 1,
   },
   {
     name: "CF",
@@ -95,6 +101,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       shooting: Ratio.high,
     },
+    positionRatio: 1,
   },
 ];
 

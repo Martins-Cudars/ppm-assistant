@@ -64,7 +64,11 @@ const viewLineupChange = () => {
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
         ratingTd.appendChild(
-          renderComparison(bestSkillWithExp, ratingSettings)
+          renderComparison(
+            bestSkillWithExp,
+            ratingSettings,
+            bestPosition.position
+          )
         );
 
         playerRow.appendChild(ratingTd);

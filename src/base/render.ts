@@ -2,6 +2,7 @@ import { potentialGrade } from "@/base/utilities";
 import { calculateRelativeSkill } from "@/base/calculations";
 import { PositionPotential, RatingSettings } from "@/types/Position";
 import { GrowthPrediction } from "@/types/GrowthData";
+import { positionSettings as hockeyPositionSettings } from "@/sports/hockey/settings";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
   const cell = document.createElement("td");
@@ -12,8 +13,20 @@ const renderTableCell = (content: string | number, cssClass: string) => {
 
 const renderComparison = (
   skill: number,
-  ratingSettings: RatingSettings
+  ratingSettings: RatingSettings,
+  position?: string
 ): HTMLDivElement => {
+  let skillAdjusted;
+
+  if (position) {
+    const positionSetting = hockeyPositionSettings.find(
+      (pos) => pos.name === position
+    );
+    skillAdjusted = positionSetting ? skill * positionSetting.positionRatio : skill;
+  } else {
+    skillAdjusted = skill;
+  }
+
   let ratingPercentage;
 
   const ratingOuter = document.createElement("span");
@@ -22,15 +35,18 @@ const renderComparison = (
   ratingOuter.classList.add("rating");
   ratingInner.classList.add("rating__inner");
 
-  if (skill < ratingSettings.low) {
+  if (skillAdjusted < ratingSettings.low) {
     ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
       "icons/star-empty.svg"
     )})`;
     ratingInner.style.backgroundImage = `url(${chrome.runtime.getURL(
       "icons/star-silver.svg"
     )})`;
-    ratingPercentage = Math.min((skill / ratingSettings.low) * 100, 100);
-  } else if (skill < ratingSettings.medium) {
+    ratingPercentage = Math.min(
+      (skillAdjusted / ratingSettings.low) * 100,
+      100
+    );
+  } else if (skillAdjusted < ratingSettings.medium) {
     ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
       "icons/star-silver.svg"
     )})`;
@@ -38,12 +54,12 @@ const renderComparison = (
       "icons/star-gold.svg"
     )})`;
     ratingPercentage = Math.min(
-      ((skill - ratingSettings.low) /
+      ((skillAdjusted - ratingSettings.low) /
         (ratingSettings.medium - ratingSettings.low)) *
         100,
       100
     );
-  } else if (skill >= ratingSettings.medium) {
+  } else if (skillAdjusted >= ratingSettings.medium) {
     ratingOuter.style.backgroundImage = `url(${chrome.runtime.getURL(
       "icons/star-gold.svg"
     )})`;
@@ -51,7 +67,7 @@ const renderComparison = (
       "icons/star-diamond.svg"
     )})`;
     ratingPercentage = Math.min(
-      ((skill - ratingSettings.medium) /
+      ((skillAdjusted - ratingSettings.medium) /
         (ratingSettings.high - ratingSettings.medium)) *
         100,
       100

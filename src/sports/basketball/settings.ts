@@ -23,6 +23,7 @@ interface PositionSetting {
   };
   minHeight: number;
   maxHeight: number;
+  positionRatio: number;
 }
 
 const positionSettings: PositionSetting[] = [
@@ -41,6 +42,7 @@ const positionSettings: PositionSetting[] = [
     },
     minHeight: 175,
     maxHeight: 190,
+    positionRatio: 1,
   },
   {
     name: "SG",
@@ -57,6 +59,7 @@ const positionSettings: PositionSetting[] = [
     },
     minHeight: 185,
     maxHeight: 200,
+    positionRatio: 1,
   },
   {
     name: "SF",
@@ -73,6 +76,7 @@ const positionSettings: PositionSetting[] = [
     },
     minHeight: 190,
     maxHeight: 205,
+    positionRatio: 1,
   },
   {
     name: "PF",
@@ -89,6 +93,7 @@ const positionSettings: PositionSetting[] = [
     },
     minHeight: 200,
     maxHeight: 215,
+    positionRatio: 1,
   },
   {
     name: "C",
@@ -105,6 +110,7 @@ const positionSettings: PositionSetting[] = [
     },
     minHeight: 205,
     maxHeight: 220,
+    positionRatio: 1,
   },
 ];
 
