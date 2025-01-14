@@ -64,6 +64,7 @@ export interface SoccerPositionSetting {
   name: "GK" | "SD" | "CD" | "SM" | "CM" | "DM" | "SF" | "CF";
   ratios: SoccerSkills;
   bonus?: SoccerSkills;
+  positionRatio: number;
 }
 
 /**
@@ -75,4 +76,5 @@ export interface BasketballPositionSetting {
   name: any;
   ratios?: any;
   bonus?: any;
+  positionRatio: number;
 }

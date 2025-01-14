@@ -42,9 +42,8 @@ export const recalculatePredictDataAccordingToSeasonDay = (
   const seasonDay = day || 1;
   const seasonProgress = calculateSeasonProgress(seasonDay);
 
-  const positionRatio = positionSettings.find(
-    (pos) => pos.name === position
-  )!.positionRatio;
+  const positionRatio =
+    positionSettings.find((pos) => pos.name === position)?.positionRatio ?? 1;
 
   const predictData = playerGrowthPrediction.map((row) => {
     return {
