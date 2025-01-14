@@ -29,11 +29,6 @@ const viewPlayerList = () => {
 
   /** Calculate predictions */
   const seasonDay = getCurrentSeasonDay();
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
 
   const tableHeads = table.querySelectorAll("thead");
   const tableBody = table.querySelector("tbody");
@@ -73,6 +68,12 @@ const viewPlayerList = () => {
     const skills = calculatePositionsSkills(player, positionSettings);
     const bestPosition = calculateBestPosition(skills);
 
+    const predictData = recalculatePredictDataAccordingToSeasonDay(
+      playerGrowthPrediction,
+      bestPosition.position,
+      seasonDay
+    );
+
     playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
     const bestSkillWithExp = calculateSkillWithExp(
       bestPosition.level,
@@ -87,21 +88,17 @@ const viewPlayerList = () => {
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
+    ratingTd.appendChild(
+      renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
+    );
 
     playerRow.appendChild(ratingTd);
 
     const relativeCell = document.createElement("td");
 
-    // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
-    const skillRecalculated =
-      bestPosition.position === "G"
-        ? bestSkillWithExp / 1.25
-        : bestSkillWithExp;
-
     const relativeSkill = renderRelativeSkill(
       player.age,
-      skillRecalculated,
+      bestSkillWithExp,
       predictData
     );
     relativeCell.classList.add(`${rowClass}td2`);

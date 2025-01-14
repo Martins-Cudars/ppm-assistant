@@ -41,6 +41,7 @@ export interface HockeyPositionSetting {
   name: "G" | "D" | "W" | "C";
   ratios: HockeySkills;
   bonus?: HockeySkills;
+  positionRatio: number;
 }
 
 /**
