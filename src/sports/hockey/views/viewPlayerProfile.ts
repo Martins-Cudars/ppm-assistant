@@ -137,7 +137,9 @@ const viewPlayerProfile = () => {
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
-  comparison.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
+  comparison.appendChild(
+    renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
+  );
 
   abilityDescription.appendChild(abilityValue);
   abilityDescription.appendChild(comparison);
