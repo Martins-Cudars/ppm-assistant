@@ -1,0 +1,15 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      # Mount your entire project directory into /app.
+      - ./:/app:delegated
+      # Mount node_modules as an anonymous volume to keep them inside the container.
+      - /app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
