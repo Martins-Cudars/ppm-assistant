@@ -4,4 +4,4 @@ yarn.lock
 dist.crx
 dist.pem
 /dist
-```
+.pnpm-store/
