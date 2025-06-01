@@ -9,8 +9,18 @@ export type BaseInfo = {
 
 export type BasePosition = {
   name: string;
-  rating: number;
+  baseRating: number;
+  bonusRating: number;
+  expBonus: number;
+  ratingWithBonus: number;
   ratingWithXp: number;
+};
+
+export type BaseTrainingQuality = {
+  position: string;
+  baseTrainingQuality: number;
+  bonusTrainingQuality: number;
+  totalTrainingQuality: number;
 };
 
 export class BasePlayer {
@@ -27,6 +37,7 @@ export class BasePlayer {
   public isVisible: boolean;
   public updatedAt: Date;
   public positions: BasePosition[] = [];
+  public positionTrainingQualities: BaseTrainingQuality[] = [];
 
   constructor(
     baseInfo: BaseInfo,
@@ -61,6 +72,34 @@ export class BasePlayer {
   }
 
   getBestPosition(): BasePosition {
-    return this.positions.sort((a, b) => b.rating - a.rating)[0];
+    return this.positions.sort(
+      (a, b) => b.ratingWithBonus - a.ratingWithBonus
+    )[0];
+  }
+
+  calculatePositionTrainingQualities() {
+    this.positionTrainingQualities = [];
+  }
+
+  getPositionTrainingQualities(): BaseTrainingQuality[] {
+    return this.positionTrainingQualities;
+  }
+
+  getBestPositionTrainingQuality(): BaseTrainingQuality {
+    console.log(
+      "Calculating position training qualities for player",
+      this.positionTrainingQualities
+    );
+    return this.positionTrainingQualities.sort(
+      (a, b) => b.totalTrainingQuality - a.totalTrainingQuality
+    )[0];
+  }
+
+  getCurrentPositionTrainingQuality(): BaseTrainingQuality {
+    const currentPosition = this.getBestPosition().name;
+
+    return this.positionTrainingQualities.find(
+      (ptq) => ptq.position === currentPosition
+    )!;
   }
 }

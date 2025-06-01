@@ -76,9 +76,7 @@ class BaseRenderer {
   static renderPotential(bestPotential: PositionPotential): HTMLDivElement {
     const potential = document.createElement("div");
     potential.classList.add("potential__text");
-    potential.textContent = `Current position (${
-      bestPotential.position
-    }) training quality is ${Math.round(bestPotential.potential)}`;
+    potential.textContent = `Current position (${bestPotential.position}) training quality is ${bestPotential.totalPotential} (${bestPotential.basePotential} + ${bestPotential.bonusPotential})`;
     return potential;
   }
 

@@ -20,7 +20,9 @@ export type PositionSkill = {
 
 export type PositionPotential = {
   position: string;
-  potential: number;
+  basePotential: number;
+  bonusPotential: number;
+  totalPotential: number;
 };
 
 /**

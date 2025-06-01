@@ -1,13 +1,28 @@
 import { BasePlayer, BaseInfo } from "./BasePlayer";
 
 export type HockeyPlayerInfo = BaseInfo & {
-  preferedSide: "L" | "R" | "U";
+  preferredSide: "L" | "R" | "U"; // Fixed typo: preferedSide -> preferredSide
 };
 
 export type HockeyPlayerPosition = {
   name: "D" | "W" | "C" | "G" | "?";
-  rating: number;
+  baseRating: number;
+  bonusRating: number;
+  expBonus: number;
+  ratingWithBonus: number;
   ratingWithXp: number;
+};
+
+type TrainingQuality = {
+  weight: number;
+  value: number;
+};
+
+export type HockeyPlayerTrainingQuality = {
+  position: HockeyPlayerPosition["name"];
+  baseTrainingQuality: number;
+  bonusTrainingQuality: number;
+  totalTrainingQuality: number;
 };
 
 export type HockeySkills = {
@@ -21,17 +36,21 @@ export type HockeySkills = {
 };
 
 export class HockeyPlayer extends BasePlayer {
-  private preferedSide: "L" | "R" | "U";
-  private positions: HockeyPlayerPosition[];
+  private static readonly BONUS_CAP_RATIO = 0.25;
+  private static readonly EXPERIENCE_DIVISOR = 500;
+
+  private preferredSide: "L" | "R" | "U"; // Fixed typo
+  private positions: HockeyPlayerPosition[] = []; // Initialize arrays
+  private positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
 
   constructor(
     baseInfo: HockeyPlayerInfo,
     updatedAt = new Date(),
     isScouted = false,
     isVisible = false,
-    skills: HockeySkills | undefined = undefined,
-    experience: number | undefined = undefined,
-    trainingQualities: Record<string, number> | undefined = undefined
+    skills?: HockeySkills, // Use optional parameter syntax
+    experience?: number, // Use optional parameter syntax
+    trainingQualities?: Record<string, number> // Use optional parameter syntax
   ) {
     super(
       baseInfo,
@@ -42,75 +61,192 @@ export class HockeyPlayer extends BasePlayer {
       experience,
       trainingQualities
     );
-    this.preferedSide = baseInfo.preferedSide;
+    this.preferredSide = baseInfo.preferredSide; // Fixed typo
   }
 
   override calculatePositions() {
-    console.log(`skills visible ${this.isVisible}`);
-    if (this.isVisible && this.skills) {
-      this.positions = [
-        this.createPosition(
-          "D",
-          Math.floor(
-            Math.min(
-              this.skills.defence,
-              this.skills.passing * 2,
-              this.skills.aggression * 2
-            ) +
-              this.skills.shooting * 0.15 +
-              this.skills.technical * 0.25 +
-              this.skills.offence * 0.1
-          )
-        ),
-        this.createPosition(
-          "W",
-          Math.floor(
-            Math.min(
-              this.skills.offence,
-              this.skills.technical * 2,
-              this.skills.aggression * 2
-            ) +
-              this.skills.shooting * 0.25 +
-              this.skills.defence * 0.1
-          )
-        ),
-        this.createPosition(
-          "C",
-          Math.floor(
-            Math.min(
-              this.skills.offence,
-              this.skills.passing * 2,
-              this.skills.technical * 2
-            ) +
-              this.skills.shooting * 0.25 +
-              this.skills.defence * 0.1
-          )
-        ),
-        this.createPosition(
-          "G",
+    if (!this.isVisible || !this.skills) {
+      const unknownRating = this.calculateUnknownRating();
+      this.positions = [this.createPosition("?", unknownRating, 0)];
+      return;
+    }
+
+    this.positions = [
+      this.createPosition(
+        "D",
+        Math.floor(
           Math.min(
-            this.skills.goalie,
+            this.skills.defence,
+            this.skills.passing * 2,
+            this.skills.aggression * 2
+          )
+        ),
+        Math.floor(
+          this.skills.shooting * 0.15 +
+            this.skills.technical * 0.15 +
+            this.skills.offence * 0.1
+        )
+      ),
+      this.createPosition(
+        "W",
+        Math.floor(
+          Math.min(
+            this.skills.offence,
+            this.skills.technical * 2,
+            this.skills.aggression * 2
+          )
+        ),
+        Math.floor(this.skills.shooting * 0.35 + this.skills.defence * 0.1)
+      ),
+      this.createPosition(
+        "C",
+        Math.floor(
+          Math.min(
+            this.skills.offence,
             this.skills.passing * 2,
             this.skills.technical * 2
           )
         ),
+        Math.floor(this.skills.shooting * 0.35 + this.skills.defence * 0.1)
+      ),
+      this.createPosition(
+        "G",
+        Math.min(
+          this.skills.goalie,
+          this.skills.passing * 2,
+          this.skills.technical * 2
+        ),
+        0
+      ),
+    ];
+  }
+
+  override calculatePositionTrainingQualities() {
+    if (!this.isVisible || !this.trainingQualities) {
+      this.positionTrainingQualities = [
+        this.createPositionTrainingQuality(
+          "?",
+          [
+            {
+              weight: 1,
+              value: this.averageTrainingRatio,
+            },
+          ],
+          [
+            {
+              weight: 1,
+              value: this.averageTrainingRatio,
+            },
+          ]
+        ),
       ];
-    } else {
-      const unknownRating = this.calculateUnknownRating();
-      this.positions = [this.createPosition("?", unknownRating)];
+      return;
     }
+
+    this.positionTrainingQualities = [
+      this.createPositionTrainingQuality(
+        "D",
+
+        [
+          { weight: 100, value: this.trainingQualities.defence },
+          { weight: 50, value: this.trainingQualities.passing },
+          { weight: 50, value: this.trainingQualities.aggression },
+        ],
+        [
+          { weight: 5, value: this.trainingQualities.shooting },
+          { weight: 25, value: this.trainingQualities.technical },
+        ]
+      ),
+      this.createPositionTrainingQuality(
+        "W",
+        [
+          { weight: 100, value: this.trainingQualities.offence },
+          { weight: 50, value: this.trainingQualities.technical },
+          { weight: 50, value: this.trainingQualities.aggression },
+        ],
+        [{ weight: 75, value: this.trainingQualities.shooting }]
+      ),
+      this.createPositionTrainingQuality(
+        "C",
+        [
+          { weight: 100, value: this.trainingQualities.offence },
+          { weight: 50, value: this.trainingQualities.passing },
+          { weight: 50, value: this.trainingQualities.technical },
+        ],
+        [{ weight: 75, value: this.trainingQualities.shooting }]
+      ),
+      this.createPositionTrainingQuality("G", [
+        { weight: 100, value: this.trainingQualities.goalie },
+        { weight: 50, value: this.trainingQualities.passing },
+        { weight: 50, value: this.trainingQualities.technical },
+      ]),
+    ];
   }
 
   /** Utilities */
 
   private createPosition(
     name: HockeyPlayerPosition["name"],
-    baseRating: number
+    baseRating: number,
+    bonusRating: number
   ): HockeyPlayerPosition {
+    const bonus = Math.floor(
+      bonusRating > baseRating * HockeyPlayer.BONUS_CAP_RATIO
+        ? baseRating * HockeyPlayer.BONUS_CAP_RATIO
+        : bonusRating
+    );
+    const ratingWithBonus = baseRating + bonus;
+
     return {
       name,
-      rating: Math.floor(baseRating),
-      ratingWithXp: this.calculateRatingWithXp(baseRating),
+      baseRating: baseRating,
+      bonusRating: bonus,
+      expBonus: this.calculateExpBonus(baseRating + bonus),
+      ratingWithBonus: ratingWithBonus,
+      ratingWithXp: ratingWithBonus + this.calculateExpBonus(ratingWithBonus),
+    };
+  }
+
+  private createPositionTrainingQuality(
+    position: HockeyPlayerPosition["name"],
+    baseTrainingQualities: TrainingQuality[],
+    bonusTrainingQualities?: TrainingQuality[]
+  ): HockeyPlayerTrainingQuality {
+    const baseTrainingQualitiesTotalWeight = baseTrainingQualities.reduce(
+      (acc, curr) => acc + curr.weight,
+      0
+    );
+
+    const bonusTrainingQualitiesTotalWeight = bonusTrainingQualities
+      ? bonusTrainingQualities.reduce((acc, curr) => acc + curr.weight, 0)
+      : 0;
+
+    const baseTrainingQuality = Math.floor(
+      baseTrainingQualities.reduce(
+        (acc, curr) => acc + curr.value * curr.weight,
+        0
+      ) / baseTrainingQualitiesTotalWeight
+    );
+
+    const bonusTrainingQuality = Math.floor(
+      bonusTrainingQualities
+        ? bonusTrainingQualities.reduce(
+            (acc, curr) => acc + curr.value * curr.weight,
+            0
+          ) / bonusTrainingQualitiesTotalWeight
+        : 0
+    );
+
+    const totalTrainingQuality =
+      (baseTrainingQuality * baseTrainingQualitiesTotalWeight +
+        bonusTrainingQuality * bonusTrainingQualitiesTotalWeight) /
+      (baseTrainingQualitiesTotalWeight + bonusTrainingQualitiesTotalWeight);
+
+    return {
+      position: position,
+      baseTrainingQuality: Math.floor(baseTrainingQuality),
+      bonusTrainingQuality: Math.floor(bonusTrainingQuality),
+      totalTrainingQuality: Math.floor(totalTrainingQuality),
     };
   }
 
@@ -118,7 +254,9 @@ export class HockeyPlayer extends BasePlayer {
     return (this.overalRating - 100) / 2;
   }
 
-  private calculateRatingWithXp(rating: number): number {
-    return Math.floor(rating * (1 + this.experience / 500));
+  private calculateExpBonus(rating: number): number {
+    return Math.floor(
+      rating * (this.experience / HockeyPlayer.EXPERIENCE_DIVISOR)
+    );
   }
 }

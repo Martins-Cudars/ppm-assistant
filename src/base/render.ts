@@ -22,7 +22,9 @@ const renderComparison = (
     const positionSetting = hockeyPositionSettings.find(
       (pos) => pos.name === position
     );
-    skillAdjusted = positionSetting ? skill * positionSetting.positionRatio : skill;
+    skillAdjusted = positionSetting
+      ? skill * positionSetting.positionRatio
+      : skill;
   } else {
     skillAdjusted = skill;
   }

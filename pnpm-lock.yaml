@@ -23,7 +23,7 @@ importers:
         version: 20.9.3
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.12.0
-        version: 6.12.0(@typescript-eslint/parser@6.12.0)(eslint@8.54.0)(typescript@5.2.2)
+        version: 6.12.0(@typescript-eslint/parser@6.12.0(eslint@8.54.0)(typescript@5.2.2))(eslint@8.54.0)(typescript@5.2.2)
       '@typescript-eslint/parser':
         specifier: ^6.12.0
         version: 6.12.0(eslint@8.54.0)(typescript@5.2.2)
@@ -1017,7 +1017,7 @@ snapshots:
 
   '@types/semver@7.5.6': {}
 
-  '@typescript-eslint/eslint-plugin@6.12.0(@typescript-eslint/parser@6.12.0)(eslint@8.54.0)(typescript@5.2.2)':
+  '@typescript-eslint/eslint-plugin@6.12.0(@typescript-eslint/parser@6.12.0(eslint@8.54.0)(typescript@5.2.2))(eslint@8.54.0)(typescript@5.2.2)':
     dependencies:
       '@eslint-community/regexpp': 4.10.0
       '@typescript-eslint/parser': 6.12.0(eslint@8.54.0)(typescript@5.2.2)
@@ -1032,6 +1032,7 @@ snapshots:
       natural-compare: 1.4.0
       semver: 7.5.4
       ts-api-utils: 1.0.3(typescript@5.2.2)
+    optionalDependencies:
       typescript: 5.2.2
     transitivePeerDependencies:
       - supports-color
@@ -1044,6 +1045,7 @@ snapshots:
       '@typescript-eslint/visitor-keys': 6.12.0
       debug: 4.3.4
       eslint: 8.54.0
+    optionalDependencies:
       typescript: 5.2.2
     transitivePeerDependencies:
       - supports-color
@@ -1060,6 +1062,7 @@ snapshots:
       debug: 4.3.4
       eslint: 8.54.0
       ts-api-utils: 1.0.3(typescript@5.2.2)
+    optionalDependencies:
       typescript: 5.2.2
     transitivePeerDependencies:
       - supports-color
@@ -1075,6 +1078,7 @@ snapshots:
       is-glob: 4.0.3
       semver: 7.5.4
       ts-api-utils: 1.0.3(typescript@5.2.2)
+    optionalDependencies:
       typescript: 5.2.2
     transitivePeerDependencies:
       - supports-color
@@ -1549,11 +1553,11 @@ snapshots:
 
   vite@5.0.0(@types/node@20.9.3):
     dependencies:
-      '@types/node': 20.9.3
       esbuild: 0.19.7
       postcss: 8.4.31
       rollup: 4.5.0
     optionalDependencies:
+      '@types/node': 20.9.3
       fsevents: 2.3.3
 
   which@2.0.2:

@@ -108,6 +108,7 @@ const viewPlayerProfile = () => {
   );
 
   player.calculatePositions();
+  player.calculatePositionTrainingQualities();
 
   console.log(player);
 
@@ -121,8 +122,6 @@ const viewPlayerProfile = () => {
 
   const positions = player.getPositions();
   const bestPosition = player.getBestPosition();
-
-  console.log("Best position", bestPosition);
 
   const abilityBox = document.createElement("div");
   abilityBox.classList.add("player-profile");
@@ -138,7 +137,7 @@ const viewPlayerProfile = () => {
   let positionList = ``;
 
   positions.forEach((position) => {
-    positionList += `<div>${position.name} ${position.rating}</div>`;
+    positionList += `<div>${position.name} ${position.ratingWithXp}</div>`;
   });
 
   allPositions.innerHTML = positionList;
@@ -149,20 +148,63 @@ const viewPlayerProfile = () => {
   abilityDescription.classList.add("ability__text");
 
   const abilityValue = document.createElement("div");
+  abilityValue.classList.add("ability__value");
   abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
-   <div>(${bestPosition.rating})</div>`;
+   <div>(${bestPosition.baseRating} + ${bestPosition.bonusRating} + ${bestPosition.expBonus})</div>`;
 
   const comparison = document.createElement("div");
-  comparison.classList.add("comparison");
+  comparison.classList.add("ability__comparison");
   comparison.appendChild(
     BaseRenderer.renderComparison(bestPosition.ratingWithXp, ratingSettings)
   );
 
   abilityDescription.appendChild(abilityValue);
-  abilityDescription.appendChild(comparison);
+  abilityBox.appendChild(comparison);
   abilityBox.appendChild(abilityDescription);
 
+  abilityBox.appendChild(allPositions);
+
   contentColumn.appendChild(abilityBox);
+
+  /**
+   * Potential Box
+   */
+  const potentialBox = document.createElement("div");
+  potentialBox.classList.add("player-profile");
+  potentialBox.classList.add("player-profile--potential");
+
+  const potentials = player.getPositionTrainingQualities();
+  console.log(potentials);
+  const currentPositionTrainingQualities =
+    player.getCurrentPositionTrainingQuality();
+  console.log(currentPositionTrainingQualities);
+
+  const potentialBadge = BaseRenderer.renderPotentialBadge(
+    currentPositionTrainingQualities.totalTrainingQuality
+  );
+  potentialBox.appendChild(potentialBadge);
+
+  const potentialDescription = BaseRenderer.renderPotential({
+    position: currentPositionTrainingQualities.position,
+    basePotential: currentPositionTrainingQualities.baseTrainingQuality,
+    bonusPotential: currentPositionTrainingQualities.bonusTrainingQuality,
+    totalPotential: currentPositionTrainingQualities.totalTrainingQuality,
+  });
+  potentialBox.appendChild(potentialDescription);
+
+  const allPotentials = document.createElement("div");
+  allPotentials.classList.add("potential__positions");
+
+  let potentialList = ``;
+
+  potentials.forEach((potential) => {
+    potentialList += `<div>${potential.position} ${potential.totalTrainingQuality}</div>`;
+  });
+
+  allPotentials.innerHTML = potentialList;
+  potentialBox.appendChild(allPotentials);
+
+  contentColumn.appendChild(potentialBox);
 };
 
 export default viewPlayerProfile;
