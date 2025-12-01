@@ -56,11 +56,10 @@ const positionSettings: HockeyPositionSetting[] = [
   },
 ];
 
-const ratingSettings: RatingSettings & { maxSkill: number } = {
-  low: 500,
-  medium: 1000,
-  high: 1500,
-  maxSkill: 2500,
+const ratingSettings: RatingSettings = {
+  low: 600,
+  medium: 1500,
+  high: 2600,
 };
 
 const playerGrowthPrediction: GrowthPrediction = [

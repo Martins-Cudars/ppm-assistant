@@ -157,7 +157,7 @@ const getRowClass = (index: number, type: "td1" | "td2") => {
           <td :class="getRowClass(index, 'td1')">
             <RatingStars
               :skill="getAdjustedSkill(player)"
-              :maxSkill="ratingSettings.maxSkill"
+              :settings="ratingSettings"
             />
           </td>
           <td :class="getRowClass(index, 'td2')">

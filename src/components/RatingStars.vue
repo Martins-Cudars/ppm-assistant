@@ -1,37 +1,33 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { RatingSettings } from "@/types/Position";
 
 const props = defineProps<{
   skill: number;
-  maxSkill: number;
+  settings: RatingSettings;
 }>();
 
-const low = computed(() => props.maxSkill / 3);
-const medium = computed(() => (props.maxSkill * 2) / 3);
-const high = computed(() => props.maxSkill);
-
 const ratingState = computed(() => {
-  if (props.skill < low.value) {
+  const { low, medium, high } = props.settings;
+
+  if (props.skill < low) {
     return {
       outerImage: "icons/star-empty.svg",
       innerImage: "icons/star-silver.svg",
-      percentage: Math.min((props.skill / low.value) * 100, 100),
+      percentage: Math.min((props.skill / low) * 100, 100),
     };
-  } else if (props.skill < medium.value) {
+  } else if (props.skill < medium) {
     return {
       outerImage: "icons/star-silver.svg",
       innerImage: "icons/star-gold.svg",
-      percentage: Math.min(
-        ((props.skill - low.value) / (medium.value - low.value)) * 100,
-        100
-      ),
+      percentage: Math.min(((props.skill - low) / (medium - low)) * 100, 100),
     };
   } else {
     return {
       outerImage: "icons/star-gold.svg",
       innerImage: "icons/star-diamond.svg",
       percentage: Math.min(
-        ((props.skill - medium.value) / (high.value - medium.value)) * 100,
+        ((props.skill - medium) / (high - medium)) * 100,
         100
       ),
     };
