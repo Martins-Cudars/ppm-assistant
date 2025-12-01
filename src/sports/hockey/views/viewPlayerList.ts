@@ -18,20 +18,33 @@ const viewPlayerList = () => {
   playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
 
+    const nameLink = playerColumns[0].querySelector(
+      "a.link_name"
+    ) as HTMLAnchorElement;
+    const id = nameLink?.href.split("data=")[1] || "unknown";
+    const countryImg = playerColumns[0].querySelector(
+      "img"
+    ) as HTMLImageElement;
+
+    const isScouted = !!playerColumns[3].querySelector("img");
+
     const player = new HockeyPlayer(
       {
-        id: "unknown",
-        name: playerColumns[0].textContent!,
+        id: id,
+        name: playerColumns[0].textContent!.trim(),
         age: parseInt(playerColumns[2].textContent!),
         careerLongitivity: parseInt(
           Array.from(playerColumns[5].textContent!)[0]
         ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
         overallRating: parseInt(playerColumns[14].textContent!),
-        averageTrainingRatio: 0,
-        preferredSide: "U",
+        averageTrainingRatio: parseInt(playerColumns[4].textContent!),
+        preferredSide:
+          (playerColumns[15].textContent?.trim() as "L" | "R" | "U") || "U",
+        countryImage: countryImg?.src,
+        teamPosition: playerColumns[1].textContent?.trim(),
       },
       new Date(),
-      false,
+      isScouted,
       true,
       {
         goalie: parseInt(playerColumns[6].textContent!),

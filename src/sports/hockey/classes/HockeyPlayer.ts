@@ -2,6 +2,8 @@ import { BasePlayer, BaseInfo } from "@/classes/BasePlayer";
 
 export type HockeyPlayerInfo = BaseInfo & {
   preferredSide: "L" | "R" | "U";
+  countryImage?: string;
+  teamPosition?: string;
 };
 
 export type HockeyPlayerPosition = {
@@ -39,7 +41,9 @@ export class HockeyPlayer extends BasePlayer {
   private static readonly BONUS_CAP_RATIO = 0.25;
   private static readonly EXPERIENCE_DIVISOR = 500;
 
-  public preferredSide: "L" | "R" | "U"; // Fixed typo
+  public preferredSide: "L" | "R" | "U";
+  public countryImage?: string;
+  public teamPosition?: string;
   public positions: HockeyPlayerPosition[] = []; // Initialize arrays
   public positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
 
@@ -62,6 +66,8 @@ export class HockeyPlayer extends BasePlayer {
       trainingQualities
     );
     this.preferredSide = baseInfo.preferredSide;
+    this.countryImage = baseInfo.countryImage;
+    this.teamPosition = baseInfo.teamPosition;
   }
 
   override calculatePositions() {
