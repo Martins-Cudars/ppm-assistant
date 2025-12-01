@@ -36,6 +36,7 @@ export class BasePlayer {
   public isScouted: boolean;
   public isVisible: boolean;
   public updatedAt: Date;
+  public seasonDay: number;
   public positions: BasePosition[] = [];
   public positionTrainingQualities: BaseTrainingQuality[] = [];
 
@@ -44,6 +45,7 @@ export class BasePlayer {
     updatedAt = new Date(),
     isScouted = false,
     isVisible = false,
+    seasonDay = 1,
     skills: Record<string, number> | undefined = undefined,
     experience: number | undefined = undefined,
     trainingQualities: Record<string, number> | undefined = undefined
@@ -56,6 +58,7 @@ export class BasePlayer {
     this.averageTrainingRatio = baseInfo.averageTrainingRatio;
     this.isScouted = isScouted;
     this.isVisible = isVisible;
+    this.seasonDay = seasonDay;
 
     this.skills = skills || undefined;
     this.experience = experience || (this.age - 15) * 8;

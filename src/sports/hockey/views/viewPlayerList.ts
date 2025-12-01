@@ -3,6 +3,7 @@ import { createPinia } from "pinia";
 import PlayerListTable from "./components/PlayerListTable.vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import { getCurrentSeasonDay } from "@/utils";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -14,6 +15,9 @@ const viewPlayerList = () => {
   const tableBody = table.querySelector("tbody");
   const playerRows = tableBody!.querySelectorAll("tr");
   const players: HockeyPlayer[] = [];
+
+  const seasonDay = getCurrentSeasonDay();
+  console.log("Current Season Day:", seasonDay);
 
   playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
@@ -48,6 +52,7 @@ const viewPlayerList = () => {
       new Date(),
       isScouted,
       true,
+      seasonDay,
       {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),

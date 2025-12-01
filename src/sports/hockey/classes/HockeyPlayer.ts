@@ -54,6 +54,7 @@ export class HockeyPlayer extends BasePlayer {
     updatedAt = new Date(),
     isScouted = false,
     isVisible = false,
+    seasonDay = 1,
     skills?: HockeySkills, // Use optional parameter syntax
     experience?: number, // Use optional parameter syntax
     trainingQualities?: Record<string, number> // Use optional parameter syntax
@@ -63,6 +64,7 @@ export class HockeyPlayer extends BasePlayer {
       updatedAt,
       isScouted,
       isVisible,
+      seasonDay,
       skills,
       experience,
       trainingQualities
@@ -277,6 +279,19 @@ export class HockeyPlayer extends BasePlayer {
       return 0;
     }
 
-    return calculateSkillWithExp(predictionByAge.skill, predictionByAge.exp);
+    const nextPrediction = playerGrowthPrediction.find(
+      (row) => row.age === this.age + 1
+    );
+
+    let skill = predictionByAge.skill;
+    let exp = predictionByAge.exp;
+
+    if (nextPrediction) {
+      const seasonProgress = this.seasonDay / 112;
+      skill += (nextPrediction.skill - predictionByAge.skill) * seasonProgress;
+      exp += (nextPrediction.exp - predictionByAge.exp) * seasonProgress;
+    }
+
+    return calculateSkillWithExp(Math.round(skill), Math.round(exp));
   }
 }
