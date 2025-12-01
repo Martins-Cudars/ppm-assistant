@@ -3,11 +3,7 @@ import {
   ratingSettings,
   playerGrowthPrediction,
 } from "@/sports/hockey/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import {
   renderTableCell,
   renderComparison,
@@ -46,11 +42,24 @@ const viewPlayerList = () => {
     const playerColumns = playerRow.querySelectorAll("td");
     playerRow.classList.add(`player-row`);
 
-    const player = {
-      name: playerColumns[0].textContent,
-      age: parseInt(playerColumns[2].textContent!),
-      careerLongitivity: parseInt(Array.from(playerColumns[5].textContent!)[0]),
-      skills: {
+    const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+
+    const player = new HockeyPlayer(
+      {
+        id: "unknown", // ID is not available in the table
+        name: playerColumns[0].textContent!,
+        age: parseInt(playerColumns[2].textContent!),
+        careerLongitivity: parseInt(
+          Array.from(playerColumns[5].textContent!)[0]
+        ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        overallRating: parseInt(playerColumns[14].textContent!),
+        averageTrainingRatio: 0, // Not available in the table
+        preferredSide: "U", // Not available in the table
+      },
+      new Date(),
+      false,
+      true,
+      {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),
         offence: parseInt(playerColumns[8].textContent!),
@@ -59,37 +68,29 @@ const viewPlayerList = () => {
         technical: parseInt(playerColumns[11].textContent!),
         aggression: parseInt(playerColumns[12].textContent!),
       },
+      parseInt(playerColumns[13].textContent!)
+    );
 
-      experience: parseInt(playerColumns[13].textContent!),
-      overall: parseInt(playerColumns[14].textContent!),
-    };
-
-    const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
+    player.calculatePositions();
+    const bestPosition = player.getBestPosition();
 
     const predictData = recalculatePredictDataAccordingToSeasonDay(
       playerGrowthPrediction,
-      bestPosition.position,
+      bestPosition.name,
       seasonDay
     );
 
-    playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
+    playerRow.classList.add(`position-${bestPosition.name.toLowerCase()}`);
+    const bestSkillWithExp = bestPosition.ratingWithXp;
 
-    playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
-    );
+    playerRow.appendChild(renderTableCell(bestPosition.name, `${rowClass}td1`));
 
     playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
     ratingTd.appendChild(
-      renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
+      renderComparison(bestSkillWithExp, ratingSettings) // Removed 3rd arg if it was position name, check signature
     );
 
     playerRow.appendChild(ratingTd);

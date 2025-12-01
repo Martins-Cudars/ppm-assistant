@@ -1,4 +1,7 @@
-import { HockeyPlayer, HockeyPlayerInfo } from "@/classes/HockeyPlayer";
+import {
+  HockeyPlayer,
+  HockeyPlayerInfo,
+} from "@/sports/hockey/classes/HockeyPlayer";
 import BaseRenderer from "@/classes/BaseRenderer";
 
 import {

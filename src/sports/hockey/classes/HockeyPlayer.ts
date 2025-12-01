@@ -1,7 +1,7 @@
-import { BasePlayer, BaseInfo } from "./BasePlayer";
+import { BasePlayer, BaseInfo } from "@/classes/BasePlayer";
 
 export type HockeyPlayerInfo = BaseInfo & {
-  preferredSide: "L" | "R" | "U"; // Fixed typo: preferedSide -> preferredSide
+  preferredSide: "L" | "R" | "U";
 };
 
 export type HockeyPlayerPosition = {
@@ -39,9 +39,9 @@ export class HockeyPlayer extends BasePlayer {
   private static readonly BONUS_CAP_RATIO = 0.25;
   private static readonly EXPERIENCE_DIVISOR = 500;
 
-  private preferredSide: "L" | "R" | "U"; // Fixed typo
-  private positions: HockeyPlayerPosition[] = []; // Initialize arrays
-  private positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
+  public preferredSide: "L" | "R" | "U"; // Fixed typo
+  public positions: HockeyPlayerPosition[] = []; // Initialize arrays
+  public positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
 
   constructor(
     baseInfo: HockeyPlayerInfo,
@@ -61,7 +61,7 @@ export class HockeyPlayer extends BasePlayer {
       experience,
       trainingQualities
     );
-    this.preferredSide = baseInfo.preferredSide; // Fixed typo
+    this.preferredSide = baseInfo.preferredSide;
   }
 
   override calculatePositions() {

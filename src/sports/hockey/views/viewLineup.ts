@@ -1,9 +1,5 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
+import { ratingSettings } from "@/sports/hockey/settings";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { renderTableCell, renderComparison } from "@/base/render";
 
 const viewLineupChange = () => {
@@ -28,9 +24,22 @@ const viewLineupChange = () => {
       const playerColumns = playerRow.querySelectorAll("td");
 
       if (playerColumns.length > 2) {
-        const player = {
-          name: playerColumns[1].textContent!,
-          skills: {
+        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
+
+        const player = new HockeyPlayer(
+          {
+            id: "unknown",
+            name: playerColumns[1].textContent!,
+            age: 0, // Not available in lineup
+            careerLongitivity: 0, // Not available
+            overallRating: 0, // Not available
+            averageTrainingRatio: 0,
+            preferredSide: "U",
+          },
+          new Date(),
+          false,
+          true,
+          {
             goalie: parseInt(playerColumns[4].textContent!),
             defence: parseInt(playerColumns[5].textContent!),
             offence: parseInt(playerColumns[6].textContent!),
@@ -39,36 +48,25 @@ const viewLineupChange = () => {
             technical: parseInt(playerColumns[9].textContent!),
             aggression: parseInt(playerColumns[10].textContent!),
           },
-          experience: parseInt(playerColumns[11].textContent!),
-        };
+          parseInt(playerColumns[11].textContent!)
+        );
 
-        const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-        const skills = calculatePositionsSkills(player, positionSettings);
-        const bestPosition = calculateBestPosition(skills);
-        const bestSkillWithExp = calculateSkillWithExp(
-          bestPosition.level,
-          player.experience
+        player.calculatePositions();
+        const bestPosition = player.getBestPosition();
+        const bestSkillWithExp = bestPosition.ratingWithXp;
+
+        playerRow.appendChild(
+          renderTableCell(bestPosition.name, `${rowClass}td1`)
         );
 
         playerRow.appendChild(
-          renderTableCell(bestPosition.position, `${rowClass}td1`)
-        );
-
-        playerRow.appendChild(
-          renderTableCell(
-            calculateSkillWithExp(bestPosition.level, player.experience),
-            `${rowClass}td2`
-          )
+          renderTableCell(bestSkillWithExp, `${rowClass}td2`)
         );
 
         const ratingTd = document.createElement("td");
         ratingTd.classList.add(`${rowClass}td1`);
         ratingTd.appendChild(
-          renderComparison(
-            bestSkillWithExp,
-            ratingSettings,
-            bestPosition.position
-          )
+          renderComparison(bestSkillWithExp, ratingSettings)
         );
 
         playerRow.appendChild(ratingTd);
