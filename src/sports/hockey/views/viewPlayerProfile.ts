@@ -4,19 +4,12 @@ import {
 } from "@/sports/hockey/classes/HockeyPlayer";
 import BaseRenderer from "@/classes/BaseRenderer";
 
-import {
-  getCurrentSeasonDay,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { getCurrentSeasonDay } from "@/utils";
 
-import {
-  positionSettings,
-  ratingSettings,
-  playerGrowthPrediction,
-} from "@/sports/hockey/settings";
+import { ratingSettings } from "@/sports/hockey/settings";
 
 const viewPlayerProfile = () => {
-  const seasonDay = getCurrentSeasonDay();
+  // const seasonDay = getCurrentSeasonDay(); // Unused
 
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
@@ -49,7 +42,7 @@ const viewPlayerProfile = () => {
     averageTrainingRatio: parseInt(
       playerTable.querySelector("#prk")!.textContent!
     ),
-    preferedSide: "U",
+    preferredSide: "U",
   };
 
   const skills = skillsVisible

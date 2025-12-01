@@ -4,6 +4,8 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 
+import vue from "@vitejs/plugin-vue";
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -21,6 +23,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    vue(),
     {
       name: "copy-manifest",
       buildStart() {
