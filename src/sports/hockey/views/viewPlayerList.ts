@@ -36,7 +36,9 @@ const viewPlayerList = () => {
         careerLongitivity: parseInt(
           Array.from(playerColumns[5].textContent!)[0]
         ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
-        overallRating: parseInt(playerColumns[14].textContent!),
+        overallRating: parseInt(
+          playerColumns[14].textContent!.replace(/\D/g, "")
+        ),
         averageTrainingRatio: parseInt(playerColumns[4].textContent!),
         preferredSide:
           (playerColumns[15].textContent?.trim() as "L" | "R" | "U") || "U",
@@ -91,6 +93,18 @@ const viewPlayerList = () => {
 
     const store = usePlayerStore();
     store.setPlayers(players);
+
+    // Extract headers
+    const headerRow = table.querySelector("thead tr");
+    const headers: string[] = [];
+    if (headerRow) {
+      const headerCells = headerRow.querySelectorAll("td");
+      headerCells.forEach((cell) => {
+        headers.push(cell.textContent?.trim() || "");
+      });
+    }
+    console.log("Extracted headers:", headers);
+    store.setTableHeaders(headers);
 
     app.mount(appContainer);
     console.log("Vue app mounted successfully");

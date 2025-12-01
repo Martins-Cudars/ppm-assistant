@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
-import { positionSettings } from "@/sports/hockey/settings";
+import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+
+import RatingStars from "@/components/RatingStars.vue";
 
 const store = usePlayerStore();
 const selectedPosition = ref("All");
@@ -22,6 +24,17 @@ const setPosition = (pos: string) => {
 
 const getBestPosition = (player: HockeyPlayer) => {
   return player.getBestPosition();
+};
+
+const getAdjustedSkill = (player: HockeyPlayer) => {
+  const bestPos = player.getBestPosition();
+  const setting = positionSettings.find((p) => p.name === bestPos.name);
+  return bestPos.ratingWithXp * (setting?.positionRatio || 1);
+};
+
+const getRowClass = (index: number, type: "td1" | "td2") => {
+  const rowType = index % 2 === 0 ? "tr0" : "tr1";
+  return `${rowType}${type}`;
 };
 </script>
 
@@ -43,24 +56,15 @@ const getBestPosition = (player: HockeyPlayer) => {
     <table cellspacing="0" cellpadding="2" class="table" id="table-1">
       <thead>
         <tr>
-          <td class="th1">Vārds</td>
-          <td class="th2">Poz</td>
-          <td class="th1">Vecums</td>
-          <td class="th2">IzS</td>
-          <td class="th1">VidV</td>
-          <td class="th2">KI</td>
-          <td class="th1">Vār</td>
-          <td class="th2">Aizs</td>
-          <td class="th1">Uzb</td>
-          <td class="th2">Met</td>
-          <td class="th1">Piesp</td>
-          <td class="th2">Teh</td>
-          <td class="th1">Agr</td>
-          <td class="th2">Pie</td>
-          <td class="th1">KR</td>
-          <td class="th2">VP</td>
+          <td
+            v-for="(header, index) in store.tableHeaders"
+            :key="index"
+            :class="index % 2 === 0 ? 'th1' : 'th2'"
+          >
+            {{ header }}
+          </td>
           <!-- New Columns -->
-          <td class="th1">Best Pos</td>
+          <td class="th1">Pos</td>
           <td class="th2">Skill</td>
           <td class="th1">Rating</td>
           <td class="th2">Relative</td>
@@ -72,7 +76,7 @@ const getBestPosition = (player: HockeyPlayer) => {
           :key="player.id || player.name"
           :class="index % 2 === 0 ? 'tr0' : 'tr1'"
         >
-          <td class="name" :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td class="name" :class="getRowClass(index, 'td1')">
             <a v-if="player.countryImage" href="#" class="flag_link">
               <img
                 :src="player.countryImage"
@@ -88,13 +92,13 @@ const getBestPosition = (player: HockeyPlayer) => {
               {{ player.name }}
             </a>
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.teamPosition }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.age }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             <img
               v-if="player.isScouted"
               src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png"
@@ -105,55 +109,57 @@ const getBestPosition = (player: HockeyPlayer) => {
               border="0"
             />
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.averageTrainingRatio }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.careerLongitivity }}/6
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.skills?.goalie }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.skills?.defence }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.skills?.offence }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.skills?.shooting }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.skills?.passing }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.skills?.technical }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.skills?.aggression }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.experience }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ player.overallRating }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ player.preferredSide }}
           </td>
 
           <!-- New Columns -->
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
+          <td :class="getRowClass(index, 'td1')">
             {{ getBestPosition(player).name }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             {{ getBestPosition(player).ratingWithXp }}
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td1' : 'tr1td1'">
-            <!-- Placeholder for Rating -->
-            {{ getBestPosition(player).ratingWithXp }}
+          <td :class="getRowClass(index, 'td1')">
+            <RatingStars
+              :skill="getAdjustedSkill(player)"
+              :maxSkill="ratingSettings.maxSkill"
+            />
           </td>
-          <td :class="index % 2 === 0 ? 'tr0td2' : 'tr1td2'">
+          <td :class="getRowClass(index, 'td2')">
             <!-- Placeholder for Relative Skill -->
             {{ getBestPosition(player).ratingWithXp }}
           </td>

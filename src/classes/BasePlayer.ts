@@ -31,7 +31,7 @@ export class BasePlayer {
   public experience: number;
   public age: number;
   public careerLongitivity: number;
-  public overalRating: number;
+  public overallRating: number;
   public averageTrainingRatio: number;
   public isScouted: boolean;
   public isVisible: boolean;
@@ -52,7 +52,7 @@ export class BasePlayer {
     this.name = baseInfo.name;
     this.age = baseInfo.age;
     this.careerLongitivity = baseInfo.careerLongitivity;
-    this.overalRating = baseInfo.overallRating;
+    this.overallRating = baseInfo.overallRating;
     this.averageTrainingRatio = baseInfo.averageTrainingRatio;
     this.isScouted = isScouted;
     this.isVisible = isVisible;

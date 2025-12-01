@@ -257,7 +257,7 @@ export class HockeyPlayer extends BasePlayer {
   }
 
   private calculateUnknownRating(): number {
-    return (this.overalRating - 100) / 2;
+    return (this.overallRating - 100) / 2;
   }
 
   private calculateExpBonus(rating: number): number {
