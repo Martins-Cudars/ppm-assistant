@@ -5,6 +5,7 @@ import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 
 import RatingStars from "@/components/RatingStars.vue";
+import RelativeSkill from "@/components/RelativeSkill.vue";
 
 const store = usePlayerStore();
 const selectedPosition = ref("All");
@@ -160,8 +161,10 @@ const getRowClass = (index: number, type: "td1" | "td2") => {
             />
           </td>
           <td :class="getRowClass(index, 'td2')">
-            <!-- Placeholder for Relative Skill -->
-            {{ getBestPosition(player).ratingWithXp }}
+            <RelativeSkill
+              :skill="getAdjustedSkill(player)"
+              :maxSkillForAge="player.getMaxSkillForAge()"
+            />
           </td>
         </tr>
       </tbody>

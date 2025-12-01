@@ -1,4 +1,6 @@
 import { BasePlayer, BaseInfo } from "@/classes/BasePlayer";
+import { playerGrowthPrediction } from "@/sports/hockey/settings";
+import { calculateSkillWithExp } from "@/base/calculations";
 
 export type HockeyPlayerInfo = BaseInfo & {
   preferredSide: "L" | "R" | "U";
@@ -264,5 +266,17 @@ export class HockeyPlayer extends BasePlayer {
     return Math.floor(
       rating * (this.experience / HockeyPlayer.EXPERIENCE_DIVISOR)
     );
+  }
+
+  override getMaxSkillForAge(): number {
+    const predictionByAge = playerGrowthPrediction.find(
+      (row) => row.age === this.age
+    );
+
+    if (!predictionByAge) {
+      return 0;
+    }
+
+    return calculateSkillWithExp(predictionByAge.skill, predictionByAge.exp);
   }
 }

@@ -102,4 +102,8 @@ export class BasePlayer {
       (ptq) => ptq.position === currentPosition
     )!;
   }
+
+  getMaxSkillForAge(): number {
+    return 0;
+  }
 }
