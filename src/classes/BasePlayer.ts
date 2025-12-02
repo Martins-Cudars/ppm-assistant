@@ -39,6 +39,7 @@ export class BasePlayer {
   public seasonDay: number;
   public positions: BasePosition[] = [];
   public positionTrainingQualities: BaseTrainingQuality[] = [];
+  public injuryDays: number = 0;
 
   constructor(
     baseInfo: BaseInfo,
@@ -48,7 +49,8 @@ export class BasePlayer {
     seasonDay = 1,
     skills: Record<string, number> | undefined = undefined,
     experience: number | undefined = undefined,
-    trainingQualities: Record<string, number> | undefined = undefined
+    trainingQualities: Record<string, number> | undefined = undefined,
+    injuryDays = 0
   ) {
     this.id = baseInfo.id;
     this.name = baseInfo.name;
@@ -64,6 +66,7 @@ export class BasePlayer {
     this.experience = experience || (this.age - 15) * 8;
     this.trainingQualities = trainingQualities || undefined;
     this.updatedAt = updatedAt;
+    this.injuryDays = injuryDays;
   }
 
   calculatePositions() {

@@ -75,6 +75,7 @@ const tableColumns = computed<Column[]>(() => {
   cols.push(
     {
       header: "Pos",
+      key: "position",
       slot: "position",
       sortable: true,
       sortValue: (p: HockeyPlayer) => p.getBestPosition().name,
@@ -82,6 +83,7 @@ const tableColumns = computed<Column[]>(() => {
     },
     {
       header: "Skill",
+      key: "skill",
       slot: "skill",
       sortable: true,
       sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
@@ -89,6 +91,7 @@ const tableColumns = computed<Column[]>(() => {
     },
     {
       header: "Rating",
+      key: "rating",
       slot: "rating",
       sortable: true,
       sortValue: (p: HockeyPlayer) => getAdjustedSkill(p),
@@ -96,6 +99,7 @@ const tableColumns = computed<Column[]>(() => {
     },
     {
       header: "Relative",
+      key: "relative",
       slot: "relative",
       sortable: true,
       sortValue: (p: HockeyPlayer) => {
@@ -146,6 +150,15 @@ const tableColumns = computed<Column[]>(() => {
         >
           {{ item.name }}
         </a>
+        <img
+          v-if="item.injuryDays > 0"
+          src="https://www.powerplaymanager.com/hockey/_images/account/icons/day_to_day.png"
+          :title="`Dienas līdz atlabšanai: ${item.injuryDays}`"
+          :alt="`Dienas līdz atlabšanai: ${item.injuryDays}`"
+          width="16"
+          height="16"
+          style="vertical-align: middle; margin-left: 5px"
+        />
       </template>
 
       <template #scouted="{ item }">

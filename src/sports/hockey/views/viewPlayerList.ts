@@ -32,6 +32,31 @@ const viewPlayerList = () => {
 
     const isScouted = !!playerColumns[3].querySelector("img");
 
+    // Parse injury
+    let injuryDays = 0;
+    const injuryImg = playerColumns[0].querySelector(
+      'img[src*="day_to_day.png"], img[src*="injury"]'
+    ) as HTMLImageElement;
+
+    if (injuryImg) {
+      console.log("Found injury image:", injuryImg.src, injuryImg.title);
+      const match = injuryImg.title.match(/: (\d+)/);
+      if (match) {
+        injuryDays = parseInt(match[1]);
+        console.log("Parsed injury days:", injuryDays);
+      } else {
+        console.log("Failed to parse injury days from title:", injuryImg.title);
+      }
+    } else {
+      // Log innerHTML for debugging if we suspect it's there but missed
+      if (
+        playerColumns[0].innerHTML.includes("day_to_day") ||
+        playerColumns[0].innerHTML.includes("injury")
+      ) {
+        console.log("Missed injury image in:", playerColumns[0].innerHTML);
+      }
+    }
+
     const player = new HockeyPlayer(
       {
         id: id,
@@ -62,13 +87,16 @@ const viewPlayerList = () => {
         technical: parseInt(playerColumns[11].textContent!),
         aggression: parseInt(playerColumns[12].textContent!),
       },
-      parseInt(playerColumns[13].textContent!)
+      parseInt(playerColumns[13].textContent!),
+      undefined,
+      injuryDays
     );
     player.calculatePositions();
     players.push(player);
   });
 
   console.log(`Found ${players.length} players`);
+  console.log(players);
 
   // Create mount point
   const appContainer = document.createElement("div");

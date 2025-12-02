@@ -57,7 +57,8 @@ export class HockeyPlayer extends BasePlayer {
     seasonDay = 1,
     skills?: HockeySkills, // Use optional parameter syntax
     experience?: number, // Use optional parameter syntax
-    trainingQualities?: Record<string, number> // Use optional parameter syntax
+    trainingQualities?: Record<string, number>, // Use optional parameter syntax
+    injuryDays = 0
   ) {
     super(
       baseInfo,
@@ -67,7 +68,8 @@ export class HockeyPlayer extends BasePlayer {
       seasonDay,
       skills,
       experience,
-      trainingQualities
+      trainingQualities,
+      injuryDays
     );
     this.preferredSide = baseInfo.preferredSide;
     this.countryImage = baseInfo.countryImage;
