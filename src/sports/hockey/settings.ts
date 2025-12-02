@@ -63,7 +63,7 @@ const ratingSettings: RatingSettings = {
 };
 
 const playerGrowthPrediction: GrowthPrediction = [
-  { age: 15, skill: 87, exp: 0 },
+  { age: 15, skill: 110, exp: 0 },
   { age: 16, skill: 204, exp: 9 },
   { age: 17, skill: 319, exp: 19 },
   { age: 18, skill: 436, exp: 28 },

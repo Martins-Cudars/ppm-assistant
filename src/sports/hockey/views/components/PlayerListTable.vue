@@ -7,6 +7,8 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
 
+import SortableTable, { type Column } from "@/components/SortableTable.vue";
+
 const store = usePlayerStore();
 const selectedPosition = ref("All");
 
@@ -33,10 +35,80 @@ const getAdjustedSkill = (player: HockeyPlayer) => {
   return bestPos.ratingWithXp * (setting?.positionRatio || 1);
 };
 
-const getRowClass = (index: number, type: "td1" | "td2") => {
-  const rowType = index % 2 === 0 ? "tr0" : "tr1";
-  return `${rowType}${type}`;
-};
+const tableColumns = computed<Column[]>(() => {
+  const headers = store.tableHeaders;
+  const mapping: Partial<Column>[] = [
+    {
+      key: "name",
+      slot: "name",
+      sortable: true,
+      headerClass: "th1",
+      cellClass: "name",
+    },
+    { key: "teamPosition", sortable: true, headerClass: "th2" },
+    { key: "age", sortable: true, headerClass: "th1" },
+    { key: "isScouted", slot: "scouted", sortable: true, headerClass: "th2" },
+    { key: "averageTrainingRatio", sortable: true, headerClass: "th1" },
+    {
+      key: "careerLongitivity",
+      slot: "cl",
+      sortable: true,
+      headerClass: "th2",
+    },
+    { key: "skills.goalie", sortable: true, headerClass: "th1" },
+    { key: "skills.defence", sortable: true, headerClass: "th2" },
+    { key: "skills.offence", sortable: true, headerClass: "th1" },
+    { key: "skills.shooting", sortable: true, headerClass: "th2" },
+    { key: "skills.passing", sortable: true, headerClass: "th1" },
+    { key: "skills.technical", sortable: true, headerClass: "th2" },
+    { key: "skills.aggression", sortable: true, headerClass: "th1" },
+    { key: "experience", sortable: true, headerClass: "th2" },
+    { key: "overallRating", sortable: true, headerClass: "th1" },
+    { key: "preferredSide", sortable: true, headerClass: "th2" },
+  ];
+
+  const cols = mapping.map((col, index) => ({
+    ...col,
+    header: headers[index] || "",
+  })) as Column[];
+
+  cols.push(
+    {
+      header: "Pos",
+      slot: "position",
+      sortable: true,
+      sortValue: (p: HockeyPlayer) => p.getBestPosition().name,
+      headerClass: "th1",
+    },
+    {
+      header: "Skill",
+      slot: "skill",
+      sortable: true,
+      sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
+      headerClass: "th2",
+    },
+    {
+      header: "Rating",
+      slot: "rating",
+      sortable: true,
+      sortValue: (p: HockeyPlayer) => getAdjustedSkill(p),
+      headerClass: "th1",
+    },
+    {
+      header: "Relative",
+      slot: "relative",
+      sortable: true,
+      sortValue: (p: HockeyPlayer) => {
+        const skill = getAdjustedSkill(p);
+        const max = p.getMaxSkillForAge();
+        return max ? skill / max : 0;
+      },
+      headerClass: "th2",
+    }
+  );
+
+  return cols;
+});
 </script>
 
 <template>
@@ -54,121 +126,64 @@ const getRowClass = (index: number, type: "td1" | "td2") => {
       </button>
     </div>
 
-    <table cellspacing="0" cellpadding="2" class="table" id="table-1">
-      <thead>
-        <tr>
-          <td
-            v-for="(header, index) in store.tableHeaders"
-            :key="index"
-            :class="index % 2 === 0 ? 'th1' : 'th2'"
-          >
-            {{ header }}
-          </td>
-          <!-- New Columns -->
-          <td class="th1">Pos</td>
-          <td class="th2">Skill</td>
-          <td class="th1">Rating</td>
-          <td class="th2">Relative</td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="(player, index) in filteredPlayers"
-          :key="player.id || player.name"
-          :class="index % 2 === 0 ? 'tr0' : 'tr1'"
+    <SortableTable
+      :columns="tableColumns"
+      :items="filteredPlayers"
+      :default-sort="{ key: 'overallRating', dir: 'desc' }"
+    >
+      <template #name="{ item }">
+        <a v-if="item.countryImage" href="#" class="flag_link">
+          <img
+            :src="item.countryImage"
+            height="16"
+            style="vertical-align: middle"
+            align="absMiddle"
+          />
+        </a>
+        <a
+          :href="`https://hockey.powerplaymanager.com/lv/speletajs.html?data=${item.id}`"
+          class="link_name"
         >
-          <td class="name" :class="getRowClass(index, 'td1')">
-            <a v-if="player.countryImage" href="#" class="flag_link">
-              <img
-                :src="player.countryImage"
-                height="16"
-                style="vertical-align: middle"
-                align="absMiddle"
-              />
-            </a>
-            <a
-              :href="`https://hockey.powerplaymanager.com/lv/speletajs.html?data=${player.id}`"
-              class="link_name"
-            >
-              {{ player.name }}
-            </a>
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.teamPosition }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.age }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            <img
-              v-if="player.isScouted"
-              src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png"
-              title="Izpētīts"
-              alt="Izpētīts"
-              width="16"
-              height="14"
-              border="0"
-            />
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.averageTrainingRatio }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.careerLongitivity }}/6
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.skills?.goalie }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.skills?.defence }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.skills?.offence }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.skills?.shooting }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.skills?.passing }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.skills?.technical }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.skills?.aggression }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.experience }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            {{ player.overallRating }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ player.preferredSide }}
-          </td>
+          {{ item.name }}
+        </a>
+      </template>
 
-          <!-- New Columns -->
-          <td :class="getRowClass(index, 'td1')">
-            {{ getBestPosition(player).name }}
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            {{ getBestPosition(player).ratingWithXp }}
-          </td>
-          <td :class="getRowClass(index, 'td1')">
-            <RatingStars
-              :skill="getAdjustedSkill(player)"
-              :settings="ratingSettings"
-            />
-          </td>
-          <td :class="getRowClass(index, 'td2')">
-            <RelativeSkill
-              :skill="getAdjustedSkill(player)"
-              :maxSkillForAge="player.getMaxSkillForAge()"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
+      <template #scouted="{ item }">
+        <img
+          v-if="item.isScouted"
+          src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png"
+          title="Izpētīts"
+          alt="Izpētīts"
+          width="16"
+          height="14"
+          border="0"
+        />
+      </template>
+
+      <template #cl="{ item }"> {{ item.careerLongitivity }}/6 </template>
+
+      <template #position="{ item }">
+        {{ getBestPosition(item).name }}
+      </template>
+
+      <template #skill="{ item }">
+        {{ getBestPosition(item).ratingWithXp }}
+      </template>
+
+      <template #rating="{ item }">
+        <RatingStars
+          :skill="getAdjustedSkill(item)"
+          :settings="ratingSettings"
+        />
+      </template>
+
+      <template #relative="{ item }">
+        <RelativeSkill
+          :skill="getAdjustedSkill(item)"
+          :maxSkillForAge="item.getMaxSkillForAge()"
+        />
+      </template>
+    </SortableTable>
   </div>
 </template>
 
