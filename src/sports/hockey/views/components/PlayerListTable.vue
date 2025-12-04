@@ -31,8 +31,7 @@ const getBestPosition = (player: HockeyPlayer) => {
 
 const getAdjustedSkill = (player: HockeyPlayer) => {
   const bestPos = player.getBestPosition();
-  const setting = positionSettings.find((p) => p.name === bestPos.name);
-  return bestPos.ratingWithXp * (setting?.positionRatio || 1);
+  return bestPos.ratingWithXp;
 };
 
 const tableColumns = computed<Column[]>(() => {

@@ -40,7 +40,7 @@ export type HockeySkills = {
 };
 
 export class HockeyPlayer extends BasePlayer {
-  private static readonly BONUS_CAP_RATIO = 0.25;
+  private static readonly BONUS_CAP_RATIO = 0.6;
   private static readonly EXPERIENCE_DIVISOR = 500;
 
   public preferredSide: "L" | "R" | "U";
@@ -94,8 +94,8 @@ export class HockeyPlayer extends BasePlayer {
           )
         ),
         Math.floor(
-          this.skills.shooting * 0.15 +
-            this.skills.technical * 0.15 +
+          this.skills.shooting * 0.25 +
+            this.skills.technical * 0.25 +
             this.skills.offence * 0.1
         )
       ),
@@ -108,7 +108,7 @@ export class HockeyPlayer extends BasePlayer {
             this.skills.aggression * 2
           )
         ),
-        Math.floor(this.skills.shooting * 0.35 + this.skills.defence * 0.1)
+        Math.floor(this.skills.shooting * 0.45 + this.skills.defence * 0.1)
       ),
       this.createPosition(
         "C",
@@ -119,7 +119,7 @@ export class HockeyPlayer extends BasePlayer {
             this.skills.technical * 2
           )
         ),
-        Math.floor(this.skills.shooting * 0.35 + this.skills.defence * 0.1)
+        Math.floor(this.skills.shooting * 0.45 + this.skills.defence * 0.1)
       ),
       this.createPosition(
         "G",

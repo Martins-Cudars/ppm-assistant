@@ -17,7 +17,6 @@ const viewPlayerList = () => {
   const players: HockeyPlayer[] = [];
 
   const seasonDay = getCurrentSeasonDay();
-  console.log("Current Season Day:", seasonDay);
 
   playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
@@ -95,9 +94,6 @@ const viewPlayerList = () => {
     players.push(player);
   });
 
-  console.log(`Found ${players.length} players`);
-  console.log(players);
-
   // Create mount point
   const appContainer = document.createElement("div");
   appContainer.id = "ppm-assistant-app";
@@ -136,11 +132,9 @@ const viewPlayerList = () => {
         headers.push(cell.textContent?.trim() || "");
       });
     }
-    console.log("Extracted headers:", headers);
     store.setTableHeaders(headers);
 
     app.mount(appContainer);
-    console.log("Vue app mounted successfully");
   } catch (error) {
     console.error("Failed to mount Vue app:", error);
     // Restore table if failed
