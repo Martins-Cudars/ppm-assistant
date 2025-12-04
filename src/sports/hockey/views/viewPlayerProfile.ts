@@ -1,15 +1,15 @@
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 import {
   HockeyPlayer,
   HockeyPlayerInfo,
 } from "@/sports/hockey/classes/HockeyPlayer";
-import BaseRenderer from "@/classes/BaseRenderer";
-
+import PlayerSidebar from "./components/PlayerSidebar.vue";
+import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
 import { getCurrentSeasonDay } from "@/utils";
 
-import { ratingSettings } from "@/sports/hockey/settings";
-
 const viewPlayerProfile = () => {
-  // const seasonDay = getCurrentSeasonDay(); // Unused
+  const seasonDay = getCurrentSeasonDay();
 
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
@@ -98,6 +98,7 @@ const viewPlayerProfile = () => {
     new Date(),
     playerScouted,
     skillsVisible,
+    seasonDay,
     skills,
     experience,
     trainingQualities
@@ -108,99 +109,34 @@ const viewPlayerProfile = () => {
 
   console.log(player);
 
-  /** Render */
+  /** Render Sidebar */
+  const contentColumn = document.querySelector(".column_left");
+  if (contentColumn) {
+    const sidebarContainer = document.createElement("div");
+    sidebarContainer.id = "ppm-assistant-sidebar";
+    contentColumn.appendChild(sidebarContainer);
 
-  const contentColumn = document.querySelector(".column_left")!;
+    const sidebarApp = createApp(PlayerSidebar, { player });
+    const pinia = createPinia();
+    sidebarApp.use(pinia);
+    sidebarApp.mount(sidebarContainer);
+  }
 
-  /**
-   * Ability Box
-   */
+  /** Render Chart */
+  // Create a container for the chart after the player table
+  const chartContainer = document.createElement("div");
+  chartContainer.id = "ppm-assistant-chart";
 
-  const positions = player.getPositions();
-  const bestPosition = player.getBestPosition();
+  // Insert after table-1
+  if (playerTable.parentNode) {
+    playerTable.parentNode.insertBefore(
+      chartContainer,
+      playerTable.nextSibling
+    );
+  }
 
-  const abilityBox = document.createElement("div");
-  abilityBox.classList.add("player-profile");
-  abilityBox.classList.add("player-profile--ability");
-
-  const position = document.createElement("div");
-  position.classList.add("ability__position");
-  position.textContent = bestPosition.name;
-
-  const allPositions = document.createElement("div");
-  allPositions.classList.add("ability__positions");
-
-  let positionList = ``;
-
-  positions.forEach((position) => {
-    positionList += `<div>${position.name} ${position.ratingWithXp}</div>`;
-  });
-
-  allPositions.innerHTML = positionList;
-
-  abilityBox.appendChild(position);
-
-  const abilityDescription = document.createElement("div");
-  abilityDescription.classList.add("ability__text");
-
-  const abilityValue = document.createElement("div");
-  abilityValue.classList.add("ability__value");
-  abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
-   <div>(${bestPosition.baseRating} + ${bestPosition.bonusRating} + ${bestPosition.expBonus})</div>`;
-
-  const comparison = document.createElement("div");
-  comparison.classList.add("ability__comparison");
-  comparison.appendChild(
-    BaseRenderer.renderComparison(bestPosition.ratingWithXp, ratingSettings)
-  );
-
-  abilityDescription.appendChild(abilityValue);
-  abilityBox.appendChild(comparison);
-  abilityBox.appendChild(abilityDescription);
-
-  abilityBox.appendChild(allPositions);
-
-  contentColumn.appendChild(abilityBox);
-
-  /**
-   * Potential Box
-   */
-  const potentialBox = document.createElement("div");
-  potentialBox.classList.add("player-profile");
-  potentialBox.classList.add("player-profile--potential");
-
-  const potentials = player.getPositionTrainingQualities();
-  console.log(potentials);
-  const currentPositionTrainingQualities =
-    player.getCurrentPositionTrainingQuality();
-  console.log(currentPositionTrainingQualities);
-
-  const potentialBadge = BaseRenderer.renderPotentialBadge(
-    currentPositionTrainingQualities.totalTrainingQuality
-  );
-  potentialBox.appendChild(potentialBadge);
-
-  const potentialDescription = BaseRenderer.renderPotential({
-    position: currentPositionTrainingQualities.position,
-    basePotential: currentPositionTrainingQualities.baseTrainingQuality,
-    bonusPotential: currentPositionTrainingQualities.bonusTrainingQuality,
-    totalPotential: currentPositionTrainingQualities.totalTrainingQuality,
-  });
-  potentialBox.appendChild(potentialDescription);
-
-  const allPotentials = document.createElement("div");
-  allPotentials.classList.add("potential__positions");
-
-  let potentialList = ``;
-
-  potentials.forEach((potential) => {
-    potentialList += `<div>${potential.position} ${potential.totalTrainingQuality}</div>`;
-  });
-
-  allPotentials.innerHTML = potentialList;
-  potentialBox.appendChild(allPotentials);
-
-  contentColumn.appendChild(potentialBox);
+  const chartApp = createApp(PlayerGrowthChart, { player });
+  chartApp.mount(chartContainer);
 };
 
 export default viewPlayerProfile;
