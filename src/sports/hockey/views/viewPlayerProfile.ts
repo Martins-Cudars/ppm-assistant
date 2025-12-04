@@ -127,12 +127,12 @@ const viewPlayerProfile = () => {
   const chartContainer = document.createElement("div");
   chartContainer.id = "ppm-assistant-chart";
 
-  // Insert after table-1
-  if (playerTable.parentNode) {
-    playerTable.parentNode.insertBefore(
-      chartContainer,
-      playerTable.nextSibling
-    );
+  const centerColumn = document.querySelector(".column_center_inner");
+  if (centerColumn) {
+    centerColumn.appendChild(chartContainer);
+  } else if (playerTable.parentNode) {
+    // Fallback if column_center_inner is not found
+    playerTable.parentNode.appendChild(chartContainer);
   }
 
   const chartApp = createApp(PlayerGrowthChart, { player });
