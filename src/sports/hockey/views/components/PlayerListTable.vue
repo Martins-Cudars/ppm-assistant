@@ -25,8 +25,12 @@ const filteredPlayers = computed(() => {
 });
 
 const getCountForPosition = (posName: string) => {
-  return store.players.filter((p) => p.getBestPosition().name === posName)
-    .length;
+  return store.players.filter((p) => {
+    const positionMatch =
+      posName === "All" ? true : p.getBestPosition().name === posName;
+    const ageMatch = p.age >= minAge.value && p.age <= maxAge.value;
+    return positionMatch && ageMatch;
+  }).length;
 };
 
 const setPosition = (pos: string) => {
@@ -130,7 +134,7 @@ const tableColumns = computed<Column[]>(() => {
           @click="setPosition('All')"
           :class="{ active: selectedPosition === 'All' }"
         >
-          All ({{ store.players.length }})
+          All ({{ getCountForPosition("All") }})
         </button>
         <button
           v-for="pos in positionSettings"
