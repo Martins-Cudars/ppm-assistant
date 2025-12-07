@@ -5,6 +5,7 @@ import { calculateSkillWithExp } from "@/base/calculations";
 export type HockeyPlayerInfo = BaseInfo & {
   preferredSide: "L" | "R" | "U";
   countryImage?: string;
+  countryLink?: string;
   teamPosition?: string;
 };
 
@@ -45,6 +46,7 @@ export class HockeyPlayer extends BasePlayer {
 
   public preferredSide: "L" | "R" | "U";
   public countryImage?: string;
+  public countryLink?: string;
   public teamPosition?: string;
   public positions: HockeyPlayerPosition[] = []; // Initialize arrays
   public positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
@@ -73,6 +75,7 @@ export class HockeyPlayer extends BasePlayer {
     );
     this.preferredSide = baseInfo.preferredSide;
     this.countryImage = baseInfo.countryImage;
+    this.countryLink = baseInfo.countryLink;
     this.teamPosition = baseInfo.teamPosition;
   }
 

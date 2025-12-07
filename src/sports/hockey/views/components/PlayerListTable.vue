@@ -11,15 +11,23 @@ import SortableTable, { type Column } from "@/components/SortableTable.vue";
 
 const store = usePlayerStore();
 const selectedPosition = ref("All");
+const minAge = ref(15);
+const maxAge = ref(50);
 
 const filteredPlayers = computed(() => {
-  if (selectedPosition.value === "All") {
-    return store.players;
-  }
   return store.players.filter((player: HockeyPlayer) => {
-    return player.getBestPosition().name === selectedPosition.value;
+    const matchesPosition =
+      selectedPosition.value === "All" ||
+      player.getBestPosition().name === selectedPosition.value;
+    const matchesAge = player.age >= minAge.value && player.age <= maxAge.value;
+    return matchesPosition && matchesAge;
   });
 });
+
+const getCountForPosition = (posName: string) => {
+  return store.players.filter((p) => p.getBestPosition().name === posName)
+    .length;
+};
 
 const setPosition = (pos: string) => {
   selectedPosition.value = pos;
@@ -117,16 +125,43 @@ const tableColumns = computed<Column[]>(() => {
 <template>
   <div class="player-list-vue">
     <div class="position-filter white_box">
-      <button @click="setPosition('All')">
-        All ({{ store.players.length }})
-      </button>
-      <button
-        v-for="pos in positionSettings"
-        :key="pos.name"
-        @click="setPosition(pos.name)"
-      >
-        {{ pos.name }}
-      </button>
+      <div class="position-buttons">
+        <button
+          @click="setPosition('All')"
+          :class="{ active: selectedPosition === 'All' }"
+        >
+          All ({{ store.players.length }})
+        </button>
+        <button
+          v-for="pos in positionSettings"
+          :key="pos.name"
+          @click="setPosition(pos.name)"
+          :class="{ active: selectedPosition === pos.name }"
+        >
+          {{ pos.name }} ({{ getCountForPosition(pos.name) }})
+        </button>
+      </div>
+
+      <div class="age-filter">
+        <label>
+          Age:
+          <input
+            type="number"
+            v-model.number="minAge"
+            min="15"
+            max="50"
+            class="age-input"
+          />
+          -
+          <input
+            type="number"
+            v-model.number="maxAge"
+            min="15"
+            max="50"
+            class="age-input"
+          />
+        </label>
+      </div>
     </div>
 
     <SortableTable
@@ -135,11 +170,11 @@ const tableColumns = computed<Column[]>(() => {
       :default-sort="{ key: 'overallRating', dir: 'desc' }"
     >
       <template #name="{ item }">
-        <a v-if="item.countryImage" href="#" class="flag_link">
+        <a v-if="item.countryImage" :href="item.countryLink" class="flag_link">
           <img
             :src="item.countryImage"
             height="16"
-            style="vertical-align: middle"
+            style="vertical-align: middle; margin-right: 5px"
             align="absMiddle"
           />
         </a>
@@ -203,9 +238,27 @@ const tableColumns = computed<Column[]>(() => {
 .position-filter {
   margin-bottom: 10px;
   padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.position-filter button {
+
+.position-buttons button {
   margin-right: 5px;
   cursor: pointer;
+}
+
+button.active {
+  font-weight: bold;
+}
+
+.age-filter {
+  display: flex;
+  align-items: center;
+}
+
+.age-input {
+  width: 50px;
+  margin: 0 5px;
 }
 </style>

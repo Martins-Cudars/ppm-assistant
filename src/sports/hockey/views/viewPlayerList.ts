@@ -28,6 +28,8 @@ const viewPlayerList = () => {
     const countryImg = playerColumns[0].querySelector(
       "img"
     ) as HTMLImageElement;
+    const countryLinkElement = countryImg?.parentNode as HTMLAnchorElement;
+    const countryLink = countryLinkElement?.href;
 
     const isScouted = !!playerColumns[3].querySelector("img");
 
@@ -71,6 +73,7 @@ const viewPlayerList = () => {
         preferredSide:
           (playerColumns[15].textContent?.trim() as "L" | "R" | "U") || "U",
         countryImage: countryImg?.src,
+        countryLink: countryLink,
         teamPosition: playerColumns[1].textContent?.trim(),
       },
       new Date(),
