@@ -11,11 +11,13 @@ const props = defineProps<{
 
 const calculateAverage = (
   items: HockeyPlayer[],
-  getValue: (p: HockeyPlayer) => number
+  getValue: (p: HockeyPlayer) => number,
+  decimals = 0
 ) => {
-  if (items.length === 0) return 0;
+  if (items.length === 0) return decimals === 0 ? 0 : (0).toFixed(decimals);
   const sum = items.reduce((acc, p) => acc + getValue(p), 0);
-  return Math.round(sum / items.length);
+  const avg = sum / items.length;
+  return decimals === 0 ? Math.round(avg) : avg.toFixed(decimals);
 };
 
 const top22 = computed(() => {
@@ -44,7 +46,7 @@ const getPositionalStats = (position: string, count: number) => {
   return {
     count: top.length,
     avgSkill: calculateAverage(top, (p) => p.getBestPosition().ratingWithXp),
-    avgAge: calculateAverage(top, (p) => p.age),
+    avgAge: calculateAverage(top, (p) => p.age, 1),
   };
 };
 
@@ -80,11 +82,11 @@ const getMinMaxStats = (position: string, count: number) => {
 const stats = computed(() => ({
   top22: {
     avgOr: calculateAverage(top22.value, (p) => p.overallRating),
-    avgAge: calculateAverage(top22.value, (p) => p.age),
+    avgAge: calculateAverage(top22.value, (p) => p.age, 1),
   },
   top17: {
     avgOr: calculateAverage(top17.value, (p) => p.overallRating),
-    avgAge: calculateAverage(top17.value, (p) => p.age),
+    avgAge: calculateAverage(top17.value, (p) => p.age, 1),
   },
   defenders: getPositionalStats("D", 8),
   wingers: getPositionalStats("W", 8),
