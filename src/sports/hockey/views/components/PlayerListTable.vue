@@ -6,6 +6,7 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import PlayerListStats from "./PlayerListStats.vue";
 
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 
@@ -21,6 +22,12 @@ const filteredPlayers = computed(() => {
       player.getBestPosition().name === selectedPosition.value;
     const matchesAge = player.age >= minAge.value && player.age <= maxAge.value;
     return matchesPosition && matchesAge;
+  });
+});
+
+const ageFilteredPlayers = computed(() => {
+  return store.players.filter((player: HockeyPlayer) => {
+    return player.age >= minAge.value && player.age <= maxAge.value;
   });
 });
 
@@ -235,6 +242,8 @@ const tableColumns = computed<Column[]>(() => {
         />
       </template>
     </SortableTable>
+
+    <PlayerListStats :players="ageFilteredPlayers" :settings="ratingSettings" />
   </div>
 </template>
 
