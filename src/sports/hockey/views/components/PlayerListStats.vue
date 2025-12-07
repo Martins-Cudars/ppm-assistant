@@ -48,6 +48,35 @@ const getPositionalStats = (position: string, count: number) => {
   };
 };
 
+const getMinMaxStats = (position: string, count: number) => {
+  const filtered = props.players.filter(
+    (p) => p.getBestPosition().name === position
+  );
+
+  if (filtered.length === 0) return null;
+
+  const sorted = filtered.sort(
+    (a, b) =>
+      b.getBestPosition().ratingWithXp - a.getBestPosition().ratingWithXp
+  );
+
+  const topN = sorted.slice(0, count);
+
+  const strongest = topN[0];
+  const weakest = topN[topN.length - 1];
+
+  return {
+    strongest: {
+      skill: strongest.getBestPosition().ratingWithXp,
+      age: strongest.age,
+    },
+    weakest: {
+      skill: weakest.getBestPosition().ratingWithXp,
+      age: weakest.age,
+    },
+  };
+};
+
 const stats = computed(() => ({
   top22: {
     avgOr: calculateAverage(top22.value, (p) => p.overallRating),
@@ -61,6 +90,12 @@ const stats = computed(() => ({
   wingers: getPositionalStats("W", 8),
   centers: getPositionalStats("C", 4),
   goalies: getPositionalStats("G", 2),
+  extremes: {
+    defenders: getMinMaxStats("D", 8),
+    wingers: getMinMaxStats("W", 8),
+    centers: getMinMaxStats("C", 4),
+    goalies: getMinMaxStats("G", 2),
+  },
 }));
 </script>
 
@@ -85,28 +120,144 @@ const stats = computed(() => ({
       <div class="stat-group">
         <h4>Positions</h4>
         <div class="stat-row">
-          <span class="stat-label">Top 8 Defender Skill:</span>
+          <span class="stat-label">Top 8 D Skill:</span>
           <strong class="stat-value">{{ stats.defenders.avgSkill }}</strong>
           <span class="stat-age">(Age: {{ stats.defenders.avgAge }})</span>
           <RatingStars :skill="stats.defenders.avgSkill" :settings="settings" />
         </div>
         <div class="stat-row">
-          <span class="stat-label">Top 8 Winger Skill:</span>
+          <span class="stat-label">Top 8 W Skill:</span>
           <strong class="stat-value">{{ stats.wingers.avgSkill }}</strong>
           <span class="stat-age">(Age: {{ stats.wingers.avgAge }})</span>
           <RatingStars :skill="stats.wingers.avgSkill" :settings="settings" />
         </div>
         <div class="stat-row">
-          <span class="stat-label">Top 4 Center Skill:</span>
+          <span class="stat-label">Top 4 C Skill:</span>
           <strong class="stat-value">{{ stats.centers.avgSkill }}</strong>
           <span class="stat-age">(Age: {{ stats.centers.avgAge }})</span>
           <RatingStars :skill="stats.centers.avgSkill" :settings="settings" />
         </div>
         <div class="stat-row">
-          <span class="stat-label">Top 2 Goalie Skill:</span>
+          <span class="stat-label">Top 2 G Skill:</span>
           <strong class="stat-value">{{ stats.goalies.avgSkill }}</strong>
           <span class="stat-age">(Age: {{ stats.goalies.avgAge }})</span>
           <RatingStars :skill="stats.goalies.avgSkill" :settings="settings" />
+        </div>
+      </div>
+
+      <div class="stat-group">
+        <h4>Extremes (Strongest / Weakest)</h4>
+
+        <!-- Defenders -->
+        <div class="stat-row" v-if="stats.extremes.defenders">
+          <span class="stat-label">Strongest D:</span>
+          <strong class="stat-value">{{
+            stats.extremes.defenders.strongest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.defenders.strongest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.defenders.strongest.skill"
+            :settings="settings"
+          />
+        </div>
+        <div class="stat-row" v-if="stats.extremes.defenders">
+          <span class="stat-label">Weakest D:</span>
+          <strong class="stat-value">{{
+            stats.extremes.defenders.weakest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.defenders.weakest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.defenders.weakest.skill"
+            :settings="settings"
+          />
+        </div>
+
+        <!-- Wingers -->
+        <div class="stat-row" v-if="stats.extremes.wingers">
+          <span class="stat-label">Strongest W:</span>
+          <strong class="stat-value">{{
+            stats.extremes.wingers.strongest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.wingers.strongest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.wingers.strongest.skill"
+            :settings="settings"
+          />
+        </div>
+        <div class="stat-row" v-if="stats.extremes.wingers">
+          <span class="stat-label">Weakest W:</span>
+          <strong class="stat-value">{{
+            stats.extremes.wingers.weakest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.wingers.weakest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.wingers.weakest.skill"
+            :settings="settings"
+          />
+        </div>
+
+        <!-- Centers -->
+        <div class="stat-row" v-if="stats.extremes.centers">
+          <span class="stat-label">Strongest C:</span>
+          <strong class="stat-value">{{
+            stats.extremes.centers.strongest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.centers.strongest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.centers.strongest.skill"
+            :settings="settings"
+          />
+        </div>
+        <div class="stat-row" v-if="stats.extremes.centers">
+          <span class="stat-label">Weakest C:</span>
+          <strong class="stat-value">{{
+            stats.extremes.centers.weakest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.centers.weakest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.centers.weakest.skill"
+            :settings="settings"
+          />
+        </div>
+
+        <!-- Goalies -->
+        <div class="stat-row" v-if="stats.extremes.goalies">
+          <span class="stat-label">Strongest G:</span>
+          <strong class="stat-value">{{
+            stats.extremes.goalies.strongest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.goalies.strongest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.goalies.strongest.skill"
+            :settings="settings"
+          />
+        </div>
+        <div class="stat-row" v-if="stats.extremes.goalies">
+          <span class="stat-label">Weakest G:</span>
+          <strong class="stat-value">{{
+            stats.extremes.goalies.weakest.skill
+          }}</strong>
+          <span class="stat-age"
+            >(Age: {{ stats.extremes.goalies.weakest.age }})</span
+          >
+          <RatingStars
+            :skill="stats.extremes.goalies.weakest.skill"
+            :settings="settings"
+          />
         </div>
       </div>
     </div>
@@ -126,9 +277,9 @@ h3 {
 }
 
 .stats-grid {
-  display: flex;
-  gap: 40px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 20px;
 }
 
 .stat-group h4 {
@@ -143,7 +294,7 @@ h3 {
 }
 
 .stat-label {
-  min-width: 140px;
+  min-width: 110px;
 }
 
 .stat-value {
