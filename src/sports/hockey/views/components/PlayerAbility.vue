@@ -14,6 +14,10 @@
           ({{ bestPosition.baseRating }} + {{ bestPosition.bonusRating }} +
           {{ bestPosition.expBonus }})
         </div>
+        <RelativeSkill
+          :skill="bestPosition.ratingWithXp"
+          :maxSkillForAge="player.getMaxSkillForAge()"
+        />
       </div>
     </div>
     <div class="ability__positions">
@@ -29,6 +33,7 @@ import { computed } from "vue";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { ratingSettings } from "@/sports/hockey/settings";
 import RatingStars from "@/components/RatingStars.vue";
+import RelativeSkill from "@/components/RelativeSkill.vue";
 
 const props = defineProps<{
   player: HockeyPlayer;
