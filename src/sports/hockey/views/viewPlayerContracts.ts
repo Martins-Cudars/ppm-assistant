@@ -33,10 +33,20 @@ const viewPlayerContracts = () => {
 
   const totalSalary = items.reduce((acc, item) => acc + item.salary, 0);
 
+  const formatMoney = (val: number) => {
+    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  };
+
   items.forEach((item) => {
     item.salaryPercentage = totalSalary
       ? ((item.salary / totalSalary) * 100).toFixed(1) + "%"
       : "0%";
+    
+    item.contractWorthRaw = item.salary * item.contract;
+    item.contractWorth = formatMoney(item.contractWorthRaw);
+
+    item.seasonSalaryRaw = item.salary * 112;
+    item.seasonSalary = formatMoney(item.seasonSalaryRaw);
   });
 
   const columns = [
@@ -51,6 +61,8 @@ const viewPlayerContracts = () => {
     { header: "Līgums", key: "contract", sortable: true },
     { header: "Alga", key: "salary", sortable: true },
     { header: "Alga %", key: "salaryPercentage", sortable: true },
+    { header: "Līguma vērt.", key: "contractWorth", sortable: true, sortKey: "contractWorthRaw" },
+    { header: "Sezonas alga", key: "seasonSalary", sortable: true, sortKey: "seasonSalaryRaw" },
     { header: "DK", key: "daysInTeam", sortable: true },
     { header: "ALP", key: "alp", slot: "alp" },
   ];
