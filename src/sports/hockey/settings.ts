@@ -89,6 +89,11 @@ const playerGrowthPrediction: GrowthPrediction = [
   { age: 38, skill: 1506, exp: 343 },
   { age: 39, skill: 1456, exp: 361 },
   { age: 40, skill: 1400, exp: 380 },
+  { age: 41, skill: 1335, exp: 398 },
+  { age: 42, skill: 1260, exp: 417 },
+  { age: 43, skill: 1175, exp: 435 },
+  { age: 44, skill: 1080, exp: 454 },
+  { age: 45, skill: 975, exp: 472 },
 ];
 
 export { positionSettings, ratingSettings, playerGrowthPrediction };

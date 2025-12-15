@@ -27,8 +27,8 @@ const calculateData = () => {
   const bestPos = props.player.getBestPosition();
   const currentPureSkill = bestPos.ratingWithBonus;
 
-  // We loop from 15 to 40
-  for (let age = 15; age <= 40; age++) {
+  // We loop from 15 to 45
+  for (let age = 15; age <= 45; age++) {
     ageData.push(age);
 
     const targetGrowthData = playerGrowthPrediction.find((p) => p.age === age);
