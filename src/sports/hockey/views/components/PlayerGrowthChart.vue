@@ -9,6 +9,7 @@ import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
+import { getCurrentSeasonDay } from "@/utils";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -18,52 +19,44 @@ const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
 const calculateData = () => {
-  const ageData = [];
-  const skillData = [];
-  const skillWithExpData = [];
   const projectedPureData = [];
   const projectedTotalData = [];
+  const currentPureData = [];
+  const currentTotalData = [];
 
   const bestPos = props.player.getBestPosition();
   const currentPureSkill = bestPos.ratingWithBonus;
+  const currentTotalSkill = bestPos.ratingWithXp;
 
   // We loop from 15 to 45
   for (let age = 15; age <= 45; age++) {
-    ageData.push(age);
-
     const targetGrowthData = playerGrowthPrediction.find((p) => p.age === age);
 
     if (targetGrowthData) {
-        // Base / Pure skill line
-        projectedPureData.push(targetGrowthData.skill);
+      // Base / Pure skill line
+      projectedPureData.push({ x: age, y: targetGrowthData.skill });
 
-        // Total skill line (Skill + Exp bonus)
-        // Formula: skill * (1 + exp / 500)
-        // We can check how calculateSkillWithExp is implemented or just replicate it:
-        // Math.round(skill * (1 + experience / 500))
-        const total = Math.round(targetGrowthData.skill * (1 + targetGrowthData.exp / 500));
-        projectedTotalData.push(total);
-    } else {
-        projectedPureData.push(null);
-        projectedTotalData.push(null);
-    }
-
-    // Player's current point
-    if (age === props.player.age) {
-      skillData.push(currentPureSkill);
-      skillWithExpData.push(bestPos.ratingWithXp);
-    } else {
-      skillData.push(null);
-      skillWithExpData.push(null);
+      // Total skill line (Skill + Exp bonus)
+      const total = Math.round(
+        targetGrowthData.skill * (1 + targetGrowthData.exp / 500)
+      );
+      projectedTotalData.push({ x: age, y: total });
     }
   }
 
+  // Player position
+  const seasonDay = getCurrentSeasonDay() || 1;
+  const seasonProgress = seasonDay / 112;
+  const exactAge = props.player.age + seasonProgress;
+
+  currentPureData.push({ x: exactAge, y: currentPureSkill });
+  currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+
   return {
-    ageData,
-    skillData,
-    skillWithExpData,
     projectedPureData,
     projectedTotalData,
+    currentPureData,
+    currentTotalData,
   };
 };
 
@@ -75,17 +68,15 @@ const renderChartWithLogic = () => {
   }
 
   const {
-    ageData,
-    skillData,
-    skillWithExpData,
     projectedPureData,
     projectedTotalData,
+    currentPureData,
+    currentTotalData,
   } = calculateData();
 
   chartInstance = new Chart(chartCanvas.value, {
     type: "line",
     data: {
-      labels: ageData,
       datasets: [
         {
           label: "Top Player Skill (Total)",
@@ -113,7 +104,7 @@ const renderChartWithLogic = () => {
         },
         {
           label: "Current Skill (Total)",
-          data: skillWithExpData,
+          data: currentTotalData,
           borderColor: "rgba(255, 99, 132, 1)",
           backgroundColor: "rgba(255, 99, 132, 0.5)",
           pointRadius: 10,
@@ -122,7 +113,7 @@ const renderChartWithLogic = () => {
         },
         {
           label: "Current Skill (Base)",
-          data: skillData,
+          data: currentPureData,
           borderColor: "rgba(255, 99, 132, 1)",
           backgroundColor: "rgba(255, 99, 132, 1)",
           pointRadius: 10,
@@ -143,9 +134,15 @@ const renderChartWithLogic = () => {
           },
         },
         x: {
+          type: "linear",
+          min: 15,
+          max: 45,
           title: {
             display: true,
             text: "Age",
+          },
+          ticks: {
+            stepSize: 1,
           },
         },
       },
