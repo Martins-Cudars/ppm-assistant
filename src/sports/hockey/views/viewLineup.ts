@@ -23,22 +23,29 @@ const viewLineupChange = () => {
     playerRows.forEach((playerRow, index) => {
       const playerColumns = playerRow.querySelectorAll("td");
 
+
       if (playerColumns.length > 2) {
         const rowClass = index % 2 === 0 ? "tr1" : "tr0";
 
+        const nameLink = playerColumns[1].querySelector(
+          "a.link_name"
+        ) as HTMLAnchorElement;
+        const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
+
         const player = new HockeyPlayer(
           {
-            id: "unknown",
+            id: id,
             name: playerColumns[1].textContent!,
-            age: 0, // Not available in lineup
-            careerLongitivity: 0, // Not available
-            overallRating: 0, // Not available
+            age: parseInt(playerColumns[2].textContent!),
+            careerLongitivity: 0,
+            overallRating: 0,
             averageTrainingRatio: 0,
-            preferredSide: "U",
+            preferredSide: playerColumns[3].textContent as "L" | "R" | "U",
           },
           new Date(),
           false,
           true,
+          1,
           {
             goalie: parseInt(playerColumns[4].textContent!),
             defence: parseInt(playerColumns[5].textContent!),
