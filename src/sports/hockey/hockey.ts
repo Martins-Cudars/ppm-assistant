@@ -7,6 +7,7 @@ import viewLineupChange from "./views/viewLineupChange";
 import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 import viewTrainingCamp from "./views/viewTrainingCamp";
+import viewPlayerContracts from "./views/viewPlayerContracts";
 
 /**
  * Run View Functions
@@ -35,6 +36,7 @@ const initHockey = () => {
   if (routes.editLine.includes(getRoute(url))) viewLineupChange();
   if (routes.market.includes(getRoute(url))) viewMarket();
   if (routes.trainingCamp.includes(getRoute(url))) viewTrainingCamp();
+  if (routes.contracts.includes(getRoute(url))) viewPlayerContracts();
 
   // TODO: Create next game view
   // if (routes.nextGame.includes(getRoute(url))) viewNextGame();

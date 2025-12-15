@@ -7,4 +7,5 @@ export default {
   nextGame: ["/en/next-game", "/lv/nakosa-spele"],
   market: ["/en/market", "/lv/tirgus"],
   trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
+  contracts: ["/en/players-contracts", "/lv/speletaju-ligumi"],
 };
