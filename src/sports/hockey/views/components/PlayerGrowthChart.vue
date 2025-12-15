@@ -26,40 +26,29 @@ const calculateData = () => {
 
   const bestPos = props.player.getBestPosition();
   const currentPureSkill = bestPos.ratingWithBonus;
-  const currentGrowthData = playerGrowthPrediction[props.player.age - 15];
-  const currentGrowth = currentGrowthData ? currentGrowthData.skill : 1;
-  const currentExpGrowth = currentGrowthData ? currentGrowthData.exp : 1;
 
+  // We loop from 15 to 40
   for (let age = 15; age <= 40; age++) {
     ageData.push(age);
 
-    const targetGrowthData = playerGrowthPrediction[age - 15];
-    const targetGrowth = targetGrowthData ? targetGrowthData.skill : 1;
-    const targetExpGrowth = targetGrowthData ? targetGrowthData.exp : 0;
+    const targetGrowthData = playerGrowthPrediction.find((p) => p.age === age);
 
-    const projectedPureSkill =
-      (targetGrowth / currentGrowth) * currentPureSkill;
-    projectedPureData.push(projectedPureSkill);
+    if (targetGrowthData) {
+        // Base / Pure skill line
+        projectedPureData.push(targetGrowthData.skill);
 
-    // Project Exp
-    let projectedExp = 0;
-    if (props.player.experience > 0 && currentExpGrowth > 0) {
-      projectedExp =
-        (targetExpGrowth / currentExpGrowth) * props.player.experience;
+        // Total skill line (Skill + Exp bonus)
+        // Formula: skill * (1 + exp / 500)
+        // We can check how calculateSkillWithExp is implemented or just replicate it:
+        // Math.round(skill * (1 + experience / 500))
+        const total = Math.round(targetGrowthData.skill * (1 + targetGrowthData.exp / 500));
+        projectedTotalData.push(total);
     } else {
-      projectedExp = 0;
-      if (targetExpGrowth > 0) {
-        // Fallback if no current exp, assume 0 for projection or use raw growth curve if we wanted to be generous,
-        // but 0 is safer/more accurate for a player with 0 exp.
-        projectedExp = 0;
-      }
+        projectedPureData.push(null);
+        projectedTotalData.push(null);
     }
 
-    const projectedExpBonus = Math.floor(
-      projectedPureSkill * (projectedExp / 500)
-    );
-    projectedTotalData.push(projectedPureSkill + projectedExpBonus);
-
+    // Player's current point
     if (age === props.player.age) {
       skillData.push(currentPureSkill);
       skillWithExpData.push(bestPos.ratingWithXp);
@@ -99,7 +88,7 @@ const renderChartWithLogic = () => {
       labels: ageData,
       datasets: [
         {
-          label: "Projected Skill (Total)",
+          label: "Top Player Skill (Total)",
           data: projectedTotalData,
           borderColor: "#ccc",
           backgroundColor: "#ccc",
@@ -111,7 +100,7 @@ const renderChartWithLogic = () => {
           tension: 0.4,
         },
         {
-          label: "Projected Skill (Base)",
+          label: "Top Player Skill (Base)",
           data: projectedPureData,
           borderColor: "#ccc",
           backgroundColor: "#ccc",
