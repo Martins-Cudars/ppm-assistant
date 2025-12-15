@@ -27,8 +27,16 @@ const viewPlayerContracts = () => {
       contract: parseInt(cells[2].textContent || "0"),
       salary: parseInt(cells[3].textContent || "0"),
       daysInTeam: parseInt(cells[4].textContent || "0"),
-      // ignoring checkbox for now
+    // ignoring checkbox for now
     });
+  });
+
+  const totalSalary = items.reduce((acc, item) => acc + item.salary, 0);
+
+  items.forEach((item) => {
+    item.salaryPercentage = totalSalary
+      ? ((item.salary / totalSalary) * 100).toFixed(1) + "%"
+      : "0%";
   });
 
   const columns = [
@@ -42,6 +50,7 @@ const viewPlayerContracts = () => {
     { header: "Vecums", key: "age", sortable: true },
     { header: "Līgums", key: "contract", sortable: true },
     { header: "Alga", key: "salary", sortable: true },
+    { header: "Alga %", key: "salaryPercentage", sortable: true },
     { header: "DK", key: "daysInTeam", sortable: true },
     { header: "ALP", key: "alp", slot: "alp" },
   ];
