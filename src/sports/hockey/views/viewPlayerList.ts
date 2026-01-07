@@ -31,7 +31,17 @@ const viewPlayerList = () => {
     const countryLinkElement = countryImg?.parentNode as HTMLAnchorElement;
     const countryLink = countryLinkElement?.href;
 
-    const isScouted = !!playerColumns[3].querySelector("img");
+    const scoutingImg = playerColumns[3].querySelector("img");
+    let scoutingStatus: "SCOUTED" | "IN_PROGRESS" | "UNSCOUTED" = "UNSCOUTED";
+
+    if (scoutingImg) {
+      const src = (scoutingImg as HTMLImageElement).src;
+      if (src.includes("scouted_yes.png")) {
+        scoutingStatus = "SCOUTED";
+      } else if (src.includes("scouted_no.png")) {
+        scoutingStatus = "IN_PROGRESS";
+      }
+    }
 
     // Parse injury
     let injuryDays = 0;
@@ -77,7 +87,7 @@ const viewPlayerList = () => {
         teamPosition: playerColumns[1].textContent?.trim(),
       },
       new Date(),
-      isScouted,
+      scoutingStatus,
       true,
       seasonDay,
       {

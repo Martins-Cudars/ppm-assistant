@@ -40,6 +40,8 @@ export type HockeySkills = {
   aggression: number;
 };
 
+export type ScoutingStatus = "SCOUTED" | "IN_PROGRESS" | "UNSCOUTED";
+
 export class HockeyPlayer extends BasePlayer {
   private static readonly BONUS_CAP_RATIO = 0.6;
   private static readonly EXPERIENCE_DIVISOR = 500;
@@ -48,13 +50,14 @@ export class HockeyPlayer extends BasePlayer {
   public countryImage?: string;
   public countryLink?: string;
   public teamPosition?: string;
+  public scoutingStatus: ScoutingStatus;
   public positions: HockeyPlayerPosition[] = []; // Initialize arrays
   public positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
 
   constructor(
     baseInfo: HockeyPlayerInfo,
     updatedAt = new Date(),
-    isScouted = false,
+    scoutingStatus: ScoutingStatus = "UNSCOUTED",
     isVisible = false,
     seasonDay = 1,
     skills?: HockeySkills, // Use optional parameter syntax
@@ -65,7 +68,7 @@ export class HockeyPlayer extends BasePlayer {
     super(
       baseInfo,
       updatedAt,
-      isScouted,
+      scoutingStatus === "SCOUTED",
       isVisible,
       seasonDay,
       skills,
@@ -77,6 +80,7 @@ export class HockeyPlayer extends BasePlayer {
     this.countryImage = baseInfo.countryImage;
     this.countryLink = baseInfo.countryLink;
     this.teamPosition = baseInfo.teamPosition;
+    this.scoutingStatus = scoutingStatus;
   }
 
   override calculatePositions() {

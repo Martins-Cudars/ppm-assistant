@@ -207,15 +207,36 @@ const tableColumns = computed<Column[]>(() => {
       </template>
 
       <template #scouted="{ item }">
-        <img
-          v-if="item.isScouted"
-          src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png"
-          title="Izpētīts"
-          alt="Izpētīts"
-          width="16"
-          height="14"
-          border="0"
-        />
+        <template v-if="item.scoutingStatus === 'SCOUTED'">
+          <img
+            src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_yes.png"
+            title="Izpētīts"
+            alt="Izpētīts"
+            width="16"
+            height="14"
+            border="0"
+          />
+        </template>
+        <template v-else-if="item.scoutingStatus === 'IN_PROGRESS'">
+          <img
+            src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_no.png"
+            title="Notiek izlūkošana"
+            alt="Notiek izlūkošana"
+            width="17"
+            height="17"
+            border="0"
+          />
+        </template>
+        <template v-else-if="item.scoutingStatus === 'UNSCOUTED'">
+          <img
+            src="https://www.powerplaymanager.com/hockey/_images/account/icons/scouted_none.png"
+            title="Neizpētīts"
+            alt="Neizpētīts"
+            width="17"
+            height="17"
+            border="0"
+          />
+        </template>
       </template>
 
       <template #cl="{ item }"> {{ item.careerLongitivity }}/6 </template>
