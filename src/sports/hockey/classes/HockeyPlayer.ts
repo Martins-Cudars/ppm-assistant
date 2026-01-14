@@ -45,6 +45,16 @@ export type ScoutingStatus = "SCOUTED" | "IN_PROGRESS" | "UNSCOUTED";
 export class HockeyPlayer extends BasePlayer {
   private static readonly BONUS_CAP_RATIO = 0.6;
   private static readonly EXPERIENCE_DIVISOR = 500;
+  private static readonly DAYS_PER_SEASON = 112;
+
+  // Defense position bonus weights
+  private static readonly DEFENSE_SHOOTING_WEIGHT = 0.25;
+  private static readonly DEFENSE_TECHNICAL_WEIGHT = 0.25;
+  private static readonly DEFENSE_OFFENCE_WEIGHT = 0.1;
+
+  // Winger/Center position bonus weights
+  private static readonly FORWARD_SHOOTING_WEIGHT = 0.45;
+  private static readonly FORWARD_DEFENSE_WEIGHT = 0.1;
 
   public preferredSide: "L" | "R" | "U";
   public countryImage?: string;
@@ -101,9 +111,9 @@ export class HockeyPlayer extends BasePlayer {
           )
         ),
         Math.floor(
-          this.skills.shooting * 0.25 +
-            this.skills.technical * 0.25 +
-            this.skills.offence * 0.1
+          this.skills.shooting * HockeyPlayer.DEFENSE_SHOOTING_WEIGHT +
+            this.skills.technical * HockeyPlayer.DEFENSE_TECHNICAL_WEIGHT +
+            this.skills.offence * HockeyPlayer.DEFENSE_OFFENCE_WEIGHT
         )
       ),
       this.createPosition(
@@ -115,7 +125,10 @@ export class HockeyPlayer extends BasePlayer {
             this.skills.aggression * 2
           )
         ),
-        Math.floor(this.skills.shooting * 0.45 + this.skills.defence * 0.1)
+        Math.floor(
+          this.skills.shooting * HockeyPlayer.FORWARD_SHOOTING_WEIGHT +
+            this.skills.defence * HockeyPlayer.FORWARD_DEFENSE_WEIGHT
+        )
       ),
       this.createPosition(
         "C",
@@ -126,7 +139,10 @@ export class HockeyPlayer extends BasePlayer {
             this.skills.technical * 2
           )
         ),
-        Math.floor(this.skills.shooting * 0.45 + this.skills.defence * 0.1)
+        Math.floor(
+          this.skills.shooting * HockeyPlayer.FORWARD_SHOOTING_WEIGHT +
+            this.skills.defence * HockeyPlayer.FORWARD_DEFENSE_WEIGHT
+        )
       ),
       this.createPosition(
         "G",
@@ -248,7 +264,7 @@ export class HockeyPlayer extends BasePlayer {
     );
 
     const bonusTrainingQuality = Math.floor(
-      bonusTrainingQualities
+      bonusTrainingQualities && bonusTrainingQualitiesTotalWeight > 0
         ? bonusTrainingQualities.reduce(
             (acc, curr) => acc + curr.value * curr.weight,
             0
@@ -296,7 +312,7 @@ export class HockeyPlayer extends BasePlayer {
     let exp = predictionByAge.exp;
 
     if (nextPrediction) {
-      const seasonProgress = this.seasonDay / 112;
+      const seasonProgress = this.seasonDay / HockeyPlayer.DAYS_PER_SEASON;
       skill += (nextPrediction.skill - predictionByAge.skill) * seasonProgress;
       exp += (nextPrediction.exp - predictionByAge.exp) * seasonProgress;
     }

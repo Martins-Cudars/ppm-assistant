@@ -30,7 +30,7 @@ export class BasePlayer {
   public trainingQualities: Record<string, number> | undefined;
   public experience: number;
   public age: number;
-  public careerLongitivity: number;
+  public careerLongitivity: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   public overallRating: number;
   public averageTrainingRatio: number;
   public isScouted: boolean;
@@ -78,7 +78,7 @@ export class BasePlayer {
   }
 
   getBestPosition(): BasePosition {
-    return this.positions.sort(
+    return [...this.positions].sort(
       (a, b) => b.ratingWithBonus - a.ratingWithBonus
     )[0];
   }
@@ -92,11 +92,7 @@ export class BasePlayer {
   }
 
   getBestPositionTrainingQuality(): BaseTrainingQuality {
-    console.log(
-      "Calculating position training qualities for player",
-      this.positionTrainingQualities
-    );
-    return this.positionTrainingQualities.sort(
+    return [...this.positionTrainingQualities].sort(
       (a, b) => b.totalTrainingQuality - a.totalTrainingQuality
     )[0];
   }
@@ -104,9 +100,15 @@ export class BasePlayer {
   getCurrentPositionTrainingQuality(): BaseTrainingQuality {
     const currentPosition = this.getBestPosition().name;
 
-    return this.positionTrainingQualities.find(
+    const quality = this.positionTrainingQualities.find(
       (ptq) => ptq.position === currentPosition
-    )!;
+    );
+
+    if (!quality) {
+      throw new Error(`No training quality found for position: ${currentPosition}`);
+    }
+
+    return quality;
   }
 
   getMaxSkillForAge(): number {
