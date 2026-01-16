@@ -44,7 +44,7 @@
       ],
       "include_globs": [
         "*speletaju-ligumi*",
-        "*players-contracts*"
+        "*player-contracts*"
       ],
       "css": [
         "hide-table.css"
