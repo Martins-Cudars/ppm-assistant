@@ -37,6 +37,9 @@ const calculateData = () => {
     C: [],
   };
 
+  // Group skills by age for average calculation
+  const skillsByAge: Record<number, number[]> = {};
+
   props.players.forEach((player) => {
     const bestPos = player.getBestPosition();
     const exactAge = player.age + seasonProgress;
@@ -47,7 +50,21 @@ const calculateData = () => {
       y: skill,
       name: player.name,
     });
+
+    // Collect skills by integer age
+    if (!skillsByAge[player.age]) {
+      skillsByAge[player.age] = [];
+    }
+    skillsByAge[player.age].push(skill);
   });
+
+  // Calculate average skill per age
+  const averageData = Object.entries(skillsByAge)
+    .map(([age, skills]) => ({
+      x: parseInt(age) + seasonProgress,
+      y: Math.round(skills.reduce((a, b) => a + b, 0) / skills.length),
+    }))
+    .sort((a, b) => a.x - b.x);
 
   // Growth prediction line (total skill with exp)
   const projectedData = playerGrowthPrediction.map((p) => ({
@@ -55,7 +72,7 @@ const calculateData = () => {
     y: Math.round(p.skill * (1 + p.exp / 500)),
   }));
 
-  return { playersByPosition, projectedData };
+  return { playersByPosition, projectedData, averageData };
 };
 
 const renderChart = () => {
@@ -65,7 +82,7 @@ const renderChart = () => {
     chartInstance.destroy();
   }
 
-  const { playersByPosition, projectedData } = calculateData();
+  const { playersByPosition, projectedData, averageData } = calculateData();
 
   const datasets = [
     {
@@ -78,6 +95,18 @@ const renderChart = () => {
       showLine: true,
       tension: 0.4,
       order: 10,
+    },
+    {
+      label: "Team Average",
+      data: averageData,
+      borderColor: "#E91E63",
+      backgroundColor: "transparent",
+      borderWidth: 3,
+      pointRadius: 4,
+      pointBackgroundColor: "#E91E63",
+      showLine: true,
+      tension: 0.3,
+      order: 5,
     },
     ...Object.entries(playersByPosition).map(([position, data]) => ({
       label: position,
