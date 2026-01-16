@@ -34,9 +34,33 @@
       "css": [
         "styles.css"
       ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
+      ],
+      "include_globs": [
+        "*speletaju-ligumi*",
+        "*players-contracts*"
+      ],
+      "css": [
+        "hide-table.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://hockey.powerplaymanager.com/*",
+        "https://soccer.powerplaymanager.com/*",
+        "https://basketball.powerplaymanager.com/*"
+      ],
       "js": [
         "main.js"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ],
   "permissions": [

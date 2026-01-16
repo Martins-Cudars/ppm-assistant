@@ -76,8 +76,7 @@ const viewPlayerContracts = () => {
     { header: "ALP", key: "alp", slot: "alp" },
   ];
 
-  // Hide original table but keep it in DOM for data parsing and event triggering
-  (table as HTMLElement).style.display = "none";
+  // Original table is hidden via CSS (hide-table.css) loaded at document_start
 
   const container = document.createElement("div");
   table.parentNode?.insertBefore(container, table.nextSibling);
