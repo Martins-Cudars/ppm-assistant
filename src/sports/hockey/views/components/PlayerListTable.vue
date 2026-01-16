@@ -7,6 +7,7 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
 import PlayerListStats from "./PlayerListStats.vue";
+import PlayerListChart from "./PlayerListChart.vue";
 
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 
@@ -265,6 +266,8 @@ const tableColumns = computed<Column[]>(() => {
     </SortableTable>
 
     <PlayerListStats :players="ageFilteredPlayers" :settings="ratingSettings" />
+
+    <PlayerListChart :players="ageFilteredPlayers" />
   </div>
 </template>
 
