@@ -21,13 +21,22 @@ const viewPlayerContracts = () => {
 
     if (cells.length < 6) return;
 
+    // Extract ALP (auto-renewal) link info from last cell
+    const alpCell = cells[5];
+    const alpLink = alpCell.querySelector("a");
+    const alpHref = alpLink?.getAttribute("href") || "";
+    // Check for checkbox_mini_yes/checkbox_mini_no class to determine state
+    const alpCheckbox = alpCell.querySelector("[class*='checkbox_mini']");
+    const alpEnabled = alpCheckbox?.classList.contains("checkbox_mini_yes") || false;
+
     items.push({
       nameHtml: cells[0].innerHTML,
       age: parseInt(cells[1].textContent || "0"),
       contract: parseInt(cells[2].textContent || "0"),
       salary: parseInt(cells[3].textContent || "0"),
       daysInTeam: parseInt(cells[4].textContent || "0"),
-    // ignoring checkbox for now
+      alpEnabled,
+      alpHref,
     });
   });
 
@@ -66,6 +75,9 @@ const viewPlayerContracts = () => {
     { header: "DK", key: "daysInTeam", sortable: true },
     { header: "ALP", key: "alp", slot: "alp" },
   ];
+
+  // Hide original table but keep it in DOM for data parsing and event triggering
+  (table as HTMLElement).style.display = "none";
 
   const container = document.createElement("div");
   table.parentNode?.insertBefore(container, table.nextSibling);

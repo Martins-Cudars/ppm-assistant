@@ -5,8 +5,12 @@
         <span v-html="item.nameHtml"></span>
       </template>
       <template #alp="{ item }">
-        <!-- Placeholder for checkbox -->
-        <span></span>
+        <input
+          type="checkbox"
+          :checked="item.alpEnabled"
+          @change="toggleAlp(item.alpHref)"
+          class="alp-checkbox"
+        />
       </template>
     </SortableTable>
   </div>
@@ -19,6 +23,12 @@ defineProps<{
   items: any[];
   columns: any[];
 }>();
+
+const toggleAlp = (href: string) => {
+  if (href) {
+    window.location.href = href;
+  }
+};
 </script>
 
 <style scoped>
@@ -28,6 +38,12 @@ defineProps<{
 
 :deep(.text-left) {
   text-align: left !important;
-  padding-left: 10px !important; /* Adding some padding for better look */
+  padding-left: 10px !important;
+}
+
+.alp-checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
 }
 </style>
