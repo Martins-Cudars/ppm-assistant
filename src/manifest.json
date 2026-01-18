@@ -38,9 +38,7 @@
     },
     {
       "matches": [
-        "https://hockey.powerplaymanager.com/*",
-        "https://soccer.powerplaymanager.com/*",
-        "https://basketball.powerplaymanager.com/*"
+        "https://hockey.powerplaymanager.com/*"
       ],
       "include_globs": [
         "*speletaju-ligumi*",

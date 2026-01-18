@@ -9,10 +9,10 @@ Chrome extension that enhances PowerPlay Manager (PPM) browser game by parsing D
 ## Commands
 
 ```bash
-npm run dev        # Build with watch mode for development
-npm run build      # Production build to ./dist
-npm run lint       # ESLint
-npm run type-check # TypeScript type checking
+pnpm dev        # Build with watch mode for development
+pnpm build      # Production build to ./dist
+pnpm lint       # ESLint
+pnpm type-check # TypeScript type checking
 ```
 
 After building, load `./dist` folder as unpacked extension in `chrome://extensions`.
