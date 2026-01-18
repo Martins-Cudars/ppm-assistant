@@ -15,7 +15,9 @@
         "icons/star-diamond.svg",
         "icons/star-gold.svg",
         "icons/star-silver.svg",
-        "icons/star-empty.svg"
+        "icons/star-empty.svg",
+        "test.html",
+        "full-player-table.html"
       ],
       "matches": [
         "https://hockey.powerplaymanager.com/*",

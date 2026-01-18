@@ -8,12 +8,18 @@ import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 import viewTrainingCamp from "./views/viewTrainingCamp";
 import viewPlayerContracts from "./views/viewPlayerContracts";
+import { clearInvalidCaches } from "@/storage/playerCache";
 
 /**
  * Run View Functions
  */
 
 const initHockey = () => {
+  // Clean up any invalid cache entries on startup
+  clearInvalidCaches().catch((error) => {
+    console.error("[Hockey] Failed to clear invalid caches:", error);
+  });
+
   const urlRegex =
     /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
 

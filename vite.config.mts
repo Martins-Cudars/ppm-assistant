@@ -20,8 +20,9 @@ export default defineConfig({
       output: {
         entryFileNames: "main.js",
         assetFileNames: "[name].[ext]",
-        format: "iife", // IIFE format - bundles everything, no imports
-        name: "PPMAssistant",
+        chunkFileNames: "chunk.js",
+        format: "iife", // IIFE format for content script (no imports)
+        inlineDynamicImports: true, // Inline everything into main.js
       },
     },
   },

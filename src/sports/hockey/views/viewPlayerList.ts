@@ -25,7 +25,7 @@ const viewPlayerList = () => {
     const nameLink = playerColumns[0].querySelector(
       "a.link_name"
     ) as HTMLAnchorElement;
-    const id = nameLink?.href.split("data=")[1] || "unknown";
+    const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
     const countryImg = playerColumns[0].querySelector(
       "img"
     ) as HTMLImageElement;

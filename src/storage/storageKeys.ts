@@ -5,12 +5,37 @@
 
 /**
  * Extracts team ID from the current page's top navigation
+ * Tries multiple selectors to find the user's team link
  * @returns Team ID string or "unknown" if not found
  */
 export function getTeamId(): string {
-  const teamLink = document.querySelector(".top_info_team a[href*='team']") as HTMLAnchorElement;
-  const match = teamLink?.href.match(/data=(\d+)/);
-  return match ? match[1] : "unknown";
+  // Try the top_info_team link first (most common)
+  let teamLink = document.querySelector(".top_info_team a[href*='team']") as HTMLAnchorElement;
+
+  // If not found, try the main navigation team link
+  if (!teamLink) {
+    teamLink = document.querySelector("a[href*='komanda.html'], a[href*='team.html']") as HTMLAnchorElement;
+  }
+
+  // If still not found, try any team link in the header/navigation
+  if (!teamLink) {
+    teamLink = document.querySelector(".top_bar a[href*='data='], .navigation a[href*='komanda']") as HTMLAnchorElement;
+  }
+
+  if (!teamLink) {
+    console.warn("[StorageKeys] Could not find team ID in page. Team link not found.");
+    return "unknown";
+  }
+
+  const match = teamLink.href.match(/data=(\d+)/);
+  if (!match) {
+    console.warn("[StorageKeys] Could not extract team ID from URL:", teamLink.href);
+    return "unknown";
+  }
+
+  const teamId = match[1];
+  console.log("[StorageKeys] Extracted team ID:", teamId);
+  return teamId;
 }
 
 /**

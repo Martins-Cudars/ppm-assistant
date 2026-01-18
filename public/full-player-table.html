@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Full Player Table - PPM Assistant</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .controls {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      button {
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      button.danger {
+        background: #dc3545;
+      }
+
+      button.danger:hover {
+        background: #c82333;
+      }
+
+      .info {
+        color: #666;
+        font-size: 14px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background: #f8f9fa;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      th:hover {
+        background: #e9ecef;
+      }
+
+      tr:hover {
+        background: #f8f9fa;
+      }
+
+      .freshness-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .fresh { background: #28a745; color: white; }
+      .stale { background: #ffc107; color: #333; }
+      .very-stale { background: #dc3545; color: white; }
+      .expired { background: #6c757d; color: white; }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 10px;
+      }
+
+      .player-link {
+        color: #007bff;
+        text-decoration: none;
+      }
+
+      .player-link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📊 Full Player Table</h1>
+
+      <div class="controls">
+        <button onclick="loadData()">🔄 Refresh</button>
+        <button class="danger" onclick="clearCache()">🗑️ Clear Cache</button>
+        <span class="info" id="info"></span>
+      </div>
+
+      <div id="content"></div>
+    </div>
+
+    <script src="full-player-table.js"></script>
+  </body>
+</html>
