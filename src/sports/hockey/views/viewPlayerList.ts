@@ -111,10 +111,10 @@ const viewPlayerList = () => {
   // Collect and cache all player data
   collectBatchPlayerData(players, "PlayersList");
 
-  // Add button to open Full Player Table in new tab
-  const fullTableButton = document.createElement("button");
-  fullTableButton.textContent = "📊 View Full Player Table";
-  fullTableButton.style.cssText = `
+  // Add button to open Player Report in new tab
+  const playerReportButton = document.createElement("button");
+  playerReportButton.textContent = "📊 Player Report";
+  playerReportButton.style.cssText = `
     margin-bottom: 15px;
     padding: 10px 20px;
     background: #007bff;
@@ -127,20 +127,20 @@ const viewPlayerList = () => {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     transition: background 0.2s;
   `;
-  fullTableButton.onmouseover = () => {
-    fullTableButton.style.background = "#0056b3";
+  playerReportButton.onmouseover = () => {
+    playerReportButton.style.background = "#0056b3";
   };
-  fullTableButton.onmouseout = () => {
-    fullTableButton.style.background = "#007bff";
+  playerReportButton.onmouseout = () => {
+    playerReportButton.style.background = "#007bff";
   };
-  fullTableButton.onclick = () => {
-    const extensionUrl = chrome.runtime.getURL("full-player-table.html");
+  playerReportButton.onclick = () => {
+    const extensionUrl = chrome.runtime.getURL("player-report.html");
     window.open(extensionUrl, "_blank");
   };
 
   // Insert button before the table
   if (table.parentNode) {
-    table.parentNode.insertBefore(fullTableButton, table);
+    table.parentNode.insertBefore(playerReportButton, table);
   }
 
   // Create mount point

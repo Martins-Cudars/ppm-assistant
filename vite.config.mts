@@ -44,5 +44,21 @@ export default defineConfig({
         }
       },
     },
+    {
+      name: "copy-player-report",
+      buildStart() {
+        this.addWatchFile(path.resolve(__dirname, "player-report.html"));
+      },
+      writeBundle() {
+        try {
+          fs.copyFileSync(
+            path.resolve(__dirname, "player-report.html"),
+            path.resolve(__dirname, "dist/player-report.html")
+          );
+        } catch (error) {
+          console.error("Failed to copy player-report.html:", error);
+        }
+      },
+    },
   ],
 });

@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Full Player Table - PPM Assistant</title>
-    <link rel="stylesheet" href="/src/assets/css/styles.css" />
+    <title>Player Report - PPM Assistant</title>
     <style>
       body {
         margin: 0;
@@ -16,6 +15,15 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/full-player-table-entry.ts"></script>
+    <script type="module">
+      import { createApp } from './chunk.js';
+      import { createPinia } from './chunk.js';
+      import PlayerReport from './playerReport.js';
+
+      const app = createApp(PlayerReport);
+      const pinia = createPinia();
+      app.use(pinia);
+      app.mount("#app");
+    </script>
   </body>
 </html>
