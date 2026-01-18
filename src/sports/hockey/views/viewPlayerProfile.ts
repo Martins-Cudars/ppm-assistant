@@ -7,6 +7,7 @@ import {
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
 import { getCurrentSeasonDay } from "@/utils";
+import { collectPlayerData } from "@/services/dataCollector";
 
 const viewPlayerProfile = () => {
   const seasonDay = getCurrentSeasonDay();
@@ -106,6 +107,9 @@ const viewPlayerProfile = () => {
 
   player.calculatePositions();
   player.calculatePositionTrainingQualities();
+
+  // Collect and cache player data
+  collectPlayerData(player, "PlayerProfile");
 
   console.log(player);
 

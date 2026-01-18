@@ -1,22 +1,92 @@
 import { defineStore } from "pinia";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import {
+  getAllPlayers,
+  clearCache,
+  getCacheStats,
+} from "@/storage/playerCache";
+import { collectPlayerData } from "@/services/dataCollector";
 
 interface PlayerState {
   players: HockeyPlayer[];
   tableHeaders: string[];
+  cachedPlayers: HockeyPlayer[];
 }
 
 export const usePlayerStore = defineStore("player", {
   state: (): PlayerState => ({
     players: [],
     tableHeaders: [],
+    cachedPlayers: [],
   }),
+  getters: {
+    getCachedPlayerCount: (state) => state.cachedPlayers.length,
+    getPlayerById: (state) => (id: string) =>
+      state.cachedPlayers.find((p) => p.id === id),
+    getFreshPlayers: (state) => {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      return state.cachedPlayers.filter((p) => p.updatedAt >= oneDayAgo);
+    },
+    getStalePlayers: (state) => {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return state.cachedPlayers.filter(
+        (p) => p.updatedAt < oneDayAgo && p.updatedAt >= sevenDaysAgo
+      );
+    },
+    getVeryStale: (state) => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return state.cachedPlayers.filter((p) => p.updatedAt < sevenDaysAgo);
+    },
+  },
   actions: {
     setPlayers(players: HockeyPlayer[]) {
       this.players = players;
     },
     setTableHeaders(headers: string[]) {
       this.tableHeaders = headers;
+    },
+    loadFromCache() {
+      try {
+        this.cachedPlayers = getAllPlayers();
+        console.log(
+          `[PlayerStore] Loaded ${this.cachedPlayers.length} players from cache`
+        );
+      } catch (error) {
+        console.error("[PlayerStore] Failed to load from cache:", error);
+        this.cachedPlayers = [];
+      }
+    },
+    clearCachedPlayers() {
+      try {
+        clearCache();
+        this.cachedPlayers = [];
+        console.log("[PlayerStore] Cache cleared");
+      } catch (error) {
+        console.error("[PlayerStore] Failed to clear cache:", error);
+      }
+    },
+    mergeAndSavePlayer(
+      player: HockeyPlayer,
+      source: "PlayerProfile" | "PlayersList" | "PlayerContracts"
+    ) {
+      try {
+        collectPlayerData(player, source);
+        // Reload cache to update state
+        this.loadFromCache();
+      } catch (error) {
+        console.error(
+          `[PlayerStore] Failed to merge and save player ${player.id}:`,
+          error
+        );
+      }
+    },
+    getCacheStatistics() {
+      return getCacheStats();
     },
   },
 });

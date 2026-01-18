@@ -4,6 +4,7 @@ import PlayerListTable from "./components/PlayerListTable.vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay } from "@/utils";
+import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -106,6 +107,41 @@ const viewPlayerList = () => {
     player.calculatePositions();
     players.push(player);
   });
+
+  // Collect and cache all player data
+  collectBatchPlayerData(players, "PlayersList");
+
+  // Add button to open Full Player Table in new tab
+  const fullTableButton = document.createElement("button");
+  fullTableButton.textContent = "📊 View Full Player Table";
+  fullTableButton.style.cssText = `
+    margin-bottom: 15px;
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+  `;
+  fullTableButton.onmouseover = () => {
+    fullTableButton.style.background = "#0056b3";
+  };
+  fullTableButton.onmouseout = () => {
+    fullTableButton.style.background = "#007bff";
+  };
+  fullTableButton.onclick = () => {
+    const extensionUrl = chrome.runtime.getURL("full-player-table.html");
+    window.open(extensionUrl, "_blank");
+  };
+
+  // Insert button before the table
+  if (table.parentNode) {
+    table.parentNode.insertBefore(fullTableButton, table);
+  }
 
   // Create mount point
   const appContainer = document.createElement("div");

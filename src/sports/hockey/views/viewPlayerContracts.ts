@@ -1,5 +1,8 @@
 import { createApp } from "vue";
 import PlayerContractsTable from "./components/PlayerContractsTable.vue";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import { getCurrentSeasonDay } from "@/utils";
+import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const viewPlayerContracts = () => {
   const table = document.querySelector("#table-1");
@@ -7,10 +10,12 @@ const viewPlayerContracts = () => {
 
   const rows = table.querySelectorAll("tbody tr");
   const items: any[] = [];
+  const players: HockeyPlayer[] = [];
+  const seasonDay = getCurrentSeasonDay();
 
   rows.forEach((row) => {
     const cells = row.querySelectorAll("td");
-    
+
     // Default structure based on user example:
     // 0: Name (HTML)
     // 1: Age
@@ -20,6 +25,12 @@ const viewPlayerContracts = () => {
     // 5: ALP (Auto-renew checkbox)
 
     if (cells.length < 6) return;
+
+    // Extract player ID from name link
+    const nameLink = cells[0].querySelector("a.link_name") as HTMLAnchorElement;
+    const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
+    const name = nameLink?.textContent?.trim() || cells[0].textContent?.trim() || "Unknown";
+    const age = parseInt(cells[1].textContent || "0");
 
     // Extract ALP (auto-renewal) link info from last cell
     const alpCell = cells[5];
@@ -31,14 +42,42 @@ const viewPlayerContracts = () => {
 
     items.push({
       nameHtml: cells[0].innerHTML,
-      age: parseInt(cells[1].textContent || "0"),
+      age: age,
       contract: parseInt(cells[2].textContent || "0"),
       salary: parseInt(cells[3].textContent || "0"),
       daysInTeam: parseInt(cells[4].textContent || "0"),
       alpEnabled,
       alpHref,
     });
+
+    // Create minimal HockeyPlayer instance for caching (contract data only)
+    if (id !== "unknown") {
+      const player = new HockeyPlayer(
+        {
+          id: id,
+          name: name,
+          age: age,
+          careerLongevity: 3, // Default - unknown from contracts view
+          overallRating: 0, // Unknown from contracts view
+          preferredSide: "U",
+        },
+        new Date(),
+        "UNSCOUTED", // Unknown from contracts view
+        false,
+        seasonDay,
+        undefined, // No skills
+        undefined, // No experience
+        undefined, // No training qualities
+        0 // No injury data in contracts view
+      );
+      players.push(player);
+    }
   });
+
+  // Collect and cache minimal player data
+  if (players.length > 0) {
+    collectBatchPlayerData(players, "PlayerContracts");
+  }
 
   const totalSalary = items.reduce((acc, item) => acc + item.salary, 0);
 

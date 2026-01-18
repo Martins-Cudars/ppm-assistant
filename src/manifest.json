@@ -27,17 +27,6 @@
   "content_scripts": [
     {
       "matches": [
-        "https://hockey.powerplaymanager.com/*",
-        "https://soccer.powerplaymanager.com/*",
-        "https://basketball.powerplaymanager.com/*"
-      ],
-      "css": [
-        "styles.css"
-      ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
         "https://hockey.powerplaymanager.com/*"
       ],
       "include_globs": [

@@ -6,6 +6,7 @@ import path from "path";
 import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
+  base: "./", // Use relative paths for Chrome extension
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -13,11 +14,14 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+      },
       output: {
         entryFileNames: "main.js",
-        assetFileNames: "styles.css",
-        chunkFileNames: "chunk.js",
-        manualChunks: undefined,
+        assetFileNames: "[name].[ext]",
+        format: "iife", // IIFE format - bundles everything, no imports
+        name: "PPMAssistant",
       },
     },
   },
