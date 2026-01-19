@@ -48,6 +48,7 @@ export default defineConfig({
       name: "copy-player-report",
       buildStart() {
         this.addWatchFile(path.resolve(__dirname, "player-report.html"));
+        this.addWatchFile(path.resolve(__dirname, "public/player-report-loader.js"));
       },
       writeBundle() {
         try {
@@ -55,8 +56,12 @@ export default defineConfig({
             path.resolve(__dirname, "player-report.html"),
             path.resolve(__dirname, "dist/player-report.html")
           );
+          fs.copyFileSync(
+            path.resolve(__dirname, "public/player-report-loader.js"),
+            path.resolve(__dirname, "dist/player-report-loader.js")
+          );
         } catch (error) {
-          console.error("Failed to copy player-report.html:", error);
+          console.error("Failed to copy player-report files:", error);
         }
       },
     },

@@ -9,13 +9,15 @@ import SortableTable, { type Column } from '@/components/SortableTable.vue';
 import RatingStars from '@/components/RatingStars.vue';
 
 const store = usePlayerStore();
-const currentSeasonDay = ref(getCurrentSeasonDay());
 const selectedFreshness = ref('All');
 const selectedCompleteness = ref('All');
 const selectedPosition = ref('All');
 
-onMounted(() => {
-  store.loadFromCache();
+// Current season day comes from the store (loaded from cache)
+const currentSeasonDay = computed(() => store.currentSeasonDay);
+
+onMounted(async () => {
+  await store.loadFromCache();
 });
 
 const filteredPlayers = computed(() => {

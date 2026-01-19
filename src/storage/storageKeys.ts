@@ -9,21 +9,27 @@
  * @returns Team ID string or "unknown" if not found
  */
 export function getTeamId(): string {
-  // Try the top_info_team link first (most common)
-  let teamLink = document.querySelector(".top_info_team a[href*='team']") as HTMLAnchorElement;
+  // Try the top_info_team link first (most common) - check both 'team' and 'komanda'
+  let teamLink = document.querySelector(".top_info_team a[href*='team'], .top_info_team a[href*='komanda']") as HTMLAnchorElement;
+
+  // If not found, try by class name
+  if (!teamLink) {
+    teamLink = document.querySelector("a.link_r[href*='komanda'], a.link_r[href*='team']") as HTMLAnchorElement;
+  }
 
   // If not found, try the main navigation team link
   if (!teamLink) {
     teamLink = document.querySelector("a[href*='komanda.html'], a[href*='team.html']") as HTMLAnchorElement;
   }
 
-  // If still not found, try any team link in the header/navigation
+  // If still not found, try any link with team data pattern
   if (!teamLink) {
-    teamLink = document.querySelector(".top_bar a[href*='data='], .navigation a[href*='komanda']") as HTMLAnchorElement;
+    teamLink = document.querySelector("a[href*='komanda.html?data='], a[href*='team.html?data=']") as HTMLAnchorElement;
   }
 
   if (!teamLink) {
     console.warn("[StorageKeys] Could not find team ID in page. Team link not found.");
+    console.warn("[StorageKeys] Available links:", Array.from(document.querySelectorAll('a[href*="komanda"], a[href*="team"]')).slice(0, 3).map(l => (l as HTMLAnchorElement).href));
     return "unknown";
   }
 
@@ -34,7 +40,7 @@ export function getTeamId(): string {
   }
 
   const teamId = match[1];
-  console.log("[StorageKeys] Extracted team ID:", teamId);
+  console.log("[StorageKeys] Extracted team ID:", teamId, "from", teamLink.href);
   return teamId;
 }
 

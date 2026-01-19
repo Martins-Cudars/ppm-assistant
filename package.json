@@ -8,7 +8,9 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build",
+    "build": "vite build && vite build --config vite.player-report.config.mts",
+    "build:main": "vite build",
+    "build:report": "vite build --config vite.player-report.config.mts",
     "preview": "vite preview",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"

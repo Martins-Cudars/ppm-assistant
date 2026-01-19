@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import {
   getAllPlayers,
+  getAllPlayersFromAllCaches,
   clearCache,
   getCacheStats,
 } from "@/storage/playerCache";
@@ -11,6 +12,8 @@ interface PlayerState {
   players: HockeyPlayer[];
   tableHeaders: string[];
   cachedPlayers: HockeyPlayer[];
+  currentSeasonDay: number;
+  teamId: string;
 }
 
 export const usePlayerStore = defineStore("player", {
@@ -18,6 +21,8 @@ export const usePlayerStore = defineStore("player", {
     players: [],
     tableHeaders: [],
     cachedPlayers: [],
+    currentSeasonDay: 1,
+    teamId: "unknown",
   }),
   getters: {
     getCachedPlayerCount: (state) => state.cachedPlayers.length,
@@ -50,34 +55,38 @@ export const usePlayerStore = defineStore("player", {
     setTableHeaders(headers: string[]) {
       this.tableHeaders = headers;
     },
-    loadFromCache() {
+    async loadFromCache() {
       try {
-        this.cachedPlayers = getAllPlayers();
+        // Use getAllPlayersFromAllCaches which works in extension pages without DOM
+        const { players, currentSeasonDay, teamId } = await getAllPlayersFromAllCaches();
+        this.cachedPlayers = players;
+        this.currentSeasonDay = currentSeasonDay;
+        this.teamId = teamId;
         console.log(
-          `[PlayerStore] Loaded ${this.cachedPlayers.length} players from cache`
+          `[PlayerStore] Loaded ${this.cachedPlayers.length} players from cache (Team: ${teamId}, Season Day: ${currentSeasonDay})`
         );
       } catch (error) {
         console.error("[PlayerStore] Failed to load from cache:", error);
         this.cachedPlayers = [];
       }
     },
-    clearCachedPlayers() {
+    async clearCachedPlayers() {
       try {
-        clearCache();
+        await clearCache();
         this.cachedPlayers = [];
         console.log("[PlayerStore] Cache cleared");
       } catch (error) {
         console.error("[PlayerStore] Failed to clear cache:", error);
       }
     },
-    mergeAndSavePlayer(
+    async mergeAndSavePlayer(
       player: HockeyPlayer,
       source: "PlayerProfile" | "PlayersList" | "PlayerContracts"
     ) {
       try {
-        collectPlayerData(player, source);
+        await collectPlayerData(player, source);
         // Reload cache to update state
-        this.loadFromCache();
+        await this.loadFromCache();
       } catch (error) {
         console.error(
           `[PlayerStore] Failed to merge and save player ${player.id}:`,
@@ -85,8 +94,8 @@ export const usePlayerStore = defineStore("player", {
         );
       }
     },
-    getCacheStatistics() {
-      return getCacheStats();
+    async getCacheStatistics() {
+      return await getCacheStats();
     },
   },
 });

@@ -20,5 +20,6 @@ export interface PlayerCacheStorage {
     [playerId: string]: StoredPlayerData; // One current object per player (no history)
   };
   teamId: string;
+  currentSeasonDay: number; // Current season day when data was collected
   lastModified: string; // ISO date string
 }

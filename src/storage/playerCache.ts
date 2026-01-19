@@ -51,9 +51,20 @@ async function saveCache(cache: PlayerCacheStorage): Promise<void> {
  */
 function initializeCache(): PlayerCacheStorage {
   const teamId = generateStorageKey().split("-").pop() || "unknown";
+
+  // Get current season day from the page
+  let seasonDay = 1;
+  try {
+    const { getCurrentSeasonDay } = require("@/utils");
+    seasonDay = getCurrentSeasonDay();
+  } catch (error) {
+    console.warn("[PlayerCache] Could not get current season day, using default");
+  }
+
   return {
     players: {},
     teamId,
+    currentSeasonDay: seasonDay,
     lastModified: new Date().toISOString(),
   };
 }
@@ -118,6 +129,57 @@ export async function getAllPlayers(): Promise<HockeyPlayer[]> {
   } catch (error) {
     console.error("[PlayerCache] Failed to load all players:", error);
     return [];
+  }
+}
+
+/**
+ * Retrieves all cached players from ALL teams (for extension pages)
+ * @returns Promise with array of HockeyPlayer instances and cache metadata
+ */
+export async function getAllPlayersFromAllCaches(): Promise<{
+  players: HockeyPlayer[];
+  currentSeasonDay: number;
+  teamId: string;
+}> {
+  try {
+    // Get all storage data
+    const allData = await chrome.storage.local.get(null);
+
+    // Find all hockey team cache keys
+    const hockeyKeys = Object.keys(allData).filter((key) =>
+      key.startsWith("ppm-assistant:hockey:team-") && !key.includes("unknown")
+    );
+
+    console.log("[PlayerCache] Found hockey cache keys:", hockeyKeys);
+
+    if (hockeyKeys.length === 0) {
+      return { players: [], currentSeasonDay: 1, teamId: "unknown" };
+    }
+
+    // Use the first cache (or we could merge all caches if user has multiple teams)
+    const cacheKey = hockeyKeys[0];
+    const cache = allData[cacheKey] as PlayerCacheStorage;
+
+    if (!cache || !cache.players) {
+      return { players: [], currentSeasonDay: 1, teamId: "unknown" };
+    }
+
+    const players = Object.values(cache.players).map((data) =>
+      deserializePlayer(data)
+    );
+
+    console.log(
+      `[PlayerCache] Loaded ${players.length} players from ${cacheKey}`
+    );
+
+    return {
+      players,
+      currentSeasonDay: cache.currentSeasonDay || 1,
+      teamId: cache.teamId || "unknown",
+    };
+  } catch (error) {
+    console.error("[PlayerCache] Failed to load from all caches:", error);
+    return { players: [], currentSeasonDay: 1, teamId: "unknown" };
   }
 }
 
