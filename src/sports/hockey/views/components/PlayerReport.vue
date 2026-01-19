@@ -21,7 +21,10 @@ onMounted(async () => {
 });
 
 const filteredPlayers = computed(() => {
-  return store.cachedPlayers.filter((player: HockeyPlayer) => {
+  console.log('[PlayerReport] Total cached players:', store.cachedPlayers.length);
+  console.log('[PlayerReport] Sample player:', store.cachedPlayers[0]);
+
+  const filtered = store.cachedPlayers.filter((player: HockeyPlayer) => {
     // Freshness filter
     if (selectedFreshness.value !== 'All') {
       const daysSinceUpdate = Math.floor(
@@ -47,6 +50,9 @@ const filteredPlayers = computed(() => {
 
     return true;
   });
+
+  console.log('[PlayerReport] Filtered players:', filtered.length);
+  return filtered;
 });
 
 const getFreshnessCount = (freshness: string) => {
@@ -250,6 +256,26 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           {{ formatDate(row.updatedAt) }}
         </template>
       </SortableTable>
+    </div>
+
+    <!-- Debug Output -->
+    <div class="debug-section white_box" style="margin-top: 20px;">
+      <h3>Debug Information</h3>
+      <div style="margin-bottom: 10px;">
+        <strong>Filtered Players Count:</strong> {{ filteredPlayers.length }}
+      </div>
+      <div style="margin-bottom: 10px;">
+        <strong>Sample Player (first):</strong>
+        <pre><code>{{ JSON.stringify(filteredPlayers[0], null, 2) }}</code></pre>
+      </div>
+      <div style="margin-bottom: 10px;">
+        <strong>Table Columns:</strong>
+        <pre><code>{{ JSON.stringify(tableColumns, null, 2) }}</code></pre>
+      </div>
+      <div>
+        <strong>All Players (raw):</strong>
+        <pre style="max-height: 400px; overflow-y: auto;"><code>{{ JSON.stringify(filteredPlayers, null, 2) }}</code></pre>
+      </div>
     </div>
   </div>
 </template>
