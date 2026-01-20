@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { usePlayerStore } from '@/stores/playerStore';
-import { HockeyPlayer } from '@/sports/hockey/classes/HockeyPlayer';
-import { getCurrentSeasonDay } from '@/utils';
-import { calculateCompleteness } from '@/storage/serialization';
-import PlayerDataFreshness from './PlayerDataFreshness.vue';
-import SortableTable, { type Column } from '@/components/SortableTable.vue';
-import RatingStars from '@/components/RatingStars.vue';
+import { ref, computed, onMounted } from "vue";
+import { usePlayerStore } from "@/stores/playerStore";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import { getCurrentSeasonDay } from "@/utils";
+import { calculateCompleteness } from "@/storage/serialization";
+import PlayerDataFreshness from "./PlayerDataFreshness.vue";
+import SortableTable, { type Column } from "@/components/SortableTable.vue";
+import RatingStars from "@/components/RatingStars.vue";
 
 const store = usePlayerStore();
-const selectedFreshness = ref('All');
-const selectedCompleteness = ref('All');
-const selectedPosition = ref('All');
+const selectedFreshness = ref("All");
+const selectedCompleteness = ref("All");
+const selectedPosition = ref("All");
 
 // Current season day comes from the store (loaded from cache)
 const currentSeasonDay = computed(() => store.currentSeasonDay);
@@ -21,29 +21,39 @@ onMounted(async () => {
 });
 
 const filteredPlayers = computed(() => {
-  console.log('[PlayerReport] Total cached players:', store.cachedPlayers.length);
-  console.log('[PlayerReport] Sample player:', store.cachedPlayers[0]);
+  console.log(
+    "[PlayerReport] Total cached players:",
+    store.cachedPlayers.length
+  );
+  console.log("[PlayerReport] Sample player:", store.cachedPlayers[0]);
 
   const filtered = store.cachedPlayers.filter((player: HockeyPlayer) => {
     // Freshness filter
-    if (selectedFreshness.value !== 'All') {
+    if (selectedFreshness.value !== "All") {
       const daysSinceUpdate = Math.floor(
-        (new Date().getTime() - player.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        (new Date().getTime() - player.updatedAt.getTime()) /
+          (1000 * 60 * 60 * 24)
       );
-      if (selectedFreshness.value === 'Fresh' && daysSinceUpdate > 1) return false;
-      if (selectedFreshness.value === 'Stale' && (daysSinceUpdate <= 1 || daysSinceUpdate > 7))
+      if (selectedFreshness.value === "Fresh" && daysSinceUpdate > 1)
         return false;
-      if (selectedFreshness.value === 'Very Stale' && daysSinceUpdate <= 7) return false;
+      if (
+        selectedFreshness.value === "Stale" &&
+        (daysSinceUpdate <= 1 || daysSinceUpdate > 7)
+      )
+        return false;
+      if (selectedFreshness.value === "Very Stale" && daysSinceUpdate <= 7)
+        return false;
     }
 
     // Completeness filter
-    if (selectedCompleteness.value !== 'All') {
+    if (selectedCompleteness.value !== "All") {
       const completeness = calculateCompleteness(player);
-      if (completeness !== selectedCompleteness.value.toLowerCase()) return false;
+      if (completeness !== selectedCompleteness.value.toLowerCase())
+        return false;
     }
 
     // Position filter
-    if (selectedPosition.value !== 'All') {
+    if (selectedPosition.value !== "All") {
       const bestPos = player.getBestPosition();
       if (bestPos.name !== selectedPosition.value) return false;
     }
@@ -51,30 +61,36 @@ const filteredPlayers = computed(() => {
     return true;
   });
 
-  console.log('[PlayerReport] Filtered players:', filtered.length);
+  console.log("[PlayerReport] Filtered players:", filtered.length);
   return filtered;
 });
 
 const getFreshnessCount = (freshness: string) => {
-  if (freshness === 'All') return store.cachedPlayers.length;
+  if (freshness === "All") return store.cachedPlayers.length;
   return store.cachedPlayers.filter((p) => {
-    const days = Math.floor((new Date().getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24));
-    if (freshness === 'Fresh') return days <= 1;
-    if (freshness === 'Stale') return days > 1 && days <= 7;
-    if (freshness === 'Very Stale') return days > 7;
+    const days = Math.floor(
+      (new Date().getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (freshness === "Fresh") return days <= 1;
+    if (freshness === "Stale") return days > 1 && days <= 7;
+    if (freshness === "Very Stale") return days > 7;
     return false;
   }).length;
 };
 
 const getCompletenessCount = (completeness: string) => {
-  if (completeness === 'All') return store.cachedPlayers.length;
+  if (completeness === "All") return store.cachedPlayers.length;
   return store.cachedPlayers.filter(
     (p) => calculateCompleteness(p) === completeness.toLowerCase()
   ).length;
 };
 
 const clearCache = () => {
-  if (confirm('Are you sure you want to clear all cached player data? This cannot be undone.')) {
+  if (
+    confirm(
+      "Are you sure you want to clear all cached player data? This cannot be undone."
+    )
+  ) {
     store.clearCachedPlayers();
   }
 };
@@ -85,77 +101,83 @@ const openPlayerProfile = (playerId: string) => {
 
 const tableColumns = computed<Column[]>(() => [
   {
-    header: 'Name',
-    key: 'name',
-    slot: 'name',
+    header: "Name",
+    key: "name",
+    slot: "name",
     sortable: true,
-    cellClass: 'name-cell',
+    cellClass: "name-cell",
   },
   {
-    header: 'Age',
-    key: 'age',
-    sortable: true,
-  },
-  {
-    header: 'OR',
-    key: 'overallRating',
+    header: "Age",
+    key: "age",
     sortable: true,
   },
   {
-    header: 'Position',
-    key: 'position',
-    slot: 'position',
+    header: "OR",
+    key: "overallRating",
+    sortable: true,
+  },
+  {
+    header: "Position",
+    key: "position",
+    slot: "position",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.getBestPosition().name,
   },
   {
-    header: 'Skill',
-    key: 'skill',
+    header: "Skill",
+    key: "skill",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
   },
   {
-    header: 'Scouted',
-    key: 'scoutingStatus',
-    slot: 'scouted',
+    header: "Scouted",
+    key: "scoutingStatus",
+    slot: "scouted",
     sortable: true,
   },
   {
-    header: 'Completeness',
-    key: 'completeness',
-    slot: 'completeness',
+    header: "Completeness",
+    key: "completeness",
+    slot: "completeness",
     sortable: true,
     sortValue: (p: HockeyPlayer) => {
       const c = calculateCompleteness(p);
-      return c === 'full' ? 3 : c === 'partial' ? 2 : 1;
+      return c === "full" ? 3 : c === "partial" ? 2 : 1;
     },
   },
   {
-    header: 'Freshness',
-    key: 'freshness',
-    slot: 'freshness',
+    header: "Freshness",
+    key: "freshness",
+    slot: "freshness",
     sortable: true,
     sortValue: (p: HockeyPlayer) =>
-      Math.floor((new Date().getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24)),
+      Math.floor(
+        (new Date().getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+      ),
   },
   {
-    header: 'Last Updated',
-    key: 'updatedAt',
+    header: "Last Updated",
+    key: "updatedAt",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.updatedAt.getTime(),
   },
 ]);
 
 const formatDate = (date: Date) => {
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return (
+    date.toLocaleDateString() +
+    " " +
+    date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  );
 };
 
 const getCompletenessBadgeClass = (player: HockeyPlayer) => {
   const c = calculateCompleteness(player);
   return {
-    'badge-full': c === 'full',
-    'badge-partial': c === 'partial',
-    'badge-minimal': c === 'minimal',
+    "badge-full": c === "full",
+    "badge-partial": c === "partial",
+    "badge-minimal": c === "minimal",
   };
 };
 
@@ -215,66 +237,87 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
     <div v-if="filteredPlayers.length === 0" class="empty-state white_box">
       <p v-if="store.cachedPlayers.length === 0">
-        No cached player data found. Visit player pages to start building your cache.
+        No cached player data found. Visit player pages to start building your
+        cache.
       </p>
       <p v-else>No players match the selected filters.</p>
     </div>
 
     <div v-else class="table-container white_box">
-      <SortableTable :data="filteredPlayers" :columns="tableColumns" :initialSort="{ key: 'updatedAt', order: 'desc' }">
-        <template #name="{ row }">
-          <a @click.prevent="openPlayerProfile(row.id)" class="player-link">
-            {{ row.name }}
+      <SortableTable
+        :items="filteredPlayers"
+        :columns="tableColumns"
+        :defaultSort="{ key: 'updatedAt', dir: 'desc' }"
+      >
+        <template #name="{ item }">
+          <a @click.prevent="openPlayerProfile(item.id)" class="player-link">
+            {{ item.name }}
           </a>
         </template>
 
-        <template #position="{ row }">
-          {{ row.getBestPosition().name }}
+        <template #position="{ item }">
+          {{ item.getBestPosition().name }}
         </template>
 
-        <template #scouted="{ row }">
-          <span :class="['scouted-badge', row.scoutingStatus.toLowerCase()]">
-            {{ row.scoutingStatus === 'SCOUTED' ? '✓' : row.scoutingStatus === 'IN_PROGRESS' ? '◐' : '✗' }}
+        <template #scouted="{ item }">
+          <span :class="['scouted-badge', item.scoutingStatus.toLowerCase()]">
+            {{
+              item.scoutingStatus === "SCOUTED"
+                ? "✓"
+                : item.scoutingStatus === "IN_PROGRESS"
+                ? "◐"
+                : "✗"
+            }}
           </span>
         </template>
 
-        <template #completeness="{ row }">
-          <span class="completeness-badge" :class="getCompletenessBadgeClass(row)">
-            {{ getCompletenessBadgeText(row) }}
+        <template #completeness="{ item }">
+          <span
+            class="completeness-badge"
+            :class="getCompletenessBadgeClass(item)"
+          >
+            {{ getCompletenessBadgeText(item) }}
           </span>
         </template>
 
-        <template #freshness="{ row }">
+        <template #freshness="{ item }">
           <PlayerDataFreshness
-            :updatedAt="row.updatedAt"
-            :seasonDay="row.seasonDay"
+            :updatedAt="item.updatedAt"
+            :seasonDay="item.seasonDay"
             :currentSeasonDay="currentSeasonDay"
           />
         </template>
 
-        <template #updatedAt="{ row }">
-          {{ formatDate(row.updatedAt) }}
+        <template #updatedAt="{ item }">
+          {{ formatDate(item.updatedAt) }}
         </template>
       </SortableTable>
     </div>
 
     <!-- Debug Output -->
-    <div class="debug-section white_box" style="margin-top: 20px;">
+    <div>
+      <div v-for="player in filteredPlayers">
+        {{ player.name }}
+      </div>
+    </div>
+    <div class="debug-section white_box" style="margin-top: 20px">
       <h3>Debug Information</h3>
-      <div style="margin-bottom: 10px;">
+      <div style="margin-bottom: 10px">
         <strong>Filtered Players Count:</strong> {{ filteredPlayers.length }}
       </div>
-      <div style="margin-bottom: 10px;">
+      <div style="margin-bottom: 10px">
         <strong>Sample Player (first):</strong>
         <pre><code>{{ JSON.stringify(filteredPlayers[0], null, 2) }}</code></pre>
       </div>
-      <div style="margin-bottom: 10px;">
+      <div style="margin-bottom: 10px">
         <strong>Table Columns:</strong>
         <pre><code>{{ JSON.stringify(tableColumns, null, 2) }}</code></pre>
       </div>
       <div>
         <strong>All Players (raw):</strong>
-        <pre style="max-height: 400px; overflow-y: auto;"><code>{{ JSON.stringify(filteredPlayers, null, 2) }}</code></pre>
+        <pre
+          style="max-height: 400px; overflow-y: auto"
+        ><code>{{ JSON.stringify(filteredPlayers, null, 2) }}</code></pre>
       </div>
     </div>
   </div>
