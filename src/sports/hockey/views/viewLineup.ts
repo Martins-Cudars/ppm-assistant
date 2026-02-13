@@ -43,7 +43,7 @@ const viewLineupChange = () => {
             preferredSide: playerColumns[3].textContent as "L" | "R" | "U",
           },
           new Date(),
-          false,
+          "UNSCOUTED",  // Convert from boolean to ScoutingStatus
           true,
           1,
           {

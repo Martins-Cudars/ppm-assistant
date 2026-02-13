@@ -99,7 +99,7 @@ const viewPlayerProfile = () => {
   const player = new HockeyPlayer(
     baseInfo,
     new Date(),
-    playerScouted,
+    playerScouted ? "SCOUTED" : "UNSCOUTED",  // Convert boolean to ScoutingStatus
     skillsVisible,
     seasonDay,
     skills,
