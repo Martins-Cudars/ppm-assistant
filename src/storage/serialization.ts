@@ -43,6 +43,7 @@ export function serializePlayer(
     countryImage: player.countryImage,
     countryLink: player.countryLink,
     teamPosition: player.teamPosition,
+    teamId: player.teamId,
   };
 
   const stored: StoredPlayerData = {

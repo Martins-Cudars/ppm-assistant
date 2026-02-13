@@ -6,11 +6,12 @@ import {
 } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay, getPlayerTeamId } from "@/utils";
 import { collectPlayerData } from "@/services/dataCollector";
 
 const viewPlayerProfile = () => {
   const seasonDay = getCurrentSeasonDay();
+  const teamId = getPlayerTeamId();
 
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
@@ -44,6 +45,7 @@ const viewPlayerProfile = () => {
       playerTable.querySelector("#prk")!.textContent!
     ),
     preferredSide: "U",
+    teamId: teamId !== "unknown" ? teamId : undefined,
   };
 
   const skills = skillsVisible

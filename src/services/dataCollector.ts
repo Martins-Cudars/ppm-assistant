@@ -20,8 +20,8 @@ export async function collectPlayerData(
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing
-    const { getTeamId } = await import("@/storage/storageKeys");
-    const teamId = getTeamId();
+    const { getUserTeamId } = await import("@/utils");
+    const teamId = getUserTeamId();
     if (teamId === "unknown") {
       console.warn(
         `[DataCollector] Skipping player ${player.id} from ${source} - cannot determine team ID`
@@ -76,8 +76,8 @@ export async function collectBatchPlayerData(
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing
-    const { getTeamId } = await import("@/storage/storageKeys");
-    const teamId = getTeamId();
+    const { getUserTeamId } = await import("@/utils");
+    const teamId = getUserTeamId();
     if (teamId === "unknown") {
       console.warn(
         `[DataCollector] Skipping batch from ${source} - cannot determine team ID`

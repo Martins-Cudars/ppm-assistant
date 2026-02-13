@@ -5,6 +5,7 @@ export type BaseInfo = {
   careerLongitivity: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   overallRating: number;
   averageTrainingRatio: number;
+  teamId?: string;
 };
 
 export type BasePosition = {
@@ -40,6 +41,7 @@ export class BasePlayer {
   public positions: BasePosition[] = [];
   public positionTrainingQualities: BaseTrainingQuality[] = [];
   public injuryDays: number = 0;
+  public teamId?: string;
 
   constructor(
     baseInfo: BaseInfo,
@@ -61,6 +63,7 @@ export class BasePlayer {
     this.isScouted = isScouted;
     this.isVisible = isVisible;
     this.seasonDay = seasonDay;
+    this.teamId = baseInfo.teamId;
 
     this.skills = skills || undefined;
     this.experience = experience || (this.age - 15) * 8;

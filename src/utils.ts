@@ -78,3 +78,86 @@ export const recalculatePredictDataAccordingToSeasonDay = (
 
   return newPredictData;
 };
+
+/**
+ * Extracts numeric team ID from a PPM URL
+ * @param url - URL string containing team data (e.g., "?data=129853-hc-skanste")
+ * @returns Team ID string or null if not found
+ */
+function extractTeamIdFromUrl(url: string): string | null {
+  const match = url.match(/data=(\d+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Gets the current user's team ID from the page navigation
+ * Tries multiple selectors with fallbacks for different page layouts
+ * @returns Team ID string or "unknown" if not found
+ */
+export function getUserTeamId(): string {
+  // Try the top_info_team link first (most common)
+  let teamLink = document.querySelector(
+    ".top_info_team a[href*='team'], .top_info_team a[href*='komanda']"
+  ) as HTMLAnchorElement;
+
+  // Fallback: try by class name
+  if (!teamLink) {
+    teamLink = document.querySelector(
+      "a.link_r[href*='komanda'], a.link_r[href*='team']"
+    ) as HTMLAnchorElement;
+  }
+
+  // Fallback: try the main navigation team link
+  if (!teamLink) {
+    teamLink = document.querySelector(
+      "a[href*='komanda.html'], a[href*='team.html']"
+    ) as HTMLAnchorElement;
+  }
+
+  // Fallback: try any link with team data pattern
+  if (!teamLink) {
+    teamLink = document.querySelector(
+      "a[href*='komanda.html?data='], a[href*='team.html?data=']"
+    ) as HTMLAnchorElement;
+  }
+
+  if (!teamLink) {
+    console.warn("[getUserTeamId] Could not find team link in page");
+    return "unknown";
+  }
+
+  const teamId = extractTeamIdFromUrl(teamLink.href);
+
+  if (!teamId) {
+    console.warn("[getUserTeamId] Could not extract team ID from URL:", teamLink.href);
+    return "unknown";
+  }
+
+  return teamId;
+}
+
+/**
+ * Gets the team ID from a player profile page
+ * @returns Team ID string or "unknown" if not found
+ */
+export function getPlayerTeamId(): string {
+  const playerInfo = document.querySelector(".player_info");
+
+  if (!playerInfo) {
+    console.warn("[getPlayerTeamId] Could not find player_info element");
+    return "unknown";
+  }
+
+  // Look for team link within player_info
+  const teamLink = playerInfo.querySelector(
+    "a[href*='team'], a[href*='komanda']"
+  ) as HTMLAnchorElement;
+
+  if (!teamLink) {
+    console.warn("[getPlayerTeamId] Could not find team link in player_info");
+    return "unknown";
+  }
+
+  const teamId = extractTeamIdFromUrl(teamLink.href);
+  return teamId || "unknown";
+}

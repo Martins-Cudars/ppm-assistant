@@ -3,46 +3,7 @@
  * Handles team ID detection and season change detection
  */
 
-/**
- * Extracts team ID from the current page's top navigation
- * Tries multiple selectors to find the user's team link
- * @returns Team ID string or "unknown" if not found
- */
-export function getTeamId(): string {
-  // Try the top_info_team link first (most common) - check both 'team' and 'komanda'
-  let teamLink = document.querySelector(".top_info_team a[href*='team'], .top_info_team a[href*='komanda']") as HTMLAnchorElement;
-
-  // If not found, try by class name
-  if (!teamLink) {
-    teamLink = document.querySelector("a.link_r[href*='komanda'], a.link_r[href*='team']") as HTMLAnchorElement;
-  }
-
-  // If not found, try the main navigation team link
-  if (!teamLink) {
-    teamLink = document.querySelector("a[href*='komanda.html'], a[href*='team.html']") as HTMLAnchorElement;
-  }
-
-  // If still not found, try any link with team data pattern
-  if (!teamLink) {
-    teamLink = document.querySelector("a[href*='komanda.html?data='], a[href*='team.html?data=']") as HTMLAnchorElement;
-  }
-
-  if (!teamLink) {
-    console.warn("[StorageKeys] Could not find team ID in page. Team link not found.");
-    console.warn("[StorageKeys] Available links:", Array.from(document.querySelectorAll('a[href*="komanda"], a[href*="team"]')).slice(0, 3).map(l => (l as HTMLAnchorElement).href));
-    return "unknown";
-  }
-
-  const match = teamLink.href.match(/data=(\d+)/);
-  if (!match) {
-    console.warn("[StorageKeys] Could not extract team ID from URL:", teamLink.href);
-    return "unknown";
-  }
-
-  const teamId = match[1];
-  console.log("[StorageKeys] Extracted team ID:", teamId, "from", teamLink.href);
-  return teamId;
-}
+import { getUserTeamId } from "@/utils";
 
 /**
  * Generates the localStorage key for the current team
@@ -50,7 +11,7 @@ export function getTeamId(): string {
  * @returns Storage key string
  */
 export function generateStorageKey(): string {
-  const teamId = getTeamId();
+  const teamId = getUserTeamId();
   return `ppm-assistant:hockey:team-${teamId}`;
 }
 
