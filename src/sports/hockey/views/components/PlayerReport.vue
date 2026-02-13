@@ -28,40 +28,51 @@ const filteredPlayers = computed(() => {
   console.log("[PlayerReport] Sample player:", store.cachedPlayers[0]);
 
   const filtered = store.cachedPlayers.filter((player: HockeyPlayer) => {
-    // Freshness filter
-    if (selectedFreshness.value !== "All") {
-      const daysSinceUpdate = Math.floor(
-        (new Date().getTime() - player.updatedAt.getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
-      if (selectedFreshness.value === "Fresh" && daysSinceUpdate > 1)
-        return false;
-      if (
-        selectedFreshness.value === "Stale" &&
-        (daysSinceUpdate <= 1 || daysSinceUpdate > 7)
-      )
-        return false;
-      if (selectedFreshness.value === "Very Stale" && daysSinceUpdate <= 7)
-        return false;
-    }
+    try {
+      // Freshness filter
+      if (selectedFreshness.value !== "All") {
+        const daysSinceUpdate = Math.floor(
+          (new Date().getTime() - player.updatedAt.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+        if (selectedFreshness.value === "Fresh" && daysSinceUpdate > 1)
+          return false;
+        if (
+          selectedFreshness.value === "Stale" &&
+          (daysSinceUpdate <= 1 || daysSinceUpdate > 7)
+        )
+          return false;
+        if (selectedFreshness.value === "Very Stale" && daysSinceUpdate <= 7)
+          return false;
+      }
 
-    // Completeness filter
-    if (selectedCompleteness.value !== "All") {
-      const completeness = calculateCompleteness(player);
-      if (completeness !== selectedCompleteness.value.toLowerCase())
-        return false;
-    }
+      // Completeness filter
+      if (selectedCompleteness.value !== "All") {
+        const completeness = calculateCompleteness(player);
+        if (completeness !== selectedCompleteness.value.toLowerCase())
+          return false;
+      }
 
-    // Position filter
-    if (selectedPosition.value !== "All") {
-      const bestPos = player.getBestPosition();
-      if (bestPos.name !== selectedPosition.value) return false;
-    }
+      // Position filter
+      if (selectedPosition.value !== "All") {
+        const bestPos = player.getBestPosition();
+        if (bestPos.name !== selectedPosition.value) return false;
+      }
 
-    return true;
+      return true;
+    } catch (error) {
+      console.error("[PlayerReport] Error filtering player:", player.id, player.name, error);
+      return false; // Exclude players that cause errors
+    }
   });
 
   console.log("[PlayerReport] Filtered players:", filtered.length);
+  console.log("[PlayerReport] Position breakdown:",
+    filtered.map(p => p.getBestPosition().name).reduce((acc, pos) => {
+      acc[pos] = (acc[pos] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  );
   return filtered;
 });
 
