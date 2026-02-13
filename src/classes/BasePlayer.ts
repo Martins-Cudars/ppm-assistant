@@ -81,6 +81,17 @@ export class BasePlayer {
   }
 
   getBestPosition(): BasePosition {
+    if (this.positions.length === 0) {
+      // Return a safe default position if positions array is empty
+      return {
+        name: "?",
+        baseRating: 0,
+        bonusRating: 0,
+        expBonus: 0,
+        ratingWithBonus: 0,
+        ratingWithXp: 0,
+      };
+    }
     return [...this.positions].sort(
       (a, b) => b.ratingWithBonus - a.ratingWithBonus
     )[0];
@@ -95,6 +106,15 @@ export class BasePlayer {
   }
 
   getBestPositionTrainingQuality(): BaseTrainingQuality {
+    if (this.positionTrainingQualities.length === 0) {
+      // Return a safe default training quality if array is empty
+      return {
+        position: "?",
+        baseTrainingQuality: 0,
+        bonusTrainingQuality: 0,
+        totalTrainingQuality: 0,
+      };
+    }
     return [...this.positionTrainingQualities].sort(
       (a, b) => b.totalTrainingQuality - a.totalTrainingQuality
     )[0];
