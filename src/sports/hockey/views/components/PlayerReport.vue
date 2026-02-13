@@ -100,6 +100,7 @@ const openPlayerProfile = (playerId: string) => {
 };
 
 const tableColumns = computed<Column[]>(() => [
+  // Basic Info
   {
     header: "Name",
     key: "name",
@@ -113,23 +114,114 @@ const tableColumns = computed<Column[]>(() => [
     sortable: true,
   },
   {
+    header: "CL", // Career Longevity
+    key: "careerLongitivity",
+    sortable: true,
+  },
+  {
     header: "OR",
     key: "overallRating",
     sortable: true,
   },
   {
-    header: "Position",
+    header: "Exp",
+    key: "experience",
+    sortable: true,
+  },
+
+  // Skills (7 columns)
+  {
+    header: "Goa",
+    key: "skills.goalie",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.goalie ?? 0,
+    slot: "goalie",
+  },
+  {
+    header: "Def",
+    key: "skills.defence",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.defence ?? 0,
+    slot: "defence",
+  },
+  {
+    header: "Off",
+    key: "skills.offence",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.offence ?? 0,
+    slot: "offence",
+  },
+  {
+    header: "Sho",
+    key: "skills.shooting",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.shooting ?? 0,
+    slot: "shooting",
+  },
+  {
+    header: "Pas",
+    key: "skills.passing",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.passing ?? 0,
+    slot: "passing",
+  },
+  {
+    header: "Tec",
+    key: "skills.technical",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.technical ?? 0,
+    slot: "technical",
+  },
+  {
+    header: "Agg",
+    key: "skills.aggression",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.skills?.aggression ?? 0,
+    slot: "aggression",
+  },
+
+  // Position and Rating
+  {
+    header: "Best Pos",
     key: "position",
     slot: "position",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.getBestPosition().name,
   },
   {
-    header: "Skill",
+    header: "Pos Skill",
     key: "skill",
+    slot: "skill",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
   },
+  {
+    header: "Pos TQ", // Position Training Quality
+    key: "positionTQ",
+    slot: "positionTQ",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => p.getBestPositionTrainingQuality().totalTrainingQuality,
+  },
+
+  // Additional Info
+  {
+    header: "Side",
+    key: "preferredSide",
+    sortable: true,
+  },
+  {
+    header: "Injury",
+    key: "injuryDays",
+    sortable: true,
+  },
+  {
+    header: "Team ID",
+    key: "teamId",
+    slot: "teamId",
+    sortable: true,
+  },
+
+  // Status
   {
     header: "Scouted",
     key: "scoutingStatus",
@@ -159,6 +251,7 @@ const tableColumns = computed<Column[]>(() => [
   {
     header: "Last Updated",
     key: "updatedAt",
+    slot: "updatedAt",
     sortable: true,
     sortValue: (p: HockeyPlayer) => p.updatedAt.getTime(),
   },
@@ -259,6 +352,50 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           {{ item.getBestPosition().name }}
         </template>
 
+        <!-- Individual Skill Slots -->
+        <template #goalie="{ item }">
+          {{ item.skills?.goalie ?? '-' }}
+        </template>
+
+        <template #defence="{ item }">
+          {{ item.skills?.defence ?? '-' }}
+        </template>
+
+        <template #offence="{ item }">
+          {{ item.skills?.offence ?? '-' }}
+        </template>
+
+        <template #shooting="{ item }">
+          {{ item.skills?.shooting ?? '-' }}
+        </template>
+
+        <template #passing="{ item }">
+          {{ item.skills?.passing ?? '-' }}
+        </template>
+
+        <template #technical="{ item }">
+          {{ item.skills?.technical ?? '-' }}
+        </template>
+
+        <template #aggression="{ item }">
+          {{ item.skills?.aggression ?? '-' }}
+        </template>
+
+        <!-- Position Skill -->
+        <template #skill="{ item }">
+          {{ item.getBestPosition().ratingWithXp }}
+        </template>
+
+        <!-- Position Training Quality -->
+        <template #positionTQ="{ item }">
+          {{ item.getBestPositionTrainingQuality().totalTrainingQuality }}
+        </template>
+
+        <!-- Team ID -->
+        <template #teamId="{ item }">
+          {{ item.teamId ?? '-' }}
+        </template>
+
         <template #scouted="{ item }">
           <span :class="['scouted-badge', item.scoutingStatus.toLowerCase()]">
             {{
@@ -294,12 +431,6 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       </SortableTable>
     </div>
 
-    <!-- Debug Output -->
-    <div>
-      <div v-for="player in filteredPlayers">
-        {{ player.name }}
-      </div>
-    </div>
     <div class="debug-section white_box" style="margin-top: 20px">
       <h3>Debug Information</h3>
       <div style="margin-bottom: 10px">
@@ -478,5 +609,17 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 .badge-minimal {
   background: #e2e3e5;
   color: #383d41;
+}
+
+/* Make skill columns more compact */
+.table td {
+  white-space: nowrap;
+}
+
+/* Reduce padding and center skill columns */
+.table :deep(td:nth-child(n+6):nth-child(-n+12)) {
+  padding: 2px 6px;
+  text-align: center;
+  font-size: 13px;
 }
 </style>
