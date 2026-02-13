@@ -197,6 +197,27 @@ export async function clearCache(): Promise<void> {
 }
 
 /**
+ * Clears ALL hockey caches (for all teams) - used by Player Report
+ */
+export async function clearAllCaches(): Promise<void> {
+  try {
+    const allData = await chrome.storage.local.get(null);
+    const hockeyKeys = Object.keys(allData).filter((key) =>
+      key.startsWith("ppm-assistant:hockey:team-")
+    );
+
+    if (hockeyKeys.length > 0) {
+      await chrome.storage.local.remove(hockeyKeys);
+      console.log(`[PlayerCache] Cleared ${hockeyKeys.length} hockey cache(s):`, hockeyKeys);
+    } else {
+      console.log("[PlayerCache] No hockey caches found to clear");
+    }
+  } catch (error) {
+    console.error("[PlayerCache] Failed to clear all caches:", error);
+  }
+}
+
+/**
  * Gets the storage key being used for debugging purposes
  * @returns Current storage key
  */

@@ -4,6 +4,7 @@ import {
   getAllPlayers,
   getAllPlayersFromAllCaches,
   clearCache,
+  clearAllCaches,
   getCacheStats,
 } from "@/storage/playerCache";
 import { collectPlayerData } from "@/services/dataCollector";
@@ -72,9 +73,9 @@ export const usePlayerStore = defineStore("player", {
     },
     async clearCachedPlayers() {
       try {
-        await clearCache();
+        await clearAllCaches();
         this.cachedPlayers = [];
-        console.log("[PlayerStore] Cache cleared");
+        console.log("[PlayerStore] All caches cleared");
       } catch (error) {
         console.error("[PlayerStore] Failed to clear cache:", error);
       }
