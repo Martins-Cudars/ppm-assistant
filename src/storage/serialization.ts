@@ -72,11 +72,27 @@ export function serializePlayer(
  * @returns Reconstructed HockeyPlayer instance
  */
 export function deserializePlayer(data: StoredPlayerData): HockeyPlayer {
-  // Handle legacy data that might not have scoutingStatus
+  // Handle legacy data that might not have newer properties
   const scoutingStatus = data.scoutingStatus || "UNSCOUTED";
 
+  // Ensure baseInfo has all required properties with defensive defaults for legacy data
+  // This prevents "undefined.method()" errors when old cached data lacks newer properties
+  const baseInfo: HockeyPlayerInfo = {
+    id: data.baseInfo.id,
+    name: data.baseInfo.name || "Unknown",
+    age: data.baseInfo.age ?? 15,
+    careerLongitivity: data.baseInfo.careerLongitivity ?? 0,
+    overallRating: data.baseInfo.overallRating ?? 0,
+    averageTrainingRatio: data.baseInfo.averageTrainingRatio ?? 0,
+    preferredSide: data.baseInfo.preferredSide || "U",
+    countryImage: data.baseInfo.countryImage,
+    countryLink: data.baseInfo.countryLink,
+    teamPosition: data.baseInfo.teamPosition,
+    teamId: data.baseInfo.teamId,
+  };
+
   const player = new HockeyPlayer(
-    data.baseInfo,
+    baseInfo,
     new Date(data.metadata.updatedAt),
     scoutingStatus,
     scoutingStatus === "SCOUTED",
@@ -84,7 +100,7 @@ export function deserializePlayer(data: StoredPlayerData): HockeyPlayer {
     data.skills || undefined,
     data.experience ?? undefined,
     data.trainingQualities || undefined,
-    data.injuryDays
+    data.injuryDays ?? 0  // Default to 0 if missing in legacy data
   );
 
   // Recalculate derived properties
