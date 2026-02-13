@@ -397,7 +397,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
         </template>
 
         <template #scouted="{ item }">
-          <span :class="['scouted-badge', item.scoutingStatus.toLowerCase()]">
+          <span :class="['scouted-badge', item.scoutingStatus?.toLowerCase() ?? 'unscouted']">
             {{
               item.scoutingStatus === "SCOUTED"
                 ? "✓"

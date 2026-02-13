@@ -72,11 +72,14 @@ export function serializePlayer(
  * @returns Reconstructed HockeyPlayer instance
  */
 export function deserializePlayer(data: StoredPlayerData): HockeyPlayer {
+  // Handle legacy data that might not have scoutingStatus
+  const scoutingStatus = data.scoutingStatus || "UNSCOUTED";
+
   const player = new HockeyPlayer(
     data.baseInfo,
     new Date(data.metadata.updatedAt),
-    data.scoutingStatus,
-    data.scoutingStatus === "SCOUTED",
+    scoutingStatus,
+    scoutingStatus === "SCOUTED",
     data.metadata.seasonDay,
     data.skills || undefined,
     data.experience ?? undefined,
