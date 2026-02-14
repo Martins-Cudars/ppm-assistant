@@ -2,11 +2,19 @@ import { BasePlayer, BaseInfo } from "@/classes/BasePlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { calculateSkillWithExp } from "@/base/calculations";
 
+export type ContractInfo = {
+  contractDays?: number;      // Days remaining on contract
+  salary?: number;            // Current salary
+  daysInTeam?: number;        // Days player has been on team
+  autoRenewal?: boolean;      // Auto-renewal enabled
+};
+
 export type HockeyPlayerInfo = BaseInfo & {
   preferredSide: "L" | "R" | "U";
   countryImage?: string;
   countryLink?: string;
   teamPosition?: string;
+  contract?: ContractInfo;    // Grouped contract/financial data
 };
 
 export type HockeyPlayerPosition = {
@@ -60,6 +68,7 @@ export class HockeyPlayer extends BasePlayer {
   public countryImage?: string;
   public countryLink?: string;
   public teamPosition?: string;
+  public contract?: ContractInfo;
   public scoutingStatus: ScoutingStatus;
   public positions: HockeyPlayerPosition[] = []; // Initialize arrays
   public positionTrainingQualities: HockeyPlayerTrainingQuality[] = []; // Initialize arrays
@@ -90,6 +99,7 @@ export class HockeyPlayer extends BasePlayer {
     this.countryImage = baseInfo.countryImage;
     this.countryLink = baseInfo.countryLink;
     this.teamPosition = baseInfo.teamPosition;
+    this.contract = baseInfo.contract;
     this.scoutingStatus = scoutingStatus;
   }
 

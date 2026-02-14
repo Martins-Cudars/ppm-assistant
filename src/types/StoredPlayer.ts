@@ -11,7 +11,7 @@ export interface StoredPlayerData {
     updatedAt: string; // ISO date string
     seasonDay: number;
     dataCompleteness: "full" | "partial" | "minimal";
-    lastViewSource: "PlayerProfile" | "PlayersList" | "PlayerContracts";
+    lastViewSource: "PlayerProfile" | "PlayersList" | "PlayerContracts" | "PlayerTraining";
   };
 }
 

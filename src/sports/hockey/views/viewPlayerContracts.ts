@@ -3,8 +3,9 @@ import PlayerContractsTable from "./components/PlayerContractsTable.vue";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay } from "@/utils";
 import { collectBatchPlayerData } from "@/services/dataCollector";
+import { getPlayer } from "@/storage/playerCache";
 
-const viewPlayerContracts = () => {
+const viewPlayerContracts = async () => {
   const table = document.querySelector("#table-1");
   if (!table) return;
 
@@ -13,7 +14,8 @@ const viewPlayerContracts = () => {
   const players: HockeyPlayer[] = [];
   const seasonDay = getCurrentSeasonDay();
 
-  rows.forEach((row) => {
+  // Process rows sequentially to handle async cache loading
+  for (const row of rows) {
     const cells = row.querySelectorAll("td");
 
     // Default structure based on user example:
@@ -24,13 +26,16 @@ const viewPlayerContracts = () => {
     // 4: DK (Market Value)
     // 5: ALP (Auto-renew checkbox)
 
-    if (cells.length < 6) return;
+    if (cells.length < 6) continue;
 
     // Extract player ID from name link
     const nameLink = cells[0].querySelector("a.link_name") as HTMLAnchorElement;
     const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
     const name = nameLink?.textContent?.trim() || cells[0].textContent?.trim() || "Unknown";
     const age = parseInt(cells[1].textContent || "0");
+    const contractDays = parseInt(cells[2].textContent || "0");
+    const salary = parseInt(cells[3].textContent || "0");
+    const daysInTeam = parseInt(cells[4].textContent || "0");
 
     // Extract ALP (auto-renewal) link info from last cell
     const alpCell = cells[5];
@@ -43,36 +48,58 @@ const viewPlayerContracts = () => {
     items.push({
       nameHtml: cells[0].innerHTML,
       age: age,
-      contract: parseInt(cells[2].textContent || "0"),
-      salary: parseInt(cells[3].textContent || "0"),
-      daysInTeam: parseInt(cells[4].textContent || "0"),
+      contract: contractDays,
+      salary: salary,
+      daysInTeam: daysInTeam,
       alpEnabled,
       alpHref,
     });
 
-    // Create minimal HockeyPlayer instance for caching (contract data only)
+    // Try to load existing player from cache
     if (id !== "unknown") {
-      const player = new HockeyPlayer(
-        {
-          id: id,
-          name: name,
-          age: age,
-          careerLongevity: 3, // Default - unknown from contracts view
-          overallRating: 0, // Unknown from contracts view
-          preferredSide: "U",
-        },
-        new Date(),
-        "UNSCOUTED", // Unknown from contracts view
-        false,
-        seasonDay,
-        undefined, // No skills
-        undefined, // No experience
-        undefined, // No training qualities
-        0 // No injury data in contracts view
-      );
-      players.push(player);
+      const existingPlayer = await getPlayer(id);
+
+      if (existingPlayer) {
+        // Enhance existing player with contract data
+        existingPlayer.contract = {
+          contractDays: contractDays,
+          salary: salary,
+          daysInTeam: daysInTeam,
+          autoRenewal: alpEnabled,
+        };
+        existingPlayer.updatedAt = new Date();
+        existingPlayer.seasonDay = seasonDay;
+        players.push(existingPlayer);
+      } else {
+        // Create minimal player if no cache exists (fallback)
+        const player = new HockeyPlayer(
+          {
+            id: id,
+            name: name,
+            age: age,
+            careerLongitivity: 3, // Default - unknown from contracts view
+            overallRating: 0, // Unknown from contracts view
+            preferredSide: "U",
+            contract: {
+              contractDays: contractDays,
+              salary: salary,
+              daysInTeam: daysInTeam,
+              autoRenewal: alpEnabled,
+            },
+          },
+          new Date(),
+          "UNSCOUTED", // Unknown from contracts view
+          false,
+          seasonDay,
+          undefined, // No skills
+          undefined, // No experience
+          undefined, // No training qualities
+          0 // No injury data in contracts view
+        );
+        players.push(player);
+      }
     }
-  });
+  }
 
   // Collect and cache minimal player data
   if (players.length > 0) {

@@ -30,7 +30,7 @@ export function calculateCompleteness(player: HockeyPlayer): "full" | "partial" 
  */
 export function serializePlayer(
   player: HockeyPlayer,
-  lastViewSource: "PlayerProfile" | "PlayersList" | "PlayerContracts"
+  lastViewSource: "PlayerProfile" | "PlayersList" | "PlayerContracts" | "PlayerTraining"
 ): StoredPlayerData {
   const baseInfo: HockeyPlayerInfo = {
     id: player.id,
@@ -44,6 +44,7 @@ export function serializePlayer(
     countryLink: player.countryLink,
     teamPosition: player.teamPosition,
     teamId: player.teamId,
+    contract: player.contract,
   };
 
   const stored: StoredPlayerData = {
@@ -89,6 +90,7 @@ export function deserializePlayer(data: StoredPlayerData): HockeyPlayer {
     countryLink: data.baseInfo.countryLink,
     teamPosition: data.baseInfo.teamPosition,
     teamId: data.baseInfo.teamId,
+    contract: data.baseInfo.contract,
   };
 
   const player = new HockeyPlayer(

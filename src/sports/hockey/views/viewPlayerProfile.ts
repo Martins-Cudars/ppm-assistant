@@ -3,6 +3,7 @@ import { createPinia } from "pinia";
 import {
   HockeyPlayer,
   HockeyPlayerInfo,
+  ContractInfo,
 } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
@@ -95,6 +96,52 @@ const viewPlayerProfile = () => {
         ),
       }
     : undefined;
+
+  // Extract contract information from the table_info div
+  // Structure: div.table_info contains 4 divs with class "five"
+  // Order: [0] Salary, [1] Contract Days, [2] ALP, [3] Days in Team
+  // Each div contains: Label<br><strong>Value</strong>
+
+  const tableInfoDiv = document.querySelector('.table_info');
+
+  if (tableInfoDiv) {
+    const children = Array.from(tableInfoDiv.children);
+
+    if (children.length >= 4) {
+      // Extract values from <strong> tags
+      const salaryStrong = children[0].querySelector('strong');
+      const contractDaysStrong = children[1].querySelector('strong');
+      const alpStrong = children[2].querySelector('strong');
+      const daysInTeamStrong = children[3].querySelector('strong');
+
+      const salaryValue = salaryStrong
+        ? parseInt(salaryStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      const contractDaysValue = contractDaysStrong
+        ? parseInt(contractDaysStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      const daysInTeamValue = daysInTeamStrong
+        ? parseInt(daysInTeamStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      // ALP can be "jā/nē" (Latvian), "yes/no" (English), or similar
+      const alpText = alpStrong?.textContent?.toLowerCase() || '';
+      const alpEnabled = alpText.includes('jā') || alpText.includes('yes') ? true :
+                         alpText.includes('nē') || alpText.includes('no') ? false :
+                         undefined;
+
+      baseInfo.contract = {
+        salary: salaryValue,
+        contractDays: contractDaysValue,
+        daysInTeam: daysInTeamValue,
+        autoRenewal: alpEnabled,
+      };
+
+      console.log('[PlayerProfile] Contract data extracted:', baseInfo.contract);
+    }
+  }
 
   const player = new HockeyPlayer(
     baseInfo,

@@ -50,10 +50,19 @@ export function mergePlayerData(
   const mergedBaseInfo: HockeyPlayerInfo = {
     ...existing,
     ...incoming,
-    // Preserve country/team data if incoming doesn't have it
-    countryImage: incoming.countryImage || existing.countryImage,
-    countryLink: incoming.countryLink || existing.countryLink,
-    teamPosition: incoming.teamPosition || existing.teamPosition,
+    // Preserve optional fields if incoming doesn't have them
+    countryImage: incoming.countryImage ?? existing.countryImage,
+    countryLink: incoming.countryLink ?? existing.countryLink,
+    teamPosition: incoming.teamPosition ?? existing.teamPosition,
+    // Merge contract data - prefer incoming, but preserve existing fields if incoming is incomplete
+    contract: incoming.contract || existing.contract
+      ? {
+          contractDays: incoming.contract?.contractDays ?? existing.contract?.contractDays,
+          salary: incoming.contract?.salary ?? existing.contract?.salary,
+          daysInTeam: incoming.contract?.daysInTeam ?? existing.contract?.daysInTeam,
+          autoRenewal: incoming.contract?.autoRenewal ?? existing.contract?.autoRenewal,
+        }
+      : undefined,
   };
 
   // Merge skills - prefer incoming, but keep existing if incoming is null

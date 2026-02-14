@@ -7,6 +7,9 @@ import {
 } from "@/base/calculations";
 
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import { getCurrentSeasonDay } from "@/utils";
+import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const extractSkill = (el) => {
   const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
@@ -27,11 +30,20 @@ const viewTraining = () => {
     head.querySelector("tr").appendChild(renderTableCell("Grd", "th1"));
   });
 
+  const players: HockeyPlayer[] = [];
+  const seasonDay = getCurrentSeasonDay();
+
   playerRows.forEach((playerRow, index) => {
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
 
     const playerQualities = playerRow.querySelectorAll(".kva");
     const playerColumns = playerRow.querySelectorAll("td");
+
+    // Extract player identifying information
+    const nameLink = playerColumns[0].querySelector("a.link_name") as HTMLAnchorElement;
+    const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
+    const name = nameLink?.textContent?.trim() || "Unknown";
+    const age = parseInt(playerColumns[3].textContent || "0");
 
     const player = {
       skills: {
@@ -72,7 +84,36 @@ const viewTraining = () => {
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
+
+    // Create HockeyPlayer instance for caching (skills + training qualities)
+    if (id !== "unknown") {
+      const hockeyPlayer = new HockeyPlayer(
+        {
+          id: id,
+          name: name,
+          age: age,
+          careerLongitivity: 3, // Default - unknown from training view
+          overallRating: 0, // Unknown from training view
+          averageTrainingRatio: 0, // Unknown from training view
+          preferredSide: "U", // Unknown from training view
+        },
+        new Date(),
+        "UNSCOUTED", // Unknown from training view
+        true, // Mark as visible since we have skill data
+        seasonDay,
+        player.skills,
+        undefined, // No experience data in training view
+        player.qualities,
+        0 // No injury data in training view
+      );
+      players.push(hockeyPlayer);
+    }
   });
+
+  // Collect and cache player data from training view
+  if (players.length > 0) {
+    collectBatchPlayerData(players, "PlayerTraining");
+  }
 };
 
 export default viewTraining;

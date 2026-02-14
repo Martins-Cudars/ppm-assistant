@@ -66,7 +66,7 @@ export class BasePlayer {
     this.teamId = baseInfo.teamId;
 
     this.skills = skills || undefined;
-    this.experience = experience || (this.age - 15) * 8;
+    this.experience = experience ?? (this.age - 15) * 8;
     this.trainingQualities = trainingQualities || undefined;
     this.updatedAt = updatedAt;
     this.injuryDays = injuryDays;
