@@ -133,7 +133,7 @@ const viewMarket = () => {
     const relativeSkill = renderRelativeSkill(
       player.age,
       bestSkillWithExp,
-      predictData
+      playerGrowthPrediction
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);
