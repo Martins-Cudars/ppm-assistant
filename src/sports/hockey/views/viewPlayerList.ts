@@ -3,7 +3,7 @@ import { createPinia } from "pinia";
 import PlayerListTable from "./components/PlayerListTable.vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils/dom";
+import { getCurrentSeasonDay, getUserTeamId } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const viewPlayerList = () => {
@@ -18,6 +18,7 @@ const viewPlayerList = () => {
   const players: HockeyPlayer[] = [];
 
   const seasonDay = getCurrentSeasonDay();
+  const teamId = getUserTeamId();
 
   playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
@@ -86,6 +87,7 @@ const viewPlayerList = () => {
         countryImage: countryImg?.src,
         countryLink: countryLink,
         teamPosition: playerColumns[1].textContent?.trim(),
+        teamId: teamId !== "unknown" ? teamId : undefined,
       },
       new Date(),
       scoutingStatus,
