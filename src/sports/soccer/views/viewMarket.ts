@@ -16,10 +16,8 @@ import {
   renderPotentialBadge,
   renderRelativeSkill,
 } from "@/base/render";
-import {
-  getCurrentSeasonDay,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
 
 /**
  * View Functions

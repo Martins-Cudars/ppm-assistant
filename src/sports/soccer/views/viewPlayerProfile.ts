@@ -17,10 +17,8 @@ import {
   renderRelativeSkill,
 } from "@/base/render";
 
-import {
-  getCurrentSeasonDay,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
 
 import { SoccerPlayer } from "@/types/Player";
 

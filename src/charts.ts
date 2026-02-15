@@ -2,11 +2,9 @@ import Chart from "chart.js/auto";
 import { ChartConfiguration } from "chart.js";
 
 import { calculateSkillWithExp } from "@/base/calculations";
-import {
-  getCurrentSeasonDay,
-  calculateSeasonProgress,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { calculateSeasonProgress } from "@/utils/calculations";
+import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
 
 import { ChartData } from "@/types/Chart";
 

@@ -8,7 +8,7 @@ import {
 
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const extractSkill = (el) => {

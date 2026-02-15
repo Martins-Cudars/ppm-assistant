@@ -9,7 +9,7 @@ import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 
 const props = defineProps<{
   player: HockeyPlayer;

@@ -7,7 +7,7 @@ import {
 } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
-import { getCurrentSeasonDay, getPlayerTeamId } from "@/utils";
+import { getCurrentSeasonDay, getPlayerTeamId } from "@/utils/dom";
 import { collectPlayerData } from "@/services/dataCollector";
 
 const viewPlayerProfile = () => {

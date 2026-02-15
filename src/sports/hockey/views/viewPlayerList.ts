@@ -3,7 +3,7 @@ import { createPinia } from "pinia";
 import PlayerListTable from "./components/PlayerListTable.vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 
 const viewPlayerList = () => {

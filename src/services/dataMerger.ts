@@ -5,7 +5,7 @@
 
 import { HockeyPlayer, HockeyPlayerInfo } from "@/sports/hockey/classes/HockeyPlayer";
 import { isNewSeason } from "@/storage/storageKeys";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 
 /**
  * Merges incoming player data with existing cached data

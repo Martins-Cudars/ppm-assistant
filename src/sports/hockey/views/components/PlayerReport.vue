@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { calculateCompleteness } from "@/storage/serialization";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";

@@ -20,7 +20,7 @@ export async function collectPlayerData(
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing
-    const { getUserTeamId } = await import("@/utils");
+    const { getUserTeamId } = await import("@/utils/dom");
     const teamId = getUserTeamId();
     if (teamId === "unknown") {
       console.warn(
@@ -76,7 +76,7 @@ export async function collectBatchPlayerData(
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing
-    const { getUserTeamId } = await import("@/utils");
+    const { getUserTeamId } = await import("@/utils/dom");
     const teamId = getUserTeamId();
     if (teamId === "unknown") {
       console.warn(

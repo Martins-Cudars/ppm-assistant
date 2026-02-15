@@ -3,7 +3,7 @@
  * Handles team ID detection and season change detection
  */
 
-import { getUserTeamId } from "@/utils";
+import { getUserTeamId } from "@/utils/dom";
 
 /**
  * Generates the localStorage key for the current team

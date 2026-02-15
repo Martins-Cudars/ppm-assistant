@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import PlayerContractsTable from "./components/PlayerContractsTable.vue";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 import { getPlayer } from "@/storage/playerCache";
 
