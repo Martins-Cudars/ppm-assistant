@@ -70,3 +70,32 @@ export function getPlayerTeamId(): string {
 
   return "unknown";
 }
+
+/**
+ * Get the viewed player's team name from player profile page
+ * Reads the team link inside .player_info — this is the player's actual team,
+ * which may differ from the logged-in user's team.
+ *
+ * @returns Team name string or "unknown" if not found
+ */
+export function getTeamNameFromPlayerProfile(): string {
+  const playerInfoDiv = document.querySelector(".player_info");
+  if (!playerInfoDiv) return "unknown";
+
+  const teamLink = playerInfoDiv.querySelector("a[href*='komanda.html']");
+  return teamLink?.textContent?.trim() || "unknown";
+}
+
+/**
+ * Get the logged-in user's team name from the top info bar
+ * Works on any page including the user's player list.
+ *
+ * @returns Team name string or "unknown" if not found
+ */
+export function getTeamNameFromUserPlayerList(): string {
+  const topInfoDiv = document.querySelector(".top_info_team");
+  if (!topInfoDiv) return "unknown";
+
+  const teamLink = topInfoDiv.querySelector("a[href*='komanda.html']");
+  return teamLink?.textContent?.trim() || "unknown";
+}
