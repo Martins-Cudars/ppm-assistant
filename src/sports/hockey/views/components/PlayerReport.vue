@@ -4,6 +4,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { calculateCompleteness } from "@/storage/serialization";
+import { buildPlayerProfileUrl } from "@/utils/parsers";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
@@ -107,7 +108,8 @@ const clearCache = () => {
 };
 
 const openPlayerProfile = (playerId: string) => {
-  window.location.href = `/hockey/player.html?data=${playerId}`;
+  const url = buildPlayerProfileUrl(store.sport, store.lang, store.playerPage, playerId);
+  window.open(url, "_blank");
 };
 
 const tableColumns = computed<Column[]>(() => [
@@ -226,10 +228,11 @@ const tableColumns = computed<Column[]>(() => [
     sortable: true,
   },
   {
-    header: "Team ID",
-    key: "teamId",
-    slot: "teamId",
+    header: "Team",
+    key: "teamName",
+    slot: "team",
     sortable: true,
+    sortValue: (p: HockeyPlayer) => p.teamName ?? p.teamId ?? "",
   },
 
   // Status
@@ -402,9 +405,9 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           {{ item.getBestPositionTrainingQuality().totalTrainingQuality }}
         </template>
 
-        <!-- Team ID -->
-        <template #teamId="{ item }">
-          {{ item.teamId ?? '-' }}
+        <!-- Team Name -->
+        <template #team="{ item }">
+          {{ item.teamName ?? item.teamId ?? '-' }}
         </template>
 
         <template #scouted="{ item }">

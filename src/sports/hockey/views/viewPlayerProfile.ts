@@ -7,12 +7,23 @@ import {
 } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
-import { getCurrentSeasonDay, getPlayerTeamId } from "@/utils/dom";
+import { getCurrentSeasonDay, getPlayerTeamId, getTeamNameFromPlayerProfile } from "@/utils/dom";
 import { collectPlayerData } from "@/services/dataCollector";
+import { saveUserSettings } from "@/storage/userSettings";
+import { extractLangFromUrl } from "@/utils/parsers";
+import { getPlayerPageForLang } from "@/sports/hockey/routes";
 
 const viewPlayerProfile = () => {
   const seasonDay = getCurrentSeasonDay();
   const teamId = getPlayerTeamId();
+  const teamName = getTeamNameFromPlayerProfile();
+
+  const lang = extractLangFromUrl(window.location.pathname);
+  saveUserSettings({
+    lang,
+    sport: "hockey",
+    playerPage: getPlayerPageForLang(lang),
+  });
 
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
@@ -47,6 +58,7 @@ const viewPlayerProfile = () => {
     ),
     preferredSide: "U",
     teamId: teamId !== "unknown" ? teamId : undefined,
+    teamName: teamName !== "unknown" ? teamName : undefined,
   };
 
   const skills = skillsVisible

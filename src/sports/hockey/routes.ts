@@ -1,4 +1,4 @@
-export default {
+const routes = {
   playersOverview: ["/en/overview-of-players", "/lv/speletaju-parskats"],
   playerProfile: ["/en/player", "/lv/speletajs"],
   playerTraining: ["/en/players-practice", "/lv/speletaju-trenini"],
@@ -9,3 +9,15 @@ export default {
   trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
   contracts: ["/en/player-contracts", "/lv/speletaju-ligumi"],
 };
+
+export default routes;
+
+/**
+ * Returns the player profile HTML filename for a given language code.
+ * Derived from the playerProfile routes, e.g. "lv" → "speletajs.html".
+ * Falls back to "player.html" for unknown languages.
+ */
+export function getPlayerPageForLang(lang: string): string {
+  const route = routes.playerProfile.find((r) => r.startsWith(`/${lang}/`));
+  return route ? route.split("/").pop()! + ".html" : "player.html";
+}

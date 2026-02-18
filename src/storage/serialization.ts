@@ -44,6 +44,7 @@ export function serializePlayer(
     countryLink: player.countryLink,
     teamPosition: player.teamPosition,
     teamId: player.teamId,
+    teamName: player.teamName,
     contract: player.contract,
   };
 
@@ -90,6 +91,7 @@ export function deserializePlayer(data: StoredPlayerData): HockeyPlayer {
     countryLink: data.baseInfo.countryLink,
     teamPosition: data.baseInfo.teamPosition,
     teamId: data.baseInfo.teamId,
+    teamName: data.baseInfo.teamName,
     contract: data.baseInfo.contract,
   };
 

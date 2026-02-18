@@ -3,8 +3,11 @@ import { createPinia } from "pinia";
 import PlayerListTable from "./components/PlayerListTable.vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay, getUserTeamId } from "@/utils/dom";
+import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
+import { saveUserSettings } from "@/storage/userSettings";
+import { extractLangFromUrl } from "@/utils/parsers";
+import { getPlayerPageForLang } from "@/sports/hockey/routes";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -19,6 +22,14 @@ const viewPlayerList = () => {
 
   const seasonDay = getCurrentSeasonDay();
   const teamId = getUserTeamId();
+  const teamName = getTeamNameFromUserPlayerList();
+
+  const lang = extractLangFromUrl(window.location.pathname);
+  saveUserSettings({
+    lang,
+    sport: "hockey",
+    playerPage: getPlayerPageForLang(lang),
+  });
 
   playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
@@ -88,6 +99,7 @@ const viewPlayerList = () => {
         countryLink: countryLink,
         teamPosition: playerColumns[1].textContent?.trim(),
         teamId: teamId !== "unknown" ? teamId : undefined,
+        teamName: teamName !== "unknown" ? teamName : undefined,
       },
       new Date(),
       scoutingStatus,

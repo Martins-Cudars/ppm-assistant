@@ -8,6 +8,7 @@ import {
   getCacheStats,
 } from "@/storage/playerCache";
 import { collectPlayerData } from "@/services/dataCollector";
+import { getUserSettings } from "@/storage/userSettings";
 
 interface PlayerState {
   players: HockeyPlayer[];
@@ -15,6 +16,9 @@ interface PlayerState {
   cachedPlayers: HockeyPlayer[];
   currentSeasonDay: number;
   teamId: string;
+  lang: string;
+  sport: string;
+  playerPage: string;
 }
 
 export const usePlayerStore = defineStore("player", {
@@ -24,6 +28,9 @@ export const usePlayerStore = defineStore("player", {
     cachedPlayers: [],
     currentSeasonDay: 1,
     teamId: "unknown",
+    lang: "en",
+    sport: "hockey",
+    playerPage: "player.html",
   }),
   getters: {
     getCachedPlayerCount: (state) => state.cachedPlayers.length,
@@ -63,8 +70,14 @@ export const usePlayerStore = defineStore("player", {
         this.cachedPlayers = players;
         this.currentSeasonDay = currentSeasonDay;
         this.teamId = teamId;
+
+        const settings = await getUserSettings();
+        this.lang = settings.lang;
+        this.sport = settings.sport;
+        this.playerPage = settings.playerPage;
+
         console.log(
-          `[PlayerStore] Loaded ${this.cachedPlayers.length} players from cache (Team: ${teamId}, Season Day: ${currentSeasonDay})`
+          `[PlayerStore] Loaded ${this.cachedPlayers.length} players from cache (Team: ${teamId}, Season Day: ${currentSeasonDay}, Lang: ${settings.lang})`
         );
       } catch (error) {
         console.error("[PlayerStore] Failed to load from cache:", error);
