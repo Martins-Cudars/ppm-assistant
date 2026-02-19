@@ -15,7 +15,6 @@ import {
   renderRelativeSkill,
 } from "@/base/render";
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
 import { SoccerPlayer } from "@/types/Player";
 
 const viewPlayerList = () => {
@@ -29,11 +28,6 @@ const viewPlayerList = () => {
 
   /** Calculate predictions */
   const seasonDay = getCurrentSeasonDay();
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
 
   const tableHead = table.querySelector("thead")!;
   const tableFoot = table.querySelector("tfoot")!;
@@ -103,7 +97,7 @@ const viewPlayerList = () => {
     const relativeSkill = renderRelativeSkill(
       player.age,
       bestSkillWithExp,
-      predictData
+      playerGrowthPrediction
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);
