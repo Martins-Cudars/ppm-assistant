@@ -1,3 +1,4 @@
+import { GrowthPrediction } from "@/types/GrowthData";
 import { SoccerPositionSetting } from "@/types/Position";
 
 enum Ratio {
@@ -120,47 +121,33 @@ const ratingSettings = {
   high: 1200,
 };
 
-const getSkillAndExpIncrement = (
-  age: number,
-): { skillIncrement: number; expIncrement: number } => {
-  if (age <= 18) {
-    return { skillIncrement: 65, expIncrement: 6 };
-  } else if (age <= 21) {
-    return { skillIncrement: 55, expIncrement: 8 };
-  } else if (age <= 24) {
-    return { skillIncrement: 40, expIncrement: 10 };
-  } else if (age <= 27) {
-    return { skillIncrement: 25, expIncrement: 10 };
-  } else if (age <= 30) {
-    return { skillIncrement: 0, expIncrement: 12 };
-  } else if (age <= 32) {
-    return { skillIncrement: -10, expIncrement: 12 };
-  } else if (age <= 35) {
-    return { skillIncrement: -25, expIncrement: 12 };
-  } else {
-    return { skillIncrement: -40, expIncrement: 12 };
-  }
-};
-
-const generatePlayerGrowthData = () => {
-  const playerGrowthData = [];
-  let skill = 60;
-  let exp = 0;
-
-  for (let age = 15; age <= 40; age++) {
-    const { skillIncrement, expIncrement } = getSkillAndExpIncrement(age);
-    skill += skillIncrement;
-    exp += expIncrement;
-
-    // Cap the skill at 655
-    if (skill > 655) skill = 655;
-
-    playerGrowthData.push({ age, skill, exp });
-  }
-
-  return playerGrowthData;
-};
-
-const playerGrowthPrediction = generatePlayerGrowthData();
+const playerGrowthPrediction: GrowthPrediction = [
+  { age: 15, skill: 120, exp: 0 },
+  { age: 16, skill: 182, exp: 5 }, // +62 skill | +5 exp
+  { age: 17, skill: 250, exp: 10 }, // +68 skill | +5 exp
+  { age: 18, skill: 318, exp: 16 }, // +68 skill | +6 exp
+  { age: 19, skill: 385, exp: 22 }, // +67 skill | +6 exp
+  { age: 20, skill: 455, exp: 35 }, // +70 skill | +13 exp
+  { age: 21, skill: 525, exp: 48 }, // +70 skill | +13 exp
+  { age: 22, skill: 590, exp: 62 }, // +65 skill | +14 exp
+  { age: 23, skill: 650, exp: 77 }, // +60 skill | +15 exp
+  { age: 24, skill: 700, exp: 93 }, // +50 skill | +16 exp
+  { age: 25, skill: 720, exp: 110 }, // +20 skill | +17 exp
+  { age: 26, skill: 735, exp: 128 }, // +15 skill | +18 exp
+  { age: 27, skill: 745, exp: 147 }, // +10 skill | +19 exp
+  { age: 28, skill: 752, exp: 167 }, // +7 skill | +20 exp
+  { age: 29, skill: 757, exp: 188 }, // +5 skill | +21 exp
+  { age: 30, skill: 760, exp: 210 }, // +3 skill | +22 exp
+  { age: 31, skill: 760, exp: 225 }, // +0 skill | +15 exp
+  { age: 32, skill: 758, exp: 238 }, // -2 skill | +13 exp
+  { age: 33, skill: 755, exp: 247 }, // -3 skill | +9 exp
+  { age: 34, skill: 750, exp: 255 }, // -5 skill | +8 exp
+  { age: 35, skill: 742, exp: 262 }, // -8 skill | +7 exp
+  { age: 36, skill: 730, exp: 268 }, // -12 skill | +6 exp
+  { age: 37, skill: 715, exp: 273 }, // -15 skill | +5 exp
+  { age: 38, skill: 695, exp: 277 }, // -20 skill | +4 exp
+  { age: 39, skill: 670, exp: 280 }, // -25 skill | +3 exp
+  { age: 40, skill: 640, exp: 282 }, // -30 skill | +2 exp
+];
 
 export { positionSettings, ratingSettings, playerGrowthPrediction };

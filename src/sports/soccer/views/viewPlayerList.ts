@@ -7,10 +7,12 @@ import {
   renderButton,
   renderRelativeSkill,
 } from "@/base/render";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewPlayerList = () => {
   const mainContent = document.getElementsByClassName("main_content");
+  const seasonDay = getCurrentSeasonDay();
 
   const table = document.getElementById("table-1");
 
@@ -51,7 +53,7 @@ const viewPlayerList = () => {
       new Date(),
       true,
       true,
-      1,
+      seasonDay,
       {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),

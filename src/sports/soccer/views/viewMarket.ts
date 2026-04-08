@@ -7,6 +7,7 @@ import {
   renderPotentialBadge,
   renderRelativeSkill,
 } from "@/base/render";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 /**
@@ -15,6 +16,7 @@ import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewMarket = () => {
   const table = document.getElementById("table-1");
+  const seasonDay = getCurrentSeasonDay();
 
   if (!table) throw new Error("Table not found");
 
@@ -56,7 +58,7 @@ const viewMarket = () => {
       new Date(),
       true,
       true,
-      1,
+      seasonDay,
       {
         goalie: getSkill(playerColumns[4]),
         defence: getSkill(playerColumns[5]),
