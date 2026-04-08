@@ -14,7 +14,6 @@ import {
   renderButton,
   renderRelativeSkill,
 } from "@/base/render";
-import { getCurrentSeasonDay } from "@/utils/dom";
 import { SoccerPlayer } from "@/types/Player";
 
 const viewPlayerList = () => {
@@ -25,9 +24,6 @@ const viewPlayerList = () => {
   if (!table) {
     return new Error("Table with id 'table-1' not found");
   }
-
-  /** Calculate predictions */
-  const seasonDay = getCurrentSeasonDay();
 
   const tableHead = table.querySelector("thead")!;
   const tableFoot = table.querySelector("tfoot")!;
@@ -105,7 +101,7 @@ const viewPlayerList = () => {
     playerRow.appendChild(relativeCell);
   });
 
-  const filterByPositions = (pos) => {
+  const filterByPositions = (pos: string) => {
     if (pos === "All") {
       document.querySelectorAll(".player-row").forEach((row) => {
         row.style.display = "table-row";

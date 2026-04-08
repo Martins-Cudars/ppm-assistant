@@ -8,11 +8,6 @@ import {
 
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 
-const extractSkill = (el) => {
-  const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
-  return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
-};
-
 const viewTraining = () => {
   const tableHeads = document
     .getElementById("table-1")!

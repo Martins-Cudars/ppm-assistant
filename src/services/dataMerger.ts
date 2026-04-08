@@ -3,7 +3,11 @@
  * Implements confidence-based merging with temporal ordering and season change detection
  */
 
-import { HockeyPlayer, HockeyPlayerInfo } from "@/sports/hockey/classes/HockeyPlayer";
+import {
+  HockeyPlayer,
+  HockeyPlayerInfo,
+  HockeySkills,
+} from "@/sports/hockey/classes/HockeyPlayer";
 import { isNewSeason } from "@/storage/storageKeys";
 import { getCurrentSeasonDay } from "@/utils/dom";
 
@@ -98,9 +102,9 @@ export function mergePlayerData(
     mergedScoutingStatus,
     mergedScoutingStatus === "SCOUTED",
     incoming.seasonDay, // Use current season day
-    mergedSkills as any,
+    mergedSkills as HockeySkills | undefined,
     mergedExperience,
-    mergedTrainingQualities as any,
+    mergedTrainingQualities as Record<string, number> | undefined,
     mergedInjuryDays
   );
 

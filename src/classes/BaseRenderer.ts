@@ -2,7 +2,6 @@ import { potentialGrade } from "@/base/utilities";
 import { calculateRelativeSkill } from "@/base/calculations";
 import { PositionPotential, RatingSettings } from "@/types/Position";
 import { GrowthPrediction } from "@/types/GrowthData";
-import { positionSettings as hockeyPositionSettings } from "@/sports/hockey/settings";
 
 class BaseRenderer {
   static renderTableCell(

@@ -1,9 +1,7 @@
 import { defineStore } from "pinia";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import {
-  getAllPlayers,
   getAllPlayersFromAllCaches,
-  clearCache,
   clearAllCaches,
   getCacheStats,
 } from "@/storage/playerCache";

@@ -10,7 +10,20 @@ const viewPlayerContracts = async () => {
   if (!table) return;
 
   const rows = table.querySelectorAll("tbody tr");
-  const items: any[] = [];
+  const items: Array<{
+    nameHtml: string;
+    age: number;
+    contract: number;
+    salary: number;
+    daysInTeam: number;
+    alpEnabled: boolean;
+    alpHref: string;
+    salaryPercentage?: string;
+    contractWorthRaw?: number;
+    contractWorth?: string;
+    seasonSalaryRaw?: number;
+    seasonSalary?: string;
+  }> = [];
   const players: HockeyPlayer[] = [];
   const seasonDay = getCurrentSeasonDay();
 

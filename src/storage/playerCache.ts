@@ -6,6 +6,7 @@
 
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { generateStorageKey } from "./storageKeys";
 import { serializePlayer, deserializePlayer } from "./serialization";
 
@@ -55,9 +56,8 @@ function initializeCache(): PlayerCacheStorage {
   // Get current season day from the page
   let seasonDay = 1;
   try {
-    const { getCurrentSeasonDay } = require("@/utils");
     seasonDay = getCurrentSeasonDay();
-  } catch (error) {
+  } catch {
     console.warn("[PlayerCache] Could not get current season day, using default");
   }
 

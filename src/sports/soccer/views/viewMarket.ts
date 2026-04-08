@@ -42,7 +42,7 @@ const viewMarket = () => {
 
   const seasonDay = getCurrentSeasonDay();
 
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
+  recalculatePredictDataAccordingToSeasonDay(
     playerGrowthPrediction,
     undefined,
     seasonDay

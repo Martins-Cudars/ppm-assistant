@@ -75,8 +75,19 @@ export interface SoccerPositionSetting {
 
 // TODO: Add Basketball skills
 export interface BasketballPositionSetting {
-  name: any;
-  ratios?: any;
-  bonus?: any;
+  name: "PG" | "SG" | "SF" | "PF" | "C";
+  ratios: {
+    shooting?: number;
+    blocking?: number;
+    passing?: number;
+    technical?: number;
+    speed?: number;
+    aggression?: number;
+    jumping?: number;
+  };
+  bonus?: {
+    shooting?: number;
+    blocking?: number;
+  };
   positionRatio: number;
 }

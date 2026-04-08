@@ -1,3 +1,4 @@
+import { BasketballPlayer } from "@/types/Player";
 import { positionSettings } from "../settings";
 
 interface PositionSkill {
@@ -17,16 +18,14 @@ const calculateHeightModifier = (
     : 1;
 };
 
-const calculatePositionsSkills = (player: any): PositionSkill[] => {
+const calculatePositionsSkills = (player: BasketballPlayer): PositionSkill[] => {
   const positionSkills: PositionSkill[] = [];
 
   positionSettings.forEach((position) => {
     const skills = [];
-    const ratios: number[] = [];
 
     for (const [key, value] of Object.entries(position.ratios)) {
       skills.push(parseInt(player.skills[key]) / value);
-      ratios.push(value);
     }
 
     const baseSkill = Math.min(...skills);

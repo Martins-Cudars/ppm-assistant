@@ -3,7 +3,6 @@ import { createPinia } from "pinia";
 import {
   HockeyPlayer,
   HockeyPlayerInfo,
-  ContractInfo,
 } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";

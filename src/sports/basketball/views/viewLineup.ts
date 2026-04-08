@@ -1,13 +1,18 @@
-import { positionSettings, ratingSettings } from "@/sports/basketball/settings";
+import { ratingSettings } from "@/sports/basketball/settings";
 import {
   calculateBestPosition,
   calculateSkillWithExp,
 } from "@/base/calculations";
 import { calculatePositionsSkills } from "@/sports/basketball/calculations/positionsSkills";
 import { renderTableCell, renderComparison } from "@/base/render";
+import { BasketballPlayer } from "@/types/Player";
+
+type BasketballLineupPlayer = BasketballPlayer & {
+  id: string;
+};
 
 const viewLineup = () => {
-  const players = [];
+  const players: BasketballLineupPlayer[] = [];
 
   const table = document.getElementById("table-1");
   if (!table) {
@@ -92,7 +97,7 @@ const viewLineup = () => {
     playerRow.appendChild(ratingTd);
   });
 
-  const formationPositions = ["PG", "SG", "C", "SF", "PF"];
+  const formationPositions = ["PG", "SG", "C", "SF", "PF"] as const;
 
   const findPlayer = (playerId: string) => {
     return players.find((player) => player.id === playerId);
@@ -118,6 +123,7 @@ const viewLineup = () => {
       if (!id) return;
 
       const playerData = findPlayer(id);
+      if (!playerData) return;
 
       const playerSkills = calculatePositionsSkills(playerData);
 
@@ -132,10 +138,10 @@ const viewLineup = () => {
         "lineup_spot_caption_wrapper--basketball"
       );
 
-      const skill = calculateSkillWithExp(
-        playerSkills.find((skill) => skill.position === position).level,
-        playerData.experience
-      );
+      const positionSkill = playerSkills.find((skill) => skill.position === position);
+      if (!positionSkill) return;
+
+      const skill = calculateSkillWithExp(positionSkill.level, playerData.experience);
 
       if (captionEl.querySelector(".lineup_spot_caption_wrapper"))
         captionEl.querySelector(".lineup_spot_caption_wrapper").remove();
@@ -151,7 +157,12 @@ const viewLineup = () => {
 
   const config = { attributes: false, childList: true, subtree: true };
 
-  const callback = (mutationList, observer) => {
+  if (!fieldEl) return;
+
+  const callback = (
+    _mutationList: MutationRecord[],
+    observer: MutationObserver
+  ) => {
     observer.disconnect();
     showFormationRankings();
     observer.observe(fieldEl, config);

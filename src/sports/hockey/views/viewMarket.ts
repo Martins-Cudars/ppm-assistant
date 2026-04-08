@@ -92,7 +92,7 @@ const viewMarket = () => {
       player.experience
     );
 
-    const predictData = recalculatePredictDataAccordingToSeasonDay(
+    recalculatePredictDataAccordingToSeasonDay(
       playerGrowthPrediction,
       bestPosition.position,
       seasonDay

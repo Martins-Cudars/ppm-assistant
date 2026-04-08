@@ -13,12 +13,12 @@ import viewTraining from "./views/viewTraining";
  */
 
 const initBasketball = () => {
-  const getRoute = (inputUrl: any) => {
+  const getRoute = (inputUrl: string) => {
     const urlRegex =
       /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
 
     const match = inputUrl.match(urlRegex);
-    return match[1];
+    return match?.[1] ?? "";
   };
 
   const url = window.location.href;

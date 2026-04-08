@@ -3,7 +3,11 @@
  * Handles Date conversion and data completeness calculation
  */
 
-import { HockeyPlayer, HockeyPlayerInfo } from "@/sports/hockey/classes/HockeyPlayer";
+import {
+  HockeyPlayer,
+  HockeyPlayerInfo,
+  HockeySkills,
+} from "@/sports/hockey/classes/HockeyPlayer";
 import { StoredPlayerData } from "@/types/StoredPlayer";
 
 /**
@@ -50,8 +54,9 @@ export function serializePlayer(
 
   const stored: StoredPlayerData = {
     baseInfo,
-    skills: (player.skills as any) || null,
-    trainingQualities: (player.trainingQualities as any) || null,
+    skills: (player.skills as HockeySkills | undefined) || null,
+    trainingQualities:
+      (player.trainingQualities as Record<string, number> | undefined) || null,
     experience: player.experience ?? null,
     injuryDays: player.injuryDays,
     scoutingStatus: player.scoutingStatus,
