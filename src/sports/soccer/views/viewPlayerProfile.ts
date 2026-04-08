@@ -1,26 +1,16 @@
 import {
-  positionSettings,
   ratingSettings,
   playerGrowthPrediction,
 } from "@/sports/soccer/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-} from "@/base/calculations";
 import { renderPotentialChart } from "@/charts";
 import {
   renderComparison,
-  renderPotential,
   renderPotentialBadge,
   renderRelativeSkill,
 } from "@/base/render";
 
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
-
-import { SoccerPlayer } from "@/types/Player";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewPlayerProfile = () => {
   const table = document.getElementById("table-1");
@@ -34,21 +24,46 @@ const viewPlayerProfile = () => {
   if (!statsVisible)
     return new Error("Player is not scouted or is not on the market");
 
-  /** Calculate predictions */
   const seasonDay = getCurrentSeasonDay();
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
+  const searchParams = new URLSearchParams(window.location.search);
+  const dataParam = searchParams.get("data") || "";
+  const extractedId = dataParam.split("-")[0] || "unknown";
+
+  const trainingQualities = {
+    goalie: parseInt(table.querySelector("#kva_goalie")!.textContent!),
+    defence: parseInt(table.querySelector("#kva_defense")!.textContent!),
+    midfield: parseInt(table.querySelector("#kva_midfield")!.textContent!),
+    offence: parseInt(table.querySelector("#kva_attack")!.textContent!),
+    shooting: parseInt(table.querySelector("#kva_shooting")!.textContent!),
+    passing: parseInt(table.querySelector("#kva_passing")!.textContent!),
+    technical: parseInt(
+      table.querySelector("#technique_quality")!.textContent!
+    ),
+    speed: parseInt(table.querySelector("#kva_speed")!.textContent!),
+    heading: parseInt(table.querySelector("#kva_heading")!.textContent!),
+  };
+
+  const averageTrainingRatio = Math.round(
+    Object.values(trainingQualities).reduce((sum, value) => sum + value, 0) /
+      Object.values(trainingQualities).length
   );
 
-  const player: SoccerPlayer = {
-    name: playerInfo.querySelectorAll("a")[1]!.textContent!,
-    age: parseInt(table.querySelector("#age")!.textContent!),
-    careerLongitivity: parseInt(
-      Array.from(table.querySelector("#life_time span")!.textContent!)[0]
-    ),
-    skills: {
+  const player = new SoccerPlayer(
+    {
+      id: extractedId,
+      name: playerInfo.querySelectorAll("a")[1]!.textContent!,
+      age: parseInt(table.querySelector("#age")!.textContent!),
+      careerLongitivity: parseInt(
+        Array.from(table.querySelector("#life_time span")!.textContent!)[0]
+      ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      overallRating: parseInt(table.querySelector("#index_skill")!.textContent!),
+      averageTrainingRatio,
+    },
+    new Date(),
+    true,
+    true,
+    seasonDay,
+    {
       goalie: parseInt(table.querySelector("#goalie")!.textContent!),
       defence: parseInt(table.querySelector("#defense")!.textContent!),
       midfield: parseInt(table.querySelector("#midfield")!.textContent!),
@@ -61,25 +76,14 @@ const viewPlayerProfile = () => {
       speed: parseInt(table.querySelector("#speed")!.textContent!),
       heading: parseInt(table.querySelector("#heading")!.textContent!),
     },
-    qualities: {
-      goalie: parseInt(table.querySelector("#kva_goalie")!.textContent!),
-      defence: parseInt(table.querySelector("#kva_defense")!.textContent!),
-      midfield: parseInt(table.querySelector("#kva_midfield")!.textContent!),
-      offence: parseInt(table.querySelector("#kva_attack")!.textContent!),
-      shooting: parseInt(table.querySelector("#kva_shooting")!.textContent!),
-      passing: parseInt(table.querySelector("#kva_passing")!.textContent!),
-      technical: parseInt(
-        table.querySelector("#technique_quality")!.textContent!
-      ),
-      speed: parseInt(table.querySelector("#kva_speed")!.textContent!),
-      heading: parseInt(table.querySelector("#kva_heading")!.textContent!),
-    },
-    experience: parseInt(table.querySelector("#experience")!.textContent!),
-    overall: parseInt(table.querySelector("#index_skill")!.textContent!),
-  };
+    parseInt(table.querySelector("#experience")!.textContent!),
+    trainingQualities
+  );
+  player.calculatePositions();
+  player.calculatePositionTrainingQualities();
 
-  const positions = calculatePositionsSkills(player, positionSettings);
-  const bestPosition = calculateBestPosition(positions);
+  const positions = player.getPositions();
+  const bestPosition = player.getBestPosition();
 
   const contentColumn = document.querySelector(".column_left");
 
@@ -95,7 +99,7 @@ const viewPlayerProfile = () => {
 
   const position = document.createElement("div");
   position.classList.add("ability__position");
-  position.textContent = bestPosition.position;
+  position.textContent = bestPosition.name;
 
   const allPositions = document.createElement("div");
   allPositions.classList.add("ability__positions");
@@ -103,10 +107,7 @@ const viewPlayerProfile = () => {
   let positionList = ``;
 
   positions.forEach((position) => {
-    positionList += `<div>${position.position} ${calculateSkillWithExp(
-      position.level,
-      player.experience
-    )}</div>`;
+    positionList += `<div>${position.name} ${position.ratingWithXp}</div>`;
   });
 
   allPositions.innerHTML = positionList;
@@ -116,17 +117,11 @@ const viewPlayerProfile = () => {
   const abilityDescription = document.createElement("div");
   abilityDescription.classList.add("ability__text");
 
-  const bestSkillWithExp = calculateSkillWithExp(
-    bestPosition.level,
-    player.experience
-  );
+  const bestSkillWithExp = bestPosition.ratingWithXp;
 
   const abilityValue = document.createElement("div");
-  abilityValue.innerHTML = `<div>${calculateSkillWithExp(
-    bestPosition.level,
-    player.experience
-  )}</div>
-  <div>(${bestPosition.level})</div>`;
+  abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
+  <div>(${bestPosition.baseRating})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
@@ -147,16 +142,17 @@ const viewPlayerProfile = () => {
   potentialBox.classList.add("player-profile");
   potentialBox.classList.add("player-profile--potential");
 
-  const potentials = calculatePositionsQualities(player, positionSettings);
+  const potentials = player.getPositionTrainingQualities();
+  const bestPotential =
+    player.getPositionTrainingQuality(bestPosition.name) ??
+    player.getBestPositionTrainingQuality();
 
-  const bestPotential = potentials.find(
-    (el) => el.position === bestPosition.position
-  );
-
-  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
+  const potentialBadge = renderPotentialBadge(bestPotential.totalTrainingQuality);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential!);
+  const potentialDescription = document.createElement("div");
+  potentialDescription.classList.add("potential__text");
+  potentialDescription.textContent = `Current position (${bestPotential.position}) training quality is ${bestPotential.totalTrainingQuality} (${bestPotential.baseTrainingQuality} + ${bestPotential.bonusTrainingQuality})`;
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");
@@ -165,7 +161,7 @@ const viewPlayerProfile = () => {
   let potentialList = ``;
 
   potentials.forEach((potential) => {
-    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    potentialList += `<div>${potential.position} ${potential.totalTrainingQuality}</div>`;
   });
 
   allPotentials.innerHTML = potentialList;
@@ -183,12 +179,12 @@ const viewPlayerProfile = () => {
 
   // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
   const skillRecalculated =
-    bestPosition.position === "G" ? bestSkillWithExp / 1.25 : bestSkillWithExp;
+    bestPosition.name === "GK" ? bestSkillWithExp / 1.25 : bestSkillWithExp;
 
   const relativeSkill = renderRelativeSkill(
     player.age,
     skillRecalculated,
-    predictData
+    playerGrowthPrediction
   );
 
   relativeEl.innerHTML = `<div class="relative__title">Relative skill</div>`;
@@ -209,8 +205,8 @@ const viewPlayerProfile = () => {
   renderPotentialChart(
     {
       age: player.age,
-      skill: bestPosition.level,
-      position: bestPosition.position,
+      skill: bestPosition.baseRating,
+      position: bestPosition.name,
       exp: player.experience,
     },
     playerGrowthPrediction,

@@ -1,20 +1,14 @@
 import {
-  positionSettings,
   ratingSettings,
   playerGrowthPrediction,
 } from "@/sports/soccer/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
 import {
   renderTableCell,
   renderComparison,
   renderButton,
   renderRelativeSkill,
 } from "@/base/render";
-import { SoccerPlayer } from "@/types/Player";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewPlayerList = () => {
   const mainContent = document.getElementsByClassName("main_content");
@@ -44,11 +38,22 @@ const viewPlayerList = () => {
     const playerColumns = playerRow.querySelectorAll("td");
     playerRow.classList.add(`player-row`);
 
-    const player: SoccerPlayer = {
-      name: playerColumns[0].textContent!,
-      age: parseInt(playerColumns[2].textContent!),
-      careerLongitivity: parseInt(Array.from(playerColumns[5].textContent!)[0]),
-      skills: {
+    const player = new SoccerPlayer(
+      {
+        id: `soccer-list-${index}`,
+        name: playerColumns[0].textContent!,
+        age: parseInt(playerColumns[2].textContent!),
+        careerLongitivity: parseInt(
+          Array.from(playerColumns[5].textContent!)[0]
+        ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        overallRating: parseInt(playerColumns[16].textContent!),
+        averageTrainingRatio: 0,
+      },
+      new Date(),
+      true,
+      true,
+      1,
+      {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),
         midfield: parseInt(playerColumns[8].textContent!),
@@ -59,25 +64,20 @@ const viewPlayerList = () => {
         speed: parseInt(playerColumns[13].textContent!),
         heading: parseInt(playerColumns[14].textContent!),
       },
-
-      experience: parseInt(playerColumns[15].textContent!),
-      overall: parseInt(playerColumns[16].textContent!),
-    };
+      parseInt(playerColumns[15].textContent!)
+    );
+    player.calculatePositions();
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
-    playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
+    const bestPosition = player.getBestPosition();
+    playerRow.classList.add(`position-${bestPosition.name.toLowerCase()}`);
 
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
+    const bestSkillWithExp = bestPosition.ratingWithXp;
 
-    playerRow.classList.add(`pos-${bestPosition.position.toLowerCase()}`);
+    playerRow.classList.add(`pos-${bestPosition.name.toLowerCase()}`);
 
     playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
+      renderTableCell(bestPosition.name, `${rowClass}td1`)
     );
 
     playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
@@ -104,19 +104,19 @@ const viewPlayerList = () => {
   const filterByPositions = (pos: string) => {
     if (pos === "All") {
       document.querySelectorAll(".player-row").forEach((row) => {
-        row.style.display = "table-row";
+        (row as HTMLElement).style.display = "table-row";
       });
       return;
     }
 
     document.querySelectorAll(".player-row").forEach((row) => {
-      row.style.display = "none";
+      (row as HTMLElement).style.display = "none";
     });
 
     document
       .querySelectorAll(`.position-${pos.toLowerCase()}`)
       .forEach((row) => {
-        row.style.display = "table-row";
+        (row as HTMLElement).style.display = "table-row";
       });
   };
 
@@ -128,13 +128,13 @@ const viewPlayerList = () => {
   positionButtonAll.addEventListener("click", () => filterByPositions("All"));
   positionFilter.append(positionButtonAll);
 
-  positionSettings.forEach((pos) => {
+  ["GK", "SD", "CD", "SM", "CM", "SF", "CF"].forEach((pos) => {
     const positionButton = renderButton(
-      `${pos.name} (${
-        document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length
+      `${pos} (${
+        document.querySelectorAll(`.position-${pos.toLowerCase()}`).length
       })`
     );
-    positionButton.addEventListener("click", () => filterByPositions(pos.name));
+    positionButton.addEventListener("click", () => filterByPositions(pos));
     positionFilter.append(positionButton);
   });
 

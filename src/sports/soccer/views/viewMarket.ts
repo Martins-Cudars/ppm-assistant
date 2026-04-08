@@ -1,23 +1,14 @@
 import {
-  positionSettings,
   ratingSettings,
   playerGrowthPrediction,
 } from "@/sports/soccer/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-  calculateBestPotential,
-} from "@/base/calculations";
 import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
   renderRelativeSkill,
 } from "@/base/render";
-import { getCurrentSeasonDay } from "@/utils/dom";
-import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/soccer/utils/calculations";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 /**
  * View Functions
@@ -40,14 +31,6 @@ const viewMarket = () => {
     head.querySelector("tr")!.appendChild(renderTableCell("Rel", "th1"));
   });
 
-  const seasonDay = getCurrentSeasonDay();
-
-  recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    undefined,
-    seasonDay
-  );
-
   const getSkill = (cell: HTMLTableCellElement) => {
     return parseInt(
       Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
@@ -60,11 +43,22 @@ const viewMarket = () => {
     const playerColumns = playerRow.querySelectorAll("td");
     const playerQualities = playerRow.querySelectorAll(".kva");
 
-    const player = {
-      name: playerColumns[0].textContent,
-      age: parseInt(playerColumns[1].textContent!),
-      careerLongitivity: Array.from(playerColumns[3].textContent!)[0],
-      skills: {
+    const player = new SoccerPlayer(
+      {
+        id: `soccer-market-${index}`,
+        name: playerColumns[0].textContent || "",
+        age: parseInt(playerColumns[1].textContent!),
+        careerLongitivity: parseInt(
+          Array.from(playerColumns[3].textContent!)[0]
+        ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        overallRating: parseInt(playerColumns[14].textContent!),
+        averageTrainingRatio: 0,
+      },
+      new Date(),
+      true,
+      true,
+      1,
+      {
         goalie: getSkill(playerColumns[4]),
         defence: getSkill(playerColumns[5]),
         midfield: getSkill(playerColumns[6]),
@@ -75,7 +69,8 @@ const viewMarket = () => {
         speed: getSkill(playerColumns[11]),
         heading: getSkill(playerColumns[12]),
       },
-      qualities: {
+      parseInt(playerColumns[13].textContent!),
+      {
         goalie: parseInt(playerQualities[0].textContent!),
         defence: parseInt(playerQualities[1].textContent!),
         midfield: parseInt(playerQualities[2].textContent!),
@@ -85,21 +80,17 @@ const viewMarket = () => {
         technical: parseInt(playerQualities[6].textContent!),
         speed: parseInt(playerQualities[7].textContent!),
         heading: parseInt(playerQualities[8].textContent!),
-      },
-      experience: parseInt(playerColumns[13].textContent!),
-      overall: parseInt(playerColumns[14].textContent!),
-    };
+      }
+    );
+    player.calculatePositions();
+    player.calculatePositionTrainingQualities();
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
+    const bestPosition = player.getBestPosition();
+    const bestSkillWithExp = bestPosition.ratingWithXp;
 
     playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
+      renderTableCell(bestPosition.name, `${rowClass}td1`)
     );
 
     playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
@@ -110,12 +101,10 @@ const viewMarket = () => {
 
     playerRow.appendChild(ratingTd);
 
-    const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player, positionSettings)
-    );
+    const bestPotential = player.getBestPositionTrainingQuality();
 
     const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
+      bestPotential.totalTrainingQuality,
       "small"
     );
 

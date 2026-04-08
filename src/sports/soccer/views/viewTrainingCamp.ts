@@ -1,12 +1,5 @@
-import { positionSettings } from "@/sports/soccer/settings";
-
-import {
-  calculatePositionsQualities,
-  calculatePositionsSkills,
-  calculateBestPosition,
-} from "@/base/calculations";
-
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewTraining = () => {
   const tableHeads = document
@@ -28,8 +21,20 @@ const viewTraining = () => {
     const playerQualities = playerRow.querySelectorAll(".kva");
     const playerColumns = playerRow.querySelectorAll("td");
 
-    const player = {
-      skills: {
+    const player = new SoccerPlayer(
+      {
+        id: `soccer-training-camp-${index}`,
+        name: "Unknown",
+        age: 15,
+        careerLongitivity: 0,
+        overallRating: 0,
+        averageTrainingRatio: 0,
+      },
+      new Date(),
+      true,
+      true,
+      1,
+      {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),
         midfield: parseInt(playerColumns[8].textContent!),
@@ -40,7 +45,8 @@ const viewTraining = () => {
         speed: parseInt(playerColumns[13].textContent!),
         heading: parseInt(playerColumns[14].textContent!),
       },
-      qualities: {
+      0,
+      {
         goalie: parseInt(playerQualities[0].textContent!),
         defence: parseInt(playerQualities[1].textContent!),
         midfield: parseInt(playerQualities[2].textContent!),
@@ -50,19 +56,18 @@ const viewTraining = () => {
         technical: parseInt(playerQualities[6].textContent!),
         speed: parseInt(playerQualities[7].textContent!),
         heading: parseInt(playerQualities[8].textContent!),
-      },
-    };
-
-    const playerPositions = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(playerPositions);
-    const potentials = calculatePositionsQualities(player, positionSettings);
-
-    const bestPotential = potentials.find(
-      (el) => el.position === bestPosition.position
+      }
     );
+    player.calculatePositions();
+    player.calculatePositionTrainingQualities();
+
+    const bestPosition = player.getBestPosition();
+    const bestPotential =
+      player.getPositionTrainingQuality(bestPosition.name) ??
+      player.getBestPositionTrainingQuality();
 
     const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
+      bestPotential.totalTrainingQuality,
       "small"
     );
     const potentialTd = document.createElement("td");
