@@ -31,7 +31,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.verylow,
     },
     positionRatio: 1,
   },
@@ -46,7 +46,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.verylow,
     },
     positionRatio: 1,
   },
@@ -62,7 +62,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       defence: Ratio.verylow,
       offence: Ratio.verylow,
-      shooting: Ratio.medium,
+      shooting: Ratio.low,
     },
     positionRatio: 1,
   },
@@ -78,7 +78,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       defence: Ratio.verylow,
       offence: Ratio.verylow,
-      shooting: Ratio.medium,
+      shooting: Ratio.low,
     },
     positionRatio: 1,
   },
@@ -93,7 +93,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.high,
+      shooting: Ratio.medium,
     },
     positionRatio: 1,
   },
@@ -108,7 +108,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.high,
+      shooting: Ratio.medium,
     },
     positionRatio: 1,
   },
