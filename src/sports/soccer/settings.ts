@@ -115,9 +115,9 @@ const positionSettings: SoccerPositionSetting[] = [
 ];
 
 const ratingSettings = {
-  low: 300,
-  medium: 600,
-  high: 900,
+  low: 400,
+  medium: 800,
+  high: 1200,
 };
 
 const getSkillAndExpIncrement = (
