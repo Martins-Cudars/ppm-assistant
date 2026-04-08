@@ -59,13 +59,14 @@
   grid-row: 1;
   grid-column: 1;
 }
+
 .player-profile .potential__text,
 .player-profile .ability__text {
   grid-row: 1;
-  grid-column: 2;
 }
 
 .player-profile .potential__text {
+  grid-column: 2;
   text-align: left;
   font-size: 12px;
 }
@@ -77,7 +78,7 @@
   gap: 0.5rem;
   font-size: 12px;
   grid-row: 2;
-  grid-column: 1;
+  grid-column: 1 / span 2;
 }
 
 .player-profile .ability__text div:nth-child(1) {

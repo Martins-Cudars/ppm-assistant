@@ -50,6 +50,7 @@ export type SoccerPlayerTrainingQuality = {
 
 export class SoccerPlayer extends BasePlayer {
   private static readonly DAYS_PER_SEASON = 112;
+  private static readonly BONUS_CAP_RATIO = 0.35;
 
   public override skills?: SoccerSkills;
   public override positions: SoccerPlayerPosition[] = [];
@@ -95,7 +96,17 @@ export class SoccerPlayer extends BasePlayer {
         )
       );
 
-      return this.createPosition(position.name, baseRating);
+      const bonusRating = position.bonus
+        ? Math.floor(
+            Object.entries(position.bonus).reduce(
+              (sum, [skillName, ratio]) =>
+                sum + this.skills![skillName as keyof SoccerSkills] * ratio,
+              0
+            )
+          )
+        : 0;
+
+      return this.createPosition(position.name, baseRating, bonusRating);
     });
   }
 
@@ -167,16 +178,21 @@ export class SoccerPlayer extends BasePlayer {
 
   private createPosition(
     name: SoccerPlayerPositionName,
-    baseRating: number
+    baseRating: number,
+    bonusRating = 0
   ): SoccerPlayerPosition {
-    const ratingWithXp = calculateSkillWithExp(baseRating, this.experience);
+    const cappedBonus = Math.floor(
+      Math.min(baseRating * SoccerPlayer.BONUS_CAP_RATIO, bonusRating)
+    );
+    const ratingWithBonus = baseRating + cappedBonus;
+    const ratingWithXp = calculateSkillWithExp(ratingWithBonus, this.experience);
 
     return {
       name,
       baseRating,
-      bonusRating: 0,
-      expBonus: ratingWithXp - baseRating,
-      ratingWithBonus: baseRating,
+      bonusRating: cappedBonus,
+      expBonus: ratingWithXp - ratingWithBonus,
+      ratingWithBonus,
       ratingWithXp,
     };
   }

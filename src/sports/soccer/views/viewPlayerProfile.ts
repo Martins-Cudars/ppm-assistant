@@ -121,7 +121,7 @@ const viewPlayerProfile = () => {
 
   const abilityValue = document.createElement("div");
   abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
-  <div>(${bestPosition.baseRating})</div>`;
+  <div>(${bestPosition.baseRating} + ${bestPosition.bonusRating} + ${bestPosition.expBonus})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
