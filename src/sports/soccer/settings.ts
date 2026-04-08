@@ -1,6 +1,7 @@
 import { SoccerPositionSetting } from "@/types/Position";
 
 enum Ratio {
+  verylow = 0.1,
   main = 1,
   high = 0.75,
   medium = 0.5,
@@ -29,6 +30,7 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.low,
     },
     bonus: {
+      midfield: Ratio.verylow,
       shooting: Ratio.low,
     },
     positionRatio: 1,
@@ -43,6 +45,7 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.medium,
     },
     bonus: {
+      midfield: Ratio.verylow,
       shooting: Ratio.low,
     },
     positionRatio: 1,
@@ -57,6 +60,8 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.low,
     },
     bonus: {
+      defence: Ratio.verylow,
+      offence: Ratio.verylow,
       shooting: Ratio.medium,
     },
     positionRatio: 1,
@@ -71,6 +76,8 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.low,
     },
     bonus: {
+      defence: Ratio.verylow,
+      offence: Ratio.verylow,
       shooting: Ratio.medium,
     },
     positionRatio: 1,
@@ -85,6 +92,7 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.low,
     },
     bonus: {
+      midfield: Ratio.verylow,
       shooting: Ratio.high,
     },
     positionRatio: 1,
@@ -99,6 +107,7 @@ const positionSettings: SoccerPositionSetting[] = [
       heading: Ratio.low,
     },
     bonus: {
+      midfield: Ratio.verylow,
       shooting: Ratio.high,
     },
     positionRatio: 1,
