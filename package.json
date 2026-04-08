@@ -12,18 +12,19 @@
     "build:main": "vite build",
     "build:report": "vite build --config vite.player-report.config.mts",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "eslint src eslint.config.mjs vite.config.mts vite.player-report.config.mts",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@eslint/js": "^9.34.0",
     "@types/chart.js": "^2.9.41",
     "@types/chrome": "^0.0.252",
     "@types/node": "^20.9.3",
-    "@typescript-eslint/eslint-plugin": "^8.42.0",
-    "@typescript-eslint/parser": "^8.42.0",
     "@vitejs/plugin-vue": "^6.0.2",
-    "eslint": "^8.57.0",
+    "eslint": "^9.34.0",
+    "globals": "^16.4.0",
     "typescript": "^5.2.2",
+    "typescript-eslint": "^8.58.1",
     "vite": "^5.0.0"
   },
   "dependencies": {
