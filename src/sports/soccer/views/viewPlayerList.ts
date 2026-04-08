@@ -92,7 +92,7 @@ const viewPlayerList = () => {
     const relativeSkill = renderRelativeSkill(
       player.age,
       bestSkillWithExp,
-      player.getMaxSkillForAge(bestPosition.name)
+        player.getMaxSkillForAge()
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);

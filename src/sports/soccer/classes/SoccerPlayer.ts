@@ -145,7 +145,7 @@ export class SoccerPlayer extends BasePlayer {
     });
   }
 
-  override getMaxSkillForAge(position?: SoccerPlayerPositionName): number {
+  override getMaxSkillForAge(): number {
     const predictionByAge = playerGrowthPrediction.find(
       (row) => row.age === this.age
     );
@@ -170,43 +170,7 @@ export class SoccerPlayer extends BasePlayer {
     const roundedSkill = Math.round(skill);
     const roundedExp = Math.round(exp);
 
-    if (!position || position === "?") {
-      return calculateSkillWithExp(roundedSkill, roundedExp);
-    }
-
-    const benchmarkPlayer = new SoccerPlayer(
-      {
-        id: "benchmark",
-        name: "Benchmark",
-        age: this.age,
-        careerLongitivity: this.careerLongitivity,
-        overallRating: this.overallRating,
-        averageTrainingRatio: this.averageTrainingRatio,
-      },
-      new Date(),
-      true,
-      true,
-      this.seasonDay,
-      {
-        goalie: roundedSkill,
-        defence: roundedSkill,
-        midfield: roundedSkill,
-        offence: roundedSkill,
-        shooting: roundedSkill,
-        passing: roundedSkill,
-        technical: roundedSkill,
-        speed: roundedSkill,
-        heading: roundedSkill,
-      },
-      roundedExp
-    );
-
-    benchmarkPlayer.calculatePositions();
-
-    return (
-      benchmarkPlayer.getPositions().find((item) => item.name === position)
-        ?.ratingWithXp ?? calculateSkillWithExp(roundedSkill, roundedExp)
-    );
+    return calculateSkillWithExp(roundedSkill, roundedExp);
   }
 
   getPositionTrainingQuality(
