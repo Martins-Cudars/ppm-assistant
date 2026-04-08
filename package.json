@@ -19,10 +19,10 @@
     "@types/chart.js": "^2.9.41",
     "@types/chrome": "^0.0.252",
     "@types/node": "^20.9.3",
-    "@typescript-eslint/eslint-plugin": "^6.12.0",
-    "@typescript-eslint/parser": "^6.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
     "@vitejs/plugin-vue": "^6.0.2",
-    "eslint": "^8.54.0",
+    "eslint": "^8.57.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
   },
