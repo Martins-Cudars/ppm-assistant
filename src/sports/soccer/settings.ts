@@ -112,7 +112,7 @@ const ratingSettings = {
 };
 
 const getSkillAndExpIncrement = (
-  age: number
+  age: number,
 ): { skillIncrement: number; expIncrement: number } => {
   if (age <= 18) {
     return { skillIncrement: 65, expIncrement: 6 };
@@ -121,21 +121,21 @@ const getSkillAndExpIncrement = (
   } else if (age <= 24) {
     return { skillIncrement: 40, expIncrement: 10 };
   } else if (age <= 27) {
-    return { skillIncrement: 30, expIncrement: 10 };
+    return { skillIncrement: 25, expIncrement: 10 };
   } else if (age <= 30) {
     return { skillIncrement: 0, expIncrement: 12 };
   } else if (age <= 32) {
     return { skillIncrement: -10, expIncrement: 12 };
   } else if (age <= 35) {
-    return { skillIncrement: -20, expIncrement: 12 };
+    return { skillIncrement: -25, expIncrement: 12 };
   } else {
-    return { skillIncrement: -20, expIncrement: 12 };
+    return { skillIncrement: -40, expIncrement: 12 };
   }
 };
 
 const generatePlayerGrowthData = () => {
   const playerGrowthData = [];
-  let skill = 30;
+  let skill = 60;
   let exp = 0;
 
   for (let age = 15; age <= 40; age++) {
