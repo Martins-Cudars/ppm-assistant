@@ -184,7 +184,7 @@ const viewPlayerProfile = () => {
   const relativeSkill = renderRelativeSkill(
     player.age,
     skillRecalculated,
-    playerGrowthPrediction
+    player.getMaxSkillForAge(bestPosition.name)
   );
 
   relativeEl.innerHTML = `<div class="relative__title">Relative skill</div>`;

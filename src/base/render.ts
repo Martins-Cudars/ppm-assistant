@@ -113,13 +113,20 @@ const renderPotentialBadge = (
 const renderRelativeSkill = (
   playerAge: number,
   playerSkillWithExp: number,
-  playerGrowthPrediction: GrowthPrediction
+  playerGrowthPredictionOrMaxSkill: GrowthPrediction | number
 ): HTMLElement => {
-  const relativeSkill = calculateRelativeSkill(
-    playerAge,
-    playerSkillWithExp,
-    playerGrowthPrediction
-  );
+  const relativeSkill =
+    typeof playerGrowthPredictionOrMaxSkill === "number"
+      ? playerGrowthPredictionOrMaxSkill === 0
+        ? 0
+        : Math.round(
+            (playerSkillWithExp / playerGrowthPredictionOrMaxSkill) * 100
+          )
+      : calculateRelativeSkill(
+          playerAge,
+          playerSkillWithExp,
+          playerGrowthPredictionOrMaxSkill
+        );
 
   // floor relative skill to 5s
   const relativeSkillRounded = Math.floor(relativeSkill / 5) * 5;

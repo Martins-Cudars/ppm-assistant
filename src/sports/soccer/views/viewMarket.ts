@@ -1,6 +1,5 @@
 import {
   ratingSettings,
-  playerGrowthPrediction,
 } from "@/sports/soccer/settings";
 import {
   renderTableCell,
@@ -120,7 +119,7 @@ const viewMarket = () => {
     const relativeSkill = renderRelativeSkill(
       player.age,
       bestSkillWithExp,
-      playerGrowthPrediction
+      player.getMaxSkillForAge(bestPosition.name)
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);
