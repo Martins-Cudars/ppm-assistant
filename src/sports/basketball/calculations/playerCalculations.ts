@@ -1,7 +1,6 @@
 import {
   calculatePositionTrainingQualities,
 } from "@/classes/playerCalculations";
-import { PlayerCalculationProfile } from "@/classes/playerProfile";
 import { BasketballPositionSetting } from "@/types/Position";
 import { calculateSkillWithExp } from "@/base/calculations";
 import {
@@ -27,10 +26,9 @@ export function calculateBasketballPositions(
   skills: BasketballSkills,
   height: number,
   experience: number,
-  profile: PlayerCalculationProfile
+  positionSettings: BasketballPositionSetting[]
 ): BasketballPlayerPosition[] {
-  return (profile.positionSettings as BasketballPositionSetting[]).map(
-    (position) => {
+  return positionSettings.map((position) => {
       const baseSkill = Math.min(
         ...Object.entries(position.ratios).map(([skillName, ratio]) =>
           Math.round(skills[skillName as keyof BasketballSkills] / (ratio ?? 1))
@@ -54,8 +52,7 @@ export function calculateBasketballPositions(
         ratingWithBonus,
         ratingWithXp,
       };
-    }
-  );
+    });
 }
 
 export function calculateBasketballPositionTrainingQualities(

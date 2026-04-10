@@ -18,10 +18,6 @@ const positionSettings: BasketballPositionSetting[] = [
       aggression: Ratio.verylow,
       jumping: Ratio.verylow,
     },
-    bonus: {
-      shooting: Ratio.medium,
-      blocking: Ratio.verylow,
-    },
     trainingRatios: {
       passing: 100,
       technical: 80,
@@ -45,10 +41,6 @@ const positionSettings: BasketballPositionSetting[] = [
       speed: Ratio.medium,
       aggression: Ratio.low,
       jumping: Ratio.low,
-    },
-    bonus: {
-      shooting: Ratio.high,
-      blocking: Ratio.low,
     },
     trainingRatios: {
       passing: 80,
@@ -74,10 +66,6 @@ const positionSettings: BasketballPositionSetting[] = [
       aggression: Ratio.medium,
       jumping: Ratio.medium,
     },
-    bonus: {
-      shooting: Ratio.medium,
-      blocking: Ratio.low,
-    },
     trainingRatios: {
       passing: 60,
       technical: 60,
@@ -102,10 +90,6 @@ const positionSettings: BasketballPositionSetting[] = [
       aggression: Ratio.high,
       jumping: Ratio.high,
     },
-    bonus: {
-      shooting: Ratio.low,
-      blocking: Ratio.medium,
-    },
     trainingRatios: {
       passing: 40,
       technical: 40,
@@ -129,10 +113,6 @@ const positionSettings: BasketballPositionSetting[] = [
       speed: Ratio.low,
       aggression: Ratio.veryhigh,
       jumping: Ratio.veryhigh,
-    },
-    bonus: {
-      shooting: Ratio.verylow,
-      blocking: Ratio.high,
     },
     trainingRatios: {
       passing: 20,

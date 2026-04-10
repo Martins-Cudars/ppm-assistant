@@ -89,7 +89,7 @@ export class BasketballPlayer extends BasePlayer {
       this.skills,
       this.height,
       this.experience,
-      basketballPlayerProfile
+      basketballPlayerProfile.positionSettings as BasketballPositionSetting[]
     );
   }
 
