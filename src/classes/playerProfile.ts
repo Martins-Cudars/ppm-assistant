@@ -12,7 +12,7 @@ export type PlayerPositionRule = {
 export type PlayerCalculationProfile = {
   unknownPositionName: string;
   requiresVisibility: boolean;
-  bonusCapRatio: number;
+  bonusCapRatio?: number;
   daysPerSeason: number;
   growthPrediction: GrowthPrediction;
   positionSettings: PlayerPositionRule[];

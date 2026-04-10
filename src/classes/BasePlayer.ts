@@ -88,6 +88,7 @@ export abstract class BasePlayer {
 
   calculatePositions(): void {
     const profile = this.getCalculationProfile();
+    const bonusCapRatio = profile.bonusCapRatio ?? 0;
 
     if (!this.skills || (profile.requiresVisibility && !this.isVisible)) {
       this.positions = [
@@ -96,7 +97,7 @@ export abstract class BasePlayer {
           this.getUnknownRating(),
           0,
           this.experience,
-          profile.bonusCapRatio
+          bonusCapRatio
         ),
       ];
       return;
@@ -106,7 +107,7 @@ export abstract class BasePlayer {
       this.skills,
       profile.positionSettings,
       this.experience,
-      profile.bonusCapRatio
+      bonusCapRatio
     );
   }
 
