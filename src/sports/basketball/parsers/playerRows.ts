@@ -135,7 +135,7 @@ export function parseBasketballPlayerFromMarketRow(playerRow: HTMLTableRowElemen
       averageTrainingRatio: 0,
     },
     skills,
-    undefined,
+    parseNumber(playerColumns[12]?.textContent),
     qualities
   );
 }
