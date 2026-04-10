@@ -1,6 +1,6 @@
 import { potentialGrade } from "@/base/utilities";
 import { calculateRelativeSkill } from "@/base/calculations";
-import { PositionPotential, RatingSettings } from "@/types/Position";
+import { RatingSettings } from "@/types/Position";
 import { GrowthPrediction } from "@/types/GrowthData";
 import { positionSettings as hockeyPositionSettings } from "@/sports/hockey/settings";
 
@@ -15,7 +15,7 @@ const renderComparison = (
   skill: number,
   ratingSettings: RatingSettings,
   position?: string
-): HTMLDivElement => {
+): HTMLSpanElement => {
   let skillAdjusted;
 
   if (position) {
@@ -82,15 +82,6 @@ const renderComparison = (
   return ratingOuter;
 };
 
-const renderPotential = (bestPotential: PositionPotential): HTMLDivElement => {
-  const potential = document.createElement("div");
-  potential.classList.add("potential__text");
-  potential.textContent = `Current position (${
-    bestPotential.position
-  }) training quality is ${Math.round(bestPotential.potential)}`;
-  return potential;
-};
-
 const renderPotentialBadge = (
   potential: number,
   size = "medium"
@@ -147,7 +138,6 @@ const renderButton = (text: string): HTMLButtonElement => {
 export {
   renderTableCell,
   renderComparison,
-  renderPotential,
   renderPotentialBadge,
   renderRelativeSkill,
   renderButton,

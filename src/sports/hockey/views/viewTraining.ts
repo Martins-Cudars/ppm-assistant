@@ -1,33 +1,26 @@
-import { positionSettings } from "@/sports/hockey/settings";
-
-import {
-  calculatePositionsQualities,
-  calculatePositionsSkills,
-  calculateBestPosition,
-} from "@/base/calculations";
-
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 
-const extractSkill = (el) => {
+const extractSkill = (el: Element): number => {
   const qualityElStart = el.innerHTML.indexOf('<span class="kva">');
   return parseInt(el.innerHTML.slice(0, qualityElStart).replace(/^\D+/g, ""));
 };
 
 const viewTraining = () => {
-  const tableHeads = document
-    .getElementById("table-1")
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
+  if (!table) return;
 
-  const playerRows = document
-    .getElementById("table-1")
-    .querySelector("tbody")
-    .querySelectorAll("tr");
+  const tableHeads = table.querySelectorAll("thead");
+
+  const tableBody = table.querySelector("tbody");
+  if (!tableBody) return;
+
+  const playerRows = tableBody.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("Grd", "th1"));
+    head.querySelector("tr")?.appendChild(renderTableCell("Grd", "th1"));
   });
 
   const players: HockeyPlayer[] = [];
@@ -56,34 +49,15 @@ const viewTraining = () => {
         aggression: extractSkill(playerColumns[11]),
       },
       qualities: {
-        goalie: parseInt(playerQualities[0].textContent),
-        defence: parseInt(playerQualities[1].textContent),
-        offence: parseInt(playerQualities[2].textContent),
-        shooting: parseInt(playerQualities[3].textContent),
-        passing: parseInt(playerQualities[4].textContent),
-        technical: parseInt(playerQualities[5].textContent),
-        aggression: parseInt(playerQualities[6].textContent),
+        goalie: parseInt(playerQualities[0].textContent || "0"),
+        defence: parseInt(playerQualities[1].textContent || "0"),
+        offence: parseInt(playerQualities[2].textContent || "0"),
+        shooting: parseInt(playerQualities[3].textContent || "0"),
+        passing: parseInt(playerQualities[4].textContent || "0"),
+        technical: parseInt(playerQualities[5].textContent || "0"),
+        aggression: parseInt(playerQualities[6].textContent || "0"),
       },
     };
-
-    const playerPositions = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(playerPositions);
-    const potentials = calculatePositionsQualities(player, positionSettings);
-
-    const bestPotential = potentials.find(
-      (el) => el.position === bestPosition.position
-    );
-
-    const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
-      "small"
-    );
-    const potentialTd = document.createElement("td");
-    potentialTd.classList.add(`${rowClass}td1`);
-    potentialTd.classList.add("td-center");
-    potentialTd.appendChild(potentialBadge);
-
-    playerRow.appendChild(potentialTd);
 
     // Create HockeyPlayer instance for caching (skills + training qualities)
     if (id !== "unknown") {
@@ -106,6 +80,21 @@ const viewTraining = () => {
         player.qualities,
         0 // No injury data in training view
       );
+      hockeyPlayer.calculatePositions();
+      hockeyPlayer.calculatePositionTrainingQualities();
+      const bestPotential = hockeyPlayer.getBestPositionTrainingQuality();
+
+      const potentialBadge = renderPotentialBadge(
+        bestPotential.totalTrainingQuality,
+        "small"
+      );
+      const potentialTd = document.createElement("td");
+      potentialTd.classList.add(`${rowClass}td1`);
+      potentialTd.classList.add("td-center");
+      potentialTd.appendChild(potentialBadge);
+
+      playerRow.appendChild(potentialTd);
+
       players.push(hockeyPlayer);
     }
   });

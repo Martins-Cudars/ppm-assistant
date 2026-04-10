@@ -1,10 +1,6 @@
-import { positionSettings, ratingSettings } from "@/sports/hockey/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
+import { ratingSettings } from "@/sports/hockey/settings";
 import { renderTableCell, renderComparison } from "@/base/render";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 
 const viewLineupChange = () => {
   const table = document.getElementById("table-1");
@@ -49,27 +45,37 @@ const viewLineupChange = () => {
     };
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
+    const hockeyPlayer = new HockeyPlayer(
+      {
+        id: `lineup-change-${index}`,
+        name: player.name ?? "Unknown",
+        age: 0,
+        careerLongitivity: 3,
+        overallRating: 0,
+        averageTrainingRatio: 0,
+        preferredSide: "U",
+      },
+      new Date(),
+      "UNSCOUTED",
+      true,
+      1,
+      player.skills,
       player.experience
     );
+    hockeyPlayer.calculatePositions();
+    const bestPosition = hockeyPlayer.getBestPosition();
 
     playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
+      renderTableCell(bestPosition.name, `${rowClass}td1`)
     );
 
     playerRow.appendChild(
-      renderTableCell(
-        calculateSkillWithExp(bestPosition.level, player.experience),
-        `${rowClass}td2`
-      )
+      renderTableCell(bestPosition.ratingWithXp, `${rowClass}td2`)
     );
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
+    ratingTd.appendChild(renderComparison(bestPosition.ratingWithXp, ratingSettings));
 
     playerRow.appendChild(ratingTd);
   });

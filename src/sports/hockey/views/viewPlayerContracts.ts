@@ -92,6 +92,7 @@ const viewPlayerContracts = async () => {
             age: age,
             careerLongitivity: 3, // Default - unknown from contracts view
             overallRating: 0, // Unknown from contracts view
+            averageTrainingRatio: 0, // Unknown from contracts view
             preferredSide: "U",
             contract: {
               contractDays: contractDays,
