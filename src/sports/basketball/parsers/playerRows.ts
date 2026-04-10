@@ -37,6 +37,7 @@ function averageQuality(
 function createPlayer(
   baseInfo: BasketballPlayerInfo,
   skills: BasketballSkills,
+  experience?: number,
   qualities?: BasketballTrainingQualities
 ): BasketballPlayer {
   return new BasketballPlayer(
@@ -48,7 +49,7 @@ function createPlayer(
     true,
     1,
     skills,
-    baseInfo.age > 0 ? undefined : 0,
+    experience ?? (baseInfo.age > 0 ? undefined : 0),
     qualities
   );
 }
@@ -91,6 +92,7 @@ export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement)
       averageTrainingRatio: 0,
     },
     skills,
+    parseNumber(playerColumns[15]?.textContent),
     undefined
   );
 }
@@ -133,6 +135,7 @@ export function parseBasketballPlayerFromMarketRow(playerRow: HTMLTableRowElemen
       averageTrainingRatio: 0,
     },
     skills,
+    undefined,
     qualities
   );
 }
@@ -211,6 +214,7 @@ export function parseBasketballPlayerFromTrainingRow(
       averageTrainingRatio: 0,
     },
     skills,
+    undefined,
     qualities
   );
 }
