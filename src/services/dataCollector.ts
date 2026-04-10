@@ -16,7 +16,7 @@ import { mergePlayerData, isIncomingMoreComplete } from "./dataMerger";
  */
 export async function collectPlayerData(
   player: HockeyPlayer,
-  source: "PlayerProfile" | "PlayersList" | "PlayerContracts"
+  source: "PlayerProfile" | "PlayersList" | "PlayerContracts" | "PlayerTraining"
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing
@@ -72,7 +72,7 @@ export async function collectPlayerData(
  */
 export async function collectBatchPlayerData(
   players: HockeyPlayer[],
-  source: "PlayerProfile" | "PlayersList" | "PlayerContracts"
+  source: "PlayerProfile" | "PlayersList" | "PlayerContracts" | "PlayerTraining"
 ): Promise<void> {
   try {
     // Validate that we have a valid team ID before storing

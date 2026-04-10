@@ -1,18 +1,10 @@
-import { ratingSettings, positionSettings } from "@/sports/basketball/settings";
-import { calculatePositionsSkills } from "@/sports/basketball/calculations/positionsSkills";
-import {
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-  calculateBestPotential,
-} from "@/base/calculations";
+import { ratingSettings } from "@/sports/basketball/settings";
+import { parseBasketballPlayerFromMarketRow } from "@/sports/basketball/parsers/playerRows";
 import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
 } from "@/base/render";
-
-import { BasketballPlayer } from "@/types/Player";
 
 const viewMarket = () => {
   const table = document.getElementById("table-1");
@@ -47,79 +39,29 @@ const viewMarket = () => {
     }
   });
 
-  const getSkill = (cell: HTMLTableCellElement) => {
-    return parseInt(
-      Array.from(cell.childNodes).reduce((a: string, b: ChildNode) => {
-        return a + (b.nodeType === 3 ? b.textContent || "" : "");
-      }, "")
-    );
-  };
-
   playerRows?.forEach((playerRow, index) => {
-    const playerColumns = playerRow.querySelectorAll("td");
-    const playerQualities = playerRow.querySelectorAll(".kva");
-
     playerRow.classList.add(`player-row`);
-
-    const player: BasketballPlayer = {
-      name: playerColumns[0].querySelectorAll("a")[1].textContent!,
-      age: parseInt(playerColumns[1]!.textContent!),
-      careerLongitivity: parseInt(
-        Array.from(playerColumns[4]!.querySelector("span")!.textContent!)[0]
-      ),
-      skills: {
-        shooting: getSkill(playerColumns[5]),
-        blocking: getSkill(playerColumns[6]),
-        passing: getSkill(playerColumns[7]),
-        technical: getSkill(playerColumns[8]),
-        speed: getSkill(playerColumns[9]),
-        aggression: getSkill(playerColumns[10]),
-        jumping: getSkill(playerColumns[11]),
-      },
-      qualities: {
-        shooting: parseInt(playerQualities[0].textContent!),
-        blocking: parseInt(playerQualities[1].textContent!),
-        passing: parseInt(playerQualities[2].textContent!),
-        technical: parseInt(playerQualities[3].textContent!),
-        speed: parseInt(playerQualities[4].textContent!),
-        aggression: parseInt(playerQualities[5].textContent!),
-        jumping: parseInt(playerQualities[6].textContent!),
-      },
-
-      experience: parseInt(playerColumns[12].textContent!),
-      overall: parseInt(playerColumns[13].textContent!),
-      height: parseInt(playerColumns[14].textContent!),
-    };
+    const player = parseBasketballPlayerFromMarketRow(playerRow);
+    player.calculatePositions();
+    player.calculatePositionTrainingQualities();
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player);
-    const bestPosition = calculateBestPosition(skills);
+    const bestPosition = player.getBestPosition();
+    const bestPotential = player.getCurrentPositionTrainingQuality();
 
-    playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
+    playerRow.classList.add(`position-${bestPosition.name.toLowerCase()}`);
 
     playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
+      renderTableCell(bestPosition.name, `${rowClass}td1`)
     );
 
-    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
+    playerRow.appendChild(renderTableCell(bestPosition.ratingWithXp, `${rowClass}td2`));
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
+    ratingTd.appendChild(renderComparison(bestPosition.ratingWithXp, ratingSettings));
     playerRow.appendChild(ratingTd);
-
-    const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player, positionSettings)
-    );
-
-    const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
-      "small"
-    );
+    const potentialBadge = renderPotentialBadge(bestPotential.totalTrainingQuality, "small");
 
     const potentialTd = document.createElement("td");
     potentialTd.classList.add(`${rowClass}td2`);

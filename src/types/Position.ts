@@ -43,6 +43,8 @@ export interface HockeyPositionSetting {
   name: "G" | "D" | "W" | "C";
   ratios: HockeySkills;
   bonus?: HockeySkills;
+  trainingRatios?: HockeySkills;
+  trainingBonus?: HockeySkills;
   positionRatio: number;
 }
 
@@ -66,6 +68,8 @@ export interface SoccerPositionSetting {
   name: "GK" | "SD" | "CD" | "SM" | "CM" | "DM" | "SF" | "CF";
   ratios: SoccerSkills;
   bonus?: SoccerSkills;
+  trainingRatios?: SoccerSkills;
+  trainingBonus?: SoccerSkills;
   positionRatio: number;
 }
 
@@ -89,5 +93,20 @@ export interface BasketballPositionSetting {
     shooting?: number;
     blocking?: number;
   };
+  trainingRatios?: {
+    shooting?: number;
+    blocking?: number;
+    passing?: number;
+    technical?: number;
+    speed?: number;
+    aggression?: number;
+    jumping?: number;
+  };
+  trainingBonus?: {
+    shooting?: number;
+    blocking?: number;
+  };
+  minHeight: number;
+  maxHeight: number;
   positionRatio: number;
 }

@@ -1,19 +1,9 @@
-import { positionSettings, ratingSettings } from "@/sports/basketball/settings";
-import { calculatePositionsSkills } from "@/sports/basketball/calculations/positionsSkills";
-
-import {
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-} from "@/base/calculations";
-
+import { ratingSettings } from "@/sports/basketball/settings";
 import {
   renderComparison,
-  renderPotential,
   renderPotentialBadge,
 } from "@/base/render";
-
-import { BasketballPlayer } from "@/types/Player";
+import { parseBasketballPlayerFromProfilePage } from "@/sports/basketball/parsers/playerProfile";
 
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
@@ -22,55 +12,11 @@ const viewPlayerProfile = () => {
   if (!playerTable) return new Error("Player table not found");
   if (!playerInfo) return new Error("Player info not found");
 
-  const player: BasketballPlayer = {
-    name: playerInfo.querySelectorAll("a")[1]!.textContent!,
-    age: parseInt(playerTable.querySelector("#age")!.textContent!),
-    careerLongitivity: parseInt(
-      Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
-    ),
-    height: parseInt(playerTable.querySelector("#vyska")!.textContent!),
-    skills: {
-      shooting: parseInt(playerTable.querySelector("#shooting")!.textContent!),
-      blocking: parseInt(playerTable.querySelector("#block")!.textContent!),
-      passing: parseInt(playerTable.querySelector("#passing")!.textContent!),
-      technical: parseInt(
-        playerTable.querySelector("#technique_attribute")!.textContent!
-      ),
-      speed: parseInt(playerTable.querySelector("#speed")!.textContent!),
-
-      aggression: parseInt(
-        playerTable.querySelector("#aggressivity")!.textContent!
-      ),
-      jumping: parseInt(playerTable.querySelector("#leaping")!.textContent!),
-    },
-    qualities: {
-      shooting: parseInt(
-        playerTable.querySelector("#kva_shooting")!.textContent!
-      ),
-      blocking: parseInt(playerTable.querySelector("#kva_block")!.textContent!),
-      passing: parseInt(
-        playerTable.querySelector("#kva_passing")!.textContent!
-      ),
-      technical: parseInt(
-        playerTable.querySelector("#technique_quality")!.textContent!
-      ),
-      speed: parseInt(playerTable.querySelector("#kva_speed")!.textContent!),
-
-      aggression: parseInt(
-        playerTable.querySelector("#kva_aggressivity")!.textContent!
-      ),
-      jumping: parseInt(
-        playerTable.querySelector("#kva_leaping")!.textContent!
-      ),
-    },
-    experience: parseInt(
-      playerTable.querySelector("#experience")!.textContent!
-    ),
-    overall: parseInt(playerTable.querySelector("#index_skill")!.textContent!),
-  };
-
-  const positions = calculatePositionsSkills(player);
-  const bestPosition = calculateBestPosition(positions);
+  const player = parseBasketballPlayerFromProfilePage(playerTable, playerInfo);
+  player.calculatePositions();
+  player.calculatePositionTrainingQualities();
+  const positions = player.getPositions();
+  const bestPosition = player.getBestPosition();
 
   const contentColumn = document.querySelector(".column_left");
 
@@ -86,7 +32,7 @@ const viewPlayerProfile = () => {
 
   const position = document.createElement("div");
   position.classList.add("ability__position");
-  position.textContent = bestPosition.position;
+  position.textContent = bestPosition.name;
 
   const allPositions = document.createElement("div");
   allPositions.classList.add("ability__positions");
@@ -94,10 +40,7 @@ const viewPlayerProfile = () => {
   let positionList = ``;
 
   positions.forEach((position) => {
-    positionList += `<div>${position.position} ${calculateSkillWithExp(
-      position.level,
-      player.experience
-    )}</div>`;
+    positionList += `<div>${position.name} ${position.ratingWithXp}</div>`;
   });
 
   allPositions.innerHTML = positionList;
@@ -108,19 +51,13 @@ const viewPlayerProfile = () => {
   abilityDescription.classList.add("ability__text");
 
   const abilityValue = document.createElement("div");
-  abilityValue.innerHTML = `<div>${calculateSkillWithExp(
-    bestPosition.level,
-    player.experience
-  )}</div>
-   <div>(${bestPosition.level})</div>`;
+  abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
+   <div>(${bestPosition.ratingWithBonus})</div>`;
 
   const comparison = document.createElement("div");
   comparison.classList.add("comparison");
   comparison.appendChild(
-    renderComparison(
-      calculateSkillWithExp(bestPosition.level, player.experience),
-      ratingSettings
-    )
+    renderComparison(bestPosition.ratingWithXp, ratingSettings)
   );
 
   abilityDescription.appendChild(abilityValue);
@@ -138,16 +75,14 @@ const viewPlayerProfile = () => {
   potentialBox.classList.add("player-profile");
   potentialBox.classList.add("player-profile--potential");
 
-  const potentials = calculatePositionsQualities(player, positionSettings);
-
-  const bestPotential = potentials.find(
-    (el) => el.position === bestPosition.position
-  );
-
-  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
+  const potentials = player.getPositionTrainingQualities();
+  const bestPotential = player.getCurrentPositionTrainingQuality();
+  const potentialBadge = renderPotentialBadge(bestPotential.totalTrainingQuality);
   potentialBox.appendChild(potentialBadge);
 
-  const potentialDescription = renderPotential(bestPotential!);
+  const potentialDescription = document.createElement("div");
+  potentialDescription.classList.add("potential__text");
+  potentialDescription.textContent = `Current position (${bestPosition.name}) training quality is ${bestPotential.totalTrainingQuality}`;
   potentialBox.appendChild(potentialDescription);
 
   const allPotentials = document.createElement("div");
@@ -156,7 +91,7 @@ const viewPlayerProfile = () => {
   let potentialList = ``;
 
   potentials.forEach((potential) => {
-    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
+    potentialList += `<div>${potential.position} ${potential.totalTrainingQuality}</div>`;
   });
 
   allPotentials.innerHTML = potentialList;

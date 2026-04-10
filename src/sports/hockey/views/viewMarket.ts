@@ -1,16 +1,6 @@
 import {
-  positionSettings,
   ratingSettings,
-  playerGrowthPrediction,
 } from "@/sports/hockey/settings";
-
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-  calculateBestPotential,
-} from "@/base/calculations";
 import {
   renderTableCell,
   renderComparison,
@@ -18,7 +8,10 @@ import {
   renderRelativeSkill,
 } from "@/base/render";
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { recalculatePredictDataAccordingToSeasonDay } from "@/sports/hockey/utils/calculations";
+import {
+  HockeyPlayer,
+  HockeyPlayerInfo,
+} from "@/sports/hockey/classes/HockeyPlayer";
 
 /**
  * View Functions
@@ -58,11 +51,23 @@ const viewMarket = () => {
     const playerColumns = playerRow.querySelectorAll("td");
     const playerQualities = playerRow.querySelectorAll(".kva");
 
-    const player = {
-      name: playerColumns[0].textContent,
+    const baseInfo: HockeyPlayerInfo = {
+      id:
+        playerColumns[0]
+          ?.querySelectorAll("a")[1]
+          ?.getAttribute("href")
+          ?.match(/\d+/)?.[0] ?? `market-player-${index}`,
+      name: playerColumns[0].textContent ?? "Unknown",
       age: parseInt(playerColumns[1].textContent!),
-      careerLongitivity: Array.from(playerColumns[4].textContent!)[0],
-      skills: {
+      careerLongitivity: parseInt(
+        Array.from(playerColumns[4].textContent!)[0]
+      ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      overallRating: parseInt(playerColumns[13].textContent!),
+      averageTrainingRatio: 0,
+      preferredSide: "U",
+    };
+
+    const skills = {
         goalie: getSkill(playerColumns[5]),
         defence: getSkill(playerColumns[6]),
         offence: getSkill(playerColumns[7]),
@@ -70,8 +75,8 @@ const viewMarket = () => {
         passing: getSkill(playerColumns[9]),
         technical: getSkill(playerColumns[10]),
         aggression: getSkill(playerColumns[11]),
-      },
-      qualities: {
+      };
+    const trainingQualities = {
         goalie: parseInt(playerQualities[0].textContent!),
         defence: parseInt(playerQualities[1].textContent!),
         offence: parseInt(playerQualities[2].textContent!),
@@ -79,45 +84,42 @@ const viewMarket = () => {
         passing: parseInt(playerQualities[4].textContent!),
         technical: parseInt(playerQualities[5].textContent!),
         aggression: parseInt(playerQualities[6].textContent!),
-      },
-      experience: parseInt(playerColumns[12].textContent!),
-      overall: parseInt(playerColumns[13].textContent!),
-    };
+      };
+    const experience = parseInt(playerColumns[12].textContent!);
+
+    const player = new HockeyPlayer(
+      baseInfo,
+      new Date(),
+      "SCOUTED",
+      true,
+      seasonDay,
+      skills,
+      experience,
+      trainingQualities
+    );
+    player.calculatePositions();
+    player.calculatePositionTrainingQualities();
 
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
-
-    recalculatePredictDataAccordingToSeasonDay(
-      playerGrowthPrediction,
-      bestPosition.position,
-      seasonDay
-    );
+    const bestPosition = player.getBestPosition();
+    const bestPotential = player.getBestPositionTrainingQuality();
 
     playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
+      renderTableCell(bestPosition.name, `${rowClass}td1`)
     );
 
-    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
+    playerRow.appendChild(renderTableCell(bestPosition.ratingWithXp, `${rowClass}td2`));
 
     const ratingTd = document.createElement("td");
     ratingTd.classList.add(`${rowClass}td1`);
     ratingTd.appendChild(
-      renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
+      renderComparison(bestPosition.ratingWithXp, ratingSettings, bestPosition.name)
     );
 
     playerRow.appendChild(ratingTd);
 
-    const bestPotential = calculateBestPotential(
-      calculatePositionsQualities(player, positionSettings)
-    );
-
     const potentialBadge = renderPotentialBadge(
-      bestPotential.potential,
+      bestPotential.totalTrainingQuality,
       "small"
     );
 
@@ -132,8 +134,8 @@ const viewMarket = () => {
 
     const relativeSkill = renderRelativeSkill(
       player.age,
-      bestSkillWithExp,
-      playerGrowthPrediction
+      bestPosition.ratingWithXp,
+      player.getMaxSkillForAge()
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);

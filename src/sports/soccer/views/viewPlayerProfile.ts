@@ -10,7 +10,10 @@ import {
 } from "@/base/render";
 
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import {
+  SoccerPlayer,
+  SoccerPlayerPositionName,
+} from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewPlayerProfile = () => {
   const table = document.getElementById("table-1");
@@ -144,7 +147,9 @@ const viewPlayerProfile = () => {
 
   const potentials = player.getPositionTrainingQualities();
   const bestPotential =
-    player.getPositionTrainingQuality(bestPosition.name) ??
+    player.getPositionTrainingQuality(
+      bestPosition.name as SoccerPlayerPositionName
+    ) ??
     player.getBestPositionTrainingQuality();
 
   const potentialBadge = renderPotentialBadge(bestPotential.totalTrainingQuality);

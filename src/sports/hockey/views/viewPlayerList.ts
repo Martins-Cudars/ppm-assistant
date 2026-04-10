@@ -177,7 +177,7 @@ const viewPlayerList = () => {
     // Error handler
     app.config.errorHandler = (
       err: unknown,
-      instance: unknown,
+      _instance: unknown,
       info: string
     ) => {
       console.error("Vue Error:", err, info);

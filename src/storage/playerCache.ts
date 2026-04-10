@@ -77,7 +77,7 @@ function initializeCache(): PlayerCacheStorage {
  */
 export async function savePlayer(
   player: HockeyPlayer,
-  source: "PlayerProfile" | "PlayersList" | "PlayerContracts"
+  source: "PlayerProfile" | "PlayersList" | "PlayerContracts" | "PlayerTraining"
 ): Promise<void> {
   try {
     let cache = await loadCache();
