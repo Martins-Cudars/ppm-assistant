@@ -1,3 +1,12 @@
+import { PlayerCalculationProfile } from "@/classes/playerProfile";
+import {
+  calculatePositionTrainingQualities,
+  calculatePositions,
+  calculateProjectedMaxSkillForAge,
+  createFallbackTrainingQuality,
+  createPosition,
+} from "@/classes/playerCalculations";
+
 export type BaseInfo = {
   id: string;
   name: string;
@@ -25,7 +34,7 @@ export type BaseTrainingQuality = {
   totalTrainingQuality: number;
 };
 
-export class BasePlayer {
+export abstract class BasePlayer {
   public id: string;
   public name: string;
   public skills: Record<string, number> | undefined;
@@ -75,8 +84,30 @@ export class BasePlayer {
     this.injuryDays = injuryDays;
   }
 
-  calculatePositions() {
-    this.positions = [];
+  protected abstract getCalculationProfile(): PlayerCalculationProfile;
+
+  calculatePositions(): void {
+    const profile = this.getCalculationProfile();
+
+    if (!this.skills || (profile.requiresVisibility && !this.isVisible)) {
+      this.positions = [
+        createPosition(
+          profile.unknownPositionName,
+          this.getUnknownRating(),
+          0,
+          this.experience,
+          profile.bonusCapRatio
+        ),
+      ];
+      return;
+    }
+
+    this.positions = calculatePositions(
+      this.skills,
+      profile.positionSettings,
+      this.experience,
+      profile.bonusCapRatio
+    );
   }
 
   getPositions() {
@@ -95,13 +126,31 @@ export class BasePlayer {
         ratingWithXp: 0,
       };
     }
-    return [...this.positions].sort(
-      (a, b) => b.ratingWithBonus - a.ratingWithBonus
-    )[0];
+    return this.positions.reduce((best, current) =>
+      current.ratingWithBonus > best.ratingWithBonus ? current : best
+    );
   }
 
-  calculatePositionTrainingQualities() {
-    this.positionTrainingQualities = [];
+  calculatePositionTrainingQualities(): void {
+    const profile = this.getCalculationProfile();
+
+    if (
+      !this.trainingQualities ||
+      (profile.requiresVisibility && !this.isVisible)
+    ) {
+      this.positionTrainingQualities = [
+        createFallbackTrainingQuality(
+          profile.unknownPositionName,
+          this.averageTrainingRatio
+        ),
+      ];
+      return;
+    }
+
+    this.positionTrainingQualities = calculatePositionTrainingQualities(
+      this.trainingQualities,
+      profile.positionSettings
+    );
   }
 
   getPositionTrainingQualities(): BaseTrainingQuality[] {
@@ -118,9 +167,9 @@ export class BasePlayer {
         totalTrainingQuality: 0,
       };
     }
-    return [...this.positionTrainingQualities].sort(
-      (a, b) => b.totalTrainingQuality - a.totalTrainingQuality
-    )[0];
+    return this.positionTrainingQualities.reduce((best, current) =>
+      current.totalTrainingQuality > best.totalTrainingQuality ? current : best
+    );
   }
 
   getCurrentPositionTrainingQuality(): BaseTrainingQuality {
@@ -137,7 +186,18 @@ export class BasePlayer {
     return quality;
   }
 
+  protected getUnknownRating(): number {
+    return (this.overallRating - 100) / 2;
+  }
+
   getMaxSkillForAge(): number {
-    return 0;
+    const profile = this.getCalculationProfile();
+
+    return calculateProjectedMaxSkillForAge(
+      this.age,
+      this.seasonDay,
+      profile.daysPerSeason,
+      profile.growthPrediction
+    );
   }
 }

@@ -25,7 +25,7 @@ const calculatePositionsSkills = (player: BasketballPlayer): PositionSkill[] => 
     const skills = [];
 
     for (const [key, value] of Object.entries(position.ratios)) {
-      skills.push(parseInt(player.skills[key]) / value);
+      skills.push(player.skills[key] / value);
     }
 
     const baseSkill = Math.min(...skills);
