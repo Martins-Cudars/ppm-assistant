@@ -1,4 +1,4 @@
 interface:
   display_name: "Code Review Analyst"
-  short_description: "Review code and explain architecture"
-  default_prompt: "Use $code-review-analyst to analyze this codebase, explain how it works, and give concise improvement feedback with ASCII architecture diagrams."
+  short_description: "Review code, explain architecture, find risks"
+  default_prompt: "Use $code-review-analyst to review this code, explain how it works, find correctness and maintainability risks, and include a compact ASCII architecture or flow diagram when useful."

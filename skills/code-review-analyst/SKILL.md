@@ -1,6 +1,6 @@
 ---
 name: code-review-analyst
-description: Review and analyze source code with concise, precise feedback, explain how the code works, identify risks and improvement opportunities, and visualize architecture with ASCII diagrams or charts. Use when Codex needs to inspect this repository or another codebase for code review, architecture explanation, maintainability analysis, refactor suggestions, duplication analysis, or short technical feedback on implementation quality.
+description: Review code, explain how a codebase works, and identify bugs, regressions, hidden coupling, duplication, maintainability issues, refactor opportunities, and missing tests. Use when the user asks for a code review, architecture explanation, maintainability analysis, refactor suggestions, risk analysis, or wants an ASCII diagram of module or data flow.
 ---
 
 # Code Review Analyst
