@@ -1,3 +1,5 @@
+import { getLocalizedPageForLang } from "@/sports/routeDispatch";
+
 const routes = {
   playersOverview: ["/en/overview-of-players", "/lv/speletaju-parskats"],
   playerProfile: ["/en/player", "/lv/speletajs"],
@@ -18,6 +20,5 @@ export default routes;
  * Falls back to "player.html" for unknown languages.
  */
 export function getPlayerPageForLang(lang: string): string {
-  const route = routes.playerProfile.find((r) => r.startsWith(`/${lang}/`));
-  return route ? route.split("/").pop()! + ".html" : "player.html";
+  return getLocalizedPageForLang(routes.playerProfile, lang, "player.html");
 }

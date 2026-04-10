@@ -7,30 +7,23 @@ import viewLineup from "./views/viewLineup";
 import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 // import viewTrainingCamp from "./views/viewTrainingCamp";
+import { dispatchRoute } from "@/sports/routeDispatch";
 
 /**
  * Run View Functions
  */
 
 const initBasketball = () => {
-  const getRoute = (inputUrl: string) => {
-    const urlRegex =
-      /https?:\/\/(?:\w+\.)?powerplaymanager\.com(\/[\w-]+\/[\w-]+)/;
-
-    const match = inputUrl.match(urlRegex);
-    return match?.[1] ?? "";
-  };
-
-  const url = window.location.href;
-  if (routes.playersOverview.includes(getRoute(url))) viewPlayerList();
-  if (routes.playerProfile.includes(getRoute(url))) viewPlayerProfile();
-  if (routes.playerTraining.includes(getRoute(url))) viewTraining();
-  if (routes.lines.includes(getRoute(url))) viewLineup();
-  // if (routes.editLine.includes(getRoute(url))) viewLineupChange();
-  if (routes.market.includes(getRoute(url))) viewMarket();
-  // if (routes.trainingCamp.includes(getRoute(url))) viewTrainingCamp();
+  dispatchRoute(window.location.href, [
+    { routes: routes.playersOverview, run: viewPlayerList },
+    { routes: routes.playerProfile, run: viewPlayerProfile },
+    { routes: routes.playerTraining, run: viewTraining },
+    { routes: routes.lines, run: viewLineup },
+    { routes: routes.market, run: viewMarket },
+  ]);
+  // dispatchRoute(window.location.href, [{ routes: routes.trainingCamp, run: viewTrainingCamp }]);
   // TODO: Create next game view
-  // if (routes.nextGame.includes(getRoute(url))) viewNextGame();
+  // dispatchRoute(window.location.href, [{ routes: routes.nextGame, run: viewNextGame }]);
 };
 
 export default initBasketball;
