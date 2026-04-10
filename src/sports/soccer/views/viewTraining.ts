@@ -1,5 +1,8 @@
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
-import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import {
+  SoccerPlayer,
+  SoccerPlayerPositionName,
+} from "@/sports/soccer/classes/SoccerPlayer";
 
 const extractSkill = (el: Element) => {
   const skill = el.querySelector("span:first-child");
@@ -7,17 +10,17 @@ const extractSkill = (el: Element) => {
 };
 
 const viewTraining = () => {
-  const tableHeads = document
-    .getElementById("table-1")
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
+  if (!table) return;
 
-  const playerRows = document
-    .getElementById("table-1")
-    .querySelector("tbody")
-    .querySelectorAll("tr");
+  const tableHeads = table.querySelectorAll("thead");
+  const tableBody = table.querySelector("tbody");
+  if (!tableBody) return;
+
+  const playerRows = tableBody.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr").appendChild(renderTableCell("Grd", "th1"));
+    head.querySelector("tr")?.appendChild(renderTableCell("Grd", "th1"));
   });
 
   playerRows.forEach((playerRow, index) => {
@@ -52,15 +55,15 @@ const viewTraining = () => {
       },
       0,
       {
-        goalie: parseInt(playerQualities[0].textContent),
-        defence: parseInt(playerQualities[1].textContent),
-        midfield: parseInt(playerQualities[2].textContent),
-        offence: parseInt(playerQualities[3].textContent),
-        shooting: parseInt(playerQualities[4].textContent),
-        passing: parseInt(playerQualities[5].textContent),
-        technical: parseInt(playerQualities[6].textContent),
-        speed: parseInt(playerQualities[7].textContent),
-        heading: parseInt(playerQualities[8].textContent),
+        goalie: parseInt(playerQualities[0].textContent || "0"),
+        defence: parseInt(playerQualities[1].textContent || "0"),
+        midfield: parseInt(playerQualities[2].textContent || "0"),
+        offence: parseInt(playerQualities[3].textContent || "0"),
+        shooting: parseInt(playerQualities[4].textContent || "0"),
+        passing: parseInt(playerQualities[5].textContent || "0"),
+        technical: parseInt(playerQualities[6].textContent || "0"),
+        speed: parseInt(playerQualities[7].textContent || "0"),
+        heading: parseInt(playerQualities[8].textContent || "0"),
       }
     );
     player.calculatePositions();
@@ -68,7 +71,9 @@ const viewTraining = () => {
 
     const bestPosition = player.getBestPosition();
     const bestPotential =
-      player.getPositionTrainingQuality(bestPosition.name) ??
+      player.getPositionTrainingQuality(
+        bestPosition.name as SoccerPlayerPositionName
+      ) ??
       player.getBestPositionTrainingQuality();
 
     const potentialBadge = renderPotentialBadge(

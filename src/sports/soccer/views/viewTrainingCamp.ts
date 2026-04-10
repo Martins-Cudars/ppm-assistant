@@ -1,18 +1,21 @@
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
-import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import {
+  SoccerPlayer,
+  SoccerPlayerPositionName,
+} from "@/sports/soccer/classes/SoccerPlayer";
 
 const viewTraining = () => {
-  const tableHeads = document
-    .getElementById("table-1")!
-    .querySelectorAll("thead");
+  const table = document.getElementById("table-1");
+  if (!table) return;
 
-  const playerRows = document
-    .getElementById("table-1")!
-    .querySelector("tbody")!
-    .querySelectorAll("tr");
+  const tableHeads = table.querySelectorAll("thead");
+  const tableBody = table.querySelector("tbody");
+  if (!tableBody) return;
+
+  const playerRows = tableBody.querySelectorAll("tr");
 
   tableHeads.forEach((head) => {
-    head.querySelector("tr")!.appendChild(renderTableCell("Grd", "th1"));
+    head.querySelector("tr")?.appendChild(renderTableCell("Grd", "th1"));
   });
 
   playerRows.forEach((playerRow, index) => {
@@ -63,7 +66,9 @@ const viewTraining = () => {
 
     const bestPosition = player.getBestPosition();
     const bestPotential =
-      player.getPositionTrainingQuality(bestPosition.name) ??
+      player.getPositionTrainingQuality(
+        bestPosition.name as SoccerPlayerPositionName
+      ) ??
       player.getBestPositionTrainingQuality();
 
     const potentialBadge = renderPotentialBadge(
