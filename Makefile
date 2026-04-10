@@ -9,7 +9,7 @@ build:
 	pnpm.cmd build
 
 zip:
-	powershell -NoProfile -Command "if (Test-Path '$(PACKAGE_NAME)') { Remove-Item '$(PACKAGE_NAME)' -Force }; Compress-Archive -Path 'dist\\*' -DestinationPath '$(PACKAGE_NAME)' -Force"
+	powershell -NoProfile -Command "if (Test-Path '$(PACKAGE_NAME)') { Remove-Item '$(PACKAGE_NAME)' -Force }; tar -a -c -f '$(PACKAGE_NAME)' -C 'dist' ."
 
 package: build zip
 
