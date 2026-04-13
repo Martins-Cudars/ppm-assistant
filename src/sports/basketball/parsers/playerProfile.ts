@@ -19,8 +19,15 @@ export function parseBasketballPlayerFromProfilePage(
   playerTable: HTMLElement,
   playerInfo: Element
 ): BasketballPlayer {
+  const searchParams = new URLSearchParams(window.location.search);
+  const dataParam = searchParams.get("data") || "";
+  const extractedId =
+    dataParam.split("-")[0] ||
+    window.location.pathname.split("/").pop() ||
+    "unknown";
+
   const baseInfo: BasketballPlayerInfo = {
-    id: window.location.pathname.split("/").pop() ?? "unknown",
+    id: extractedId,
     name: playerInfo.querySelectorAll("a")[1]?.textContent ?? "Unknown",
     age: readRequiredNumber(playerTable, "#age"),
     careerLongitivity: parseInt(
