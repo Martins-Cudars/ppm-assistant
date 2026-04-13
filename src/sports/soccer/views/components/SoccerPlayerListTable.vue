@@ -3,7 +3,9 @@ import { computed, ref } from "vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import SoccerPlayerListChart from "./SoccerPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/soccer/settings";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 import type { SoccerPlayerListItem } from "../types";
 
 const props = defineProps<{
@@ -23,6 +25,12 @@ const filteredItems = computed(() =>
     const matchesAge = player.age >= minAge.value && player.age <= maxAge.value;
     return matchesPosition && matchesAge;
   })
+);
+
+const ageFilteredPlayers = computed(() =>
+  props.items
+    .filter(({ player }) => player.age >= minAge.value && player.age <= maxAge.value)
+    .map(({ player }) => player)
 );
 
 const getCountForPosition = (positionName: string) =>
@@ -270,6 +278,8 @@ const tableColumns = computed<Column[]>(() => {
         />
       </template>
     </SortableTable>
+
+    <SoccerPlayerListChart :players="ageFilteredPlayers as SoccerPlayer[]" />
   </div>
 </template>
 
