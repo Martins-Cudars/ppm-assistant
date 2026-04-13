@@ -1,19 +1,8 @@
-import {
-  ratingSettings,
-  playerGrowthPrediction,
-} from "@/sports/soccer/settings";
-import { renderPotentialChart } from "@/charts";
-import {
-  renderComparison,
-  renderPotentialBadge,
-  renderRelativeSkill,
-} from "@/base/render";
-
+import { createApp } from "vue";
 import { getCurrentSeasonDay } from "@/utils/dom";
-import {
-  SoccerPlayer,
-  SoccerPlayerPositionName,
-} from "@/sports/soccer/classes/SoccerPlayer";
+import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import SoccerPlayerSidebar from "./components/SoccerPlayerSidebar.vue";
+import SoccerPlayerGrowthChart from "./components/SoccerPlayerGrowthChart.vue";
 
 const viewPlayerProfile = () => {
   const table = document.getElementById("table-1");
@@ -85,142 +74,27 @@ const viewPlayerProfile = () => {
   player.calculatePositions();
   player.calculatePositionTrainingQualities();
 
-  const positions = player.getPositions();
-  const bestPosition = player.getBestPosition();
-
   const contentColumn = document.querySelector(".column_left");
 
   // If content column is not found, return
   if (!contentColumn) return new Error("Content column not found");
 
-  /**
-   * Ability Box
-   */
-  const abilityBox = document.createElement("div");
-  abilityBox.classList.add("player-profile");
-  abilityBox.classList.add("player-profile--ability");
+  const sidebarContainer = document.createElement("div");
+  sidebarContainer.id = "ppm-assistant-soccer-sidebar";
+  contentColumn.appendChild(sidebarContainer);
 
-  const position = document.createElement("div");
-  position.classList.add("ability__position");
-  position.textContent = bestPosition.name;
+  const sidebarApp = createApp(SoccerPlayerSidebar, { player });
+  sidebarApp.mount(sidebarContainer);
 
-  const allPositions = document.createElement("div");
-  allPositions.classList.add("ability__positions");
+  const profileCenter = document.querySelector(".profile_player_center");
+  if (!profileCenter) return new Error("Profile center not found");
 
-  let positionList = ``;
+  const chartContainer = document.createElement("div");
+  chartContainer.id = "ppm-assistant-soccer-chart";
+  profileCenter.appendChild(chartContainer);
 
-  positions.forEach((position) => {
-    positionList += `<div>${position.name} ${position.ratingWithXp}</div>`;
-  });
-
-  allPositions.innerHTML = positionList;
-
-  abilityBox.appendChild(position);
-
-  const abilityDescription = document.createElement("div");
-  abilityDescription.classList.add("ability__text");
-
-  const bestSkillWithExp = bestPosition.ratingWithXp;
-
-  const abilityValue = document.createElement("div");
-  abilityValue.innerHTML = `<div>${bestPosition.ratingWithXp}</div>
-  <div>(${bestPosition.baseRating} + ${bestPosition.bonusRating} + ${bestPosition.expBonus})</div>`;
-
-  const comparison = document.createElement("div");
-  comparison.classList.add("comparison");
-  comparison.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
-
-  abilityDescription.appendChild(abilityValue);
-  abilityDescription.appendChild(comparison);
-  abilityBox.appendChild(abilityDescription);
-
-  abilityBox.appendChild(allPositions);
-
-  contentColumn.appendChild(abilityBox);
-
-  /**
-   * Potential Box
-   */
-  const potentialBox = document.createElement("div");
-  potentialBox.classList.add("player-profile");
-  potentialBox.classList.add("player-profile--potential");
-
-  const potentials = player.getPositionTrainingQualities();
-  const bestPotential =
-    player.getPositionTrainingQuality(
-      bestPosition.name as SoccerPlayerPositionName
-    ) ??
-    player.getBestPositionTrainingQuality();
-
-  const potentialBadge = renderPotentialBadge(bestPotential.totalTrainingQuality);
-  potentialBox.appendChild(potentialBadge);
-
-  const potentialDescription = document.createElement("div");
-  potentialDescription.classList.add("potential__text");
-  potentialDescription.textContent = `Current position (${bestPotential.position}) training quality is ${bestPotential.totalTrainingQuality} (${bestPotential.baseTrainingQuality} + ${bestPotential.bonusTrainingQuality})`;
-  potentialBox.appendChild(potentialDescription);
-
-  const allPotentials = document.createElement("div");
-  allPotentials.classList.add("potential__positions");
-
-  let potentialList = ``;
-
-  potentials.forEach((potential) => {
-    potentialList += `<div>${potential.position} ${potential.totalTrainingQuality}</div>`;
-  });
-
-  allPotentials.innerHTML = potentialList;
-  potentialBox.appendChild(allPotentials);
-
-  contentColumn.appendChild(potentialBox);
-
-  /**
-   * Relative skill (player ability compared to other players in the same age group)
-   */
-
-  const relativeEl = document.createElement("div");
-  relativeEl.classList.add("player-profile");
-  relativeEl.classList.add("player-profile--relative");
-
-  // Goalies only need 2 skill points per ability compared to other positions which need 2.5 skill points per ability
-  const skillRecalculated =
-    bestPosition.name === "GK" ? bestSkillWithExp / 1.25 : bestSkillWithExp;
-
-  const relativeSkill = renderRelativeSkill(
-    player.age,
-    skillRecalculated,
-      player.getMaxSkillForAge()
-  );
-
-  relativeEl.innerHTML = `<div class="relative__title">Relative skill</div>`;
-
-  relativeEl.appendChild(relativeSkill);
-  contentColumn.appendChild(relativeEl);
-
-  /**
-   * Add chart
-   */
-
-  const chartBox = document.createElement("div");
-  const chartCanvas = document.createElement("canvas");
-
-  chartBox.classList.add("player-chart");
-  chartCanvas.classList.add("player-chart__canvas");
-
-  renderPotentialChart(
-    {
-      age: player.age,
-      skill: bestPosition.baseRating,
-      position: bestPosition.name,
-      exp: player.experience,
-    },
-    playerGrowthPrediction,
-    chartCanvas
-  );
-
-  chartBox.appendChild(chartCanvas);
-
-  document.querySelector(".profile_player_center")!.appendChild(chartBox);
+  const chartApp = createApp(SoccerPlayerGrowthChart, { player });
+  chartApp.mount(chartContainer);
 };
 
 export default viewPlayerProfile;

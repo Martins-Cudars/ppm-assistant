@@ -1,48 +1,44 @@
-import {
-  ratingSettings,
-} from "@/sports/soccer/settings";
-import {
-  renderTableCell,
-  renderComparison,
-  renderButton,
-  renderRelativeSkill,
-} from "@/base/render";
+import { createApp } from "vue";
+import SoccerPlayerListTable from "./components/SoccerPlayerListTable.vue";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import type { SoccerPlayerListItem } from "./types";
 
 const viewPlayerList = () => {
-  const mainContent = document.getElementsByClassName("main_content");
-  const seasonDay = getCurrentSeasonDay();
-
   const table = document.getElementById("table-1");
 
   if (!table) {
     return new Error("Table with id 'table-1' not found");
   }
 
-  const tableHead = table.querySelector("thead")!;
-  const tableFoot = table.querySelector("tfoot")!;
-
+  const seasonDay = getCurrentSeasonDay();
   const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
-
-  tableHead.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
-  tableHead.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
-  tableHead.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
-  tableHead.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
-
-  tableFoot.querySelector("tr")!.appendChild(renderTableCell("POS", "th1"));
-  tableFoot.querySelector("tr")!.appendChild(renderTableCell("SK", "th2"));
-  tableFoot.querySelector("tr")!.appendChild(renderTableCell("RATING", "th1"));
-  tableFoot.querySelector("tr")!.appendChild(renderTableCell("Rel", "th2"));
+  const headerCells = table.querySelectorAll("thead tr td, thead tr th");
+  const headerIndexes = [0, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  const headers = headerIndexes.map(
+    (index) => headerCells[index]?.textContent?.trim() || ""
+  );
+  const items: SoccerPlayerListItem[] = [];
 
   playerRows.forEach((playerRow, index) => {
     const playerColumns = playerRow.querySelectorAll("td");
-    playerRow.classList.add(`player-row`);
+    const nameLink = playerColumns[0].querySelector(
+      'a.link_name, a[href*="speletajs"], a[href*="player"]'
+    ) as HTMLAnchorElement | null;
+    const countryFlagImg = playerColumns[0].querySelector(
+      "a img"
+    ) as HTMLImageElement | null;
+    const countryFlagLink = countryFlagImg?.closest("a") as HTMLAnchorElement | null;
+    const injuryImg = Array.from(playerColumns[0].querySelectorAll("img")).find(
+      (img) => img !== countryFlagImg
+    ) as HTMLImageElement | undefined;
+    const dataParam = nameLink?.href.split("data=")[1] || "";
+    const id = dataParam.split("-")[0] || `soccer-list-${index}`;
 
     const player = new SoccerPlayer(
       {
-        id: `soccer-list-${index}`,
-        name: playerColumns[0].textContent!,
+        id,
+        name: nameLink?.textContent?.trim() || playerColumns[0].textContent!.trim(),
         age: parseInt(playerColumns[2].textContent!),
         careerLongitivity: parseInt(
           Array.from(playerColumns[5].textContent!)[0]
@@ -68,78 +64,41 @@ const viewPlayerList = () => {
       parseInt(playerColumns[15].textContent!)
     );
     player.calculatePositions();
-
-    const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const bestPosition = player.getBestPosition();
-    playerRow.classList.add(`position-${bestPosition.name.toLowerCase()}`);
-
-    const bestSkillWithExp = bestPosition.ratingWithXp;
-
-    playerRow.classList.add(`pos-${bestPosition.name.toLowerCase()}`);
-
-    playerRow.appendChild(
-      renderTableCell(bestPosition.name, `${rowClass}td1`)
-    );
-
-    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
-
-    const ratingTd = document.createElement("td");
-    ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
-
-    playerRow.appendChild(ratingTd);
-
-    const relativeCell = document.createElement("td");
-
-    const relativeSkill = renderRelativeSkill(
-      player.age,
-      bestSkillWithExp,
-        player.getMaxSkillForAge()
-    );
-    relativeCell.classList.add(`${rowClass}td2`);
-    relativeCell.appendChild(relativeSkill);
-
-    playerRow.appendChild(relativeCell);
-  });
-
-  const filterByPositions = (pos: string) => {
-    if (pos === "All") {
-      document.querySelectorAll(".player-row").forEach((row) => {
-        (row as HTMLElement).style.display = "table-row";
-      });
-      return;
-    }
-
-    document.querySelectorAll(".player-row").forEach((row) => {
-      (row as HTMLElement).style.display = "none";
+    items.push({
+      player,
+      profileUrl: nameLink?.href,
+      countryFlag: countryFlagImg
+        ? {
+            href: countryFlagLink?.href,
+            src: countryFlagImg.src,
+            alt: countryFlagImg.alt,
+            title: countryFlagImg.title,
+          }
+        : undefined,
+      injuryIndicator: injuryImg
+        ? {
+            src: injuryImg.src,
+            alt: injuryImg.alt,
+            title: injuryImg.title,
+          }
+        : undefined,
     });
-
-    document
-      .querySelectorAll(`.position-${pos.toLowerCase()}`)
-      .forEach((row) => {
-        (row as HTMLElement).style.display = "table-row";
-      });
-  };
-
-  const positionFilter = document.createElement("div");
-  positionFilter.classList.add("position-filter");
-  positionFilter.classList.add("white_box");
-
-  const positionButtonAll = renderButton(`All (${playerRows.length})`);
-  positionButtonAll.addEventListener("click", () => filterByPositions("All"));
-  positionFilter.append(positionButtonAll);
-
-  ["GK", "SD", "CD", "SM", "CM", "SF", "CF"].forEach((pos) => {
-    const positionButton = renderButton(
-      `${pos} (${
-        document.querySelectorAll(`.position-${pos.toLowerCase()}`).length
-      })`
-    );
-    positionButton.addEventListener("click", () => filterByPositions(pos));
-    positionFilter.append(positionButton);
   });
 
-  mainContent[0].prepend(positionFilter);
+  const appContainer = document.createElement("div");
+  appContainer.id = "ppm-assistant-soccer-list";
+
+  if (!table.parentNode) {
+    return new Error("Table has no parent node");
+  }
+
+  table.parentNode.replaceChild(appContainer, table);
+
+  const app = createApp(SoccerPlayerListTable, {
+    items,
+    headers,
+  });
+  app.mount(appContainer);
 };
 
 export default viewPlayerList;
