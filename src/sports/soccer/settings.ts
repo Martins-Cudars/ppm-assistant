@@ -2,11 +2,11 @@ import { GrowthPrediction } from "@/types/GrowthData";
 import { SoccerPositionSetting } from "@/types/Position";
 
 enum Ratio {
-  verylow = 0.1,
   main = 1,
   high = 0.75,
   medium = 0.5,
   low = 0.25,
+  verylow = 0.1,
 }
 
 const positionSettings: SoccerPositionSetting[] = [
@@ -94,7 +94,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.medium,
+      shooting: Ratio.low,
     },
     positionRatio: 1,
   },
@@ -109,7 +109,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.medium,
+      shooting: Ratio.low,
     },
     positionRatio: 1,
   },
