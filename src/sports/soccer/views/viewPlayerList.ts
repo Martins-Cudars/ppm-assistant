@@ -14,7 +14,7 @@ const viewPlayerList = () => {
   const seasonDay = getCurrentSeasonDay();
   const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
   const headerCells = table.querySelectorAll("thead tr td, thead tr th");
-  const headerIndexes = [0, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  const headerIndexes = [0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
   const headers = headerIndexes.map(
     (index) => headerCells[index]?.textContent?.trim() || ""
   );
@@ -40,11 +40,11 @@ const viewPlayerList = () => {
         id,
         name: nameLink?.textContent?.trim() || playerColumns[0].textContent!.trim(),
         age: parseInt(playerColumns[2].textContent!),
+        averageTrainingRatio: parseInt(playerColumns[4].textContent!),
         careerLongitivity: parseInt(
           Array.from(playerColumns[5].textContent!)[0]
         ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
         overallRating: parseInt(playerColumns[16].textContent!),
-        averageTrainingRatio: 0,
       },
       new Date(),
       true,

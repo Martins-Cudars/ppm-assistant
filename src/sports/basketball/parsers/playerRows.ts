@@ -43,7 +43,10 @@ function createPlayer(
   return new BasketballPlayer(
     {
       ...baseInfo,
-      averageTrainingRatio: averageQuality(qualities),
+      averageTrainingRatio:
+        qualities === undefined
+          ? baseInfo.averageTrainingRatio
+          : averageQuality(qualities),
     },
     new Date(),
     true,
@@ -84,12 +87,12 @@ export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement)
       id: playerColumns[0]?.querySelector("a")?.getAttribute("href") ?? "unknown",
       name: playerColumns[0]?.textContent?.trim() ?? "Unknown",
       age: parseNumber(playerColumns[4]?.textContent),
+      averageTrainingRatio: parseNumber(playerColumns[6]?.textContent),
       careerLongitivity: parseNumber(
         Array.from(playerColumns[7]?.textContent ?? "0")[0]
       ) as BasketballPlayerInfo["careerLongitivity"],
       overallRating: parseNumber(playerColumns[16]?.textContent),
       height: parseNumber(playerColumns[17]?.textContent),
-      averageTrainingRatio: 0,
     },
     skills,
     parseNumber(playerColumns[15]?.textContent),
