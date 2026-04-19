@@ -1,56 +1,111 @@
-import {
-  positionSettings,
-  ratingSettings,
-  playerGrowthPrediction,
-} from "@/sports/hockey/settings";
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
-import {
-  renderTableCell,
-  renderComparison,
-  renderRelativeSkill,
-  renderButton,
-} from "@/base/render";
-import {
-  getCurrentSeasonDay,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+import PlayerListTable from "./components/PlayerListTable.vue";
+import { usePlayerStore } from "@/stores/playerStore";
+import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
+import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
+import { collectBatchPlayerData } from "@/services/dataCollector";
+import { saveUserSettings } from "@/storage/userSettings";
+import { extractLangFromUrl } from "@/utils/parsers";
+import { getPlayerPageForLang } from "@/sports/hockey/routes";
 
 const viewPlayerList = () => {
-  const mainContent = document.getElementsByClassName("main_content");
   const table = document.getElementById("table-1");
 
   if (!table) {
     return new Error("Table with id 'table-1' not found");
   }
 
-  /** Calculate predictions */
-  const seasonDay = getCurrentSeasonDay();
-
-  const tableHeads = table.querySelectorAll("thead");
   const tableBody = table.querySelector("tbody");
-
   const playerRows = tableBody!.querySelectorAll("tr");
+  const players: HockeyPlayer[] = [];
 
-  tableHeads.forEach((head) => {
-    head.querySelector("tr")!.appendChild(renderTableCell("Pos", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("Skill", "th2"));
-    head.querySelector("tr")!.appendChild(renderTableCell("Rating", "th1"));
-    head.querySelector("tr")!.appendChild(renderTableCell("Relative", "th2"));
+  const seasonDay = getCurrentSeasonDay();
+  const teamId = getUserTeamId();
+  const teamName = getTeamNameFromUserPlayerList();
+
+  const lang = extractLangFromUrl(window.location.pathname);
+  saveUserSettings({
+    lang,
+    sport: "hockey",
+    playerPage: getPlayerPageForLang(lang),
   });
 
-  playerRows.forEach((playerRow, index) => {
+  playerRows.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
-    playerRow.classList.add(`player-row`);
 
-    const player = {
-      name: playerColumns[0].textContent,
-      age: parseInt(playerColumns[2].textContent!),
-      careerLongitivity: parseInt(Array.from(playerColumns[5].textContent!)[0]),
-      skills: {
+    const nameLink = playerColumns[0].querySelector(
+      "a.link_name"
+    ) as HTMLAnchorElement;
+    const id = nameLink?.href.split("data=")[1]?.split("-")[0] || "unknown";
+    const countryImg = playerColumns[0].querySelector(
+      "img"
+    ) as HTMLImageElement;
+    const countryLinkElement = countryImg?.parentNode as HTMLAnchorElement;
+    const countryLink = countryLinkElement?.href;
+
+    const scoutingImg = playerColumns[3].querySelector("img");
+    let scoutingStatus: "SCOUTED" | "IN_PROGRESS" | "UNSCOUTED" = "UNSCOUTED";
+
+    if (scoutingImg) {
+      const src = (scoutingImg as HTMLImageElement).src;
+      if (src.includes("scouted_yes.png")) {
+        scoutingStatus = "SCOUTED";
+      } else if (src.includes("scouted_no.png")) {
+        scoutingStatus = "IN_PROGRESS";
+      }
+    }
+
+    // Parse injury
+    let injuryDays = 0;
+    const injuryImg = playerColumns[0].querySelector(
+      'img[src*="day_to_day.png"], img[src*="injury"]'
+    ) as HTMLImageElement;
+
+    if (injuryImg) {
+      console.log("Found injury image:", injuryImg.src, injuryImg.title);
+      const match = injuryImg.title.match(/: (\d+)/);
+      if (match) {
+        injuryDays = parseInt(match[1]);
+        console.log("Parsed injury days:", injuryDays);
+      } else {
+        console.log("Failed to parse injury days from title:", injuryImg.title);
+      }
+    } else {
+      // Log innerHTML for debugging if we suspect it's there but missed
+      if (
+        playerColumns[0].innerHTML.includes("day_to_day") ||
+        playerColumns[0].innerHTML.includes("injury")
+      ) {
+        console.log("Missed injury image in:", playerColumns[0].innerHTML);
+      }
+    }
+
+    const player = new HockeyPlayer(
+      {
+        id: id,
+        name: playerColumns[0].textContent!.trim(),
+        age: parseInt(playerColumns[2].textContent!),
+        careerLongitivity: parseInt(
+          Array.from(playerColumns[5].textContent!)[0]
+        ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        overallRating: parseInt(
+          playerColumns[14].textContent!.replace(/\D/g, "")
+        ),
+        averageTrainingRatio: parseInt(playerColumns[4].textContent!),
+        preferredSide:
+          (playerColumns[15].textContent?.trim() as "L" | "R" | "U") || "U",
+        countryImage: countryImg?.src,
+        countryLink: countryLink,
+        teamPosition: playerColumns[1].textContent?.trim(),
+        teamId: teamId !== "unknown" ? teamId : undefined,
+        teamName: teamName !== "unknown" ? teamName : undefined,
+      },
+      new Date(),
+      scoutingStatus,
+      true,
+      seasonDay,
+      {
         goalie: parseInt(playerColumns[6].textContent!),
         defence: parseInt(playerColumns[7].textContent!),
         offence: parseInt(playerColumns[8].textContent!),
@@ -59,92 +114,97 @@ const viewPlayerList = () => {
         technical: parseInt(playerColumns[11].textContent!),
         aggression: parseInt(playerColumns[12].textContent!),
       },
-
-      experience: parseInt(playerColumns[13].textContent!),
-      overall: parseInt(playerColumns[14].textContent!),
-    };
-
-    const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player, positionSettings);
-    const bestPosition = calculateBestPosition(skills);
-
-    const predictData = recalculatePredictDataAccordingToSeasonDay(
-      playerGrowthPrediction,
-      bestPosition.position,
-      seasonDay
+      parseInt(playerColumns[13].textContent!),
+      undefined,
+      injuryDays
     );
-
-    playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
-
-    playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
-    );
-
-    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
-
-    const ratingTd = document.createElement("td");
-    ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(
-      renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
-    );
-
-    playerRow.appendChild(ratingTd);
-
-    const relativeCell = document.createElement("td");
-
-    const relativeSkill = renderRelativeSkill(
-      player.age,
-      bestSkillWithExp,
-      predictData
-    );
-    relativeCell.classList.add(`${rowClass}td2`);
-    relativeCell.appendChild(relativeSkill);
-
-    playerRow.appendChild(relativeCell);
+    player.calculatePositions();
+    players.push(player);
   });
 
-  const filterByPositions = (pos: string) => {
-    if (pos === "All") {
-      tableBody!.querySelectorAll(".player-row").forEach((row: Element) => {
-        (row as HTMLElement).style.display = "table-row";
-      });
-      return;
-    }
+  // Collect and cache all player data
+  collectBatchPlayerData(players, "PlayersList");
 
-    tableBody!.querySelectorAll(".player-row").forEach((row: Element) => {
-      (row as HTMLElement).style.display = "none";
-    });
-
-    tableBody!
-      .querySelectorAll(`.position-${pos.toLowerCase()}`)
-      .forEach((row: Element) => {
-        (row as HTMLElement).style.display = "table-row";
-      });
+  // Add button to open Player Report in new tab
+  const playerReportButton = document.createElement("button");
+  playerReportButton.textContent = "📊 Player Report";
+  playerReportButton.style.cssText = `
+    margin-bottom: 15px;
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+  `;
+  playerReportButton.onmouseover = () => {
+    playerReportButton.style.background = "#0056b3";
+  };
+  playerReportButton.onmouseout = () => {
+    playerReportButton.style.background = "#007bff";
+  };
+  playerReportButton.onclick = () => {
+    const extensionUrl = chrome.runtime.getURL("player-report.html");
+    window.open(extensionUrl, "_blank");
   };
 
-  const positionFilter = document.createElement("div");
-  positionFilter.classList.add("position-filter");
-  positionFilter.classList.add("white_box");
+  // Insert button before the table
+  if (table.parentNode) {
+    table.parentNode.insertBefore(playerReportButton, table);
+  }
 
-  const positionButtonAll = renderButton(`All (${playerRows.length})`);
-  positionButtonAll.addEventListener("click", () => filterByPositions("All"));
-  positionFilter.append(positionButtonAll);
+  // Create mount point
+  const appContainer = document.createElement("div");
+  appContainer.id = "ppm-assistant-app";
 
-  positionSettings.forEach((pos) => {
-    const positionButton = renderButton(
-      `${pos.name} (${
-        document.querySelectorAll(`.position-${pos.name.toLowerCase()}`).length
-      })`
-    );
-    positionButton.addEventListener("click", () => filterByPositions(pos.name));
-    positionFilter.append(positionButton);
-  });
+  // Replace original table to avoid conflicts
+  if (table.parentNode) {
+    table.parentNode.replaceChild(appContainer, table);
+  } else {
+    console.error("Table has no parent node");
+    return;
+  }
 
-  mainContent[0].prepend(positionFilter);
+  try {
+    const pinia = createPinia();
+    const app = createApp(PlayerListTable);
+    app.use(pinia);
+
+    // Error handler
+    app.config.errorHandler = (
+      err: unknown,
+      _instance: unknown,
+      info: string
+    ) => {
+      console.error("Vue Error:", err, info);
+    };
+
+    const store = usePlayerStore();
+    store.setPlayers(players);
+
+    // Extract headers
+    const headerRow = table.querySelector("thead tr");
+    const headers: string[] = [];
+    if (headerRow) {
+      const headerCells = headerRow.querySelectorAll("td");
+      headerCells.forEach((cell) => {
+        headers.push(cell.textContent?.trim() || "");
+      });
+    }
+    store.setTableHeaders(headers);
+
+    app.mount(appContainer);
+  } catch (error) {
+    console.error("Failed to mount Vue app:", error);
+    // Restore table if failed
+    if (appContainer.parentNode) {
+      appContainer.parentNode.replaceChild(table, appContainer);
+    }
+  }
 };
 
 export default viewPlayerList;

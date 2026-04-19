@@ -1,30 +1,29 @@
+import { createApp } from "vue";
+import { createPinia } from "pinia";
 import {
-  positionSettings,
-  ratingSettings,
-  playerGrowthPrediction,
-} from "@/sports/hockey/settings";
-
-import {
-  calculatePositionsSkills,
-  calculateBestPosition,
-  calculateSkillWithExp,
-  calculatePositionsQualities,
-} from "@/base/calculations";
-import { renderPotentialChart } from "@/charts";
-import {
-  renderComparison,
-  renderPotential,
-  renderPotentialBadge,
-  renderRelativeSkill,
-} from "@/base/render";
-import {
-  getCurrentSeasonDay,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
-
-import { HockeyPlayer } from "@/types/Player";
+  HockeyPlayer,
+  HockeyPlayerInfo,
+} from "@/sports/hockey/classes/HockeyPlayer";
+import PlayerSidebar from "./components/PlayerSidebar.vue";
+import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
+import { getCurrentSeasonDay, getPlayerTeamId, getTeamNameFromPlayerProfile } from "@/utils/dom";
+import { collectPlayerData } from "@/services/dataCollector";
+import { saveUserSettings } from "@/storage/userSettings";
+import { extractLangFromUrl } from "@/utils/parsers";
+import { getPlayerPageForLang } from "@/sports/hockey/routes";
 
 const viewPlayerProfile = () => {
+  const seasonDay = getCurrentSeasonDay();
+  const teamId = getPlayerTeamId();
+  const teamName = getTeamNameFromPlayerProfile();
+
+  const lang = extractLangFromUrl(window.location.pathname);
+  saveUserSettings({
+    lang,
+    sport: "hockey",
+    playerPage: getPlayerPageForLang(lang),
+  });
+
   const playerTable = document.getElementById("table-1");
   const playerInfo = document.querySelector(".player_info");
 
@@ -32,194 +31,176 @@ const viewPlayerProfile = () => {
   if (!playerTable) return new Error("Player table not found");
   if (!playerInfo) return new Error("Player info not found");
 
-  const statsVisible = playerTable.querySelector("#goalie") ? true : false; // If goalie stat is found, player is scouted
-  if (!statsVisible)
-    return new Error("Player is not scouted or is not on the market");
+  const playerScouted = document
+    .querySelector(".player_info")
+    ?.querySelector("img[src*='scouted_yes.png']")
+    ? true
+    : false;
+  const skillsVisible = playerTable.querySelector("#goalie") ? true : false; // If goalie stat is found, player data is visible
 
-  /** Calculate predictions */
-  const seasonDay = getCurrentSeasonDay();
+  const searchParams = new URLSearchParams(window.location.search);
+  const dataParam = searchParams.get("data") || "";
+  const extractedId = dataParam.split("-")[0];
 
-  const player: HockeyPlayer = {
-    age: parseInt(playerTable.querySelector("#age")!.textContent!),
+  const baseInfo: HockeyPlayerInfo = {
+    id: extractedId,
     name: playerInfo.querySelector(".link_name")!.textContent!,
+    age: parseInt(playerTable.querySelector("#age")!.textContent!),
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
+    ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    overallRating: parseInt(
+      playerTable.querySelector("#index_skill")!.textContent!
     ),
-    skills: {
-      goalie: parseInt(playerTable.querySelector("#goalie")!.textContent!),
-      defence: parseInt(playerTable.querySelector("#defense")!.textContent!),
-      offence: parseInt(playerTable.querySelector("#attack")!.textContent!),
-      shooting: parseInt(playerTable.querySelector("#shooting")!.textContent!),
-      passing: parseInt(playerTable.querySelector("#passing")!.textContent!),
-      technical: parseInt(
-        playerTable.querySelector("#technique_attribute")!.textContent!
-      ),
-      aggression: parseInt(
-        playerTable.querySelector("#aggressive")!.textContent!
-      ),
-    },
-    qualities: {
-      goalie: parseInt(playerTable.querySelector("#kva_goalie")!.textContent!),
-      defence: parseInt(
-        playerTable.querySelector("#kva_defense")!.textContent!
-      ),
-      offence: parseInt(playerTable.querySelector("#kva_attack")!.textContent!),
-      shooting: parseInt(
-        playerTable.querySelector("#kva_shooting")!.textContent!
-      ),
-      passing: parseInt(
-        playerTable.querySelector("#kva_passing")!.textContent!
-      ),
-      technical: parseInt(
-        playerTable.querySelector("#technique_quality")!.textContent!
-      ),
-      aggression: parseInt(
-        playerTable.querySelector("#kva_aggressive")!.textContent!
-      ),
-    },
-    experience: parseInt(
-      playerTable.querySelector("#experience")!.textContent!
+    averageTrainingRatio: parseInt(
+      playerTable.querySelector("#prk")!.textContent!
     ),
-    overall: parseInt(playerTable.querySelector("#index_skill")!.textContent!),
+    preferredSide: "U",
+    teamId: teamId !== "unknown" ? teamId : undefined,
+    teamName: teamName !== "unknown" ? teamName : undefined,
   };
 
-  const positions = calculatePositionsSkills(player, positionSettings);
-  const bestPosition = calculateBestPosition(positions);
+  const skills = skillsVisible
+    ? {
+        goalie: parseInt(playerTable.querySelector("#goalie")!.textContent!),
+        defence: parseInt(playerTable.querySelector("#defense")!.textContent!),
+        offence: parseInt(playerTable.querySelector("#attack")!.textContent!),
+        shooting: parseInt(
+          playerTable.querySelector("#shooting")!.textContent!
+        ),
+        passing: parseInt(playerTable.querySelector("#passing")!.textContent!),
+        technical: parseInt(
+          playerTable.querySelector("#technique_attribute")!.textContent!
+        ),
+        aggression: parseInt(
+          playerTable.querySelector("#aggressive")!.textContent!
+        ),
+      }
+    : undefined;
 
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    bestPosition.position,
-    seasonDay
+  const experience = skillsVisible
+    ? parseInt(playerTable.querySelector("#experience")!.textContent!)
+    : undefined;
+
+  const trainingQualities = skillsVisible
+    ? {
+        goalie: parseInt(
+          playerTable.querySelector("#kva_goalie")!.textContent!
+        ),
+        defence: parseInt(
+          playerTable.querySelector("#kva_defense")!.textContent!
+        ),
+        offence: parseInt(
+          playerTable.querySelector("#kva_attack")!.textContent!
+        ),
+        shooting: parseInt(
+          playerTable.querySelector("#kva_shooting")!.textContent!
+        ),
+        passing: parseInt(
+          playerTable.querySelector("#kva_passing")!.textContent!
+        ),
+        technical: parseInt(
+          playerTable.querySelector("#technique_quality")!.textContent!
+        ),
+        aggression: parseInt(
+          playerTable.querySelector("#kva_aggressive")!.textContent!
+        ),
+      }
+    : undefined;
+
+  // Extract contract information from the table_info div
+  // Structure: div.table_info contains 4 divs with class "five"
+  // Order: [0] Salary, [1] Contract Days, [2] ALP, [3] Days in Team
+  // Each div contains: Label<br><strong>Value</strong>
+
+  const tableInfoDiv = document.querySelector('.table_info');
+
+  if (tableInfoDiv) {
+    const children = Array.from(tableInfoDiv.children);
+
+    if (children.length >= 4) {
+      // Extract values from <strong> tags
+      const salaryStrong = children[0].querySelector('strong');
+      const contractDaysStrong = children[1].querySelector('strong');
+      const alpStrong = children[2].querySelector('strong');
+      const daysInTeamStrong = children[3].querySelector('strong');
+
+      const salaryValue = salaryStrong
+        ? parseInt(salaryStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      const contractDaysValue = contractDaysStrong
+        ? parseInt(contractDaysStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      const daysInTeamValue = daysInTeamStrong
+        ? parseInt(daysInTeamStrong.textContent?.replace(/\s/g, '') || '0')
+        : undefined;
+
+      // ALP can be "jā/nē" (Latvian), "yes/no" (English), or similar
+      const alpText = alpStrong?.textContent?.toLowerCase() || '';
+      const alpEnabled = alpText.includes('jā') || alpText.includes('yes') ? true :
+                         alpText.includes('nē') || alpText.includes('no') ? false :
+                         undefined;
+
+      baseInfo.contract = {
+        salary: salaryValue,
+        contractDays: contractDaysValue,
+        daysInTeam: daysInTeamValue,
+        autoRenewal: alpEnabled,
+      };
+
+      console.log('[PlayerProfile] Contract data extracted:', baseInfo.contract);
+    }
+  }
+
+  const player = new HockeyPlayer(
+    baseInfo,
+    new Date(),
+    playerScouted ? "SCOUTED" : "UNSCOUTED",  // Convert boolean to ScoutingStatus
+    skillsVisible,
+    seasonDay,
+    skills,
+    experience,
+    trainingQualities
   );
 
+  player.calculatePositions();
+  player.calculatePositionTrainingQualities();
+
+  // Collect and cache player data
+  collectPlayerData(player, "PlayerProfile");
+
+  console.log(player);
+
+  /** Render Sidebar */
   const contentColumn = document.querySelector(".column_left");
+  if (contentColumn) {
+    const sidebarContainer = document.createElement("div");
+    sidebarContainer.id = "ppm-assistant-sidebar";
+    contentColumn.appendChild(sidebarContainer);
 
-  // If content column is not found, return
-  if (!contentColumn) return new Error("Content column not found");
-  /**
-   * Ability Box
-   */
-  const abilityBox = document.createElement("div");
-  abilityBox.classList.add("player-profile");
-  abilityBox.classList.add("player-profile--ability");
+    const sidebarApp = createApp(PlayerSidebar, { player });
+    const pinia = createPinia();
+    sidebarApp.use(pinia);
+    sidebarApp.mount(sidebarContainer);
+  }
 
-  const position = document.createElement("div");
-  position.classList.add("ability__position");
-  position.textContent = bestPosition.position;
+  /** Render Chart */
+  // Create a container for the chart after the player table
+  const chartContainer = document.createElement("div");
+  chartContainer.id = "ppm-assistant-chart";
 
-  const allPositions = document.createElement("div");
-  allPositions.classList.add("ability__positions");
+  const centerColumn = document.querySelector(".column_center_inner");
+  if (centerColumn) {
+    centerColumn.appendChild(chartContainer);
+  } else if (playerTable.parentNode) {
+    // Fallback if column_center_inner is not found
+    playerTable.parentNode.appendChild(chartContainer);
+  }
 
-  let positionList = ``;
-
-  positions.forEach((position) => {
-    positionList += `<div>${position.position} ${calculateSkillWithExp(
-      position.level,
-      player.experience
-    )}</div>`;
-  });
-
-  allPositions.innerHTML = positionList;
-
-  abilityBox.appendChild(position);
-
-  const abilityDescription = document.createElement("div");
-  abilityDescription.classList.add("ability__text");
-
-  const bestSkillWithExp = calculateSkillWithExp(
-    bestPosition.level,
-    player.experience
-  );
-
-  const abilityValue = document.createElement("div");
-  abilityValue.innerHTML = `<div>${bestSkillWithExp}</div>
-   <div>(${bestPosition.level})</div>`;
-
-  const comparison = document.createElement("div");
-  comparison.classList.add("comparison");
-  comparison.appendChild(
-    renderComparison(bestSkillWithExp, ratingSettings, bestPosition.position)
-  );
-
-  abilityDescription.appendChild(abilityValue);
-  abilityDescription.appendChild(comparison);
-  abilityBox.appendChild(abilityDescription);
-
-  abilityBox.appendChild(allPositions);
-
-  contentColumn.appendChild(abilityBox);
-
-  /**
-   * Potential Box
-   */
-  const potentialBox = document.createElement("div");
-  potentialBox.classList.add("player-profile");
-  potentialBox.classList.add("player-profile--potential");
-
-  const potentials = calculatePositionsQualities(player, positionSettings);
-  const bestPotential = potentials.find(
-    (el) => el.position === bestPosition.position
-  );
-
-  const potentialBadge = renderPotentialBadge(bestPotential!.potential);
-  potentialBox.appendChild(potentialBadge);
-
-  const potentialDescription = renderPotential(bestPotential!);
-  potentialBox.appendChild(potentialDescription);
-
-  const allPotentials = document.createElement("div");
-  allPotentials.classList.add("potential__positions");
-
-  let potentialList = ``;
-
-  potentials.forEach((potential) => {
-    potentialList += `<div>${potential.position} ${potential.potential}</div>`;
-  });
-
-  allPotentials.innerHTML = potentialList;
-  potentialBox.appendChild(allPotentials);
-
-  contentColumn.appendChild(potentialBox);
-
-  const relativeEl = document.createElement("div");
-  relativeEl.classList.add("player-profile");
-  relativeEl.classList.add("player-profile--relative");
-
-  const relativeSkill = renderRelativeSkill(
-    player.age,
-    bestSkillWithExp,
-    predictData
-  );
-
-  relativeEl.innerHTML = `<div class="relative__title">Relative skill</div>`;
-
-  relativeEl.appendChild(relativeSkill);
-  contentColumn.appendChild(relativeEl);
-
-  /**
-   * Add chart
-   */
-
-  const chartBox = document.createElement("div");
-  const chartCanvas = document.createElement("canvas");
-
-  chartBox.classList.add("player-chart");
-  chartCanvas.classList.add("player-chart__canvas");
-
-  renderPotentialChart(
-    {
-      age: player.age,
-      skill: bestPosition.level,
-      position: bestPosition.position,
-      exp: player.experience,
-    },
-    playerGrowthPrediction,
-    chartCanvas
-  );
-
-  chartBox.appendChild(chartCanvas);
-
-  document.querySelector(".profile_player_center")!.appendChild(chartBox);
+  const chartApp = createApp(PlayerGrowthChart, { player });
+  chartApp.mount(chartContainer);
 };
 
 export default viewPlayerProfile;

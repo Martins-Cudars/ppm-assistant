@@ -1,3 +1,5 @@
+import { BasketballPositionSetting, RatingSettings } from "@/types/Position";
+
 enum Ratio {
   verylow = 0.2,
   low = 0.4,
@@ -6,27 +8,7 @@ enum Ratio {
   veryhigh = 1,
 }
 
-interface PositionSetting {
-  name: "PG" | "SG" | "SF" | "PF" | "C";
-  ratios: {
-    shooting?: number;
-    blocking?: number;
-    passing?: number;
-    technical?: number;
-    speed?: number;
-    aggression?: number;
-    jumping?: number;
-  };
-  bonus?: {
-    shooting?: number;
-    blocking?: number;
-  };
-  minHeight: number;
-  maxHeight: number;
-  positionRatio: number;
-}
-
-const positionSettings: PositionSetting[] = [
+const positionSettings: BasketballPositionSetting[] = [
   {
     name: "PG",
     ratios: {
@@ -36,9 +18,16 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.verylow,
       jumping: Ratio.verylow,
     },
-    bonus: {
-      shooting: Ratio.medium,
-      blocking: Ratio.verylow,
+    trainingRatios: {
+      passing: 100,
+      technical: 80,
+      speed: 80,
+      aggression: 20,
+      jumping: 20,
+    },
+    trainingBonus: {
+      shooting: 60,
+      blocking: 20,
     },
     minHeight: 175,
     maxHeight: 190,
@@ -53,9 +42,16 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.low,
       jumping: Ratio.low,
     },
-    bonus: {
-      shooting: Ratio.high,
-      blocking: Ratio.low,
+    trainingRatios: {
+      passing: 80,
+      technical: 80,
+      speed: 60,
+      aggression: 40,
+      jumping: 40,
+    },
+    trainingBonus: {
+      shooting: 80,
+      blocking: 40,
     },
     minHeight: 185,
     maxHeight: 200,
@@ -70,9 +66,16 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.medium,
       jumping: Ratio.medium,
     },
-    bonus: {
-      shooting: Ratio.medium,
-      blocking: Ratio.low,
+    trainingRatios: {
+      passing: 60,
+      technical: 60,
+      speed: 60,
+      aggression: 60,
+      jumping: 60,
+    },
+    trainingBonus: {
+      shooting: 60,
+      blocking: 40,
     },
     minHeight: 190,
     maxHeight: 205,
@@ -87,9 +90,16 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.high,
       jumping: Ratio.high,
     },
-    bonus: {
-      shooting: Ratio.low,
-      blocking: Ratio.medium,
+    trainingRatios: {
+      passing: 40,
+      technical: 40,
+      speed: 60,
+      aggression: 80,
+      jumping: 80,
+    },
+    trainingBonus: {
+      shooting: 40,
+      blocking: 60,
     },
     minHeight: 200,
     maxHeight: 215,
@@ -104,9 +114,16 @@ const positionSettings: PositionSetting[] = [
       aggression: Ratio.veryhigh,
       jumping: Ratio.veryhigh,
     },
-    bonus: {
-      shooting: Ratio.verylow,
-      blocking: Ratio.high,
+    trainingRatios: {
+      passing: 20,
+      technical: 40,
+      speed: 40,
+      aggression: 100,
+      jumping: 100,
+    },
+    trainingBonus: {
+      shooting: 20,
+      blocking: 80,
     },
     minHeight: 205,
     maxHeight: 220,
@@ -114,7 +131,7 @@ const positionSettings: PositionSetting[] = [
   },
 ];
 
-const ratingSettings = {
+const ratingSettings: RatingSettings = {
   low: 300,
   medium: 600,
   high: 900,

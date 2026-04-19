@@ -1,10 +1,7 @@
-import { ratingSettings } from "@/sports/basketball/settings";
-import { calculatePositionsSkills } from "@/sports/basketball/calculations/positionsSkills";
-import {
-  calculateBestPosition,
-  calculateSkillWithExp,
-} from "@/base/calculations";
-import { renderTableCell, renderComparison } from "@/base/render";
+import { createApp } from "vue";
+import { parseBasketballPlayerFromListRow } from "@/sports/basketball/parsers/playerRows";
+import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vue";
+import type { BasketballPlayerListItem } from "./types";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -13,74 +10,66 @@ const viewPlayerList = () => {
     return;
   }
 
-  const tableHeads = table.querySelectorAll("thead");
-  const tableFoots = table.querySelectorAll("tfoot");
+  const legacyPositionSorter = document.querySelector(".center_div.select_form");
+  legacyPositionSorter?.remove();
+
   const playerRows = table.querySelector("tbody")?.querySelectorAll("tr");
+  const headerCells = table.querySelectorAll("thead tr td, thead tr th");
+  const headerIndexes = [0, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+  const headers = headerIndexes.map(
+    (index) => headerCells[index]?.textContent?.trim() || ""
+  );
+  const items: BasketballPlayerListItem[] = [];
 
-  tableHeads.forEach((head) => {
-    const row = head.querySelector("tr");
-
-    if (row) {
-      row.appendChild(renderTableCell("POS", "th1"));
-      row.appendChild(renderTableCell("SK", "th2"));
-      row.appendChild(renderTableCell("RATING", "th1"));
-    }
-  });
-
-  tableFoots.forEach((foot) => {
-    const row = foot.querySelector("tr");
-
-    if (row) {
-      row.appendChild(renderTableCell("POS", "th1"));
-      row.appendChild(renderTableCell("SK", "th2"));
-      row.appendChild(renderTableCell("RATING", "th1"));
-    }
-  });
-
-  playerRows?.forEach((playerRow, index) => {
+  playerRows?.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
-    playerRow.classList.add(`player-row`);
+    const playerLink = playerColumns[0]?.querySelector(
+      'a.link_name, a[href*="player-profile"], a[href*="speletaja-profils"]'
+    ) as HTMLAnchorElement | null;
+    const countryFlagImg = playerColumns[0]?.querySelector("a img") as HTMLImageElement | null;
+    const countryFlagLink = countryFlagImg?.closest("a") as HTMLAnchorElement | null;
+    const injuryImg = Array.from(playerColumns[0]?.querySelectorAll("img") || []).find(
+      (img) => img !== countryFlagImg
+    ) as HTMLImageElement | undefined;
 
-    const player = {
-      name: playerColumns[0].textContent,
-      age: playerColumns[4].textContent,
-      careerLongitivity: Array.from(playerColumns[7].textContent!)[0],
-      skills: {
-        shooting: parseInt(playerColumns[8].textContent!),
-        blocking: parseInt(playerColumns[9].textContent!),
-        passing: parseInt(playerColumns[10].textContent!),
-        technical: parseInt(playerColumns[11].textContent!),
-        speed: parseInt(playerColumns[12].textContent!),
-        aggression: parseInt(playerColumns[13].textContent!),
-        jumping: parseInt(playerColumns[14].textContent!),
-      },
+    const player = parseBasketballPlayerFromListRow(playerRow);
+    player.calculatePositions();
 
-      experience: parseInt(playerColumns[15].textContent!),
-      overall: parseInt(playerColumns[16].textContent!),
-      height: parseInt(playerColumns[17].textContent!),
-    };
-
-    const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const skills = calculatePositionsSkills(player);
-    const bestPosition = calculateBestPosition(skills);
-
-    playerRow.classList.add(`position-${bestPosition.position.toLowerCase()}`);
-    const bestSkillWithExp = calculateSkillWithExp(
-      bestPosition.level,
-      player.experience
-    );
-
-    playerRow.appendChild(
-      renderTableCell(bestPosition.position, `${rowClass}td1`)
-    );
-
-    playerRow.appendChild(renderTableCell(bestSkillWithExp, `${rowClass}td2`));
-
-    const ratingTd = document.createElement("td");
-    ratingTd.classList.add(`${rowClass}td1`);
-    ratingTd.appendChild(renderComparison(bestSkillWithExp, ratingSettings));
-    playerRow.appendChild(ratingTd);
+    items.push({
+      player,
+      profileUrl: playerLink?.href || undefined,
+      countryFlag: countryFlagImg
+        ? {
+            href: countryFlagLink?.href,
+            src: countryFlagImg.src,
+            alt: countryFlagImg.alt,
+            title: countryFlagImg.title,
+          }
+        : undefined,
+      injuryIndicator: injuryImg
+        ? {
+            src: injuryImg.src,
+            alt: injuryImg.alt,
+            title: injuryImg.title,
+          }
+        : undefined,
+    });
   });
+
+  if (!table.parentNode) {
+    console.error("Table has no parent node");
+    return;
+  }
+
+  const appContainer = document.createElement("div");
+  appContainer.id = "ppm-assistant-basketball-list";
+  table.parentNode.replaceChild(appContainer, table);
+
+  const app = createApp(BasketballPlayerListTable, {
+    items,
+    headers,
+  });
+  app.mount(appContainer);
 };
 
 export default viewPlayerList;

@@ -20,7 +20,9 @@ export type PositionSkill = {
 
 export type PositionPotential = {
   position: string;
-  potential: number;
+  basePotential: number;
+  bonusPotential: number;
+  totalPotential: number;
 };
 
 /**
@@ -41,6 +43,8 @@ export interface HockeyPositionSetting {
   name: "G" | "D" | "W" | "C";
   ratios: HockeySkills;
   bonus?: HockeySkills;
+  trainingRatios?: HockeySkills;
+  trainingBonus?: HockeySkills;
   positionRatio: number;
 }
 
@@ -64,6 +68,8 @@ export interface SoccerPositionSetting {
   name: "GK" | "SD" | "CD" | "SM" | "CM" | "DM" | "SF" | "CF";
   ratios: SoccerSkills;
   bonus?: SoccerSkills;
+  trainingRatios?: SoccerSkills;
+  trainingBonus?: SoccerSkills;
   positionRatio: number;
 }
 
@@ -73,8 +79,34 @@ export interface SoccerPositionSetting {
 
 // TODO: Add Basketball skills
 export interface BasketballPositionSetting {
-  name: any;
-  ratios?: any;
-  bonus?: any;
+  name: "PG" | "SG" | "SF" | "PF" | "C";
+  ratios: {
+    shooting?: number;
+    blocking?: number;
+    passing?: number;
+    technical?: number;
+    speed?: number;
+    aggression?: number;
+    jumping?: number;
+  };
+  bonus?: {
+    shooting?: number;
+    blocking?: number;
+  };
+  trainingRatios?: {
+    shooting?: number;
+    blocking?: number;
+    passing?: number;
+    technical?: number;
+    speed?: number;
+    aggression?: number;
+    jumping?: number;
+  };
+  trainingBonus?: {
+    shooting?: number;
+    blocking?: number;
+  };
+  minHeight: number;
+  maxHeight: number;
   positionRatio: number;
 }

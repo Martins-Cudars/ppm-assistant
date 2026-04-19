@@ -16,6 +16,11 @@ const positionSettings: HockeyPositionSetting[] = [
       technical: Ratio.high,
       passing: Ratio.high,
     },
+    trainingRatios: {
+      goalie: 100,
+      passing: 50,
+      technical: 50,
+    },
     positionRatio: 0.73,
   },
   {
@@ -26,7 +31,18 @@ const positionSettings: HockeyPositionSetting[] = [
       aggression: Ratio.high,
     },
     bonus: {
-      technical: Ratio.high,
+      shooting: 0.25,
+      technical: 0.25,
+      offence: 0.1,
+    },
+    trainingRatios: {
+      defence: 100,
+      passing: 50,
+      aggression: 50,
+    },
+    trainingBonus: {
+      shooting: 5,
+      technical: 25,
     },
     positionRatio: 0.85,
   },
@@ -38,7 +54,16 @@ const positionSettings: HockeyPositionSetting[] = [
       aggression: Ratio.high,
     },
     bonus: {
-      shooting: Ratio.veryhigh,
+      shooting: 0.45,
+      defence: 0.1,
+    },
+    trainingRatios: {
+      offence: 100,
+      technical: 50,
+      aggression: 50,
+    },
+    trainingBonus: {
+      shooting: 75,
     },
     positionRatio: 1.0,
   },
@@ -50,45 +75,59 @@ const positionSettings: HockeyPositionSetting[] = [
       passing: Ratio.high,
     },
     bonus: {
-      shooting: Ratio.high,
+      shooting: 0.45,
+      defence: 0.1,
+    },
+    trainingRatios: {
+      offence: 100,
+      passing: 50,
+      technical: 50,
+    },
+    trainingBonus: {
+      shooting: 75,
     },
     positionRatio: 1.0,
   },
 ];
 
 const ratingSettings: RatingSettings = {
-  low: 500,
-  medium: 1000,
-  high: 1500,
+  low: 600,
+  medium: 1500,
+  high: 2600,
 };
 
 const playerGrowthPrediction: GrowthPrediction = [
-  { age: 15, skill: 87, exp: 0 },
-  { age: 16, skill: 170, exp: 8 },
-  { age: 17, skill: 252, exp: 16 },
-  { age: 18, skill: 335, exp: 24 },
-  { age: 19, skill: 417, exp: 34 },
-  { age: 20, skill: 486, exp: 44 },
-  { age: 21, skill: 555, exp: 54 },
-  { age: 22, skill: 623, exp: 64 },
-  { age: 23, skill: 692, exp: 76 },
-  { age: 24, skill: 747, exp: 88 },
-  { age: 25, skill: 802, exp: 100 },
-  { age: 26, skill: 857, exp: 112 },
-  { age: 27, skill: 912, exp: 126 },
-  { age: 28, skill: 953, exp: 140 },
-  { age: 29, skill: 995, exp: 154 },
-  { age: 30, skill: 1036, exp: 168 },
-  { age: 31, skill: 1063, exp: 184 },
-  { age: 32, skill: 1091, exp: 200 },
-  { age: 33, skill: 1118, exp: 216 },
-  { age: 34, skill: 1146, exp: 232 },
-  { age: 35, skill: 1159, exp: 248 },
-  { age: 36, skill: 1143, exp: 264 },
-  { age: 37, skill: 1121, exp: 280 },
-  { age: 38, skill: 1095, exp: 296 },
-  { age: 39, skill: 1060, exp: 312 },
-  { age: 40, skill: 1020, exp: 328 },
+  { age: 15, skill: 120, exp: 0 },
+  { age: 16, skill: 240, exp: 9 }, // +120 skill | +9 exp
+  { age: 17, skill: 346, exp: 19 }, // +106 skill | +10 exp
+  { age: 18, skill: 450, exp: 28 }, // +104 skill | +9 exp
+  { age: 19, skill: 551, exp: 39 }, // +101 skill | +11 exp
+  { age: 20, skill: 649, exp: 51 }, // +98 skill | +12 exp
+  { age: 21, skill: 746, exp: 63 }, // +97 skill | +12 exp
+  { age: 22, skill: 841, exp: 74 }, // +95 skill | +11 exp
+  { age: 23, skill: 938, exp: 88 }, // +97 skill | +14 exp
+  { age: 24, skill: 1016, exp: 102 }, // +78 skill | +14 exp
+  { age: 25, skill: 1093, exp: 116 }, // +77 skill | +14 exp
+  { age: 26, skill: 1171, exp: 130 }, // +78 skill | +14 exp
+  { age: 27, skill: 1248, exp: 146 }, // +77 skill | +16 exp
+  { age: 28, skill: 1306, exp: 162 }, // +58 skill | +16 exp
+  { age: 29, skill: 1365, exp: 178 }, // +59 skill | +16 exp
+  { age: 30, skill: 1423, exp: 195 }, // +58 skill | +17 exp
+  { age: 31, skill: 1461, exp: 213 }, // +38 skill | +18 exp
+  { age: 32, skill: 1500, exp: 232 }, // +39 skill | +19 exp
+  { age: 33, skill: 1538, exp: 250 }, // +38 skill | +18 exp
+  { age: 34, skill: 1577, exp: 269 }, // +39 skill | +19 exp
+  { age: 35, skill: 1596, exp: 287 }, // +19 skill | +18 exp
+  { age: 36, skill: 1573, exp: 306 }, // -23 skill | +19 exp
+  { age: 37, skill: 1542, exp: 324 }, // -31 skill | +18 exp
+  { age: 38, skill: 1506, exp: 343 }, // -36 skill | +19 exp
+  { age: 39, skill: 1456, exp: 361 }, // -50 skill | +18 exp
+  { age: 40, skill: 1400, exp: 380 }, // -56 skill | +19 exp
+  { age: 41, skill: 1335, exp: 398 }, // -65 skill | +18 exp
+  { age: 42, skill: 1260, exp: 417 }, // -75 skill | +19 exp
+  { age: 43, skill: 1175, exp: 435 }, // -85 skill | +18 exp
+  { age: 44, skill: 1080, exp: 454 }, // -95 skill | +19 exp
+  { age: 45, skill: 975, exp: 472 }, // -105 skill | +18 exp
 ];
 
 export { positionSettings, ratingSettings, playerGrowthPrediction };

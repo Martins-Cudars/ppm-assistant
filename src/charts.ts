@@ -2,26 +2,19 @@ import Chart from "chart.js/auto";
 import { ChartConfiguration } from "chart.js";
 
 import { calculateSkillWithExp } from "@/base/calculations";
-import {
-  getCurrentSeasonDay,
-  calculateSeasonProgress,
-  recalculatePredictDataAccordingToSeasonDay,
-} from "@/utils";
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { calculateSeasonProgress } from "@/utils/calculations";
 
 import { ChartData } from "@/types/Chart";
+import { GrowthPrediction } from "@/types/GrowthData";
 
 // TODO: Improve calculations by using player age, career longitivity, current training level, etc.
 
 const renderPotentialChart = (
   data: ChartData,
-  playerGrowthPrediction,
+  playerGrowthPrediction: GrowthPrediction,
   el: HTMLCanvasElement
 ) => {
-  const predictData = recalculatePredictDataAccordingToSeasonDay(
-    playerGrowthPrediction,
-    data.position
-  );
-
   const seasonDay = getCurrentSeasonDay();
   const seasonProgress = calculateSeasonProgress(seasonDay);
 
@@ -66,7 +59,7 @@ const renderPotentialChart = (
       datasets: [
         {
           label: "Perfect Player Skill",
-          data: predictData.map((row) => {
+          data: playerGrowthPrediction.map((row) => {
             return { x: row.age, y: row.skill };
           }),
           backgroundColor: "rgba(56, 50, 58, 0.5)",
@@ -74,7 +67,7 @@ const renderPotentialChart = (
         },
         {
           label: "Perfect Player Skill With Exp",
-          data: predictData.map((row) => {
+          data: playerGrowthPrediction.map((row) => {
             return { x: row.age, y: calculateSkillWithExp(row.skill, row.exp) };
           }),
           backgroundColor: "rgba(29, 27, 29, 0.5)",
