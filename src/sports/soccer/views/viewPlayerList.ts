@@ -14,7 +14,7 @@ const viewPlayerList = () => {
   const seasonDay = getCurrentSeasonDay();
   const playerRows = table.querySelector("tbody")!.querySelectorAll("tr");
   const headerCells = table.querySelectorAll("thead tr td, thead tr th");
-  const headerIndexes = [0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+  const headerIndexes = [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
   const headers = headerIndexes.map(
     (index) => headerCells[index]?.textContent?.trim() || ""
   );
@@ -66,6 +66,8 @@ const viewPlayerList = () => {
     player.calculatePositions();
     items.push({
       player,
+      lineupPosition: playerColumns[1].textContent?.trim(),
+      preferredSide: playerColumns[17].textContent?.trim(),
       profileUrl: nameLink?.href,
       countryFlag: countryFlagImg
         ? {
