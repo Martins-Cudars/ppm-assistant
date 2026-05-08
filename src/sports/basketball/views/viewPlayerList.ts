@@ -15,7 +15,7 @@ const viewPlayerList = () => {
 
   const playerRows = table.querySelector("tbody")?.querySelectorAll("tr");
   const headerCells = table.querySelectorAll("thead tr td, thead tr th");
-  const headerIndexes = [0, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+  const headerIndexes = [0, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
   const headers = headerIndexes.map(
     (index) => headerCells[index]?.textContent?.trim() || ""
   );
@@ -37,6 +37,7 @@ const viewPlayerList = () => {
 
     items.push({
       player,
+      lineupPosition: playerColumns[3]?.textContent?.trim(),
       profileUrl: playerLink?.href || undefined,
       countryFlag: countryFlagImg
         ? {
