@@ -34,6 +34,7 @@ import RelativeSkill from "@/components/RelativeSkill.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 import { ratingSettings } from "@/sports/soccer/settings";
+import { getSoccerRelativeSkill } from "@/sports/soccer/utils/playerRatings";
 
 const props = defineProps<{
   player: SoccerPlayer;
@@ -41,9 +42,5 @@ const props = defineProps<{
 
 const positions = computed(() => props.player.getPositions());
 const bestPosition = computed(() => props.player.getBestPosition());
-const relativeSkill = computed(() =>
-  bestPosition.value.name === "GK"
-    ? bestPosition.value.ratingWithXp / 1.25
-    : bestPosition.value.ratingWithXp
-);
+const relativeSkill = computed(() => getSoccerRelativeSkill(props.player));
 </script>
