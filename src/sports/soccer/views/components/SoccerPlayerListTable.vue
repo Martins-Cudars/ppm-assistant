@@ -6,6 +6,7 @@ import RatingStars from "@/components/RatingStars.vue";
 import SoccerPlayerListChart from "./SoccerPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/soccer/settings";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import { getSoccerRelativeSkill } from "@/sports/soccer/utils/playerRatings";
 import type { SoccerPlayerListItem } from "../types";
 
 const props = defineProps<{
@@ -176,7 +177,7 @@ const tableColumns = computed<Column[]>(() => {
       slot: "relative",
       sortable: true,
       sortValue: (item: SoccerPlayerListItem) => {
-        const skill = item.player.getBestPosition().ratingWithXp;
+        const skill = getSoccerRelativeSkill(item.player);
         const maxSkill = item.player.getMaxSkillForAge();
         return maxSkill ? skill / maxSkill : 0;
       },
@@ -279,7 +280,7 @@ const tableColumns = computed<Column[]>(() => {
 
       <template #relative="{ item }">
         <RelativeSkill
-          :skill="item.player.getBestPosition().ratingWithXp"
+          :skill="getSoccerRelativeSkill(item.player)"
           :maxSkillForAge="item.player.getMaxSkillForAge()"
         />
       </template>
