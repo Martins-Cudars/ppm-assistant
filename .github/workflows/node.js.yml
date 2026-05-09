@@ -58,7 +58,9 @@ jobs:
 
       - name: Set release version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: echo "RELEASE_VERSION=v$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "RELEASE_VERSION=v${PACKAGE_VERSION}" >> "$GITHUB_ENV"
 
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
