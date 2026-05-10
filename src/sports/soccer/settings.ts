@@ -6,6 +6,8 @@ enum Ratio {
   high = 0.75,
   medium = 0.5,
   low = 0.25,
+  forwardShooting = 0.2,
+  midfieldShooting = 0.15,
   verylow = 0.1,
 }
 
@@ -63,7 +65,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       defence: Ratio.verylow,
       offence: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.midfieldShooting,
     },
     positionRatio: 1,
   },
@@ -79,7 +81,7 @@ const positionSettings: SoccerPositionSetting[] = [
     bonus: {
       defence: Ratio.verylow,
       offence: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.midfieldShooting,
     },
     positionRatio: 1,
   },
@@ -94,7 +96,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.forwardShooting,
     },
     positionRatio: 1,
   },
@@ -109,7 +111,7 @@ const positionSettings: SoccerPositionSetting[] = [
     },
     bonus: {
       midfield: Ratio.verylow,
-      shooting: Ratio.low,
+      shooting: Ratio.forwardShooting,
     },
     positionRatio: 1,
   },
