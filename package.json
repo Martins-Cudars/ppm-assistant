@@ -1,4 +1,5 @@
 {
+  "version": "3.0.4",
   "source": "src/main.js",
   "targets": {
     "default": {
@@ -13,7 +14,13 @@
     "build:report": "vite build --config vite.player-report.config.mts",
     "preview": "vite preview",
     "lint": "eslint src eslint.config.mjs vite.config.mts vite.player-report.config.mts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "version:check": "node scripts/check-version.mjs",
+    "version:bump-check": "node scripts/check-version-bump.mjs",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:patch": "node scripts/bump-version.mjs patch",
+    "version:minor": "node scripts/bump-version.mjs minor",
+    "version:major": "node scripts/bump-version.mjs major"
   },
   "engines": {
     "node": ">=20.12.0"

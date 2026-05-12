@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -34,6 +36,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Check version sync
+        run: pnpm version:check
+
+      - name: Check version bump
+        if: github.event_name == 'pull_request'
+        run: pnpm version:bump-check
 
       - name: Build project
         run: pnpm build
@@ -47,9 +56,11 @@ jobs:
           name: dist-zip
           path: dist.zip
 
-      - name: Set up date and time
+      - name: Set release version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: echo "RELEASE_VERSION=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "RELEASE_VERSION=v${PACKAGE_VERSION}" >> "$GITHUB_ENV"
 
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
