@@ -89,21 +89,6 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.player-profile--export button {
-  border: 1px solid #b9b9b9;
-  border-radius: 4px;
-  background: #f3f3f3;
-  color: #222;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 8px;
-}
-
-.player-profile--export button:hover {
-  background: #e8e8e8;
-}
-
 .export__status {
   grid-column: 1 / span 2;
   color: #225c39;
