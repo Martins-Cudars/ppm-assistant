@@ -2,12 +2,14 @@
   <div class="player-sidebar">
     <PlayerAbility :player="player" />
     <PlayerPotential :player="player" />
+    <PlayerExport :player="player" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import PlayerAbility from "./PlayerAbility.vue";
+import PlayerExport from "./PlayerExport.vue";
 import PlayerPotential from "./PlayerPotential.vue";
 
 defineProps<{
