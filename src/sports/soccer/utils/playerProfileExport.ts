@@ -1,10 +1,9 @@
 import {
-  BasketballPlayer,
-  BasketballPlayerPosition,
-  BasketballPlayerTrainingQuality,
-  BasketballSkills,
-  BasketballTrainingQualities,
-} from "@/sports/basketball/classes/BasketballPlayer";
+  SoccerPlayer,
+  SoccerPlayerPosition,
+  SoccerPlayerTrainingQuality,
+  SoccerSkills,
+} from "@/sports/soccer/classes/SoccerPlayer";
 import {
   CsvRow,
   normalizePositionName,
@@ -12,51 +11,54 @@ import {
   setCsvValue,
 } from "@/utils/playerProfileExport";
 
-const basketballSkillKeys: Array<keyof BasketballSkills> = [
+const soccerSkillKeys: Array<keyof SoccerSkills> = [
+  "goalie",
+  "defence",
+  "midfield",
+  "offence",
   "shooting",
-  "blocking",
   "passing",
   "technical",
   "speed",
-  "aggression",
-  "jumping",
+  "heading",
 ];
 
-type BasketballPlayerProfileExport = {
+type SoccerPlayerProfileExport = {
   id: string;
   name: string;
   age: number;
   careerLongitivity: number;
   overallRating: number;
   averageTrainingRatio: number;
-  height: number;
   experience: number;
   isScouted: boolean;
   isVisible: boolean;
   seasonDay: number;
   updatedAt: string;
-  skills: BasketballSkills | null;
-  trainingQualities: BasketballTrainingQualities | null;
-  positions: BasketballPlayerPosition[];
-  positionTrainingQualities: BasketballPlayerTrainingQuality[];
-  bestPosition: BasketballPlayerPosition;
-  bestPositionTrainingQuality: BasketballPlayerTrainingQuality;
-  currentPositionTrainingQuality: BasketballPlayerTrainingQuality | null;
+  teamId: string | null;
+  teamName: string | null;
+  skills: SoccerSkills | null;
+  trainingQualities: SoccerSkills | null;
+  positions: SoccerPlayerPosition[];
+  positionTrainingQualities: SoccerPlayerTrainingQuality[];
+  bestPosition: SoccerPlayerPosition;
+  bestPositionTrainingQuality: SoccerPlayerTrainingQuality;
+  currentPositionTrainingQuality: SoccerPlayerTrainingQuality | null;
 };
 
 function getCurrentPositionTrainingQuality(
-  player: BasketballPlayer
-): BasketballPlayerTrainingQuality | null {
+  player: SoccerPlayer
+): SoccerPlayerTrainingQuality | null {
   try {
-    return player.getCurrentPositionTrainingQuality() as BasketballPlayerTrainingQuality;
+    return player.getCurrentPositionTrainingQuality() as SoccerPlayerTrainingQuality;
   } catch {
     return null;
   }
 }
 
-function createBasketballPlayerProfileExport(
-  player: BasketballPlayer
-): BasketballPlayerProfileExport {
+function createSoccerPlayerProfileExport(
+  player: SoccerPlayer
+): SoccerPlayerProfileExport {
   return {
     id: player.id,
     name: player.name,
@@ -64,25 +66,69 @@ function createBasketballPlayerProfileExport(
     careerLongitivity: player.careerLongitivity,
     overallRating: player.overallRating,
     averageTrainingRatio: player.averageTrainingRatio,
-    height: player.height,
     experience: player.experience,
     isScouted: player.isScouted,
     isVisible: player.isVisible,
     seasonDay: player.seasonDay,
     updatedAt: player.updatedAt.toISOString(),
+    teamId: player.teamId ?? null,
+    teamName: player.teamName ?? null,
     skills: player.skills ?? null,
-    trainingQualities: player.trainingQualities ?? null,
-    positions: player.getPositions() as BasketballPlayerPosition[],
+    trainingQualities:
+      (player.trainingQualities as SoccerSkills | undefined) ?? null,
+    positions: player.getPositions() as SoccerPlayerPosition[],
     positionTrainingQualities:
-      player.getPositionTrainingQualities() as BasketballPlayerTrainingQuality[],
-    bestPosition: player.getBestPosition() as BasketballPlayerPosition,
+      player.getPositionTrainingQualities() as SoccerPlayerTrainingQuality[],
+    bestPosition: player.getBestPosition() as SoccerPlayerPosition,
     bestPositionTrainingQuality:
-      player.getBestPositionTrainingQuality() as BasketballPlayerTrainingQuality,
+      player.getBestPositionTrainingQuality() as SoccerPlayerTrainingQuality,
     currentPositionTrainingQuality: getCurrentPositionTrainingQuality(player),
   };
 }
 
-function createCsvRow(data: BasketballPlayerProfileExport): CsvRow {
+function addPositionColumns(
+  row: CsvRow,
+  positions: SoccerPlayerPosition[],
+  positionTrainingQualities: SoccerPlayerTrainingQuality[]
+): void {
+  for (const position of positions) {
+    const positionKey = normalizePositionName(position.name);
+    setCsvValue(row, `position_${positionKey}_base_rating`, position.baseRating);
+    setCsvValue(row, `position_${positionKey}_bonus_rating`, position.bonusRating);
+    setCsvValue(row, `position_${positionKey}_exp_bonus`, position.expBonus);
+    setCsvValue(
+      row,
+      `position_${positionKey}_rating_with_bonus`,
+      position.ratingWithBonus
+    );
+    setCsvValue(
+      row,
+      `position_${positionKey}_rating_with_xp`,
+      position.ratingWithXp
+    );
+  }
+
+  for (const quality of positionTrainingQualities) {
+    const positionKey = normalizePositionName(quality.position);
+    setCsvValue(
+      row,
+      `position_training_quality_${positionKey}_base_training_quality`,
+      quality.baseTrainingQuality
+    );
+    setCsvValue(
+      row,
+      `position_training_quality_${positionKey}_bonus_training_quality`,
+      quality.bonusTrainingQuality
+    );
+    setCsvValue(
+      row,
+      `position_training_quality_${positionKey}_total_training_quality`,
+      quality.totalTrainingQuality
+    );
+  }
+}
+
+function createCsvRow(data: SoccerPlayerProfileExport): CsvRow {
   const row: CsvRow = {};
 
   setCsvValue(row, "id", data.id);
@@ -91,14 +137,15 @@ function createCsvRow(data: BasketballPlayerProfileExport): CsvRow {
   setCsvValue(row, "career_longitivity", data.careerLongitivity);
   setCsvValue(row, "overall_rating", data.overallRating);
   setCsvValue(row, "average_training_ratio", data.averageTrainingRatio);
-  setCsvValue(row, "height", data.height);
   setCsvValue(row, "experience", data.experience);
   setCsvValue(row, "is_scouted", data.isScouted);
   setCsvValue(row, "is_visible", data.isVisible);
   setCsvValue(row, "season_day", data.seasonDay);
   setCsvValue(row, "updated_at", data.updatedAt);
+  setCsvValue(row, "team_id", data.teamId);
+  setCsvValue(row, "team_name", data.teamName);
 
-  for (const skill of basketballSkillKeys) {
+  for (const skill of soccerSkillKeys) {
     setCsvValue(row, `skill_${skill}`, data.skills?.[skill]);
     setCsvValue(
       row,
@@ -166,52 +213,15 @@ function createCsvRow(data: BasketballPlayerProfileExport): CsvRow {
     );
   }
 
-  for (const position of data.positions) {
-    const positionKey = normalizePositionName(position.name);
-    setCsvValue(row, `position_${positionKey}_base_rating`, position.baseRating);
-    setCsvValue(row, `position_${positionKey}_bonus_rating`, position.bonusRating);
-    setCsvValue(row, `position_${positionKey}_exp_bonus`, position.expBonus);
-    setCsvValue(
-      row,
-      `position_${positionKey}_rating_with_bonus`,
-      position.ratingWithBonus
-    );
-    setCsvValue(
-      row,
-      `position_${positionKey}_rating_with_xp`,
-      position.ratingWithXp
-    );
-  }
-
-  for (const quality of data.positionTrainingQualities) {
-    const positionKey = normalizePositionName(quality.position);
-    setCsvValue(
-      row,
-      `position_training_quality_${positionKey}_base_training_quality`,
-      quality.baseTrainingQuality
-    );
-    setCsvValue(
-      row,
-      `position_training_quality_${positionKey}_bonus_training_quality`,
-      quality.bonusTrainingQuality
-    );
-    setCsvValue(
-      row,
-      `position_training_quality_${positionKey}_total_training_quality`,
-      quality.totalTrainingQuality
-    );
-  }
+  addPositionColumns(row, data.positions, data.positionTrainingQualities);
 
   return row;
 }
 
-export function basketballPlayerProfileToJson(
-  player: BasketballPlayer
-): string {
-  return JSON.stringify(createBasketballPlayerProfileExport(player), null, 2);
+export function soccerPlayerProfileToJson(player: SoccerPlayer): string {
+  return JSON.stringify(createSoccerPlayerProfileExport(player), null, 2);
 }
 
-export function basketballPlayerProfileToCsv(player: BasketballPlayer): string {
-  const row = createCsvRow(createBasketballPlayerProfileExport(player));
-  return serializeCsvRow(row);
+export function soccerPlayerProfileToCsv(player: SoccerPlayer): string {
+  return serializeCsvRow(createCsvRow(createSoccerPlayerProfileExport(player)));
 }
