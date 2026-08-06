@@ -1,12 +1,28 @@
 <template>
   <div class="player-list-chart white_box">
-    <h3>Team Skill Distribution</h3>
+    <div class="chart-header">
+      <h3>Team {{ metricLabel }} Distribution</h3>
+      <div class="chart-tabs">
+        <button
+          :class="{ active: activeMetric === 'skill' }"
+          @click="activeMetric = 'skill'"
+        >
+          Skill
+        </button>
+        <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">
+          OR
+        </button>
+        <button :class="{ active: activeMetric === 'exp' }" @click="activeMetric = 'exp'">
+          Exp
+        </button>
+      </div>
+    </div>
     <canvas ref="chartCanvas"></canvas>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
@@ -19,11 +35,31 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
+const activeMetric = ref<"skill" | "or" | "exp">("skill");
+
+const metricLabels: Record<"skill" | "or" | "exp", string> = {
+  skill: "Skill",
+  or: "OR",
+  exp: "Exp",
+};
+const metricLabel = computed(() => metricLabels[activeMetric.value]);
+
 const positionColors: Record<string, string> = {
   G: "#4CAF50",
   D: "#2196F3",
   W: "#FF9800",
   C: "#9C27B0",
+};
+
+const getMetricValue = (player: HockeyPlayer, bestPosRating: number) => {
+  switch (activeMetric.value) {
+    case "or":
+      return player.overallRating;
+    case "exp":
+      return player.experience;
+    default:
+      return bestPosRating;
+  }
 };
 
 const calculateData = () => {
@@ -37,40 +73,48 @@ const calculateData = () => {
     C: [],
   };
 
-  // Group skills by age for average calculation
-  const skillsByAge: Record<number, number[]> = {};
+  // Group values by age for average calculation
+  const valuesByAge: Record<number, number[]> = {};
 
   props.players.forEach((player) => {
     const bestPos = player.getBestPosition();
     const exactAge = player.age + seasonProgress;
-    const skill = bestPos.ratingWithXp;
+    const value = getMetricValue(player, bestPos.ratingWithXp);
 
     playersByPosition[bestPos.name]?.push({
       x: exactAge,
-      y: skill,
+      y: value,
       name: player.name,
     });
 
-    // Collect skills by integer age
-    if (!skillsByAge[player.age]) {
-      skillsByAge[player.age] = [];
+    // Collect values by integer age
+    if (!valuesByAge[player.age]) {
+      valuesByAge[player.age] = [];
     }
-    skillsByAge[player.age].push(skill);
+    valuesByAge[player.age].push(value);
   });
 
-  // Calculate average skill per age
-  const averageData = Object.entries(skillsByAge)
-    .map(([age, skills]) => ({
+  // Calculate average value per age
+  const averageData = Object.entries(valuesByAge)
+    .map(([age, values]) => ({
       x: parseInt(age) + seasonProgress,
-      y: Math.round(skills.reduce((a, b) => a + b, 0) / skills.length),
+      y: Math.round(values.reduce((a, b) => a + b, 0) / values.length),
     }))
     .sort((a, b) => a.x - b.x);
 
-  // Growth prediction line (total skill with exp)
-  const projectedData = playerGrowthPrediction.map((p) => ({
-    x: p.age,
-    y: Math.round(p.skill * (1 + p.exp / 500)),
-  }));
+  // Growth prediction line - skill and exp metrics only
+  let projectedData: { x: number; y: number }[] = [];
+  if (activeMetric.value === "skill") {
+    projectedData = playerGrowthPrediction.map((p) => ({
+      x: p.age,
+      y: Math.round(p.skill * (1 + p.exp / 500)),
+    }));
+  } else if (activeMetric.value === "exp") {
+    projectedData = playerGrowthPrediction.map((p) => ({
+      x: p.age,
+      y: p.exp,
+    }));
+  }
 
   return { playersByPosition, projectedData, averageData };
 };
@@ -85,17 +129,21 @@ const renderChart = () => {
   const { playersByPosition, projectedData, averageData } = calculateData();
 
   const datasets = [
-    {
-      label: "Top Player Curve",
-      data: projectedData,
-      borderColor: "#ccc",
-      backgroundColor: "transparent",
-      borderWidth: 2,
-      pointRadius: 0,
-      showLine: true,
-      tension: 0.4,
-      order: 10,
-    },
+    ...(projectedData.length
+      ? [
+          {
+            label: "Top Player Curve",
+            data: projectedData,
+            borderColor: "#ccc",
+            backgroundColor: "transparent",
+            borderWidth: 2,
+            pointRadius: 0,
+            showLine: true,
+            tension: 0.4,
+            order: 10,
+          },
+        ]
+      : []),
     {
       label: "Team Average",
       data: averageData,
@@ -131,7 +179,7 @@ const renderChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: "Skill",
+            text: metricLabel.value,
           },
         },
         x: {
@@ -159,7 +207,7 @@ const renderChart = () => {
               if (point.name) {
                 return `${point.name}: ${point.y} (Age ${point.x.toFixed(1)})`;
               }
-              return `Skill: ${point.y}`;
+              return `${metricLabel.value}: ${point.y}`;
             },
           },
         },
@@ -179,6 +227,10 @@ watch(
   },
   { deep: true }
 );
+
+watch(activeMetric, () => {
+  renderChart();
+});
 </script>
 
 <style scoped>
@@ -188,10 +240,25 @@ watch(
   height: 400px;
 }
 
-.player-list-chart h3 {
-  margin-top: 0;
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid #eee;
   padding-bottom: 10px;
+}
+
+.player-list-chart h3 {
+  margin: 0;
+}
+
+.chart-tabs button {
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+.chart-tabs button.active {
+  font-weight: bold;
 }
 
 canvas {
