@@ -1,7 +1,7 @@
 <template>
   <div class="player-list-chart white_box">
     <div class="chart-header">
-      <h3>Team {{ activeMetric === "skill" ? "Skill" : "OR" }} Distribution</h3>
+      <h3>Team {{ metricLabel }} Distribution</h3>
       <div class="chart-tabs">
         <button
           :class="{ active: activeMetric === 'skill' }"
@@ -12,6 +12,9 @@
         <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">
           OR
         </button>
+        <button :class="{ active: activeMetric === 'exp' }" @click="activeMetric = 'exp'">
+          Exp
+        </button>
       </div>
     </div>
     <canvas ref="chartCanvas"></canvas>
@@ -19,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import Chart from "chart.js/auto";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 import { playerGrowthPrediction } from "@/sports/soccer/settings";
@@ -32,7 +35,14 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
-const activeMetric = ref<"skill" | "or">("skill");
+const activeMetric = ref<"skill" | "or" | "exp">("skill");
+
+const metricLabels: Record<"skill" | "or" | "exp", string> = {
+  skill: "Skill",
+  or: "OR",
+  exp: "Exp",
+};
+const metricLabel = computed(() => metricLabels[activeMetric.value]);
 
 const positionColors: Record<string, string> = {
   GK: "#4CAF50",
@@ -42,6 +52,17 @@ const positionColors: Record<string, string> = {
   CM: "#9C27B0",
   SF: "#E91E63",
   CF: "#F44336",
+};
+
+const getMetricValue = (player: SoccerPlayer, bestPosRating: number) => {
+  switch (activeMetric.value) {
+    case "or":
+      return player.overallRating;
+    case "exp":
+      return player.experience;
+    default:
+      return bestPosRating;
+  }
 };
 
 const calculateData = () => {
@@ -57,7 +78,7 @@ const calculateData = () => {
   props.players.forEach((player) => {
     const bestPos = player.getBestPosition();
     const exactAge = player.age + seasonProgress;
-    const value = activeMetric.value === "skill" ? bestPos.ratingWithXp : player.overallRating;
+    const value = getMetricValue(player, bestPos.ratingWithXp);
 
     if (!playersByPosition[bestPos.name]) {
       playersByPosition[bestPos.name] = [];
@@ -82,13 +103,18 @@ const calculateData = () => {
     }))
     .sort((a, b) => a.x - b.x);
 
-  const projectedData =
-    activeMetric.value === "skill"
-      ? playerGrowthPrediction.map((prediction) => ({
-          x: prediction.age,
-          y: Math.round(prediction.skill * (1 + prediction.exp / 500)),
-        }))
-      : [];
+  let projectedData: { x: number; y: number }[] = [];
+  if (activeMetric.value === "skill") {
+    projectedData = playerGrowthPrediction.map((prediction) => ({
+      x: prediction.age,
+      y: Math.round(prediction.skill * (1 + prediction.exp / 500)),
+    }));
+  } else if (activeMetric.value === "exp") {
+    projectedData = playerGrowthPrediction.map((prediction) => ({
+      x: prediction.age,
+      y: prediction.exp,
+    }));
+  }
 
   return { playersByPosition, averageData, projectedData };
 };
@@ -99,7 +125,6 @@ const renderChart = () => {
   chartInstance?.destroy();
 
   const { playersByPosition, averageData, projectedData } = calculateData();
-  const metricLabel = activeMetric.value === "skill" ? "Skill" : "OR";
 
   const datasets = [
     ...(projectedData.length
@@ -152,7 +177,7 @@ const renderChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: metricLabel,
+            text: metricLabel.value,
           },
         },
         x: {
@@ -180,7 +205,7 @@ const renderChart = () => {
               if (point.name) {
                 return `${point.name}: ${point.y} (Age ${point.x.toFixed(1)})`;
               }
-              return `${metricLabel}: ${point.y}`;
+              return `${metricLabel.value}: ${point.y}`;
             },
           },
         },

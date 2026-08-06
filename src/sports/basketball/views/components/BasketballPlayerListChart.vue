@@ -1,7 +1,7 @@
 <template>
   <div class="player-list-chart white_box">
     <div class="chart-header">
-      <h3>Team {{ activeMetric === "skill" ? "Skill" : "OR" }} Distribution</h3>
+      <h3>Team {{ metricLabel }} Distribution</h3>
       <div class="chart-tabs">
         <button
           :class="{ active: activeMetric === 'skill' }"
@@ -12,6 +12,9 @@
         <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">
           OR
         </button>
+        <button :class="{ active: activeMetric === 'exp' }" @click="activeMetric = 'exp'">
+          Exp
+        </button>
       </div>
     </div>
     <canvas ref="chartCanvas"></canvas>
@@ -19,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import Chart from "chart.js/auto";
 import { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
 import { getCurrentSeasonDay } from "@/utils/dom";
@@ -31,7 +34,14 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
-const activeMetric = ref<"skill" | "or">("skill");
+const activeMetric = ref<"skill" | "or" | "exp">("skill");
+
+const metricLabels: Record<"skill" | "or" | "exp", string> = {
+  skill: "Skill",
+  or: "OR",
+  exp: "Exp",
+};
+const metricLabel = computed(() => metricLabels[activeMetric.value]);
 
 const positionColors: Record<string, string> = {
   PG: "#4CAF50",
@@ -39,6 +49,17 @@ const positionColors: Record<string, string> = {
   SF: "#FF9800",
   PF: "#9C27B0",
   C: "#F44336",
+};
+
+const getMetricValue = (player: BasketballPlayer, bestPosRating: number) => {
+  switch (activeMetric.value) {
+    case "or":
+      return player.overallRating;
+    case "exp":
+      return player.experience;
+    default:
+      return bestPosRating;
+  }
 };
 
 const calculateData = () => {
@@ -54,7 +75,7 @@ const calculateData = () => {
   props.players.forEach((player) => {
     const bestPos = player.getBestPosition();
     const exactAge = player.age + seasonProgress;
-    const value = activeMetric.value === "skill" ? bestPos.ratingWithXp : player.overallRating;
+    const value = getMetricValue(player, bestPos.ratingWithXp);
 
     if (!playersByPosition[bestPos.name]) {
       playersByPosition[bestPos.name] = [];
@@ -88,7 +109,6 @@ const renderChart = () => {
   chartInstance?.destroy();
 
   const { playersByPosition, averageData } = calculateData();
-  const metricLabel = activeMetric.value === "skill" ? "Skill" : "OR";
 
   const datasets = [
     {
@@ -126,7 +146,7 @@ const renderChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: metricLabel,
+            text: metricLabel.value,
           },
         },
         x: {
@@ -154,7 +174,7 @@ const renderChart = () => {
               if (point.name) {
                 return `${point.name}: ${point.y} (Age ${point.x.toFixed(1)})`;
               }
-              return `${metricLabel}: ${point.y}`;
+              return `${metricLabel.value}: ${point.y}`;
             },
           },
         },

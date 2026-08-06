@@ -1,7 +1,7 @@
 <template>
   <div class="player-list-chart white_box">
     <div class="chart-header">
-      <h3>Team {{ activeMetric === "skill" ? "Skill" : "OR" }} Distribution</h3>
+      <h3>Team {{ metricLabel }} Distribution</h3>
       <div class="chart-tabs">
         <button
           :class="{ active: activeMetric === 'skill' }"
@@ -12,6 +12,9 @@
         <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">
           OR
         </button>
+        <button :class="{ active: activeMetric === 'exp' }" @click="activeMetric = 'exp'">
+          Exp
+        </button>
       </div>
     </div>
     <canvas ref="chartCanvas"></canvas>
@@ -19,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
@@ -32,13 +35,31 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 
-const activeMetric = ref<"skill" | "or">("skill");
+const activeMetric = ref<"skill" | "or" | "exp">("skill");
+
+const metricLabels: Record<"skill" | "or" | "exp", string> = {
+  skill: "Skill",
+  or: "OR",
+  exp: "Exp",
+};
+const metricLabel = computed(() => metricLabels[activeMetric.value]);
 
 const positionColors: Record<string, string> = {
   G: "#4CAF50",
   D: "#2196F3",
   W: "#FF9800",
   C: "#9C27B0",
+};
+
+const getMetricValue = (player: HockeyPlayer, bestPosRating: number) => {
+  switch (activeMetric.value) {
+    case "or":
+      return player.overallRating;
+    case "exp":
+      return player.experience;
+    default:
+      return bestPosRating;
+  }
 };
 
 const calculateData = () => {
@@ -58,7 +79,7 @@ const calculateData = () => {
   props.players.forEach((player) => {
     const bestPos = player.getBestPosition();
     const exactAge = player.age + seasonProgress;
-    const value = activeMetric.value === "skill" ? bestPos.ratingWithXp : player.overallRating;
+    const value = getMetricValue(player, bestPos.ratingWithXp);
 
     playersByPosition[bestPos.name]?.push({
       x: exactAge,
@@ -81,14 +102,19 @@ const calculateData = () => {
     }))
     .sort((a, b) => a.x - b.x);
 
-  // Growth prediction line (total skill with exp) - skill metric only
-  const projectedData =
-    activeMetric.value === "skill"
-      ? playerGrowthPrediction.map((p) => ({
-          x: p.age,
-          y: Math.round(p.skill * (1 + p.exp / 500)),
-        }))
-      : [];
+  // Growth prediction line - skill and exp metrics only
+  let projectedData: { x: number; y: number }[] = [];
+  if (activeMetric.value === "skill") {
+    projectedData = playerGrowthPrediction.map((p) => ({
+      x: p.age,
+      y: Math.round(p.skill * (1 + p.exp / 500)),
+    }));
+  } else if (activeMetric.value === "exp") {
+    projectedData = playerGrowthPrediction.map((p) => ({
+      x: p.age,
+      y: p.exp,
+    }));
+  }
 
   return { playersByPosition, projectedData, averageData };
 };
@@ -101,7 +127,6 @@ const renderChart = () => {
   }
 
   const { playersByPosition, projectedData, averageData } = calculateData();
-  const metricLabel = activeMetric.value === "skill" ? "Skill" : "OR";
 
   const datasets = [
     ...(projectedData.length
@@ -154,7 +179,7 @@ const renderChart = () => {
           beginAtZero: true,
           title: {
             display: true,
-            text: metricLabel,
+            text: metricLabel.value,
           },
         },
         x: {
@@ -182,7 +207,7 @@ const renderChart = () => {
               if (point.name) {
                 return `${point.name}: ${point.y} (Age ${point.x.toFixed(1)})`;
               }
-              return `${metricLabel}: ${point.y}`;
+              return `${metricLabel.value}: ${point.y}`;
             },
           },
         },
