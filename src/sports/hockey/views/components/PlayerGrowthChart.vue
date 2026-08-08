@@ -1,5 +1,15 @@
 <template>
   <div class="player-growth-chart">
+    <div class="chart-header">
+      <div class="age-filter">
+        <label>
+          Age:
+          <input type="number" v-model.number="minAge" min="15" max="45" class="age-input" />
+          -
+          <input type="number" v-model.number="maxAge" min="15" max="45" class="age-input" />
+        </label>
+      </div>
+    </div>
     <canvas ref="chartCanvas"></canvas>
   </div>
 </template>
@@ -7,9 +17,14 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
+import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getCurrentSeasonDay } from "@/utils/dom";
+import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
+import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { calculatePositions } from "@/classes/playerCalculations";
+import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -17,6 +32,14 @@ const props = defineProps<{
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
+const historyEntries = ref<SkillHistoryEntry[]>([]);
+
+// Default to a window around the player's current age rather than the full
+// 15-45 data range, so a young player's progress isn't squeezed into a
+// sliver of the chart. Computed once from the initial player prop; the user
+// can widen/narrow via the age-filter inputs afterwards.
+const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
+const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 
 const calculateData = () => {
   const projectedPureData = [];
@@ -46,17 +69,44 @@ const calculateData = () => {
 
   // Player position
   const seasonDay = getCurrentSeasonDay() || 1;
-  const seasonProgress = seasonDay / 112;
+  const seasonProgress = seasonDay / hockeyPlayerProfile.daysPerSeason;
   const exactAge = props.player.age + seasonProgress;
 
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+
+  // Actual skill history, sourced from prior visits to treninu-progress.html.
+  // Only the "Base" (no-XP) rating can be reconstructed exactly for historical
+  // days, since the history table doesn't capture a per-day experience value.
+  const actualHistoryData = [...historyEntries.value]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((entry) => {
+      const positions = calculatePositions(
+        entry.skills,
+        hockeyPlayerProfile.positionSettings,
+        0,
+        hockeyPlayerProfile.bonusCapRatio
+      );
+      const bestRating = Math.max(...positions.map((p) => p.ratingWithBonus));
+
+      // Converts a historical entry's calendar date into an approximate age
+      // at that date, by reusing the same age/seasonDay math as the "current
+      // skill" point above. This assumes real calendar days and in-game
+      // season days advance 1:1, since there's no per-historical-day season
+      // day value available to compute this exactly.
+      const daysAgo =
+        (Date.now() - Date.parse(`${entry.date}T00:00:00`)) / 86_400_000;
+      const ageAtEntry = exactAge - daysAgo / hockeyPlayerProfile.daysPerSeason;
+
+      return { x: ageAtEntry, y: bestRating };
+    });
 
   return {
     projectedPureData,
     projectedTotalData,
     currentPureData,
     currentTotalData,
+    actualHistoryData,
   };
 };
 
@@ -72,55 +122,77 @@ const renderChartWithLogic = () => {
     projectedTotalData,
     currentPureData,
     currentTotalData,
+    actualHistoryData,
   } = calculateData();
+
+  const datasets: ChartDataset<"line">[] = [
+    {
+      label: "Top Player Skill (Total)",
+      data: projectedTotalData,
+      borderColor: "#ccc",
+      backgroundColor: "#ccc",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "#fff",
+      pointBorderColor: "#ccc",
+      fill: false,
+      tension: 0.4,
+    },
+    {
+      label: "Top Player Skill (Base)",
+      data: projectedPureData,
+      borderColor: "#ccc",
+      backgroundColor: "#ccc",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "#fff",
+      pointBorderColor: "#ccc",
+      fill: false,
+      tension: 0.4,
+    },
+    {
+      label: "Current Skill (Total)",
+      data: currentTotalData,
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 0.5)",
+      pointRadius: 10,
+      pointHoverRadius: 12,
+      showLine: false,
+    },
+    {
+      label: "Current Skill (Base)",
+      data: currentPureData,
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 1)",
+      pointRadius: 10,
+      pointHoverRadius: 12,
+      showLine: false,
+    },
+  ];
+
+  // Only add the actual-history line once there's data to show - omit it
+  // entirely rather than showing an empty/misleading legend entry. History
+  // and profile pages are visited independently, so a player never viewed on
+  // treninu-progress.html simply won't have this line yet; that's expected.
+  if (actualHistoryData.length > 0) {
+    datasets.push({
+      label: "Actual Skill History (Base)",
+      data: actualHistoryData,
+      borderColor: "rgba(54, 162, 235, 1)",
+      backgroundColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "rgba(54, 162, 235, 1)",
+      pointBorderColor: "rgba(54, 162, 235, 1)",
+      fill: false,
+      tension: 0,
+    });
+  }
 
   chartInstance = new Chart(chartCanvas.value, {
     type: "line",
     data: {
-      datasets: [
-        {
-          label: "Top Player Skill (Total)",
-          data: projectedTotalData,
-          borderColor: "#ccc",
-          backgroundColor: "#ccc",
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#ccc",
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: "Top Player Skill (Base)",
-          data: projectedPureData,
-          borderColor: "#ccc",
-          backgroundColor: "#ccc",
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#ccc",
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: "Current Skill (Total)",
-          data: currentTotalData,
-          borderColor: "rgba(255, 99, 132, 1)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-          pointRadius: 10,
-          pointHoverRadius: 12,
-          showLine: false,
-        },
-        {
-          label: "Current Skill (Base)",
-          data: currentPureData,
-          borderColor: "rgba(255, 99, 132, 1)",
-          backgroundColor: "rgba(255, 99, 132, 1)",
-          pointRadius: 10,
-          pointHoverRadius: 12,
-          showLine: false,
-        },
-      ],
+      datasets,
     },
     options: {
       responsive: true,
@@ -135,8 +207,8 @@ const renderChartWithLogic = () => {
         },
         x: {
           type: "linear",
-          min: 15,
-          max: 45,
+          min: minAge.value,
+          max: maxAge.value,
           title: {
             display: true,
             text: "Age",
@@ -148,7 +220,8 @@ const renderChartWithLogic = () => {
       },
       plugins: {
         legend: {
-          display: false,
+          display: true,
+          position: "top",
         },
         tooltip: {
           mode: "index",
@@ -159,8 +232,16 @@ const renderChartWithLogic = () => {
   });
 };
 
+const loadHistory = () => {
+  getSkillHistoryForPlayer(props.player.id).then((entries) => {
+    historyEntries.value = entries;
+    renderChartWithLogic();
+  });
+};
+
 onMounted(() => {
   renderChartWithLogic();
+  loadHistory();
 });
 
 watch(
@@ -170,6 +251,10 @@ watch(
   },
   { deep: true }
 );
+
+watch([minAge, maxAge], () => {
+  renderChartWithLogic();
+});
 </script>
 
 <style scoped>
@@ -182,5 +267,24 @@ watch(
   border: 1px solid #c9c9c9;
   border-radius: 5px;
   box-sizing: border-box;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.age-filter {
+  display: flex;
+  align-items: center;
+}
+
+.age-input {
+  width: 50px;
+  margin: 0 5px;
 }
 </style>

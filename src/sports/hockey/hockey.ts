@@ -8,6 +8,7 @@ import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 import viewTrainingCamp from "./views/viewTrainingCamp";
 import viewPlayerContracts from "./views/viewPlayerContracts";
+import viewTrainingProgress from "./views/viewTrainingProgress";
 import { clearInvalidCaches } from "@/storage/playerCache";
 import { dispatchRoute } from "@/sports/routeDispatch";
 
@@ -30,6 +31,7 @@ const initHockey = () => {
     { routes: routes.market, run: viewMarket },
     { routes: routes.trainingCamp, run: viewTrainingCamp },
     { routes: routes.contracts, run: viewPlayerContracts },
+    { routes: routes.trainingProgress, run: viewTrainingProgress },
   ]);
 
   // TODO: Create next game view
