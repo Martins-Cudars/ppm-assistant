@@ -10,6 +10,7 @@ import viewTrainingCamp from "./views/viewTrainingCamp";
 import viewPlayerContracts from "./views/viewPlayerContracts";
 import viewTrainingProgress from "./views/viewTrainingProgress";
 import { clearInvalidCaches } from "@/storage/playerCache";
+import { migrateLegacySkillHistoryIfNeeded } from "@/storage/skillHistoryMigration";
 import { dispatchRoute } from "@/sports/routeDispatch";
 
 /**
@@ -20,6 +21,12 @@ const initHockey = () => {
   // Clean up any invalid cache entries on startup
   clearInvalidCaches().catch((error) => {
     console.error("[Hockey] Failed to clear invalid caches:", error);
+  });
+
+  // One-time migration of skill history captured before the background
+  // worker existed (see src/storage/skillHistoryMigration.ts)
+  migrateLegacySkillHistoryIfNeeded().catch((error) => {
+    console.error("[Hockey] Failed to migrate legacy skill history:", error);
   });
 
   dispatchRoute(window.location.href, [

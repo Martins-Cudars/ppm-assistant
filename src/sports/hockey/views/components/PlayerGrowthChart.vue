@@ -23,8 +23,7 @@ import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
-import { calculatePositions } from "@/classes/playerCalculations";
-import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
+import { getExactAge, historyEntryToAgePoint } from "@/sports/hockey/skillHistoryChart";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -69,37 +68,15 @@ const calculateData = () => {
 
   // Player position
   const seasonDay = getCurrentSeasonDay() || 1;
-  const seasonProgress = seasonDay / hockeyPlayerProfile.daysPerSeason;
-  const exactAge = props.player.age + seasonProgress;
+  const exactAge = getExactAge(props.player, seasonDay);
 
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
 
   // Actual skill history, sourced from prior visits to treninu-progress.html.
-  // Only the "Base" (no-XP) rating can be reconstructed exactly for historical
-  // days, since the history table doesn't capture a per-day experience value.
   const actualHistoryData = [...historyEntries.value]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((entry) => {
-      const positions = calculatePositions(
-        entry.skills,
-        hockeyPlayerProfile.positionSettings,
-        0,
-        hockeyPlayerProfile.bonusCapRatio
-      );
-      const bestRating = Math.max(...positions.map((p) => p.ratingWithBonus));
-
-      // Converts a historical entry's calendar date into an approximate age
-      // at that date, by reusing the same age/seasonDay math as the "current
-      // skill" point above. This assumes real calendar days and in-game
-      // season days advance 1:1, since there's no per-historical-day season
-      // day value available to compute this exactly.
-      const daysAgo =
-        (Date.now() - Date.parse(`${entry.date}T00:00:00`)) / 86_400_000;
-      const ageAtEntry = exactAge - daysAgo / hockeyPlayerProfile.daysPerSeason;
-
-      return { x: ageAtEntry, y: bestRating };
-    });
+    .map((entry) => historyEntryToAgePoint(entry, exactAge));
 
   return {
     projectedPureData,
@@ -113,8 +90,23 @@ const calculateData = () => {
 const renderChartWithLogic = () => {
   if (!chartCanvas.value) return;
 
+  // v-model.number leaves the ref as a raw (empty) string while the user is
+  // mid-edit (e.g. backspacing before typing a new value), since Vue only
+  // converts via parseFloat when it succeeds. Fall back to sane defaults
+  // rather than feeding Chart.js a non-numeric axis bound, and skip
+  // rendering entirely on a momentarily-degenerate range (min >= max) - the
+  // next keystroke will produce a valid one.
+  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
+  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
+  if (safeMinAge >= safeMaxAge) return;
+
   if (chartInstance) {
-    chartInstance.destroy();
+    try {
+      chartInstance.destroy();
+    } catch (error) {
+      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
+    }
+    chartInstance = null;
   }
 
   const {
@@ -189,47 +181,52 @@ const renderChartWithLogic = () => {
     });
   }
 
-  chartInstance = new Chart(chartCanvas.value, {
-    type: "line",
-    data: {
-      datasets,
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: "Skill",
+  try {
+    chartInstance = new Chart(chartCanvas.value, {
+      type: "line",
+      data: {
+        datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "Skill",
+            },
+          },
+          x: {
+            type: "linear",
+            min: safeMinAge,
+            max: safeMaxAge,
+            title: {
+              display: true,
+              text: "Age",
+            },
+            ticks: {
+              stepSize: 1,
+            },
           },
         },
-        x: {
-          type: "linear",
-          min: minAge.value,
-          max: maxAge.value,
-          title: {
+        plugins: {
+          legend: {
             display: true,
-            text: "Age",
+            position: "top",
           },
-          ticks: {
-            stepSize: 1,
+          tooltip: {
+            mode: "index",
+            intersect: false,
           },
         },
       },
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-        },
-        tooltip: {
-          mode: "index",
-          intersect: false,
-        },
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[PlayerGrowthChart] Failed to render chart:", error);
+    chartInstance = null;
+  }
 };
 
 const loadHistory = () => {

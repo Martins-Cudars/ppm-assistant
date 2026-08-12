@@ -44,3 +44,7 @@ After building, load `./dist` folder as unpacked extension in `chrome://extensio
 4. If hiding original elements, add CSS rules and `include_globs` in manifest
 
 **URL matching**: Routes use path without `.html` extension. The regex in init functions extracts `/lang/page-name` from URLs.
+
+## Known Issues
+
+See `docs/known-issues.md` for bugs that were investigated but not resolved, including current hypotheses and what's already been ruled out. Check it before re-investigating a bug from scratch.

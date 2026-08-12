@@ -6,10 +6,12 @@ import { getCurrentSeasonDay } from "@/utils/dom";
 import { calculateCompleteness } from "@/storage/serialization";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
+import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
 
 const store = usePlayerStore();
+const activeTab = ref<"table" | "graph">("table");
 const selectedFreshness = ref("All");
 const selectedCompleteness = ref("All");
 const selectedPosition = ref("All");
@@ -304,6 +306,21 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       </div>
     </div>
 
+    <div class="view-tabs white_box">
+      <button
+        :class="{ active: activeTab === 'table' }"
+        @click="activeTab = 'table'"
+      >
+        Table
+      </button>
+      <button
+        :class="{ active: activeTab === 'graph' }"
+        @click="activeTab = 'graph'"
+      >
+        Growth Comparison
+      </button>
+    </div>
+
     <div class="filters white_box">
       <div class="filter-group">
         <label>Freshness:</label>
@@ -342,6 +359,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       </div>
     </div>
 
+    <template v-if="activeTab === 'table'">
     <div v-if="filteredPlayers.length === 0" class="empty-state white_box">
       <p v-if="store.cachedPlayers.length === 0">
         No cached player data found. Visit player pages to start building your
@@ -444,6 +462,12 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
         </template>
       </SortableTable>
     </div>
+    </template>
+
+    <PlayerGrowthComparisonChart
+      v-else-if="activeTab === 'graph'"
+      :players="filteredPlayers"
+    />
 
     <div class="debug-section white_box" style="margin-top: 20px">
       <h3>Debug Information</h3>
@@ -512,6 +536,32 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 .clear-btn:hover {
   background: #c82333;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.view-tabs button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.view-tabs button:hover {
+  background: #f8f9fa;
+}
+
+.view-tabs button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
 }
 
 .filters {
