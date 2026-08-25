@@ -10,10 +10,6 @@ const routes = {
   market: ["/en/market", "/lv/tirgus"],
   trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
   contracts: ["/en/player-contracts", "/lv/speletaju-ligumi"],
-  // EN slug unverified - no reference to this page in English exists anywhere
-  // in the codebase. Placeholder guess following the neighboring routes'
-  // naming pattern; confirm against the live game (switch to English) before
-  // relying on it.
   trainingProgress: ["/en/training-progress", "/lv/treninu-progress"],
 };
 
