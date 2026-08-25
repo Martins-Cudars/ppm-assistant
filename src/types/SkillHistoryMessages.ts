@@ -8,12 +8,17 @@
  * the background worker's own origin makes the data reachable from anywhere.
  */
 
-import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
 
 export type SkillHistoryMessage =
   | { type: "SKILL_HISTORY_UPSERT"; entries: SkillHistoryEntry[] }
-  | { type: "SKILL_HISTORY_GET"; playerId: string };
+  | { type: "SKILL_HISTORY_GET"; playerId: string }
+  // Coverage for every player at once. Takes no arguments: a summary is five
+  // small fields, and the callers that need one need the whole set, so paying
+  // for a round-trip per player would be pure overhead.
+  | { type: "SKILL_HISTORY_SUMMARY" };
 
 export type SkillHistoryResponse =
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
-  | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] };
+  | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] }
+  | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] };

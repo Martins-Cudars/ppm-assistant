@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
+import { getSkillHistorySummaries } from "@/storage/skillHistoryDb";
+import { SkillHistorySummary } from "@/types/SkillHistory";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
@@ -14,12 +16,18 @@ const activeTab = ref<"table" | "graph">("table");
 const selectedFreshness = ref("All");
 const selectedCompleteness = ref("All");
 const selectedPosition = ref("All");
+const selectedHistory = ref("All");
+
+// Skill-history coverage per player, keyed by player id. Populated after the
+// cache loads; a player missing from the map simply has nothing stored.
+const historySummaries = ref<Map<string, SkillHistorySummary>>(new Map());
 
 // Current season day comes from the store (loaded from cache)
 const currentSeasonDay = computed(() => store.currentSeasonDay);
 
 onMounted(async () => {
   await store.loadFromCache();
+  historySummaries.value = await getSkillHistorySummaries();
 });
 
 const filteredPlayers = computed(() => {
@@ -61,6 +69,13 @@ const filteredPlayers = computed(() => {
         if (bestPos.name !== selectedPosition.value) return false;
       }
 
+      // History filter
+      if (selectedHistory.value !== "All") {
+        const hasHistory = (historySummaries.value.get(player.id)?.days ?? 0) > 0;
+        if (selectedHistory.value === "Has history" && !hasHistory) return false;
+        if (selectedHistory.value === "No history" && hasHistory) return false;
+      }
+
       return true;
     } catch (error) {
       console.error("[PlayerReport] Error filtering player:", player.id, player.name, error);
@@ -96,6 +111,25 @@ const getCompletenessCount = (completeness: string) => {
   return store.cachedPlayers.filter(
     (p) => calculateCompleteness(p) === completeness.toLowerCase()
   ).length;
+};
+
+const getHistoryCount = (option: string) => {
+  if (option === "All") return store.cachedPlayers.length;
+  return store.cachedPlayers.filter((p) => {
+    const hasHistory = (historySummaries.value.get(p.id)?.days ?? 0) > 0;
+    return option === "Has history" ? hasHistory : !hasHistory;
+  }).length;
+};
+
+const historyFor = (player: HockeyPlayer): SkillHistorySummary | undefined =>
+  historySummaries.value.get(player.id);
+
+const historyTitle = (player: HockeyPlayer) => {
+  const summary = historyFor(player);
+  if (!summary) return "No skill history stored";
+  const gaps =
+    summary.missingDays > 0 ? `${summary.missingDays} days missing` : "no gaps";
+  return `${summary.days} days, ${summary.firstDate} - ${summary.lastDate}, ${gaps}`;
 };
 
 const clearCache = () => {
@@ -264,6 +298,14 @@ const tableColumns = computed<Column[]>(() => [
       ),
   },
   {
+    header: "History",
+    key: "history",
+    slot: "history",
+    sortable: true,
+    // Day count, so sorting groups the players still needing a gather run.
+    sortValue: (p: HockeyPlayer) => historySummaries.value.get(p.id)?.days ?? 0,
+  },
+  {
     header: "Last Updated",
     key: "updatedAt",
     slot: "updatedAt",
@@ -342,6 +384,18 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           :class="{ active: selectedCompleteness === completeness }"
         >
           {{ completeness }} ({{ getCompletenessCount(completeness) }})
+        </button>
+      </div>
+
+      <div class="filter-group">
+        <label>History:</label>
+        <button
+          v-for="option in ['All', 'Has history', 'No history']"
+          :key="option"
+          @click="selectedHistory = option"
+          :class="{ active: selectedHistory === option }"
+        >
+          {{ option }} ({{ getHistoryCount(option) }})
         </button>
       </div>
 
@@ -454,6 +508,14 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
             :seasonDay="item.seasonDay"
             :currentSeasonDay="currentSeasonDay"
           />
+        </template>
+
+        <template #history="{ item }">
+          <span v-if="historyFor(item)" class="history-cell" :title="historyTitle(item)">
+            <span class="history-days">{{ historyFor(item)!.days }}d</span>
+            <span class="history-since">{{ historyFor(item)!.firstDate.slice(0, 7) }}</span>
+          </span>
+          <span v-else class="history-none" :title="historyTitle(item)">-</span>
         </template>
 
         <template #updatedAt="{ item }">
@@ -658,6 +720,22 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.history-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.history-since {
+  color: #666;
+  font-size: 11px;
+}
+
+.history-none {
+  color: #999;
 }
 
 .badge-full {

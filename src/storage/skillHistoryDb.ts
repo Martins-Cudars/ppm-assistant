@@ -14,7 +14,7 @@
  * for the message contract.
  */
 
-import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 
 async function sendSkillHistoryMessage(
@@ -44,6 +44,28 @@ export async function upsertSkillHistoryEntries(
   } catch (error) {
     console.error("[SkillHistoryDb] Failed to upsert entries:", error);
     return { written: 0 };
+  }
+}
+
+/**
+ * Coverage for every player that has any stored history, keyed by playerId.
+ *
+ * One round-trip for the whole store, so a table of players can be annotated
+ * without a message per row. Players with no history are simply absent from
+ * the map - callers should treat a miss as "nothing stored".
+ */
+export async function getSkillHistorySummaries(): Promise<
+  Map<string, SkillHistorySummary>
+> {
+  try {
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_SUMMARY" });
+    if (response.type !== "SKILL_HISTORY_SUMMARY") {
+      return new Map();
+    }
+    return new Map(response.summaries.map((summary) => [summary.playerId, summary]));
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to load history summaries:", error);
+    return new Map();
   }
 }
 

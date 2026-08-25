@@ -44,3 +44,19 @@ export interface SkillHistoryEntry {
    */
   kr?: number;
 }
+
+/**
+ * Per-player coverage of the history store: how many days are held and what
+ * range they span. Deliberately carries no skill values - it exists so a whole
+ * table can be summarised in one round-trip, and it is derived from entry keys
+ * alone (they encode `${playerId}:${date}`), without reading any record.
+ */
+export interface SkillHistorySummary {
+  playerId: string;
+  /** Number of distinct days stored. */
+  days: number;
+  firstDate: string; // ISO "YYYY-MM-DD"
+  lastDate: string; // ISO "YYYY-MM-DD"
+  /** Days between first and last with no stored entry; 0 means a solid run. */
+  missingDays: number;
+}

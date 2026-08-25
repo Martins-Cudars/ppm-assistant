@@ -9,7 +9,7 @@
  * these messages.
  */
 
-import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 
 const DB_NAME = "ppm-assistant-skill-history";
@@ -108,6 +108,68 @@ async function getEntriesForPlayer(playerId: string): Promise<SkillHistoryEntry[
   return entries.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/** Whole days between two ISO dates. UTC arithmetic, so DST can't skew it. */
+function daysBetween(fromIso: string, toIso: string): number {
+  const [fromYear, fromMonth, fromDay] = fromIso.split("-").map(Number);
+  const [toYear, toMonth, toDay] = toIso.split("-").map(Number);
+  const from = Date.UTC(fromYear, fromMonth - 1, fromDay);
+  const to = Date.UTC(toYear, toMonth - 1, toDay);
+  return Math.round((to - from) / 86400000);
+}
+
+/**
+ * Coverage for every player in the store, in one pass.
+ *
+ * Reads only the primary keys, never the records: entry ids are
+ * `${playerId}:${date}`, so the player, the day count and the date range all
+ * fall out of the key set. That keeps summarising a whole squad cheap even
+ * when each player holds hundreds of days.
+ */
+async function getSummaries(): Promise<SkillHistorySummary[]> {
+  const db = await openDb();
+
+  const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const request = tx.objectStore(STORE_NAME).getAllKeys();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  const totals = new Map<string, { days: number; firstDate: string; lastDate: string }>();
+
+  keys.forEach((key) => {
+    if (typeof key !== "string") return;
+    // Split on the first ":" only - the date part contains none, and this
+    // stays correct if a player id ever gains one.
+    const separator = key.indexOf(":");
+    if (separator <= 0) return;
+
+    const playerId = key.slice(0, separator);
+    const date = key.slice(separator + 1);
+    if (date.length !== 10) return;
+
+    const existing = totals.get(playerId);
+    if (!existing) {
+      totals.set(playerId, { days: 1, firstDate: date, lastDate: date });
+      return;
+    }
+
+    existing.days += 1;
+    // ISO dates sort correctly as strings, so no Date objects needed here.
+    if (date < existing.firstDate) existing.firstDate = date;
+    if (date > existing.lastDate) existing.lastDate = date;
+  });
+
+  return [...totals.entries()].map(([playerId, { days, firstDate, lastDate }]) => ({
+    playerId,
+    days,
+    firstDate,
+    lastDate,
+    missingDays: daysBetween(firstDate, lastDate) + 1 - days,
+  }));
+}
+
 chrome.runtime.onMessage.addListener(
   (message: SkillHistoryMessage, _sender, sendResponse: (response: SkillHistoryResponse) => void) => {
     if (message.type === "SKILL_HISTORY_UPSERT") {
@@ -126,6 +188,16 @@ chrome.runtime.onMessage.addListener(
         .catch((error) => {
           console.error("[Background] Failed to load skill history:", error);
           sendResponse({ type: "SKILL_HISTORY_GET", entries: [] });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_SUMMARY") {
+      getSummaries()
+        .then((summaries) => sendResponse({ type: "SKILL_HISTORY_SUMMARY", summaries }))
+        .catch((error) => {
+          console.error("[Background] Failed to summarise skill history:", error);
+          sendResponse({ type: "SKILL_HISTORY_SUMMARY", summaries: [] });
         });
       return true;
     }
