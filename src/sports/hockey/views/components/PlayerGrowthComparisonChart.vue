@@ -19,7 +19,12 @@
     <p v-else-if="players.length === 0" class="loading-state">
       No players to compare - adjust the filters above.
     </p>
-    <canvas v-show="!loading && players.length > 0" ref="chartCanvas"></canvas>
+    <!-- v-show lives on the wrapper, never on the canvas: Chart.js snapshots
+         the canvas's inline style on creation and restores it on destroy(), so a
+         canvas hidden via v-show gets permanently re-hidden by every destroy. -->
+    <div v-show="!loading && players.length > 0" class="chart-body">
+      <canvas ref="chartCanvas"></canvas>
+    </div>
   </div>
 </template>
 
@@ -42,7 +47,6 @@ let chartInstance: Chart | null = null;
 const loading = ref(true);
 const minAge = ref(15);
 const maxAge = ref(30);
-let currentDatasets: ChartDataset<"line">[] = [];
 
 // Distinct colors for an unbounded number of players - golden-angle hue
 // rotation spreads colors evenly regardless of how many players there are.
@@ -181,9 +185,12 @@ const renderChart = (datasets: ChartDataset<"line">[]) => {
 
 const loadAndRender = async () => {
   loading.value = true;
-  currentDatasets = await buildPlayerDatasets();
+  const datasets = await buildPlayerDatasets();
   loading.value = false;
-  renderChart(currentDatasets);
+  // Let Vue flush the v-show update first - Chart.js reads the canvas box at
+  // construction time, and a hidden canvas measures zero.
+  await nextTick();
+  renderChart(datasets);
 };
 
 const hideAllPlayers = () => {
@@ -214,17 +221,19 @@ watch(
   }
 );
 
-watch([minAge, maxAge], async () => {
-  if (!loading.value) {
-    // NOTE: the chart still goes blank on age-range changes even with this
-    // nextTick() deferral - this did NOT fix the known issue documented in
-    // docs/known-issues.md. Left in as a harmless no-op-ish safeguard, but
-    // don't treat this as the fix; see that doc for what's actually going on
-    // and the recommended next thing to try (mutate scales in place instead
-    // of destroy/recreate).
-    await nextTick();
-    renderChart(currentDatasets);
-  }
+// An axis-range change needs no new chart - mutating the scale bounds in place
+// keeps the user's legend / Hide All visibility selections, and avoids tearing
+// down the canvas on every keystroke.
+watch([minAge, maxAge], () => {
+  if (!chartInstance) return;
+
+  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
+  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
+  if (safeMinAge >= safeMaxAge) return;
+
+  chartInstance.options.scales!.x!.min = safeMinAge;
+  chartInstance.options.scales!.x!.max = safeMaxAge;
+  chartInstance.update();
 });
 </script>
 
@@ -288,8 +297,9 @@ watch([minAge, maxAge], async () => {
   padding: 40px;
 }
 
-canvas {
+.chart-body {
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 </style>
