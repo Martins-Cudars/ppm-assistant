@@ -10,7 +10,8 @@ import { upsertSkillHistoryEntries } from "@/storage/skillHistoryDb";
 // but have not been verified against the live page - confirm against real markup
 // and adjust if the page differs.
 const DATE_COL = 0;
-const KR_COL = 1;
+// "KR" is the Latvian label for the overall rating (OR).
+const OR_COL = 1;
 const SKILL_COLS: (keyof HockeySkills)[] = [
   "goalie", // Vār
   "defence", // Aizs
@@ -97,7 +98,10 @@ const viewTrainingProgress = () => {
     if (cells.length < SKILL_COL_START + SKILL_COLS.length) return;
 
     const date = parseCellDate(cells[DATE_COL], fallbackYear, fallbackMonth);
-    const kr = parseCellNumber(cells[KR_COL]);
+    // "KR" is the Latvian label for the overall rating - the same value the
+    // player profile exposes as #index_skill - so it's stored under the same
+    // field regardless of which page captured it.
+    const overallRating = parseCellNumber(cells[OR_COL]);
 
     const skills = {} as HockeySkills;
     let skillsValid = true;
@@ -112,15 +116,16 @@ const viewTrainingProgress = () => {
     // Skip rows that fail to parse cleanly - e.g. future days in the current
     // month that haven't happened yet in-game, or days before the player
     // joined the team, typically rendered blank/dash.
-    if (!date || Number.isNaN(kr) || !skillsValid) return;
+    if (!date || Number.isNaN(overallRating) || !skillsValid) return;
 
     entries.push({
       id: `${playerId}:${date}`,
       playerId,
       date,
-      kr,
+      overallRating,
       skills,
       capturedAt,
+      source: "TrainingProgress",
     });
   });
 

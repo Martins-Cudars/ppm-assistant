@@ -1,8 +1,19 @@
 <template>
   <div class="player-growth-comparison-chart">
     <div class="chart-header">
-      <h3>Growth Comparison (Base)</h3>
+      <h3>Growth Comparison ({{ metricHeading }})</h3>
       <div v-if="!loading && players.length > 0" class="chart-controls">
+        <div class="chart-tabs">
+          <button
+            :class="{ active: activeMetric === 'skill' }"
+            @click="activeMetric = 'skill'"
+          >
+            Skill
+          </button>
+          <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">
+            OR
+          </button>
+        </div>
         <div class="age-filter">
           <label>
             Age:
@@ -29,13 +40,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
-import { getExactAge, historyEntryToAgePoint } from "@/sports/hockey/skillHistoryChart";
+import { SkillHistoryEntry } from "@/types/SkillHistory";
+import {
+  getExactAge,
+  historyEntryAge,
+  readEntryBaseRating,
+  readEntryOverallRating,
+} from "@/sports/hockey/skillHistoryChart";
 
 const props = defineProps<{
   players: HockeyPlayer[];
@@ -44,11 +61,22 @@ const props = defineProps<{
   currentSeasonDay: number;
 }>();
 
+type Metric = "skill" | "or";
+
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 const loading = ref(true);
 const minAge = ref(15);
 const maxAge = ref(30);
+const activeMetric = ref<Metric>("skill");
+
+// History is fetched once per player set and reused across metric switches -
+// each lookup is a round trip to the background worker, so re-fetching them
+// every time the user flips a tab would be needlessly slow.
+let playerHistories = new Map<string, SkillHistoryEntry[]>();
+
+const metricHeading = computed(() => (activeMetric.value === "or" ? "OR" : "Base"));
+const axisLabel = computed(() => (activeMetric.value === "or" ? "Overall Rating" : "Skill"));
 
 // Distinct colors for an unbounded number of players - golden-angle hue
 // rotation spreads colors evenly regardless of how many players there are.
@@ -57,61 +85,105 @@ const colorForIndex = (index: number): string => {
   return `hsl(${hue}, 65%, 45%)`;
 };
 
-const buildPlayerDatasets = async (): Promise<ChartDataset<"line">[]> => {
-  const seasonDay = props.currentSeasonDay || 1;
+/**
+ * The value a history entry contributes on the active tab, or null when that
+ * entry can't speak to it - a profile capture of an unscouted player has an
+ * overall rating but no attributes to derive a skill rating from, and older
+ * entries may predate overall-rating capture entirely.
+ */
+const readEntryValue = (entry: SkillHistoryEntry): number | null =>
+  activeMetric.value === "or" ? readEntryOverallRating(entry) : readEntryBaseRating(entry);
 
-  const series = await Promise.all(
-    props.players.map(async (player, index) => {
-      const history = await getSkillHistoryForPlayer(player.id);
-      const exactAge = getExactAge(player, seasonDay);
-      const color = colorForIndex(index);
+/** The player's present-day value on the active tab. */
+const readPlayerValue = (player: HockeyPlayer): number | null => {
+  if (activeMetric.value === "or") {
+    return Number.isFinite(player.overallRating) && player.overallRating > 0
+      ? player.overallRating
+      : null;
+  }
 
-      if (history.length > 0) {
-        const data = [...history]
-          .sort((a, b) => a.date.localeCompare(b.date))
-          .map((entry) => historyEntryToAgePoint(entry, exactAge));
-
-        return {
-          label: player.name,
-          data,
-          borderColor: color,
-          backgroundColor: color,
-          borderWidth: 2,
-          pointRadius: 2,
-          showLine: true,
-          tension: 0,
-        } satisfies ChartDataset<"line">;
-      }
-
-      const currentRating = player.getBestPosition().ratingWithBonus;
-      return {
-        label: player.name,
-        data: [{ x: exactAge, y: currentRating }],
-        borderColor: color,
-        backgroundColor: color,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        showLine: false,
-      } satisfies ChartDataset<"line">;
-    })
-  );
-
-  return series;
+  return player.getBestPosition().ratingWithBonus;
 };
 
-const buildReferenceDataset = (): ChartDataset<"line"> => ({
-  label: "Top Player Curve (Base)",
-  data: playerGrowthPrediction.map((p) => ({ x: p.age, y: p.skill })),
-  borderColor: "#ccc",
-  backgroundColor: "transparent",
-  borderWidth: 2,
-  pointRadius: 0,
-  showLine: true,
-  tension: 0.4,
-  order: 10,
-});
+const buildPlayerDatasets = (): ChartDataset<"line">[] => {
+  const datasets: ChartDataset<"line">[] = [];
 
-const renderChart = (datasets: ChartDataset<"line">[]) => {
+  props.players.forEach((player, index) => {
+    const exactAge = getExactAge(player, props.currentSeasonDay || 1);
+    const color = colorForIndex(index);
+
+    const history = playerHistories.get(player.id) ?? [];
+    const data = [...history]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((entry) => {
+        const value = readEntryValue(entry);
+        return value === null ? null : { x: historyEntryAge(entry, exactAge), y: value };
+      })
+      .filter((point): point is { x: number; y: number } => point !== null);
+
+    if (data.length > 0) {
+      datasets.push({
+        label: player.name,
+        data,
+        borderColor: color,
+        backgroundColor: color,
+        borderWidth: 2,
+        pointRadius: 2,
+        showLine: true,
+        tension: 0,
+      });
+      return;
+    }
+
+    // No usable history on this metric - fall back to a single dot at the
+    // player's current value so they're still on the chart.
+    const currentValue = readPlayerValue(player);
+    if (currentValue === null) return;
+
+    datasets.push({
+      label: player.name,
+      data: [{ x: exactAge, y: currentValue }],
+      borderColor: color,
+      backgroundColor: color,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      showLine: false,
+    });
+  });
+
+  return datasets;
+};
+
+/**
+ * The grey "what a top player looks like at this age" curve. Only meaningful
+ * on the skill tab - playerGrowthPrediction models positional skill, and has
+ * no overall-rating equivalent.
+ */
+const buildReferenceDataset = (): ChartDataset<"line">[] => {
+  if (activeMetric.value === "or") return [];
+
+  return [
+    {
+      label: "Top Player Curve (Base)",
+      data: playerGrowthPrediction.map((p) => ({ x: p.age, y: p.skill })),
+      borderColor: "#ccc",
+      backgroundColor: "transparent",
+      borderWidth: 2,
+      pointRadius: 0,
+      showLine: true,
+      tension: 0.4,
+      order: 10,
+    },
+  ];
+};
+
+/**
+ * Index of the first player dataset, i.e. past any reference curve. The OR tab
+ * has no reference curve, so player datasets start at 0 there.
+ */
+const firstPlayerDatasetIndex = (): number => (activeMetric.value === "or" ? 0 : 1);
+
+const renderChart = () => {
   if (!chartCanvas.value) return;
 
   // v-model.number leaves the ref as a raw (empty) string while the user is
@@ -133,11 +205,13 @@ const renderChart = (datasets: ChartDataset<"line">[]) => {
     chartInstance = null;
   }
 
+  const label = axisLabel.value;
+
   try {
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
       data: {
-        datasets: [buildReferenceDataset(), ...datasets],
+        datasets: [...buildReferenceDataset(), ...buildPlayerDatasets()],
       },
       options: {
         responsive: true,
@@ -147,7 +221,7 @@ const renderChart = (datasets: ChartDataset<"line">[]) => {
             beginAtZero: true,
             title: {
               display: true,
-              text: "Skill",
+              text: label,
             },
           },
           x: {
@@ -187,18 +261,26 @@ const renderChart = (datasets: ChartDataset<"line">[]) => {
 
 const loadAndRender = async () => {
   loading.value = true;
-  const datasets = await buildPlayerDatasets();
+
+  const histories = await Promise.all(
+    props.players.map(
+      async (player) => [player.id, await getSkillHistoryForPlayer(player.id)] as const
+    )
+  );
+  playerHistories = new Map(histories);
+
   loading.value = false;
   // Let Vue flush the v-show update first - Chart.js reads the canvas box at
   // construction time, and a hidden canvas measures zero.
   await nextTick();
-  renderChart(datasets);
+  renderChart();
 };
 
 const hideAllPlayers = () => {
   if (!chartInstance) return;
+  const firstPlayer = firstPlayerDatasetIndex();
   chartInstance.data.datasets.forEach((_, index) => {
-    if (index === 0) return; // keep the grey reference curve visible
+    if (index < firstPlayer) return; // keep the grey reference curve visible
     chartInstance!.setDatasetVisibility(index, false);
   });
   chartInstance.update();
@@ -220,6 +302,13 @@ onMounted(() => {
 // when it lands as well as when the filtered player set changes.
 watch([() => props.players, () => props.currentSeasonDay], () => {
   loadAndRender();
+});
+
+// Switching tabs re-plots the histories already in memory - no re-fetch.
+watch(activeMetric, () => {
+  if (!loading.value) {
+    renderChart();
+  }
 });
 
 // An axis-range change needs no new chart - mutating the scale bounds in place
@@ -268,6 +357,18 @@ watch([minAge, maxAge], () => {
   gap: 8px;
 }
 
+.chart-tabs {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.chart-tabs button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
 .age-filter {
   display: flex;
   align-items: center;
@@ -290,6 +391,10 @@ watch([minAge, maxAge], () => {
 
 .chart-controls button:hover {
   background: #f8f9fa;
+}
+
+.chart-tabs button.active:hover {
+  background: #0069d9;
 }
 
 .loading-state {

@@ -73,10 +73,14 @@ const calculateData = () => {
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
 
-  // Actual skill history, sourced from prior visits to treninu-progress.html.
+  // Actual skill history, sourced from prior visits to treninu-progress.html
+  // and from profile visits. Entries captured from an unscouted player's
+  // profile carry an overall rating but no attributes, so they yield no base
+  // rating and drop out here.
   const actualHistoryData = [...historyEntries.value]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((entry) => historyEntryToAgePoint(entry, exactAge));
+    .map((entry) => historyEntryToAgePoint(entry, exactAge))
+    .filter((point): point is { x: number; y: number } => point !== null);
 
   return {
     projectedPureData,

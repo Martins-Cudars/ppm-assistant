@@ -8,6 +8,7 @@ import PlayerSidebar from "./components/PlayerSidebar.vue";
 import PlayerGrowthChart from "./components/PlayerGrowthChart.vue";
 import { getCurrentSeasonDay, getPlayerTeamId, getTeamNameFromPlayerProfile } from "@/utils/dom";
 import { collectPlayerData } from "@/services/dataCollector";
+import { captureTodaysHistoryEntry } from "@/storage/skillHistoryCapture";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
 import { getPlayerPageForLang } from "@/sports/hockey/routes";
@@ -49,8 +50,11 @@ const viewPlayerProfile = () => {
     careerLongitivity: parseInt(
       Array.from(playerTable.querySelector("#life_time span")!.textContent!)[0]
     ) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    // Strip non-digits rather than parseInt() the raw text: the game renders
+    // four-digit ratings with a thousands separator ("1 078"), which parseInt
+    // would truncate to 1. Same treatment as the OR column in viewPlayerList.
     overallRating: parseInt(
-      playerTable.querySelector("#index_skill")!.textContent!
+      playerTable.querySelector("#index_skill")!.textContent!.replace(/\D/g, "")
     ),
     averageTrainingRatio: parseInt(
       playerTable.querySelector("#prk")!.textContent!
@@ -170,6 +174,11 @@ const viewPlayerProfile = () => {
 
   // Collect and cache player data
   collectPlayerData(player, "PlayerProfile");
+
+  // Record today's snapshot in the skill history. This is the only capture
+  // path that works for other teams' players, whose training progress page
+  // we can't reach.
+  captureTodaysHistoryEntry(player, "PlayerProfile");
 
   console.log(player);
 

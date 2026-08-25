@@ -45,6 +45,30 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
+/**
+ * Combines an incoming entry with whatever is already stored for that
+ * player/day. The two capture paths each supply only part of an entry - the
+ * training progress page has skills, the profile of an unscouted opponent has
+ * only an overall rating - and they can land on the same key, so a plain put()
+ * would let whichever ran last erase the other's fields.
+ *
+ * Incoming values win where present; existing values survive where the
+ * incoming entry has nothing to say.
+ */
+function mergeEntry(
+  existing: SkillHistoryEntry | undefined,
+  incoming: SkillHistoryEntry
+): SkillHistoryEntry {
+  if (!existing) return incoming;
+
+  return {
+    ...existing,
+    ...incoming,
+    overallRating: incoming.overallRating ?? existing.overallRating ?? existing.kr,
+    skills: incoming.skills ?? existing.skills,
+  };
+}
+
 async function upsertEntries(entries: SkillHistoryEntry[]): Promise<number> {
   if (entries.length === 0) {
     return 0;
@@ -56,7 +80,12 @@ async function upsertEntries(entries: SkillHistoryEntry[]): Promise<number> {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
 
-    entries.forEach((entry) => store.put(entry));
+    entries.forEach((entry) => {
+      const existingRequest = store.get(entry.id);
+      existingRequest.onsuccess = () => {
+        store.put(mergeEntry(existingRequest.result as SkillHistoryEntry | undefined, entry));
+      };
+    });
 
     tx.oncomplete = () => resolve(entries.length);
     tx.onerror = () => reject(tx.error);
