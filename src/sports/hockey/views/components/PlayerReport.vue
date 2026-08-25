@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { getCurrentSeasonDay } from "@/utils/dom";
 import { calculateCompleteness } from "@/storage/serialization";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
@@ -467,6 +466,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
     <PlayerGrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :players="filteredPlayers"
+      :current-season-day="currentSeasonDay"
     />
 
     <div class="debug-section white_box" style="margin-top: 20px">

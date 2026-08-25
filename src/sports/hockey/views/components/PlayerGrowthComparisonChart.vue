@@ -34,12 +34,14 @@ import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
-import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { getExactAge, historyEntryToAgePoint } from "@/sports/hockey/skillHistoryChart";
 
 const props = defineProps<{
   players: HockeyPlayer[];
+  // Sourced from the player store, not getCurrentSeasonDay(): this component
+  // renders on the standalone player-report page, which has no game DOM.
+  currentSeasonDay: number;
 }>();
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
@@ -56,7 +58,7 @@ const colorForIndex = (index: number): string => {
 };
 
 const buildPlayerDatasets = async (): Promise<ChartDataset<"line">[]> => {
-  const seasonDay = getCurrentSeasonDay() || 1;
+  const seasonDay = props.currentSeasonDay || 1;
 
   const series = await Promise.all(
     props.players.map(async (player, index) => {
@@ -214,12 +216,11 @@ onMounted(() => {
   loadAndRender();
 });
 
-watch(
-  () => props.players,
-  () => {
-    loadAndRender();
-  }
-);
+// currentSeasonDay arrives asynchronously with the cache load, so re-render
+// when it lands as well as when the filtered player set changes.
+watch([() => props.players, () => props.currentSeasonDay], () => {
+  loadAndRender();
+});
 
 // An axis-range change needs no new chart - mutating the scale bounds in place
 // keeps the user's legend / Hide All visibility selections, and avoids tearing

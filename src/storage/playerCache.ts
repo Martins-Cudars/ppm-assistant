@@ -89,6 +89,18 @@ export async function savePlayer(
     cache.players[player.id] = serialized;
     cache.lastModified = new Date().toISOString();
 
+    // Refresh the season day on every write, not just at cache creation.
+    // Extension pages (player-report.html) have no game DOM of their own and
+    // read this value back via getAllPlayersFromAllCaches(), so if it were
+    // only stamped once it would stay frozen at whatever day the cache was
+    // first created. savePlayer only ever runs from a content script on a
+    // game page, so getCurrentSeasonDay() is reliable here.
+    try {
+      cache.currentSeasonDay = getCurrentSeasonDay();
+    } catch {
+      console.warn("[PlayerCache] Could not refresh current season day");
+    }
+
     await saveCache(cache);
   } catch (error) {
     console.error(`[PlayerCache] Failed to save player ${player.id}:`, error);

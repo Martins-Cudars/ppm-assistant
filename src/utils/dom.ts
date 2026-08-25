@@ -9,6 +9,12 @@ import { extractTeamIdFromUrl } from "./parsers";
  * Extract current season day from top info bar
  * Works for all sports - DOM structure is consistent
  *
+ * Only usable on powerplaymanager.com pages. It silently returns 1 when the
+ * info bar isn't present, which includes every standalone extension page
+ * (e.g. player-report.html) - those must read `playerStore.currentSeasonDay`
+ * instead, which the cache persists from the last game-page visit. Falling
+ * back to 1 there quietly corrupts any age/season maths built on it.
+ *
  * @returns Current season day (1-112) or 1 if not found
  */
 export function getCurrentSeasonDay(): number {
