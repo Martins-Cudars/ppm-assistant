@@ -3,8 +3,8 @@ import { ref, computed, onMounted } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
-import { getSkillHistorySummaries } from "@/storage/skillHistoryDb";
-import { SkillHistorySummary } from "@/types/SkillHistory";
+import { getSkillHistoryStats, getSkillHistorySummaries } from "@/storage/skillHistoryDb";
+import { SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
@@ -22,12 +22,21 @@ const selectedHistory = ref("All");
 // cache loads; a player missing from the map simply has nothing stored.
 const historySummaries = ref<Map<string, SkillHistorySummary>>(new Map());
 
+// Storage footprint of the history store, shown in the header.
+const historyStats = ref<SkillHistoryStats | null>(null);
+
 // Current season day comes from the store (loaded from cache)
 const currentSeasonDay = computed(() => store.currentSeasonDay);
 
 onMounted(async () => {
   await store.loadFromCache();
-  historySummaries.value = await getSkillHistorySummaries();
+  // Independent of each other, so don't serialise them.
+  const [summaries, stats] = await Promise.all([
+    getSkillHistorySummaries(),
+    getSkillHistoryStats(),
+  ]);
+  historySummaries.value = summaries;
+  historyStats.value = stats;
 });
 
 const filteredPlayers = computed(() => {
@@ -120,6 +129,25 @@ const getHistoryCount = (option: string) => {
     return option === "Has history" ? hasHistory : !hasHistory;
   }).length;
 };
+
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+// The headline figure is the size of the record data, not the disk footprint -
+// say so, rather than letting the smaller number read as the whole story.
+const historyStatsTitle = computed(() => {
+  const stats = historyStats.value;
+  if (!stats) return "";
+  const base =
+    "Measured JSON size of all stored entries. Actual disk use is higher - " +
+    "IndexedDB adds primary keys, the by_playerId index and row overhead.";
+  return stats.originBytes
+    ? `${base} Browser reports ${formatBytes(stats.originBytes)} for the extension origin.`
+    : base;
+});
 
 const historyFor = (player: HockeyPlayer): SkillHistorySummary | undefined =>
   historySummaries.value.get(player.id);
@@ -343,6 +371,15 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       <h2>Full Player Table - Cached Data</h2>
       <div class="stats">
         <span>Total Cached: {{ store.cachedPlayers.length }} players</span>
+        <span
+          v-if="historyStats && historyStats.records > 0"
+          class="history-stats"
+          :title="historyStatsTitle"
+        >
+          Skill history: {{ historyStats.records.toLocaleString() }} records ·
+          {{ historyStats.players }} players ·
+          {{ formatBytes(historyStats.jsonBytes) }}
+        </span>
         <button @click="clearCache" class="clear-btn">Clear Cache</button>
       </div>
     </div>
@@ -720,6 +757,12 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.history-stats {
+  color: #666;
+  font-size: 13px;
+  cursor: help;
 }
 
 .history-cell {

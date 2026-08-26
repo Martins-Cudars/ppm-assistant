@@ -14,7 +14,11 @@
  * for the message contract.
  */
 
-import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
+import {
+  SkillHistoryEntry,
+  SkillHistoryStats,
+  SkillHistorySummary,
+} from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 
 async function sendSkillHistoryMessage(
@@ -66,6 +70,23 @@ export async function getSkillHistorySummaries(): Promise<
   } catch (error) {
     console.error("[SkillHistoryDb] Failed to load history summaries:", error);
     return new Map();
+  }
+}
+
+/**
+ * Measures the store's footprint. Reads every record on the worker side, so
+ * call it only where the numbers are shown - not as a cheap liveness check.
+ */
+export async function getSkillHistoryStats(): Promise<SkillHistoryStats> {
+  try {
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_STATS" });
+    if (response.type !== "SKILL_HISTORY_STATS") {
+      return { records: 0, players: 0, jsonBytes: 0 };
+    }
+    return response.stats;
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to measure history storage:", error);
+    return { records: 0, players: 0, jsonBytes: 0 };
   }
 }
 

@@ -8,7 +8,11 @@
  * the background worker's own origin makes the data reachable from anywhere.
  */
 
-import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
+import {
+  SkillHistoryEntry,
+  SkillHistoryStats,
+  SkillHistorySummary,
+} from "@/types/SkillHistory";
 
 export type SkillHistoryMessage =
   | { type: "SKILL_HISTORY_UPSERT"; entries: SkillHistoryEntry[] }
@@ -16,9 +20,13 @@ export type SkillHistoryMessage =
   // Coverage for every player at once. Takes no arguments: a summary is five
   // small fields, and the callers that need one need the whole set, so paying
   // for a round-trip per player would be pure overhead.
-  | { type: "SKILL_HISTORY_SUMMARY" };
+  | { type: "SKILL_HISTORY_SUMMARY" }
+  // Storage footprint. Reads every record, unlike the summary, so only send it
+  // when the numbers are actually being displayed.
+  | { type: "SKILL_HISTORY_STATS" };
 
 export type SkillHistoryResponse =
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
   | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] }
-  | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] };
+  | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] }
+  | { type: "SKILL_HISTORY_STATS"; stats: SkillHistoryStats };

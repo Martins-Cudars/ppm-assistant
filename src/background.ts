@@ -9,7 +9,11 @@
  * these messages.
  */
 
-import { SkillHistoryEntry, SkillHistorySummary } from "@/types/SkillHistory";
+import {
+  SkillHistoryEntry,
+  SkillHistoryStats,
+  SkillHistorySummary,
+} from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 
 const DB_NAME = "ppm-assistant-skill-history";
@@ -170,6 +174,45 @@ async function getSummaries(): Promise<SkillHistorySummary[]> {
   }));
 }
 
+/**
+ * Storage footprint of the whole store.
+ *
+ * Unlike getSummaries(), this deliberately reads every record - measuring size
+ * is the entire point, so the key-only shortcut doesn't apply. One getAll() per
+ * call, so keep it to places that actually display the numbers.
+ */
+async function getStats(): Promise<SkillHistoryStats> {
+  const db = await openDb();
+
+  const entries = await new Promise<SkillHistoryEntry[]>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const request = tx.objectStore(STORE_NAME).getAll();
+
+    request.onsuccess = () => resolve(request.result as SkillHistoryEntry[]);
+    request.onerror = () => reject(request.error);
+  });
+
+  const players = new Set<string>();
+  let jsonBytes = 0;
+
+  entries.forEach((entry) => {
+    players.add(entry.playerId);
+    // Every stored value is ASCII - numeric ids, ISO dates, skill numbers and
+    // the two source literals - so .length is the UTF-8 byte count and there's
+    // no need to run a TextEncoder over each record.
+    jsonBytes += JSON.stringify(entry).length;
+  });
+
+  let originBytes: number | undefined;
+  try {
+    originBytes = (await navigator.storage?.estimate())?.usage;
+  } catch {
+    // Quota reporting is best-effort; the measured size stands without it.
+  }
+
+  return { records: entries.length, players: players.size, jsonBytes, originBytes };
+}
+
 chrome.runtime.onMessage.addListener(
   (message: SkillHistoryMessage, _sender, sendResponse: (response: SkillHistoryResponse) => void) => {
     if (message.type === "SKILL_HISTORY_UPSERT") {
@@ -198,6 +241,19 @@ chrome.runtime.onMessage.addListener(
         .catch((error) => {
           console.error("[Background] Failed to summarise skill history:", error);
           sendResponse({ type: "SKILL_HISTORY_SUMMARY", summaries: [] });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_STATS") {
+      getStats()
+        .then((stats) => sendResponse({ type: "SKILL_HISTORY_STATS", stats }))
+        .catch((error) => {
+          console.error("[Background] Failed to measure skill history:", error);
+          sendResponse({
+            type: "SKILL_HISTORY_STATS",
+            stats: { records: 0, players: 0, jsonBytes: 0 },
+          });
         });
       return true;
     }

@@ -60,3 +60,23 @@ export interface SkillHistorySummary {
   /** Days between first and last with no stored entry; 0 means a solid run. */
   missingDays: number;
 }
+
+/**
+ * Storage footprint of the whole history store, for display.
+ *
+ * Separate from SkillHistorySummary on purpose: a summary is derived from entry
+ * keys alone, whereas measuring size means reading every record. Only ask for
+ * these when actually showing them.
+ */
+export interface SkillHistoryStats {
+  records: number;
+  players: number;
+  /** Summed JSON byte size of every stored entry. Measured, not estimated. */
+  jsonBytes: number;
+  /**
+   * navigator.storage.estimate().usage for the extension origin, when the
+   * browser reports it. Always larger than jsonBytes - it also covers IndexedDB
+   * primary keys, the by_playerId index, and per-row overhead.
+   */
+  originBytes?: number;
+}
