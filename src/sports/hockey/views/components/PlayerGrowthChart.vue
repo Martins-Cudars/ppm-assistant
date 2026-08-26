@@ -23,7 +23,12 @@ import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
-import { getExactAge, historyEntryToAgePoint } from "@/sports/hockey/skillHistoryChart";
+import {
+  downsampleHistory,
+  getExactAge,
+  historyEntryToAgePoint,
+  readEntryBaseRating,
+} from "@/sports/hockey/skillHistoryChart";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -77,8 +82,14 @@ const calculateData = () => {
   // and from profile visits. Entries captured from an unscouted player's
   // profile carry an overall rating but no attributes, so they yield no base
   // rating and drop out here.
-  const actualHistoryData = [...historyEntries.value]
-    .sort((a, b) => a.date.localeCompare(b.date))
+  //
+  // That filtering happens *before* downsampling on purpose: were one of those
+  // rating-only entries the latest in its window, thinning first would discard
+  // the whole window even though earlier entries in it had usable skills.
+  const usable = historyEntries.value.filter(
+    (entry) => readEntryBaseRating(entry) !== null
+  );
+  const actualHistoryData = downsampleHistory(usable)
     .map((entry) => historyEntryToAgePoint(entry, exactAge))
     .filter((point): point is { x: number; y: number } => point !== null);
 

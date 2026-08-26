@@ -48,6 +48,7 @@ import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import {
+  downsampleHistory,
   getExactAge,
   historyEntryAge,
   readEntryBaseRating,
@@ -113,8 +114,13 @@ const buildPlayerDatasets = (): ChartDataset<"line">[] => {
     const color = colorForIndex(index);
 
     const history = playerHistories.get(player.id) ?? [];
-    const data = [...history]
-      .sort((a, b) => a.date.localeCompare(b.date))
+    // Filter to entries usable on the active metric *before* thinning, not
+    // after: an unscouted player's profile capture carries an overall rating
+    // but no skills, so it yields nothing on the Skill tab. Were such an entry
+    // the latest in its window, downsampling first would discard that whole
+    // window even though earlier entries in it had usable skills.
+    const usable = history.filter((entry) => readEntryValue(entry) !== null);
+    const data = downsampleHistory(usable)
       .map((entry) => {
         const value = readEntryValue(entry);
         return value === null ? null : { x: historyEntryAge(entry, exactAge), y: value };
