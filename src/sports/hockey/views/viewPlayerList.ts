@@ -128,8 +128,16 @@ const viewPlayerList = () => {
   // Add button to open Player Report in new tab
   const playerReportButton = document.createElement("button");
   playerReportButton.textContent = "📊 Player Report";
+  // height, line-height and margin are declared deliberately, not redundantly:
+  // the game's global button rule sets all three (height: 25px, line-height:
+  // 18px, margin: 0 5px), and an injected button inherits whatever it doesn't
+  // declare for itself. Left to the game, box-sizing: border-box means the
+  // 20px of vertical padding below eats the whole 25px box and the label
+  // overflows it.
   playerReportButton.style.cssText = `
-    margin-bottom: 15px;
+    height: auto;
+    line-height: normal;
+    margin: 0 0 15px;
     padding: 10px 20px;
     background: #007bff;
     color: white;
