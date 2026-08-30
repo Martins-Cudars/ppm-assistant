@@ -5,7 +5,17 @@ from scratch, and move an entry to **Resolved** once it's actually fixed.
 
 ## Open
 
-Found while reviewing the skill-history work. None has been fixed; all were confirmed by
+### Dependabot vulnerabilities on the default branch
+
+GitHub reported 44 open Dependabot alerts on `main` as of 2026-08-30 (20 high, 21 moderate,
+3 low), surfaced in the push output for this branch rather than from a dedicated audit. Package
+names, advisory IDs, and severities weren't available to record here — `gh` isn't installed and
+no GitHub token was available in this environment to query the Dependabot Alerts API. Check
+https://github.com/Martins-Cudars/ppm-assistant/security/dependabot for the current list before
+acting on this entry, since the counts will drift as new advisories land or existing ones are
+patched.
+
+The rest of this file is skill-history-specific — found while reviewing that work, confirmed by
 reading the code. Roughly most to least severe.
 
 ### `onabort` is unhandled across the worker's IndexedDB operations
