@@ -8,28 +8,6 @@ from scratch, and move an entry to **Resolved** once it's actually fixed.
 Found while reviewing the skill-history work. None has been fixed; all were confirmed by
 reading the code. Roughly most to least severe.
 
-### The legacy migration marks itself done even when it copied nothing
-
-`migrateLegacySkillHistoryIfNeeded()` sets its `chrome.storage.local` flag unconditionally.
-Both calls it makes swallow their own errors and return a benign empty value —
-`getAllLegacyEntries()` returns `[]`, `upsertSkillHistoryEntries()` returns `{written: 0}` —
-and `written` is never compared against `legacyEntries.length`. One transient failure (the
-worker not yet awake, the database blocked) permanently orphans a user's pre-worker history:
-the flag says migrated, so it never tries again.
-
-**Fix shape:** only set the flag when `written` matches the number of entries read.
-
-### `getAllLegacyEntries()` creates the junk database it's meant to read
-
-Its `indexedDB.open()` carries an `onupgradeneeded` that creates the object store. For a user
-who never had pre-worker data there is nothing to migrate, but the call still **creates** an
-empty `ppm-assistant-skill-history` database on `hockey.powerplaymanager.com`. Nothing closes
-or deletes the legacy database after a successful migration either, so the data sits
-duplicated indefinitely.
-
-`legacySkillHistoryDb.ts` says it is safe to delete once the migration has rolled out to all
-users. Nothing tracks when that is.
-
 ### `onabort` is unhandled across the worker's IndexedDB operations
 
 A failing request bubbles to the transaction, so `tx.onerror` catches the common case in
@@ -116,6 +94,41 @@ it could open the database directly. The real reason is the content scripts, whi
 game's origin. The architecture is correct; the explanation would mislead the next reader.
 
 ## Resolved
+
+### The legacy migration marked itself done even when it copied nothing, and created a junk database along the way
+
+**Was:** `migrateLegacySkillHistoryIfNeeded()` set its `chrome.storage.local` flag
+unconditionally. `getAllLegacyEntries()` also created a legacy `ppm-assistant-skill-history`
+database on `hockey.powerplaymanager.com` even for users who never had pre-worker data, and
+never closed or deleted the connection afterward for users who did.
+
+**Cause:** `getAllLegacyEntries()` and `upsertSkillHistoryEntries()` both swallowed their own
+errors and resolved to benign-looking empty values (`[]` and `{written: 0}`) instead of
+throwing, so a single transient failure (the worker not yet awake, the database blocked) was
+indistinguishable from "nothing to migrate" — and `written` was never compared against
+`legacyEntries.length` before the flag was set. Separately, `indexedDB.open()` always fires
+`onupgradeneeded` for a database that doesn't yet exist, so merely checking for legacy data
+created it.
+
+**Fix (in `src/storage/legacySkillHistoryDb.ts` and `src/storage/skillHistoryMigration.ts`):**
+1. `getAllLegacyEntries()` now checks `indexedDB.databases()` before ever calling `open()`, so
+   the legacy database is never created for a user who doesn't already have one.
+2. It now returns `null` on read failure instead of `[]`, distinguishing "read failed" from
+   "legitimately no data" — the same pattern `exportSkillHistory()`/`clearSkillHistory()`
+   already use. The migration only sets its flag on `[]` (nothing to migrate) or on a
+   confirmed matching `written`/`legacyEntries.length`; a `null` read or a `written` mismatch
+   leaves the flag unset so the next page load retries.
+3. The IndexedDB connection is now closed after reading.
+4. A new `deleteLegacyDatabase()` removes the legacy database per-user immediately after that
+   user's own successful migration, as best-effort cleanup (failure there doesn't block the
+   flag or retry anything, since the data is already safely migrated by that point).
+
+**Not addressed by this fix**, still open below: `upsertEntries()`'s inaccurate write count,
+`openDb()`'s uninvalidatable cached `dbPromise`, and unhandled `onabort` on the worker's
+IndexedDB operations. None are worsened by this change — the new retry-until-success behavior
+is what makes interaction with the first two benign rather than harmful — but a hung (not
+rejected) worker response could still leave `migrateLegacySkillHistoryIfNeeded()`'s promise
+pending rather than failing, per the `onabort` issue below.
 
 ### Chart.js `destroy()` restores the canvas's inline `display` - never `v-show` a canvas
 
