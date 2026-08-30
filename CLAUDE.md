@@ -47,6 +47,13 @@ After building, load `./dist` folder as unpacked extension in `chrome://extensio
 
 **URL matching**: Routes use path without `.html` extension. The regex in init functions extracts `/lang/page-name` from URLs.
 
+## Feature Docs
+
+See `docs/skill-history.md` for the skill-history store (the three capture paths, the
+background-worker-owned IndexedDB, and the backup file format), plus what has actually been
+verified in a browser versus only type-checked, and the outstanding work. Read it before
+touching capture, the Player Report, or backup/restore.
+
 ## Known Issues
 
 See `docs/known-issues.md` for bugs that were investigated but not resolved, including current hypotheses and what's already been ruled out. Check it before re-investigating a bug from scratch.
