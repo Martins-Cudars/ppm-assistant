@@ -5,6 +5,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
+import { captureTodaysHistoryEntries } from "@/storage/skillHistoryCapture";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
 import { getPlayerPageForLang } from "@/sports/hockey/routes";
@@ -124,6 +125,15 @@ const viewPlayerList = () => {
 
   // Collect and cache all player data
   collectBatchPlayerData(players, "PlayersList");
+
+  // Record today's snapshot for the whole squad in one round-trip. This page
+  // already parses overall rating and every skill for each row, so a single
+  // visit builds history for the entire team - no per-player gather walk and
+  // no extra navigation. Entries are keyed playerId:date, so revisiting the
+  // page the same day refreshes rather than duplicates, and the background
+  // worker merges rather than overwrites, so this composes with a gather walk
+  // that already covered today.
+  captureTodaysHistoryEntries(players, "PlayersList");
 
   // Add button to open Player Report in new tab
   const playerReportButton = document.createElement("button");

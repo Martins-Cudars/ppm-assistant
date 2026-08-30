@@ -5,12 +5,15 @@ import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
  * be written by more than one source, in which case they are merged rather
  * than overwritten (see upsertEntries in src/background.ts).
  */
-export type SkillHistorySource = "TrainingProgress" | "PlayerProfile";
+export type SkillHistorySource =
+  | "TrainingProgress"
+  | "PlayerProfile"
+  | "PlayersList";
 
 /**
  * One day's worth of tracked data for a player.
  *
- * Two capture paths feed this, and each can only supply part of the picture:
+ * Three capture paths feed this, and each can only supply part of the picture:
  *
  * - treninu-progress.html ("training progress") gives overall rating and
  *   skills for every day of a month, but is only reachable for players on our
@@ -18,6 +21,9 @@ export type SkillHistorySource = "TrainingProgress" | "PlayerProfile";
  * - The player profile gives the overall rating for *any* player - including
  *   other teams' - plus `skills` when the player's attributes are visible to
  *   us. It only ever covers the day it was visited.
+ * - The squad overview lists overall rating and skills for the whole team at
+ *   once, so one visit snapshots every player. Like the profile, it only ever
+ *   covers the day it was visited.
  *
  * So every value field is optional: an unscouted opponent yields an entry with
  * an overall rating alone. Consumers must filter for the field they need

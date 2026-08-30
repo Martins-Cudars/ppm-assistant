@@ -1,11 +1,11 @@
 /**
- * Captures a single "today" history entry from a player we're currently
- * looking at, as opposed to the bulk month-at-a-time capture that
- * viewTrainingProgress.ts does from the training progress page.
+ * Captures "today" history entries from players we're currently looking at, as
+ * opposed to the bulk month-at-a-time capture that viewTrainingProgress.ts does
+ * from the training progress page.
  *
  * The training progress page only exists for players on our own team, so this
  * is the only way to build history for other teams' players. It records one
- * point per day per player - re-visiting a profile the same day just refreshes
+ * point per day per player - re-visiting a page the same day just refreshes
  * that day's entry rather than adding a duplicate, since the entry id is
  * `${playerId}:${date}`.
  */
@@ -36,31 +36,33 @@ function isUsableNumber(value: unknown): value is number {
 }
 
 /**
- * Records today's snapshot for a player. Silently does nothing when there's
- * nothing worth storing - an entry with neither an overall rating nor skills
- * would just be a dated placeholder.
- *
- * Fire-and-forget: history capture is a background nicety and must never
- * break the page it's called from.
+ * Builds today's entry for one player, or null when there's nothing worth
+ * storing - an entry with neither an overall rating nor skills would just be a
+ * dated placeholder.
  */
-export function captureTodaysHistoryEntry(
+function buildTodaysEntry(
   player: HockeyPlayer,
   source: SkillHistorySource
-): void {
-  if (!player.id) return;
+): SkillHistoryEntry | null {
+  // The list parsers fall back to the literal "unknown" when a row's name link
+  // won't parse, so an empty check alone isn't enough - that id would be stored
+  // and then surface as a phantom player in the Player Report.
+  if (!player.id || player.id === "unknown") return null;
 
-  const overallRating = isUsableNumber(player.overallRating) && player.overallRating > 0
-    ? player.overallRating
-    : undefined;
+  const overallRating =
+    isUsableNumber(player.overallRating) && player.overallRating > 0
+      ? player.overallRating
+      : undefined;
 
   // player.skills is only populated when the attributes are visible to us;
   // unscouted opponents give us an overall rating and nothing else.
   const skills = player.skills as HockeySkills | undefined;
 
-  if (overallRating === undefined && !skills) return;
+  if (overallRating === undefined && !skills) return null;
 
   const date = todayIsoDate();
-  const entry: SkillHistoryEntry = {
+
+  return {
     id: `${player.id}:${date}`,
     playerId: player.id,
     date,
@@ -69,14 +71,44 @@ export function captureTodaysHistoryEntry(
     capturedAt: new Date().toISOString(),
     source,
   };
+}
 
-  upsertSkillHistoryEntries([entry])
+/**
+ * Records today's snapshot for a whole page's worth of players in a single
+ * round-trip, so a squad-overview visit costs one message and one IndexedDB
+ * transaction rather than one per row.
+ *
+ * Fire-and-forget: history capture is a background nicety and must never break
+ * the page it's called from.
+ */
+export function captureTodaysHistoryEntries(
+  players: HockeyPlayer[],
+  source: SkillHistorySource
+): void {
+  const entries = players
+    .map((player) => buildTodaysEntry(player, source))
+    .filter((entry): entry is SkillHistoryEntry => entry !== null);
+
+  if (entries.length === 0) return;
+
+  upsertSkillHistoryEntries(entries)
     .then(() => {
       console.log(
-        `[SkillHistoryCapture] Stored ${date} snapshot for player ${player.id} (OR: ${overallRating ?? "n/a"}, skills: ${skills ? "yes" : "no"})`
+        `[SkillHistoryCapture] Stored ${entries[0].date} snapshot for ${entries.length} player(s) from ${source}`
       );
     })
     .catch((error) => {
-      console.error("[SkillHistoryCapture] Failed to store snapshot:", error);
+      console.error("[SkillHistoryCapture] Failed to store snapshots:", error);
     });
+}
+
+/**
+ * Records today's snapshot for a single player. Silently does nothing when
+ * there's nothing worth storing.
+ */
+export function captureTodaysHistoryEntry(
+  player: HockeyPlayer,
+  source: SkillHistorySource
+): void {
+  captureTodaysHistoryEntries([player], source);
 }
