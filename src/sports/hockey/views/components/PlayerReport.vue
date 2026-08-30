@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
 import { getSkillHistoryStats, getSkillHistorySummaries } from "@/storage/skillHistoryDb";
 import { SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
+import {
+  createBackup,
+  downloadBackup,
+  parseBackup,
+  restoreBackup,
+} from "@/storage/backup";
+import { ImportMode, ParsedBackup } from "@/types/Backup";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
-import RatingStars from "@/components/RatingStars.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 const store = usePlayerStore();
 const activeTab = ref<"table" | "graph">("table");
@@ -25,11 +32,25 @@ const historySummaries = ref<Map<string, SkillHistorySummary>>(new Map());
 // Storage footprint of the history store, shown in the header.
 const historyStats = ref<SkillHistoryStats | null>(null);
 
+// Whether the destructive-clear confirmation is showing.
+const confirmingClear = ref(false);
+
+// Backup state. `busy` disables both buttons while a multi-megabyte export or
+// import is in flight; `pendingImport` holds a parsed, validated file waiting
+// for the user to pick a merge or replace; `notice` carries the one-line result
+// or error shown under the header.
+const backupBusy = ref<"" | "export" | "import">("");
+const pendingImport = ref<ParsedBackup | null>(null);
+const importMode = ref<ImportMode>("merge");
+const backupNotice = ref("");
+const backupError = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
+
 // Current season day comes from the store (loaded from cache)
 const currentSeasonDay = computed(() => store.currentSeasonDay);
 
-onMounted(async () => {
-  await store.loadFromCache();
+// Re-read rather than derived, so it can also be used to resync after a clear.
+const loadHistoryMeta = async () => {
   // Independent of each other, so don't serialise them.
   const [summaries, stats] = await Promise.all([
     getSkillHistorySummaries(),
@@ -37,16 +58,15 @@ onMounted(async () => {
   ]);
   historySummaries.value = summaries;
   historyStats.value = stats;
+};
+
+onMounted(async () => {
+  await store.loadFromCache();
+  await loadHistoryMeta();
 });
 
-const filteredPlayers = computed(() => {
-  console.log(
-    "[PlayerReport] Total cached players:",
-    store.cachedPlayers.length
-  );
-  console.log("[PlayerReport] Sample player:", store.cachedPlayers[0]);
-
-  const filtered = store.cachedPlayers.filter((player: HockeyPlayer) => {
+const filteredPlayers = computed(() =>
+  store.cachedPlayers.filter((player: HockeyPlayer) => {
     try {
       // Freshness filter
       if (selectedFreshness.value !== "All") {
@@ -90,17 +110,8 @@ const filteredPlayers = computed(() => {
       console.error("[PlayerReport] Error filtering player:", player.id, player.name, error);
       return false; // Exclude players that cause errors
     }
-  });
-
-  console.log("[PlayerReport] Filtered players:", filtered.length);
-  console.log("[PlayerReport] Position breakdown:",
-    filtered.map(p => p.getBestPosition().name).reduce((acc, pos) => {
-      acc[pos] = (acc[pos] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  );
-  return filtered;
-});
+  })
+);
 
 const getFreshnessCount = (freshness: string) => {
   if (freshness === "All") return store.cachedPlayers.length;
@@ -160,13 +171,157 @@ const historyTitle = (player: HockeyPlayer) => {
   return `${summary.days} days, ${summary.firstDate} - ${summary.lastDate}, ${gaps}`;
 };
 
-const clearCache = () => {
-  if (
-    confirm(
-      "Are you sure you want to clear all cached player data? This cannot be undone."
-    )
-  ) {
-    store.clearCachedPlayers();
+/** How long a success message stays before tidying itself away. */
+const NOTICE_TIMEOUT_MS = 6000;
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Starts the auto-clear countdown, if this notice is one that should expire.
+ *
+ * Only successes expire. Errors and the "N malformed entries were skipped"
+ * warning stay until the next action - they're the ones worth reading twice,
+ * and a warning that vanished on a timer could be missed entirely.
+ */
+const scheduleNoticeClear = () => {
+  clearTimeout(noticeTimer);
+
+  if (!backupNotice.value || backupError.value) return;
+
+  // Never while the clear dialog is open. The "backup saved" line is the whole
+  // reason the user is about to feel safe pressing a destructive button, so it
+  // must not disappear from under them mid-decision. The watcher below restarts
+  // the countdown once the dialog closes.
+  if (confirmingClear.value) return;
+
+  noticeTimer = setTimeout(() => {
+    backupNotice.value = "";
+  }, NOTICE_TIMEOUT_MS);
+};
+
+const setNotice = (message: string, isError = false) => {
+  backupNotice.value = message;
+  backupError.value = isError;
+  scheduleNoticeClear();
+};
+
+watch(confirmingClear, (open) => {
+  if (!open) scheduleNoticeClear();
+});
+
+// A pending callback would otherwise write to a torn-down component.
+onBeforeUnmount(() => clearTimeout(noticeTimer));
+
+const exportBackup = async () => {
+  backupBusy.value = "export";
+  setNotice("");
+  try {
+    const backup = await createBackup();
+    if (!backup) {
+      setNotice("Could not read the skill history - no file was saved.", true);
+      return;
+    }
+    downloadBackup(backup);
+    setNotice(
+      `Saved ${backup.skillHistory.length.toLocaleString()} history records and ` +
+        `${Object.keys(backup.playerCaches).length} team cache(s).`
+    );
+  } catch (error) {
+    console.error("[PlayerReport] Export failed:", error);
+    setNotice("Export failed - see the console for details.", true);
+  } finally {
+    backupBusy.value = "";
+  }
+};
+
+const chooseImportFile = () => {
+  setNotice("");
+  fileInput.value?.click();
+};
+
+const onFileChosen = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  // Reset immediately, so re-picking the same file still fires a change event.
+  input.value = "";
+  if (!file) return;
+
+  backupBusy.value = "import";
+  try {
+    const parsed = parseBackup(await file.text());
+    importMode.value = "merge";
+    pendingImport.value = parsed;
+  } catch (error) {
+    setNotice(error instanceof Error ? error.message : "Could not read that file.", true);
+  } finally {
+    backupBusy.value = "";
+  }
+};
+
+const performImport = async () => {
+  const parsed = pendingImport.value;
+  if (!parsed) return;
+
+  pendingImport.value = null;
+  backupBusy.value = "import";
+  try {
+    const result = await restoreBackup(parsed.backup, importMode.value);
+    await store.loadFromCache();
+    await loadHistoryMeta();
+
+    const skipped = parsed.skippedEntries
+      ? ` ${parsed.skippedEntries.toLocaleString()} malformed entries were skipped.`
+      : "";
+    setNotice(
+      `Imported ${result.entriesWritten.toLocaleString()} history records and ` +
+        `${result.playersWritten} players.${skipped}`,
+      parsed.skippedEntries > 0
+    );
+  } catch (error) {
+    console.error("[PlayerReport] Import failed:", error);
+    setNotice(error instanceof Error ? error.message : "Import failed.", true);
+    // The store may be partly changed, so show what is actually there now.
+    await store.loadFromCache();
+    await loadHistoryMeta();
+  } finally {
+    backupBusy.value = "";
+  }
+};
+
+const requestClear = () => {
+  setNotice("");
+  confirmingClear.value = true;
+};
+
+/** Backup from inside the clear dialog. Deliberately leaves it open. */
+const backupBeforeClear = async () => {
+  await exportBackup();
+};
+
+const performClear = async () => {
+  // Never clear while a backup is still being read. Both hit the same store, and
+  // IndexedDB would just serialise them - if the clear landed first, the export
+  // in flight would come back empty, save a plausible-looking file with no
+  // history in it, and report success. That is the exact outcome this whole
+  // feature exists to prevent. The dialog also disables the button, so this is
+  // the belt to that braces.
+  if (backupBusy.value !== "") return;
+
+  confirmingClear.value = false;
+  const cleared = await store.clearAllStoredData();
+  // Ask the worker what is actually there rather than assuming the clear
+  // succeeded. Blanking the header unconditionally would show an empty store
+  // on a failed clear - and the data would reappear on the user's next reload.
+  await loadHistoryMeta();
+
+  // clearAllStoredData() returns null rather than 0 when the history clear
+  // failed. Without this the distinction only ever reached the console, and a
+  // half-completed wipe looked exactly like a successful one.
+  if (cleared === null) {
+    setNotice("Player caches were cleared, but the skill history could not be.", true);
+  } else {
+    setNotice(
+      `Cleared ${cleared.toLocaleString()} history records and all cached players.`
+    );
   }
 };
 
@@ -380,8 +535,32 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           {{ historyStats.players }} players ·
           {{ formatBytes(historyStats.jsonBytes) }}
         </span>
-        <button @click="clearCache" class="clear-btn">Clear Cache</button>
+        <button
+          class="backup-btn"
+          :disabled="backupBusy !== ''"
+          @click="exportBackup"
+        >
+          {{ backupBusy === "export" ? "Exporting…" : "Export backup" }}
+        </button>
+        <button
+          class="backup-btn"
+          :disabled="backupBusy !== ''"
+          @click="chooseImportFile"
+        >
+          {{ backupBusy === "import" ? "Importing…" : "Import backup" }}
+        </button>
+        <button @click="requestClear" class="clear-btn">Clear All Data</button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="application/json,.json"
+          class="file-input"
+          @change="onFileChosen"
+        />
       </div>
+      <p v-if="backupNotice" class="backup-notice" :class="{ error: backupError }">
+        {{ backupNotice }}
+      </p>
     </div>
 
     <div class="view-tabs white_box">
@@ -568,26 +747,88 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       :current-season-day="currentSeasonDay"
     />
 
-    <div class="debug-section white_box" style="margin-top: 20px">
-      <h3>Debug Information</h3>
-      <div style="margin-bottom: 10px">
-        <strong>Filtered Players Count:</strong> {{ filteredPlayers.length }}
-      </div>
-      <div style="margin-bottom: 10px">
-        <strong>Sample Player (first):</strong>
-        <pre><code>{{ JSON.stringify(filteredPlayers[0], null, 2) }}</code></pre>
-      </div>
-      <div style="margin-bottom: 10px">
-        <strong>Table Columns:</strong>
-        <pre><code>{{ JSON.stringify(tableColumns, null, 2) }}</code></pre>
-      </div>
-      <div>
-        <strong>All Players (raw):</strong>
-        <pre
-          style="max-height: 400px; overflow-y: auto"
-        ><code>{{ JSON.stringify(filteredPlayers, null, 2) }}</code></pre>
-      </div>
-    </div>
+    <ConfirmDialog
+      :open="confirmingClear"
+      title="Clear all stored data?"
+      confirm-label="Clear everything"
+      danger
+      :confirm-disabled="backupBusy !== ''"
+      @cancel="confirmingClear = false"
+      @confirm="performClear"
+    >
+      <p>This deletes both stores and cannot be undone:</p>
+      <ul>
+        <li>
+          <strong>{{ store.cachedPlayers.length }}</strong> cached players
+        </li>
+        <li v-if="historyStats && historyStats.records > 0">
+          <strong>{{ historyStats.records.toLocaleString() }}</strong> skill-history
+          records across
+          <strong>{{ historyStats.players }}</strong> players
+        </li>
+        <li v-else>No skill history is stored.</li>
+      </ul>
+      <p>
+        Cached players rebuild themselves as you browse. Skill history does not -
+        rebuilding it means re-running a Gather history walk on every player.
+      </p>
+      <!-- Stays open afterwards: download, check the file, then decide. -->
+      <button
+        class="backup-btn dialog-backup"
+        :disabled="backupBusy !== ''"
+        @click="backupBeforeClear"
+      >
+        {{ backupBusy === "export" ? "Saving backup…" : "Download backup first" }}
+      </button>
+      <p v-if="backupNotice" class="backup-notice" :class="{ error: backupError }">
+        {{ backupNotice }}
+      </p>
+    </ConfirmDialog>
+
+    <ConfirmDialog
+      :open="pendingImport !== null"
+      title="Import backup"
+      confirm-label="Import"
+      :danger="importMode === 'replace'"
+      @cancel="pendingImport = null"
+      @confirm="performImport"
+    >
+      <template v-if="pendingImport">
+        <p>
+          This file holds
+          <strong>{{ pendingImport.backup.skillHistory.length.toLocaleString() }}</strong>
+          history records and
+          <strong>{{ Object.keys(pendingImport.backup.playerCaches).length }}</strong>
+          team cache(s), exported
+          {{
+            pendingImport.backup.exportedAt
+              ? new Date(pendingImport.backup.exportedAt).toLocaleString()
+              : "at an unknown time"
+          }}
+          from extension {{ pendingImport.backup.extensionVersion }}.
+        </p>
+
+        <p v-if="pendingImport.skippedEntries > 0" class="backup-notice error">
+          {{ pendingImport.skippedEntries.toLocaleString() }} malformed entries will be
+          skipped.
+        </p>
+
+        <label class="import-mode">
+          <input type="radio" value="merge" v-model="importMode" />
+          <span>
+            <strong>Merge</strong> - keep what's stored and add the file to it. Nothing is
+            lost.
+          </span>
+        </label>
+        <label class="import-mode">
+          <input type="radio" value="replace" v-model="importMode" />
+          <span>
+            <strong>Replace</strong> - make the stores match the file exactly, discarding
+            anything captured since the export.
+          </span>
+        </label>
+      </template>
+    </ConfirmDialog>
   </div>
 </template>
 
@@ -608,8 +849,19 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 .header-section {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+}
+
+/*
+ * The notice is a third flex item in this row, so without a full-width basis
+ * space-between pushes it hard right and it overflows the card. Child
+ * combinator on purpose: the same class is reused inside the clear dialog,
+ * where it's an ordinary block and must not be given flex sizing.
+ */
+.header-section > .backup-notice {
+  flex-basis: 100%;
 }
 
 .header-section h2 {
@@ -619,6 +871,9 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 .stats {
   display: flex;
+  /* Two stat spans and three buttons - reflow rather than spill once the
+     window is narrower than a wide desktop. */
+  flex-wrap: wrap;
   gap: 15px;
   align-items: center;
 }
@@ -635,6 +890,58 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 .clear-btn:hover {
   background: #c82333;
+}
+
+.backup-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.backup-btn:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.backup-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Driven by the Import button; never shown, but must stay focusable-free. */
+.file-input {
+  display: none;
+}
+
+.backup-notice {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #2b7a3d;
+}
+
+.backup-notice.error {
+  color: #b3383f;
+}
+
+.dialog-backup {
+  margin-top: 4px;
+}
+
+.import-mode {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.import-mode input {
+  margin-top: 3px;
 }
 
 .view-tabs {

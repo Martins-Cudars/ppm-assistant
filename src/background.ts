@@ -181,16 +181,25 @@ async function getSummaries(): Promise<SkillHistorySummary[]> {
  * is the entire point, so the key-only shortcut doesn't apply. One getAll() per
  * call, so keep it to places that actually display the numbers.
  */
-async function getStats(): Promise<SkillHistoryStats> {
+/**
+ * Every record in the store. The expensive read - shared by the two callers
+ * that genuinely need values rather than keys: the footprint measurement and
+ * the backup export.
+ */
+async function getAllEntries(): Promise<SkillHistoryEntry[]> {
   const db = await openDb();
 
-  const entries = await new Promise<SkillHistoryEntry[]>((resolve, reject) => {
+  return new Promise<SkillHistoryEntry[]>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
     const request = tx.objectStore(STORE_NAME).getAll();
 
     request.onsuccess = () => resolve(request.result as SkillHistoryEntry[]);
     request.onerror = () => reject(request.error);
   });
+}
+
+async function getStats(): Promise<SkillHistoryStats> {
+  const entries = await getAllEntries();
 
   const players = new Set<string>();
   let jsonBytes = 0;
@@ -211,6 +220,32 @@ async function getStats(): Promise<SkillHistoryStats> {
   }
 
   return { records: entries.length, players: players.size, jsonBytes, originBytes };
+}
+
+/**
+ * Empties the store, resolving the number of records removed.
+ *
+ * count() and clear() share one transaction so the number reported is the
+ * number actually removed, rather than a count that a concurrent capture
+ * could have changed between two separate transactions.
+ */
+async function clearEntries(): Promise<number> {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    let cleared = 0;
+
+    const countRequest = store.count();
+    countRequest.onsuccess = () => {
+      cleared = countRequest.result;
+      store.clear();
+    };
+
+    tx.oncomplete = () => resolve(cleared);
+    tx.onerror = () => reject(tx.error);
+  });
 }
 
 chrome.runtime.onMessage.addListener(
@@ -254,6 +289,28 @@ chrome.runtime.onMessage.addListener(
             type: "SKILL_HISTORY_STATS",
             stats: { records: 0, players: 0, jsonBytes: 0 },
           });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_CLEAR") {
+      clearEntries()
+        .then((cleared) => sendResponse({ type: "SKILL_HISTORY_CLEAR", cleared }))
+        .catch((error) => {
+          console.error("[Background] Failed to clear skill history:", error);
+          // null, not 0 - see the note on the response type.
+          sendResponse({ type: "SKILL_HISTORY_CLEAR", cleared: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_EXPORT") {
+      getAllEntries()
+        .then((entries) => sendResponse({ type: "SKILL_HISTORY_EXPORT", entries }))
+        .catch((error) => {
+          console.error("[Background] Failed to export skill history:", error);
+          // null, not [] - see the note on the response type.
+          sendResponse({ type: "SKILL_HISTORY_EXPORT", entries: null });
         });
       return true;
     }

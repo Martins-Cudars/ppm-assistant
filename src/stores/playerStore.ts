@@ -7,6 +7,7 @@ import {
 } from "@/storage/playerCache";
 import { collectPlayerData } from "@/services/dataCollector";
 import { getUserSettings } from "@/storage/userSettings";
+import { clearSkillHistory } from "@/storage/skillHistoryDb";
 
 interface PlayerState {
   players: HockeyPlayer[];
@@ -82,14 +83,35 @@ export const usePlayerStore = defineStore("player", {
         this.cachedPlayers = [];
       }
     },
-    async clearCachedPlayers() {
-      try {
-        await clearAllCaches();
-        this.cachedPlayers = [];
-        console.log("[PlayerStore] All caches cleared");
-      } catch (error) {
-        console.error("[PlayerStore] Failed to clear cache:", error);
+    /**
+     * Wipes every stored player: the chrome.storage.local snapshot caches and
+     * the skill-history time series behind the background worker. The two used
+     * to be cleared separately, which left history unreachable - nothing else
+     * deletes it - while the UI claimed everything was gone.
+     *
+     * Returns the number of history records removed, or null if the history
+     * clear failed - "0" and "it did not happen" mean opposite things here, and
+     * a caller that blanks its display on either will claim an empty store while
+     * the data is still on disk.
+     *
+     * Destructive and unrecoverable: confirm with the user first.
+     */
+    async clearAllStoredData(): Promise<number | null> {
+      const [, clearedHistory] = await Promise.all([
+        clearAllCaches(),
+        clearSkillHistory(),
+      ]);
+      this.cachedPlayers = [];
+
+      if (clearedHistory === null) {
+        console.error("[PlayerStore] Caches cleared, but the history clear failed");
+      } else {
+        console.log(
+          `[PlayerStore] All caches cleared, ${clearedHistory} history records removed`
+        );
       }
+
+      return clearedHistory;
     },
     async mergeAndSavePlayer(
       player: HockeyPlayer,

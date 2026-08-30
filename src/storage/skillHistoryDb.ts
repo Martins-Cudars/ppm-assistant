@@ -91,6 +91,24 @@ export async function getSkillHistoryStats(): Promise<SkillHistoryStats> {
 }
 
 /**
+ * Every stored entry, for the backup file. Returns null if the read failed.
+ *
+ * Like clearSkillHistory(), this reports failure rather than degrading to an
+ * empty result - and here the stakes are higher than a blank chart: an export
+ * that treated failure as "no history" would hand the user a backup file with
+ * nothing in it, which they would then keep and rely on.
+ */
+export async function exportSkillHistory(): Promise<SkillHistoryEntry[] | null> {
+  try {
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_EXPORT" });
+    return response.type === "SKILL_HISTORY_EXPORT" ? response.entries : null;
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to export history:", error);
+    return null;
+  }
+}
+
+/**
  * Retrieves all stored history entries for a player, ascending by date.
  */
 export async function getSkillHistoryForPlayer(
@@ -108,5 +126,28 @@ export async function getSkillHistoryForPlayer(
       error
     );
     return [];
+  }
+}
+
+/**
+ * Empties the whole history store, returning the number of records removed,
+ * or null if the clear failed.
+ *
+ * The only reader in this file that reports failure rather than swallowing it
+ * into a benign empty value. The others can: a failed read just draws an empty
+ * chart. Here, "0" and "it did not happen" mean opposite things, and a caller
+ * that cannot tell them apart will show the user an empty store while the data
+ * is still on disk.
+ *
+ * There is no undo - history is rebuilt only by re-running the gather walks
+ * that produced it - so callers should confirm with the user first.
+ */
+export async function clearSkillHistory(): Promise<number | null> {
+  try {
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_CLEAR" });
+    return response.type === "SKILL_HISTORY_CLEAR" ? response.cleared : null;
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to clear history:", error);
+    return null;
   }
 }

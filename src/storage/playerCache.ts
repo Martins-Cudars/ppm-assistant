@@ -6,6 +6,7 @@
 
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
+import { ImportMode } from "@/types/Backup";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { generateStorageKey } from "./storageKeys";
 import { serializePlayer, deserializePlayer } from "./serialization";
@@ -193,6 +194,114 @@ export async function getAllPlayersFromAllCaches(): Promise<{
     console.error("[PlayerCache] Failed to load from all caches:", error);
     return { players: [], currentSeasonDay: 1, teamId: "unknown" };
   }
+}
+
+/** Prefix every hockey team cache key shares. */
+const TEAM_CACHE_PREFIX = "ppm-assistant:hockey:team-";
+
+/**
+ * Every team cache, raw and keyed by storage key, for the backup file.
+ *
+ * Deliberately not built on getAllPlayersFromAllCaches(): that deserialises
+ * into HockeyPlayer instances and, despite its name, reads only hockeyKeys[0] -
+ * it drops every cache after the first. A backup has to keep them all, and
+ * keep them in the exact shape they are stored in.
+ *
+ * `team-unknown` caches are excluded. They are junk by definition:
+ * clearInvalidCaches() deletes them and runs on every hockey page load, so
+ * backing one up would only restore something the next visit removes again.
+ */
+export async function exportAllCaches(): Promise<Record<string, PlayerCacheStorage>> {
+  try {
+    const allData = await chrome.storage.local.get(null);
+    const caches: Record<string, PlayerCacheStorage> = {};
+
+    Object.keys(allData)
+      .filter((key) => key.startsWith(TEAM_CACHE_PREFIX) && !key.includes("unknown"))
+      .forEach((key) => {
+        caches[key] = allData[key] as PlayerCacheStorage;
+      });
+
+    return caches;
+  } catch (error) {
+    console.error("[PlayerCache] Failed to export caches:", error);
+    return {};
+  }
+}
+
+/**
+ * Writes backed-up caches back into chrome.storage.local.
+ *
+ * Keys come from the file, never from generateStorageKey(). That helper reads
+ * the team id out of the game DOM, which does not exist on the standalone
+ * player-report.html page where a restore runs - it would resolve to
+ * "team-unknown" and quietly funnel the entire restore into a key that
+ * clearInvalidCaches() deletes on the next game page visit. Every other write
+ * path in this module goes through generateStorageKey(); this one must not.
+ *
+ * In "merge" mode a player present in both keeps whichever copy has the newer
+ * metadata.updatedAt, so importing an old backup can't roll back fresher data.
+ * In "replace" mode the stored caches end up matching the file exactly.
+ */
+export async function importCaches(
+  caches: Record<string, PlayerCacheStorage>,
+  mode: ImportMode
+): Promise<number> {
+  const allData = await chrome.storage.local.get(null);
+  const existingKeys = Object.keys(allData).filter((key) =>
+    key.startsWith(TEAM_CACHE_PREFIX)
+  );
+
+  const toWrite: Record<string, PlayerCacheStorage> = {};
+  let importedPlayers = 0;
+
+  Object.entries(caches).forEach(([key, incoming]) => {
+    const existing = mode === "merge" ? (allData[key] as PlayerCacheStorage) : undefined;
+
+    if (!existing?.players) {
+      toWrite[key] = incoming;
+      importedPlayers += Object.keys(incoming.players || {}).length;
+      return;
+    }
+
+    const players = { ...existing.players };
+    Object.entries(incoming.players || {}).forEach(([playerId, incomingPlayer]) => {
+      const current = players[playerId];
+      const isNewer =
+        !current ||
+        incomingPlayer.metadata.updatedAt > current.metadata.updatedAt;
+      if (isNewer) {
+        players[playerId] = incomingPlayer;
+        importedPlayers += 1;
+      }
+    });
+
+    toWrite[key] = {
+      ...existing,
+      ...incoming,
+      players,
+      // The later of the two, so the field keeps meaning "most recent write".
+      lastModified:
+        incoming.lastModified > existing.lastModified
+          ? incoming.lastModified
+          : existing.lastModified,
+    };
+  });
+
+  // Write before deleting, so a failed write can't leave the user with neither
+  // their old caches nor the restored ones.
+  if (Object.keys(toWrite).length > 0) {
+    await chrome.storage.local.set(toWrite);
+  }
+
+  if (mode === "replace") {
+    const stale = existingKeys.filter((key) => !(key in caches));
+    if (stale.length > 0) {
+      await chrome.storage.local.remove(stale);
+    }
+  }
+
+  return importedPlayers;
 }
 
 /**
