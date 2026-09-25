@@ -146,6 +146,57 @@ export async function getAllPlayers(): Promise<HockeyPlayer[]> {
 }
 
 /**
+ * Records who is on the squad right now, from the squad overview page.
+ *
+ * Must run after that page's player saves have finished, not alongside them:
+ * both load, modify and save the same cache key, so whichever saved second
+ * would silently drop the other's change.
+ */
+export async function saveSquadRoster(playerIds: string[]): Promise<void> {
+  try {
+    const cache = (await loadCache()) ?? initializeCache();
+    cache.squad = { playerIds, updatedAt: new Date().toISOString() };
+    await saveCache(cache);
+  } catch (error) {
+    console.error("[PlayerCache] Failed to save squad roster:", error);
+  }
+}
+
+/**
+ * The logged-in team's current squad, for comparing a player against it.
+ *
+ * Uses the roster from the last squad overview visit when there is one. Without
+ * it, falls back to cached players carrying our teamId - which also includes
+ * anyone sold since their profile was last seen, so `rosterUpdatedAt` is null
+ * to let the caller say so.
+ */
+export async function getCurrentSquad(): Promise<{
+  players: HockeyPlayer[];
+  rosterUpdatedAt: string | null;
+}> {
+  try {
+    const cache = await loadCache();
+    if (!cache) return { players: [], rosterUpdatedAt: null };
+
+    if (cache.squad) {
+      const players = cache.squad.playerIds
+        .map((id) => cache.players[id])
+        .filter((data) => data !== undefined)
+        .map((data) => deserializePlayer(data));
+      return { players, rosterUpdatedAt: cache.squad.updatedAt };
+    }
+
+    const players = Object.values(cache.players)
+      .filter((data) => data.baseInfo.teamId === cache.teamId)
+      .map((data) => deserializePlayer(data));
+    return { players, rosterUpdatedAt: null };
+  } catch (error) {
+    console.error("[PlayerCache] Failed to load the current squad:", error);
+    return { players: [], rosterUpdatedAt: null };
+  }
+}
+
+/**
  * Retrieves all cached players from ALL teams (for extension pages)
  * @returns Promise with array of HockeyPlayer instances and cache metadata
  */

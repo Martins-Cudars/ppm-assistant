@@ -22,4 +22,14 @@ export interface PlayerCacheStorage {
   teamId: string;
   currentSeasonDay: number; // Current season day when data was collected
   lastModified: string; // ISO date string
+  /**
+   * Who was on the squad overview the last time it was opened. `players` alone
+   * can't answer "who is on the team": a sold player keeps our teamId there
+   * until their profile is visited again. Absent in caches written before the
+   * roster was tracked - readers must fall back rather than assume it.
+   */
+  squad?: {
+    playerIds: string[];
+    updatedAt: string; // ISO date string
+  };
 }

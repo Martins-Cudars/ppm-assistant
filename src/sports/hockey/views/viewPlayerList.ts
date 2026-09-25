@@ -5,6 +5,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
+import { saveSquadRoster } from "@/storage/playerCache";
 import { captureTodaysHistoryEntries } from "@/storage/skillHistoryCapture";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
@@ -123,8 +124,17 @@ const viewPlayerList = () => {
     players.push(player);
   });
 
-  // Collect and cache all player data
-  collectBatchPlayerData(players, "PlayersList");
+  // Collect and cache all player data, then record this page's players as the
+  // current squad - the profile page's squad-rank card needs to know who is
+  // actually on the team. Chained, not parallel: both rewrite the same cache
+  // key, and whichever saved second would drop the other's change. Skipped
+  // without a team id, which would only write a team-unknown cache that
+  // clearInvalidCaches() deletes anyway.
+  collectBatchPlayerData(players, "PlayersList").then(() => {
+    if (teamId !== "unknown" && players.length > 0) {
+      saveSquadRoster(players.map((player) => player.id));
+    }
+  });
 
   // Record today's snapshot for the whole squad in one round-trip. This page
   // already parses overall rating and every skill for each row, so a single
