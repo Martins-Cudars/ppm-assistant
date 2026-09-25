@@ -109,6 +109,72 @@ export async function exportSkillHistory(): Promise<SkillHistoryEntry[] | null> 
 }
 
 /**
+ * Each player's most recent `days` of history, counted back from their own
+ * latest stored day, grouped by player id. One round-trip for the whole store.
+ *
+ * Returns null if the read failed, rather than an empty map: an empty map
+ * would read as "no history for anyone", and every pace shown from it would
+ * be a statement about the players rather than about the failure.
+ */
+export async function getLatestSkillHistoryWindow(
+  days: number
+): Promise<Map<string, SkillHistoryEntry[]> | null> {
+  try {
+    const response = await sendSkillHistoryMessage({
+      type: "SKILL_HISTORY_LATEST_WINDOW",
+      days,
+    });
+    if (response.type !== "SKILL_HISTORY_LATEST_WINDOW" || response.entries === null) {
+      return null;
+    }
+    return groupByPlayer(response.entries);
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to load recent history:", error);
+    return null;
+  }
+}
+
+/**
+ * Each target player's history within `days` either side of their target
+ * date, grouped by player id - e.g. around the day each turned 25. One
+ * round-trip for all targets.
+ *
+ * Returns null if the read failed, for the same reason as
+ * getLatestSkillHistoryWindow().
+ */
+export async function getSkillHistoryNearDates(
+  targets: { playerId: string; date: string }[],
+  days: number
+): Promise<Map<string, SkillHistoryEntry[]> | null> {
+  if (targets.length === 0) return new Map();
+
+  try {
+    const response = await sendSkillHistoryMessage({
+      type: "SKILL_HISTORY_NEAR_DATES",
+      targets,
+      days,
+    });
+    if (response.type !== "SKILL_HISTORY_NEAR_DATES" || response.entries === null) {
+      return null;
+    }
+    return groupByPlayer(response.entries);
+  } catch (error) {
+    console.error("[SkillHistoryDb] Failed to load history near dates:", error);
+    return null;
+  }
+}
+
+function groupByPlayer(entries: SkillHistoryEntry[]): Map<string, SkillHistoryEntry[]> {
+  const byPlayer = new Map<string, SkillHistoryEntry[]>();
+  entries.forEach((entry) => {
+    const list = byPlayer.get(entry.playerId);
+    if (list) list.push(entry);
+    else byPlayer.set(entry.playerId, [entry]);
+  });
+  return byPlayer;
+}
+
+/**
  * Retrieves all stored history entries for a player, ascending by date.
  */
 export async function getSkillHistoryForPlayer(

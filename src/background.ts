@@ -122,6 +122,23 @@ function daysBetween(fromIso: string, toIso: string): number {
 }
 
 /**
+ * Splits an entry key back into its player and date, or null for a key that
+ * isn't `${playerId}:${date}`.
+ */
+function parseEntryKey(key: IDBValidKey): { playerId: string; date: string } | null {
+  if (typeof key !== "string") return null;
+  // Split on the first ":" only - the date part contains none, and this
+  // stays correct if a player id ever gains one.
+  const separator = key.indexOf(":");
+  if (separator <= 0) return null;
+
+  const date = key.slice(separator + 1);
+  if (date.length !== 10) return null;
+
+  return { playerId: key.slice(0, separator), date };
+}
+
+/**
  * Coverage for every player in the store, in one pass.
  *
  * Reads only the primary keys, never the records: entry ids are
@@ -143,15 +160,9 @@ async function getSummaries(): Promise<SkillHistorySummary[]> {
   const totals = new Map<string, { days: number; firstDate: string; lastDate: string }>();
 
   keys.forEach((key) => {
-    if (typeof key !== "string") return;
-    // Split on the first ":" only - the date part contains none, and this
-    // stays correct if a player id ever gains one.
-    const separator = key.indexOf(":");
-    if (separator <= 0) return;
-
-    const playerId = key.slice(0, separator);
-    const date = key.slice(separator + 1);
-    if (date.length !== 10) return;
+    const parsed = parseEntryKey(key);
+    if (!parsed) return;
+    const { playerId, date } = parsed;
 
     const existing = totals.get(playerId);
     if (!existing) {
@@ -174,13 +185,80 @@ async function getSummaries(): Promise<SkillHistorySummary[]> {
   }));
 }
 
+type ParsedKey = { key: IDBValidKey; playerId: string; date: string };
+
 /**
- * Storage footprint of the whole store.
- *
- * Unlike getSummaries(), this deliberately reads every record - measuring size
- * is the entire point, so the key-only shortcut doesn't apply. One getAll() per
- * call, so keep it to places that actually display the numbers.
+ * Reads only the records whose keys `select` picks, in one read-only
+ * transaction. The keys are read first - cheap, as in getSummaries() - so a
+ * caller that needs a few weeks per player never pays for the whole store.
  */
+async function getEntriesForSelectedKeys(
+  select: (keys: ParsedKey[]) => ParsedKey[]
+): Promise<SkillHistoryEntry[]> {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+    const entries: SkillHistoryEntry[] = [];
+
+    const keysRequest = store.getAllKeys();
+    keysRequest.onsuccess = () => {
+      const parsed = keysRequest.result.flatMap((key) => {
+        const parts = parseEntryKey(key);
+        return parts ? [{ key, ...parts }] : [];
+      });
+
+      select(parsed).forEach(({ key }) => {
+        const request = store.get(key);
+        request.onsuccess = () => {
+          if (request.result) entries.push(request.result as SkillHistoryEntry);
+        };
+      });
+    };
+
+    tx.oncomplete = () => resolve(entries);
+    tx.onerror = () => reject(tx.error);
+    // An abort with no request error would otherwise leave the caller hanging.
+    tx.onabort = () => reject(tx.error ?? new Error("Transaction aborted"));
+  });
+}
+
+/**
+ * Each player's entries from the last `days` before their own latest stored
+ * day. Anchoring on each player's latest day rather than today means a player
+ * last seen a while ago still returns the weeks before that sighting.
+ */
+function getLatestWindowEntries(days: number): Promise<SkillHistoryEntry[]> {
+  return getEntriesForSelectedKeys((keys) => {
+    const latest = new Map<string, string>();
+    keys.forEach(({ playerId, date }) => {
+      const current = latest.get(playerId);
+      if (!current || date > current) latest.set(playerId, date);
+    });
+
+    return keys.filter(({ playerId, date }) => daysBetween(date, latest.get(playerId)!) <= days);
+  });
+}
+
+/**
+ * The target players' entries within `days` either side of each one's target
+ * date - e.g. around the day each turned 25.
+ */
+function getEntriesNearDates(
+  targets: { playerId: string; date: string }[],
+  days: number
+): Promise<SkillHistoryEntry[]> {
+  const targetDates = new Map(targets.map(({ playerId, date }) => [playerId, date]));
+
+  return getEntriesForSelectedKeys((keys) =>
+    keys.filter(({ playerId, date }) => {
+      const target = targetDates.get(playerId);
+      return target !== undefined && Math.abs(daysBetween(target, date)) <= days;
+    })
+  );
+}
+
 /**
  * Every record in the store. The expensive read - shared by the two callers
  * that genuinely need values rather than keys: the footprint measurement and
@@ -198,6 +276,13 @@ async function getAllEntries(): Promise<SkillHistoryEntry[]> {
   });
 }
 
+/**
+ * Storage footprint of the whole store.
+ *
+ * Unlike getSummaries(), this deliberately reads every record - measuring size
+ * is the entire point, so the key-only shortcut doesn't apply. One getAll() per
+ * call, so keep it to places that actually display the numbers.
+ */
 async function getStats(): Promise<SkillHistoryStats> {
   const entries = await getAllEntries();
 
@@ -311,6 +396,28 @@ chrome.runtime.onMessage.addListener(
           console.error("[Background] Failed to export skill history:", error);
           // null, not [] - see the note on the response type.
           sendResponse({ type: "SKILL_HISTORY_EXPORT", entries: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_LATEST_WINDOW") {
+      getLatestWindowEntries(message.days)
+        .then((entries) => sendResponse({ type: "SKILL_HISTORY_LATEST_WINDOW", entries }))
+        .catch((error) => {
+          console.error("[Background] Failed to read recent skill history:", error);
+          // null, not [] - see the note on the response type.
+          sendResponse({ type: "SKILL_HISTORY_LATEST_WINDOW", entries: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SKILL_HISTORY_NEAR_DATES") {
+      getEntriesNearDates(message.targets, message.days)
+        .then((entries) => sendResponse({ type: "SKILL_HISTORY_NEAR_DATES", entries }))
+        .catch((error) => {
+          console.error("[Background] Failed to read skill history near dates:", error);
+          // null, not [] - see the note on the response type.
+          sendResponse({ type: "SKILL_HISTORY_NEAR_DATES", entries: null });
         });
       return true;
     }

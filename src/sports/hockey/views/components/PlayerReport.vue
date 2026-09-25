@@ -3,8 +3,25 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
-import { getSkillHistoryStats, getSkillHistorySummaries } from "@/storage/skillHistoryDb";
-import { SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
+import {
+  getLatestSkillHistoryWindow,
+  getSkillHistoryNearDates,
+  getSkillHistoryStats,
+  getSkillHistorySummaries,
+} from "@/storage/skillHistoryDb";
+import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
+import { getExactAge, readEntryOverallRating } from "@/sports/hockey/skillHistoryChart";
+import {
+  GrowthPace,
+  PACE_WINDOW_DAYS,
+  bestPositionRating,
+  dateAtAge,
+  entryNearestDate,
+  measureGrowthPace,
+  overallFromSkills,
+  projectOverallRating,
+  projectPositionRating,
+} from "@/sports/hockey/growthPace";
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import {
   createBackup,
@@ -29,6 +46,27 @@ const selectedHistory = ref("All");
 // cache loads; a player missing from the map simply has nothing stored.
 const historySummaries = ref<Map<string, SkillHistorySummary>>(new Map());
 
+// Each player's most recent weeks of history, for the Pace column. Null when
+// the read failed - distinct from an empty map, so a failure shows as "-"
+// rather than as every player having no measurable growth.
+const recentHistory = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
+
+/**
+ * The age the @25 columns report: projected for younger players, recorded
+ * from history for older ones.
+ */
+const PROJECTION_AGE = 25;
+
+/**
+ * How far from the computed "turned 25" date a recorded day may be. The date
+ * assumes 112 calendar days per season, which drifts over many seasons.
+ */
+const AT_AGE_TOLERANCE_DAYS = 14;
+
+// Entries around the day each player aged PROJECTION_AGE+ turned that age.
+// Null when the read failed, so it shows as "-" rather than as "no history".
+const atAgeHistory = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
+
 // Storage footprint of the history store, shown in the header.
 const historyStats = ref<SkillHistoryStats | null>(null);
 
@@ -51,13 +89,173 @@ const currentSeasonDay = computed(() => store.currentSeasonDay);
 
 // Re-read rather than derived, so it can also be used to resync after a clear.
 const loadHistoryMeta = async () => {
+  // Players already past PROJECTION_AGE get their recorded value, looked up
+  // around the day each turned it. Needs the cache loaded first for ages.
+  const atAgeTargets = store.cachedPlayers
+    .filter((player: HockeyPlayer) => exactAgeOf(player) >= PROJECTION_AGE)
+    .map((player: HockeyPlayer) => ({
+      playerId: player.id,
+      date: dateAtAge(exactAgeOf(player), PROJECTION_AGE),
+    }));
+
   // Independent of each other, so don't serialise them.
-  const [summaries, stats] = await Promise.all([
+  const [summaries, stats, recent, atAge] = await Promise.all([
     getSkillHistorySummaries(),
     getSkillHistoryStats(),
+    getLatestSkillHistoryWindow(PACE_WINDOW_DAYS),
+    getSkillHistoryNearDates(atAgeTargets, AT_AGE_TOLERANCE_DAYS),
   ]);
   historySummaries.value = summaries;
   historyStats.value = stats;
+  recentHistory.value = recent;
+  atAgeHistory.value = atAge;
+  if (recent === null || atAge === null) {
+    setNotice(
+      `Growth history could not be loaded - the Pace and @${PROJECTION_AGE} columns are incomplete.`,
+      true
+    );
+  }
+};
+
+// Computed once per load rather than per cell: the Pace and Proj columns and
+// both of their sort functions all read the same value.
+const paceByPlayer = computed(() => {
+  const paces = new Map<string, GrowthPace | null>();
+  const recent = recentHistory.value;
+  if (!recent) return paces;
+
+  store.cachedPlayers.forEach((player: HockeyPlayer) => {
+    const entries = recent.get(player.id);
+    // Paced for the player's current best position - the projection assumes
+    // balanced training for that position from here on.
+    paces.set(
+      player.id,
+      entries
+        ? measureGrowthPace(
+            entries,
+            getExactAge(player, currentSeasonDay.value || 1),
+            player.getBestPosition().name
+          )
+        : null
+    );
+  });
+  return paces;
+});
+
+const paceFor = (player: HockeyPlayer): GrowthPace | null =>
+  paceByPlayer.value.get(player.id) ?? null;
+
+const signed = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value)}`;
+
+/**
+ * Whether the rating moved noticeably faster or slower than the points put in
+ * would move it under balanced training - a bottleneck being caught up, or
+ * points going into a skill that isn't the bottleneck yet.
+ */
+const isUnbalanced = (pace: GrowthPace) =>
+  Math.abs(pace.ratingMovedPerSeason - pace.gainPerSeason) >
+  0.25 * Math.max(Math.abs(pace.gainPerSeason), 1);
+
+const paceTitle = (player: HockeyPlayer) => {
+  const pace = paceFor(player);
+  if (!pace) {
+    return recentHistory.value === null
+      ? "Growth pace could not be loaded"
+      : `Needs two days with skills at least 14 days apart, within the last ${PACE_WINDOW_DAYS} days of history`;
+  }
+  const lines = [
+    `${signed(pace.pointsPerSeason)} skill points/season into ${pace.position} skills ` +
+      `= ${signed(pace.gainPerSeason)} rating/season when balanced`,
+    `(${pace.spanDays} days, ${pace.fromDate} to ${pace.toDate})`,
+    pace.expectedPerSeason === null
+      ? "No top-player pace to compare against at this age"
+      : `Top-player pace at ${Math.floor(pace.midAge)}: ${signed(pace.expectedPerSeason)}/season`,
+  ];
+  if (isUnbalanced(pace)) {
+    lines.push(
+      `The rating itself moved ${signed(pace.ratingMovedPerSeason)}/season - ` +
+        "skills are unbalanced, so it won't keep moving at that rate"
+    );
+  }
+  return lines.join("\n");
+};
+
+const paceBadgeClass = (pace: number) => ({
+  "badge-full": pace >= 1,
+  "badge-partial": pace >= 0.7 && pace < 1,
+  "badge-minimal": pace < 0.7,
+});
+
+/**
+ * A player's skill and OR at PROJECTION_AGE: recorded from history for players
+ * already past it, projected for everyone younger. One shape for both, so the
+ * two columns sort a 19-year-old's projection against what a 27-year-old
+ * actually reached - which is the comparison worth making.
+ */
+type AtAgeValue = {
+  skill: number | null;
+  or: number | null;
+  kind: "recorded" | "projected";
+  title: string;
+};
+
+const exactAgeOf = (player: HockeyPlayer) => getExactAge(player, currentSeasonDay.value || 1);
+
+const atAgeByPlayer = computed(() => {
+  const values = new Map<string, AtAgeValue | null>();
+
+  store.cachedPlayers.forEach((player: HockeyPlayer) => {
+    const exactAge = exactAgeOf(player);
+
+    if (exactAge >= PROJECTION_AGE) {
+      const target = dateAtAge(exactAge, PROJECTION_AGE);
+      const entries = atAgeHistory.value?.get(player.id) ?? [];
+      const entry = entryNearestDate(entries, target, AT_AGE_TOLERANCE_DAYS);
+      if (!entry) {
+        values.set(player.id, null);
+        return;
+      }
+      const best = bestPositionRating(entry.skills);
+      values.set(player.id, {
+        skill: best.rating,
+        or: readEntryOverallRating(entry) ?? overallFromSkills(entry.skills),
+        kind: "recorded",
+        title: `Recorded ${entry.date}, when the player was about ${PROJECTION_AGE} (best position ${best.name}, no XP)`,
+      });
+      return;
+    }
+
+    // Projects from the live skills, so it starts from the same rating the Pos
+    // Skill column's base and the profile chart's current point show.
+    const pace = paceFor(player);
+    if (pace?.pace === null || pace?.pace === undefined) {
+      values.set(player.id, null);
+      return;
+    }
+    values.set(player.id, {
+      skill: projectPositionRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      or: projectOverallRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      kind: "projected",
+      title:
+        `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
+        `${pace.position} training at ${Math.round(pace.pace * 100)}% of the top-player pace ` +
+        "from here on. Any lagging main skill is caught up first; other skills keep their " +
+        "current rate.",
+    });
+  });
+  return values;
+});
+
+const atAgeFor = (player: HockeyPlayer): AtAgeValue | null =>
+  atAgeByPlayer.value.get(player.id) ?? null;
+
+const atAgeMissingTitle = (player: HockeyPlayer) => {
+  if (exactAgeOf(player) >= PROJECTION_AGE) {
+    return atAgeHistory.value === null
+      ? "History could not be loaded"
+      : `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${PROJECTION_AGE}`;
+  }
+  return "No pace to project from";
 };
 
 onMounted(async () => {
@@ -489,6 +687,29 @@ const tableColumns = computed<Column[]>(() => [
     sortValue: (p: HockeyPlayer) => historySummaries.value.get(p.id)?.days ?? 0,
   },
   {
+    header: "Pace",
+    key: "pace",
+    slot: "pace",
+    sortable: true,
+    // Null sorts last, so players with no measurable pace stay out of the way.
+    sortValue: (p: HockeyPlayer) => paceFor(p)?.pace ?? null,
+  },
+  // Recorded and projected values sort together on purpose - see AtAgeValue.
+  {
+    header: `Skill @${PROJECTION_AGE}`,
+    key: "skillAtAge",
+    slot: "skillAtAge",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.skill ?? null,
+  },
+  {
+    header: `OR @${PROJECTION_AGE}`,
+    key: "orAtAge",
+    slot: "orAtAge",
+    sortable: true,
+    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.or ?? null,
+  },
+  {
     header: "Last Updated",
     key: "updatedAt",
     slot: "updatedAt",
@@ -732,6 +953,40 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
             <span class="history-since">{{ historyFor(item)!.firstDate.slice(0, 7) }}</span>
           </span>
           <span v-else class="history-none" :title="historyTitle(item)">-</span>
+        </template>
+
+        <template #pace="{ item }">
+          <span
+            v-if="paceFor(item)?.pace != null"
+            class="completeness-badge"
+            :class="paceBadgeClass(paceFor(item)!.pace!)"
+            :title="paceTitle(item)"
+          >
+            {{ Math.round(paceFor(item)!.pace! * 100) }}%
+          </span>
+          <span v-else class="history-none" :title="paceTitle(item)">-</span>
+        </template>
+
+        <template #skillAtAge="{ item }">
+          <span
+            v-if="atAgeFor(item)?.skill != null"
+            :class="{ projected: atAgeFor(item)!.kind === 'projected' }"
+            :title="atAgeFor(item)!.title"
+          >
+            {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.skill }}
+          </span>
+          <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
+        </template>
+
+        <template #orAtAge="{ item }">
+          <span
+            v-if="atAgeFor(item)?.or != null"
+            :class="{ projected: atAgeFor(item)!.kind === 'projected' }"
+            :title="atAgeFor(item)!.title"
+          >
+            {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.or }}
+          </span>
+          <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
         </template>
 
         <template #updatedAt="{ item }">
@@ -1086,6 +1341,12 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 .history-none {
   color: #999;
+}
+
+/* A projection, not a recorded value - see AtAgeValue. */
+.projected {
+  color: #666;
+  font-style: italic;
 }
 
 .badge-full {

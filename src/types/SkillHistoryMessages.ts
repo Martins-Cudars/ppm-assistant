@@ -30,7 +30,19 @@ export type SkillHistoryMessage =
   // Every record, for the backup file. Distinct from SUMMARY (keys only) and
   // STATS (reads records but returns counts): this is the one caller that
   // genuinely needs the values, so it pays the full cost knowingly.
-  | { type: "SKILL_HISTORY_EXPORT" };
+  | { type: "SKILL_HISTORY_EXPORT" }
+  // Each player's most recent `days` of entries, counted back from that
+  // player's own latest stored day. Enough to measure growth pace for a whole
+  // table in one round-trip, without the full-store read EXPORT pays for.
+  | { type: "SKILL_HISTORY_LATEST_WINDOW"; days: number }
+  // Each target player's entries within `days` either side of that player's
+  // target date - e.g. around the day each turned 25. Same key-first read as
+  // LATEST_WINDOW, so it never touches the rest of a player's history.
+  | {
+      type: "SKILL_HISTORY_NEAR_DATES";
+      targets: { playerId: string; date: string }[];
+      days: number;
+    };
 
 export type SkillHistoryResponse =
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
@@ -45,4 +57,10 @@ export type SkillHistoryResponse =
   // Null on failure, for the same reason as CLEAR above and more sharply: an
   // export that reported failure as an empty array would write a backup file
   // containing no history at all, which the user would then trust and act on.
-  | { type: "SKILL_HISTORY_EXPORT"; entries: SkillHistoryEntry[] | null };
+  | { type: "SKILL_HISTORY_EXPORT"; entries: SkillHistoryEntry[] | null }
+  // Null on failure: a pace computed from an empty result would read as
+  // "no growth", which is a claim about the player, not about the read.
+  | { type: "SKILL_HISTORY_LATEST_WINDOW"; entries: SkillHistoryEntry[] | null }
+  // Null on failure, like LATEST_WINDOW: "no entries" would read as "no
+  // history at 25" for every player, which the read failing doesn't mean.
+  | { type: "SKILL_HISTORY_NEAR_DATES"; entries: SkillHistoryEntry[] | null };

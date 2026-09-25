@@ -29,6 +29,7 @@ import {
   historyEntryToAgePoint,
   readEntryBaseRating,
 } from "@/sports/hockey/skillHistoryChart";
+import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -93,12 +94,22 @@ const calculateData = () => {
     .map((entry) => historyEntryToAgePoint(entry, exactAge))
     .filter((point): point is { x: number; y: number } => point !== null);
 
+  // Where the player lands if their recent pace holds, assuming balanced
+  // training for their best position from here, starting from the red
+  // current-point marker. Empty - and so omitted - without a measurable pace.
+  // Runs to 35 regardless of the visible window; the x-axis clips it.
+  const growthPace = measureGrowthPace(historyEntries.value, exactAge, bestPos.name);
+  const pace = growthPace?.pace ?? null;
+  const ownPaceProjection = projectionPoints(props.player.skills, exactAge, growthPace, 45);
+
   return {
     projectedPureData,
     projectedTotalData,
     currentPureData,
     currentTotalData,
     actualHistoryData,
+    ownPaceProjection,
+    pace,
   };
 };
 
@@ -130,6 +141,8 @@ const renderChartWithLogic = () => {
     currentPureData,
     currentTotalData,
     actualHistoryData,
+    ownPaceProjection,
+    pace,
   } = calculateData();
 
   const datasets: ChartDataset<"line">[] = [
@@ -191,6 +204,20 @@ const renderChartWithLogic = () => {
       pointRadius: 3,
       pointBackgroundColor: "rgba(54, 162, 235, 1)",
       pointBorderColor: "rgba(54, 162, 235, 1)",
+      fill: false,
+      tension: 0,
+    });
+  }
+
+  if (ownPaceProjection.length > 0 && pace !== null) {
+    datasets.push({
+      label: `Projected at own pace (${Math.round(pace * 100)}%)`,
+      data: ownPaceProjection,
+      borderColor: "rgba(54, 162, 235, 1)",
+      backgroundColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 2,
+      borderDash: [6, 4],
+      pointRadius: 0,
       fill: false,
       tension: 0,
     });
