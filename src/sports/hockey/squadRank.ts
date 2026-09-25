@@ -16,23 +16,31 @@ export interface RankedPlayer {
   rating: number;
 }
 
-export interface Neighbour extends RankedPlayer {
+export interface StandingRow extends RankedPlayer {
+  /** 1-based. Ties share the better rank. */
   rank: number;
-  /** Neighbour's rating minus the subject's: positive above, zero or negative below. */
+  /** This row's rating minus the subject's: positive above, zero or negative below. */
   gap: number;
+  /** Where the row sits relative to the subject's row. */
+  side: "above" | "subject" | "below";
 }
 
 export interface SquadRank {
   position: string;
-  /** 1-based. Ties share the better rank. */
+  /** The subject's rank, 1-based. Ties share the better rank. */
   rank: number;
   /** Players at this position, the subject included. */
   total: number;
-  /** The closest player rated strictly higher, or null at rank 1. */
-  above: Neighbour | null;
-  /** The closest player rated the same or lower, or null in last place. */
-  below: Neighbour | null;
+  /**
+   * A slice of the standings around the subject, the subject's row included,
+   * best first. Holds up to `neighbours` other players, split evenly above and
+   * below and shifted to one side at the top or bottom of the table.
+   */
+  rows: StandingRow[];
 }
+
+/** How many other players the standings slice shows by default. */
+export const DEFAULT_NEIGHBOURS = 4;
 
 export const POSITION_NOUN: Record<string, string> = {
   G: "goalie",
@@ -68,38 +76,39 @@ export function ordinal(n: number): string {
  * Whether the subject is actually on the team doesn't change the arithmetic:
  * an own player "is" the Nth best, anyone else "would be" - the caller words it.
  */
-export function rankInSquad(subject: RankedPlayer, squad: RankedPlayer[]): SquadRank {
-  const others = squad
-    .filter((player) => player.id !== subject.id && player.position === subject.position)
-    .sort((a, b) => b.rating - a.rating);
+export function rankInSquad(
+  subject: RankedPlayer,
+  squad: RankedPlayer[],
+  neighbours: number = DEFAULT_NEIGHBOURS
+): SquadRank {
+  const others = squad.filter(
+    (player) => player.id !== subject.id && player.position === subject.position
+  );
 
-  const higher = others.filter((player) => player.rating > subject.rating);
-  const rest = others.filter((player) => player.rating <= subject.rating);
-  const rank = higher.length + 1;
+  // Best first. Among equal ratings the subject is listed first: they share
+  // the rank, and "5th" should sit next to the rows it's compared against.
+  const table = [subject, ...others].sort(
+    (a, b) => b.rating - a.rating || Number(b === subject) - Number(a === subject)
+  );
+  const rankOf = (rating: number) => 1 + table.filter((player) => player.rating > rating).length;
 
-  const closestAbove = higher[higher.length - 1];
-  const closestBelow = rest[0];
+  const index = table.indexOf(subject);
+  const size = Math.min(table.length, neighbours + 1);
+  const start = Math.min(
+    Math.max(0, index - Math.floor(neighbours / 2)),
+    table.length - size
+  );
 
   return {
     position: subject.position,
-    rank,
-    total: others.length + 1,
-    above: closestAbove
-      ? {
-          ...closestAbove,
-          // Rank among the others; ties above share, just like the subject's.
-          rank: 1 + others.filter((player) => player.rating > closestAbove.rating).length,
-          gap: closestAbove.rating - subject.rating,
-        }
-      : null,
-    below: closestBelow
-      ? {
-          ...closestBelow,
-          // Everyone above the subject, plus the subject, sits above it -
-          // unless it ties the subject, in which case it shares their rank.
-          rank: closestBelow.rating === subject.rating ? rank : rank + 1,
-          gap: closestBelow.rating - subject.rating,
-        }
-      : null,
+    rank: rankOf(subject.rating),
+    total: table.length,
+    rows: table.slice(start, start + size).map((player, offset) => ({
+      ...player,
+      rank: rankOf(player.rating),
+      gap: player.rating - subject.rating,
+      side:
+        player === subject ? "subject" : start + offset < index ? "above" : "below",
+    })),
   };
 }

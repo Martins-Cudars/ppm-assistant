@@ -3,17 +3,21 @@
     <div class="squad-rank__badge">{{ ordinal(result.rank) }}</div>
     <div class="squad-rank__text">{{ sentence }}</div>
 
-    <div v-if="result.above || result.below" class="squad-rank__neighbours">
-      <div v-if="result.above">
-        ↑ {{ ordinal(result.above.rank) }}
-        <a :href="profileUrl(result.above.id)">{{ result.above.name }}</a>
-        {{ result.above.rating }} ({{ signed(result.above.gap) }})
-      </div>
-      <div v-if="result.below">
-        ↓ {{ ordinal(result.below.rank) }}
-        <a :href="profileUrl(result.below.id)">{{ result.below.name }}</a>
-        {{ result.below.rating }} ({{ signed(result.below.gap) }})
-      </div>
+    <!-- One grid, not a row of inline text per player: arrow, rank, name,
+         rating and gap each keep their own column however long a name is. -->
+    <div v-if="result.rows.length > 1" class="squad-rank__table">
+      <template v-for="row in result.rows" :key="row.id">
+        <span :class="cellClass(row)">{{ ARROW[row.side] }}</span>
+        <span :class="[cellClass(row), 'squad-rank__num']">{{ ordinal(row.rank) }}</span>
+        <span :class="[cellClass(row), 'squad-rank__name']" :title="row.name">
+          <a v-if="row.side !== 'subject'" :href="profileUrl(row.id)">{{ row.name }}</a>
+          <template v-else>{{ row.name }}</template>
+        </span>
+        <span :class="[cellClass(row), 'squad-rank__num']">{{ row.rating }}</span>
+        <span :class="[cellClass(row), 'squad-rank__num']">
+          {{ row.side === "subject" ? "" : signed(row.gap) }}
+        </span>
+      </template>
     </div>
 
     <div class="squad-rank__footnote">{{ footnote }}</div>
@@ -31,6 +35,7 @@ import {
   POSITION_NOUN,
   RankedPlayer,
   SquadRank,
+  StandingRow,
   ordinal,
   rankInSquad,
 } from "@/sports/hockey/squadRank";
@@ -94,6 +99,12 @@ const footnote = computed(() => {
 
 const signed = (value: number) => `${value > 0 ? "+" : value < 0 ? "−" : "±"}${Math.abs(value)}`;
 
+const ARROW: Record<StandingRow["side"], string> = { above: "↑", subject: "•", below: "↓" };
+
+// Each grid cell is its own element, so the subject's highlight goes on every
+// cell of its row rather than on a row wrapper the grid doesn't have.
+const cellClass = (row: StandingRow) => ({ "squad-rank__subject": row.side === "subject" });
+
 const lang = extractLangFromUrl(window.location.pathname);
 const profileUrl = (playerId: string) =>
   buildPlayerProfileUrl("hockey", lang, getPlayerPageForLang(lang), playerId);
@@ -125,17 +136,43 @@ const profileUrl = (playerId: string) =>
   font-size: 14px;
 }
 
-.squad-rank__neighbours {
+.squad-rank__table {
+  display: grid;
+  /* arrow | rank | name (takes the slack, truncates) | rating | gap */
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  /* Spacing lives in cell padding, not column-gap, so the subject row's
+     highlight runs unbroken across its cells. */
+  row-gap: 2px;
+  width: 100%;
   margin-top: 10px;
   font-size: 12px;
-  color: #666;
-  text-align: center;
   line-height: 1.6;
+  color: #666;
 }
 
-.squad-rank__neighbours a {
+.squad-rank__table > span {
+  padding: 0 3px;
+}
+
+.squad-rank__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.squad-rank__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.squad-rank__name a {
   color: inherit;
+}
+
+.squad-rank__subject {
+  color: #222;
   font-weight: bold;
+  background: #eef3f7;
 }
 
 .squad-rank__footnote {

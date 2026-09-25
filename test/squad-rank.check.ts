@@ -33,16 +33,47 @@ const w = (id: string, rating: number): RankedPlayer => ({
 
 const squad = [w("a", 900), w("b", 850), w("c", 800), w("d", 700), w("e", 600)];
 
+/** The slice as "rank:id:side" strings, for compact comparison. */
+const slice = (r: ReturnType<typeof rankInSquad>) =>
+  r.rows.map((row) => `${row.rank}:${row.id}:${row.side}`).join(" ");
+
 check("ranks among players at the same position", () => {
   const r = rankInSquad(w("x", 750), squad);
   eq(r.rank, 4, "rank");
   eq(r.total, 6, "of");
-  eq(r.above?.id, "c", "just above");
-  eq(r.above?.rank, 3, "above's rank");
-  eq(r.above?.gap, 50, "above gap");
-  eq(r.below?.id, "d", "just below");
-  eq(r.below?.rank, 5, "below's rank");
-  eq(r.below?.gap, -50, "below gap");
+});
+
+check("shows two above and two below, the subject in the middle", () => {
+  const r = rankInSquad(w("x", 750), squad);
+  eq(slice(r), "2:b:above 3:c:above 4:x:subject 5:d:below 6:e:below");
+  eq(r.rows.map((row) => row.gap).join(","), "100,50,0,-50,-150", "gaps");
+});
+
+check("at the top the slice shifts down", () => {
+  const r = rankInSquad(w("x", 1000), squad);
+  eq(r.rank, 1);
+  eq(slice(r), "1:x:subject 2:a:below 3:b:below 4:c:below 5:d:below");
+});
+
+check("at the bottom the slice shifts up", () => {
+  const r = rankInSquad(w("x", 100), squad);
+  eq(r.rank, 6);
+  eq(slice(r), "2:b:above 3:c:above 4:d:above 5:e:above 6:x:subject");
+});
+
+check("one from the top keeps four neighbours", () => {
+  const r = rankInSquad(w("x", 875), squad);
+  eq(slice(r), "1:a:above 2:x:subject 3:b:below 4:c:below 5:d:below");
+});
+
+check("a small pool shows everyone", () => {
+  const r = rankInSquad(w("x", 750), [w("a", 900), w("b", 600)]);
+  eq(slice(r), "1:a:above 2:x:subject 3:b:below");
+});
+
+check("the neighbour count is adjustable", () => {
+  const r = rankInSquad(w("x", 750), squad, 2);
+  eq(slice(r), "3:c:above 4:x:subject 5:d:below");
 });
 
 check("other positions don't count", () => {
@@ -55,7 +86,7 @@ check("the subject's cached copy is ignored", () => {
   const r = rankInSquad(w("c", 820), squad);
   eq(r.total, 5, "counted once");
   eq(r.rank, 3, "ranked on the live rating");
-  eq(r.below?.id, "d", "not its own old copy");
+  eq(r.rows.filter((row) => row.id === "c").length, 1, "one row for the subject");
 });
 
 check("an outsider ranks the same as a member would", () => {
@@ -65,35 +96,17 @@ check("an outsider ranks the same as a member would", () => {
   eq(outsider.total, 6);
 });
 
-check("ties share the better rank", () => {
+check("ties share the better rank, subject listed first", () => {
   const r = rankInSquad(w("x", 800), squad);
   eq(r.rank, 3, "ties with c at 800");
-  eq(r.above?.id, "b", "strictly higher only");
-  eq(r.below?.id, "c", "the tie sits below");
-  eq(r.below?.rank, 3, "and shares the rank");
-  eq(r.below?.gap, 0, "gap");
-});
-
-check("the best has nobody above", () => {
-  const r = rankInSquad(w("x", 1000), squad);
-  eq(r.rank, 1);
-  eq(r.above, null);
-  eq(r.below?.id, "a");
-});
-
-check("the last has nobody below", () => {
-  const r = rankInSquad(w("x", 100), squad);
-  eq(r.rank, 6);
-  eq(r.below, null);
-  eq(r.above?.id, "e");
+  eq(slice(r), "1:a:above 2:b:above 3:x:subject 3:c:below 5:d:below");
 });
 
 check("the only player at the position", () => {
   const r = rankInSquad({ id: "x", name: "Goalie", position: "G", rating: 500 }, squad);
   eq(r.rank, 1);
   eq(r.total, 1);
-  eq(r.above, null);
-  eq(r.below, null);
+  eq(slice(r), "1:x:subject");
 });
 
 check("ordinals", () => {
