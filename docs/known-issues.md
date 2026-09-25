@@ -5,17 +5,7 @@ from scratch, and move an entry to **Resolved** once it's actually fixed.
 
 ## Open
 
-### Dependabot vulnerabilities on the default branch
-
-GitHub reported 44 open Dependabot alerts on `main` as of 2026-08-30 (20 high, 21 moderate,
-3 low), surfaced in the push output for this branch rather than from a dedicated audit. Package
-names, advisory IDs, and severities weren't available to record here — `gh` isn't installed and
-no GitHub token was available in this environment to query the Dependabot Alerts API. Check
-https://github.com/Martins-Cudars/ppm-assistant/security/dependabot for the current list before
-acting on this entry, since the counts will drift as new advisories land or existing ones are
-patched.
-
-The rest of this file is skill-history-specific — found while reviewing that work, confirmed by
+The entries below are skill-history-specific — found while reviewing that work, confirmed by
 reading the code. Roughly most to least severe.
 
 ### `onabort` is unhandled across the worker's IndexedDB operations
@@ -104,6 +94,24 @@ it could open the database directly. The real reason is the content scripts, whi
 game's origin. The architecture is correct; the explanation would mislead the next reader.
 
 ## Resolved
+
+### Dependabot / `pnpm audit` vulnerabilities in the build toolchain
+
+**Was:** GitHub counted 44 open Dependabot alerts on `main`; a local `pnpm audit` on
+2026-09-25 reported 51 advisories (26 high, 22 moderate, 3 low) across vite, rollup,
+esbuild, postcss, nanoid, brace-expansion, flatted, js-yaml and @humanfs/node.
+
+**Cause:** the lockfile still resolved `vite` to its original 5.0.0, and transitive deps of
+eslint and vue had never been re-resolved. Everything flagged was build, lint or dev-server
+code — nothing that ships inside the extension bundle.
+
+**Fix:** `vite` bumped `^5.0.0` → `^6.4.3` (three vite advisories have no 5.x fix; 6 rather
+than 7 because 7 needs Node ≥20.19 and `engines` allows 20.12; 8 swaps rollup for rolldown),
+then `pnpm update --depth Infinity` to re-resolve everything else within its existing major.
+No overrides were needed and no config changes. `pnpm audit` reports none; lint,
+type-check, build and the `test/` checks pass; `dist` keeps the same files, no
+`chunk.js`, and `main.js` is still a classic script with no `import`. Majors (eslint 10,
+TypeScript 7, pinia 4, vite 7/8) were deliberately left for their own migrations.
 
 ### The legacy migration marked itself done even when it copied nothing, and created a junk database along the way
 
