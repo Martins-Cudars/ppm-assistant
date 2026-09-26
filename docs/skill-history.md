@@ -113,8 +113,26 @@ The youth median went from 55% to 66%.
   - The last 56 days (`PACE_WINDOW_DAYS`) before the player's latest day *with skills*,
     not before today. It was 28 days at first, but single months proved too noisy: one
     player ranged 52–64% month to month, and a projection from his best month overshot by 15%.
-  - There must be at least two such days, 28 or more days apart (`PACE_MIN_SPAN_DAYS`).
-  - The tooltip gives the dates.
+  - **Days that aren't normal training are skipped** (`cleanedGains()`):
+    - **No-training days:** every one of the 7 skills flat, even for a single day. PPM has no
+      rest days, so zero training means injured, too old, or no training selected. The test
+      is *all* skills, not the position's main skills: on the Aug 28 backup, 23% of days left
+      the main skills flat, but on 87% of those another skill grew. That day's training
+      simply went elsewhere, and it counts. Only the other 13% were true no-training days.
+      - If more than half the window has no training, nothing is skipped: the player isn't
+        being trained, and the pace honestly reads low.
+    - **Training camps:** 4+ consecutive days above 1.6× the window's median daily gain.
+      The June 2026 camp showed as 12–14-day runs across the youth squad. Left in, it lifted a
+      window by 15–25 points (Verpakovski 68% → 86%).
+    - Only day-to-day intervals can be judged. Gaps and profile-only history are kept, and
+      measured end to end as before.
+    - Effect on current injuries: Mizis 46% → 61%, Vanteris 56% → 68%, Ābols 17% → 24%.
+  - **Minimums, in measured days:**
+    - 28 or more (`PACE_MIN_SPAN_DAYS`): a full pace.
+    - 14–27 (`PACE_PROVISIONAL_MIN_DAYS`): a provisional pace, shown as `~61%` in grey
+      italics. This covers newly arrived 15-year-olds.
+    - Fewer than 14: `-`, and the tooltip gives the stored day count.
+  - The tooltip gives the dates, the measured days and what was skipped.
 - **Expected gain** at an age is the curve's slope for that year of age:
   `skill[floor+1] − skill[floor]`. There is no pace from 35 on, where the curve declines.
 - **@25 columns: one value per player, from one of two sources.**
@@ -174,16 +192,20 @@ adding it.
 
 ### Pace slows with age: `AGE_PACE_FACTORS`
 
-A single pace carried to 25 was too optimistic after 21. At this team, players train at a
-steady ~58% of the curve up to 21, then slow down faster than the curve does. So projections
-multiply each future year by an age factor, relative to ages 16–21:
+A single pace carried to 25 was too optimistic. At this team, players slow down faster than
+the curve does, so projections multiply each future year by an age factor relative to ages
+up to 21. These are measured with no-training and camp days skipped:
 
-| From age | Factor | Players | Across three slicings |
+| From age | Factor | Players | Since Mar 2026 |
 |---|---|---|---|
-| ≤21 | **1.00** | 23 | reference, ~58% base pace (~66% with bonus) |
-| 22 | **0.87** | 12 | 0.86 / 0.88 / 0.91 |
-| 25 | **0.64** | 13 | 0.62 / 0.64 / 0.68 |
-| 28 | **0.47** | 4 | 0.46 / 0.48 / 0.50 |
+| ≤21 | **1.00** | 23 | reference, ~56% base pace |
+| 22 | **0.95** | 12 | 0.95 |
+| 25 | **0.67** | 13 | 0.71 |
+| 28 | **0.49** | 4 | 0.51 |
+
+Before skipping, these read 0.87 / 0.64 / 0.47. Much of the apparent slowdown after 21 came
+from camps, which only young players get and which inflated the reference, and from
+injuries. The real drop comes at 25.
 
 **How it's applied**:
 
@@ -191,8 +213,8 @@ multiply each future year by an age factor, relative to ages 16–21:
   pace. A 23-year-old at 50% is doing what a 20-year-old at ~57% would.
 - Each future year then gains `underlying × curve step × agePaceFactor(that year)`, via
   `adjustedCurveGainBetween()`. Non-main skills are scaled the same way.
-- A 100% on-curve player at 18 still stays on the curve up to 21. At 25 they reach **1060**
-  instead of 1093: 450 + (101 + 98 + 97 + 95) + (97 + 78 + 77) × 0.87.
+- A 100% on-curve player at 18 still stays on the curve up to 21. At 25 they reach **1080**
+  instead of 1093: 450 + (101 + 98 + 97 + 95) + (97 + 78 + 77) × 0.95.
 - The **Pace** column is unchanged. It shows the measured pace, not the underlying one.
 
 **Why we compare players over the same months, not each player's own history.** The
@@ -216,20 +238,26 @@ elite teams.
 accumulates, or after the next facility or coach change, run
 `scripts/measure-age-factors.ts`. It uses the real `measureGrowthPace()`, and its header
 says how to run it. Then copy the factors into `AGE_PACE_FACTORS`. On the Aug 28 backup it
-prints 1.00 / 0.87 / 0.62 / 0.47.
+prints 1.00 / 0.95 / 0.67 / 0.49.
 
 **Backtest on Octave**, who was actually 839 / 1825 at 25. Replaying the model at earlier
 ages:
 
 | Projected at | Projected | Error |
 |---|---|---|
-| 20 | 841 / 1828 | 0% |
-| 22 | 784 / 1709 | −7% |
+| 20 | 813 / 1768 | −3% |
+| 22 | 815 / 1774 | −3% |
 | 23 | 823 / 1788 | −2% |
 | 24 | 847 / 1838 | +1% |
 
-At 18 it overshoots by +28%, but that window is his last two months at the elite team
-(81% pace). That's the facility effect, not the model.
+At 18 it overshoots by +13%. That window is his last two months at the elite team, so it's
+the facility effect, not the model. Before camps were skipped it overshot by +28%. At 22 the
+error went from −7% to −3%, once the 17 injury days in that window were skipped.
+
+**Known gap: camps are skipped in the projection too.** If camps recur (the youth had one in
+Feb and one in June, about one per 112-day season), each adds roughly 14 extra days of
+training a season. The @25 projections for players under 22 may therefore run about 10%
+low. If that holds, a "camp allowance" per season is the fix.
 
 ## Backup format
 
@@ -278,14 +306,14 @@ The repo has no test runner, so "verified" means it was actually run.
 | `parseBackup()` | **Verified.** 12 assertions against the compiled code (foreign files, unknown versions, missing `id`, `id` disagreeing with `playerId:date`, malformed dates, null rows). |
 | `importCaches()` / `exportAllCaches()` | **Verified.** 8 assertions (newest-wins merge, union, replace dropping stale keys, the `team-unknown` exclusion, and that import writes the file's keys rather than a DOM-derived one). |
 | Header layout with the notice | **Verified in the browser.** Measured at 1400px and 760px: no overflow, notice contained and full-width. |
-| Pace / projection / @25 math | **Verified.** 34 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
+| Pace / projection / @25 math | **Verified.** 41 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
 | Pace and @25 columns, projection line, `SKILL_HISTORY_LATEST_WINDOW`, `SKILL_HISTORY_NEAR_DATES` | **Never run in the browser.** The worker's key-then-get read has no test at all. |
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 68 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 75 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -317,7 +345,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 68 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 75 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

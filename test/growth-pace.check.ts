@@ -14,6 +14,7 @@
 import {
   GrowthPace,
   PACE_MIN_SPAN_DAYS,
+  PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
   adjustedCurveGainBetween,
   agePaceFactor,
@@ -113,6 +114,10 @@ const paceOf = (
   fromDate: daysAgo(20),
   toDate: daysAgo(0),
   spanDays: 20,
+  measuredDays: 20,
+  skippedNoTrainingDays: 0,
+  skippedCampDays: 0,
+  provisional: false,
 });
 
 check("expected gain is the slope of the year the age falls in", () => {
@@ -134,18 +139,18 @@ check("curve gain walks the table year by year and stops at 35", () => {
   near(curveGainBetween(30, 40), 1596 - 1423, "capped at 35");
 });
 
-check("age factors: 1.00 up to 21, then 0.87, 0.64, 0.47", () => {
+check("age factors: 1.00 up to 21, then 0.95, 0.67, 0.49", () => {
   eq(agePaceFactor(15), 1, "15");
   eq(agePaceFactor(21.99), 1, "21.99");
-  eq(agePaceFactor(22), 0.87, "22");
-  eq(agePaceFactor(24.99), 0.87, "24.99");
-  eq(agePaceFactor(25), 0.64, "25");
-  eq(agePaceFactor(28), 0.47, "28");
+  eq(agePaceFactor(22), 0.95, "22");
+  eq(agePaceFactor(24.99), 0.95, "24.99");
+  eq(agePaceFactor(25), 0.67, "25");
+  eq(agePaceFactor(28), 0.49, "28");
 });
 
 check("the age-adjusted curve weights each year by its factor", () => {
-  // 18 -> 22 at 1.00 (101 + 98 + 97 + 95), then 22 -> 25 at 0.87 (97 + 78 + 77).
-  near(adjustedCurveGainBetween(18, 25), 391 + 0.87 * 252);
+  // 18 -> 22 at 1.00 (101 + 98 + 97 + 95), then 22 -> 25 at 0.95 (97 + 78 + 77).
+  near(adjustedCurveGainBetween(18, 25), 391 + 0.95 * 252);
   near(adjustedCurveGainBetween(18, 21), curveGainBetween(18, 21), "all at 1.00 before 22");
 });
 
@@ -215,11 +220,100 @@ check("a capped bonus can only grow with the base", () => {
   near(result.bonusPerSeason, 0.6 * result.basePerSeason, "capped");
 });
 
-check("no pace below the minimum span", () => {
+check("no pace below the provisional minimum", () => {
   eq(
-    measureGrowthPace([dDay(PACE_MIN_SPAN_DAYS - 1, 400, 200, 200), dDay(0, 420, 210, 210)], 18.5, "D"),
+    measureGrowthPace(
+      [dDay(PACE_PROVISIONAL_MIN_DAYS - 1, 400, 200, 200), dDay(0, 420, 210, 210)],
+      18.5,
+      "D"
+    ),
     null
   );
+});
+
+check("between the two minimums the pace is provisional", () => {
+  const result = measureGrowthPace(
+    [dDay(PACE_MIN_SPAN_DAYS - 1, 400, 200, 200), dDay(0, 420, 210, 210)],
+    18.5,
+    "D"
+  )!;
+  eq(result.provisional, true, "provisional");
+  eq(result.measuredDays, PACE_MIN_SPAN_DAYS - 1, "days");
+  eq(measureGrowthPace([dDay(40, 400, 200, 200), dDay(0, 420, 210, 210)], 18.5, "D")!.provisional, false, "40 days is full");
+});
+
+// --- Day by day: no-training days and camps ---------------------------------
+
+/**
+ * A defender trained day by day: each value in `base` is that day's base gain
+ * (defence +g, passing and aggression +g/2 - balanced, so base rises by g).
+ * `shooting` adds shooting gains on given day indexes. Ends today.
+ */
+const dailyD = (base: number[], shooting: Record<number, number> = {}) => {
+  let def = 400, pas = 200, agg = 200, sho = 50;
+  const entries = [dDayWithShooting(base.length, def, pas, agg, sho)];
+  base.forEach((g, i) => {
+    def += g; pas += g / 2; agg += g / 2; sho += shooting[i] ?? 0;
+    entries.push(dDayWithShooting(base.length - i - 1, def, pas, agg, sho));
+  });
+  return entries;
+};
+const dDayWithShooting = (ago: number, d: number, p: number, a: number, s: number) => ({
+  ...dDay(ago, d, p, a),
+  skills: skills({ defence: d, passing: p, aggression: a, shooting: s }),
+});
+const ones = (n: number) => new Array(n).fill(1);
+
+check("a single no-training day is skipped", () => {
+  const days = ones(30);
+  days[10] = 0;
+  const result = measureGrowthPace(dailyD(days), 18.5, "D")!;
+  eq(result.skippedNoTrainingDays, 1, "skipped");
+  eq(result.measuredDays, 29, "measured");
+  near(result.basePerSeason, 112, "a full day's rate, not diluted");
+});
+
+check("a day that only trained other skills is kept", () => {
+  // Main skills flat, but shooting grew: training went elsewhere, not absent.
+  const days = ones(30);
+  days[10] = 0;
+  const result = measureGrowthPace(dailyD(days, { 10: 2 }), 18.5, "D")!;
+  eq(result.skippedNoTrainingDays, 0, "not a no-training day");
+  eq(result.measuredDays, 30, "measured");
+});
+
+check("mostly no training: nothing skipped, pace reads low", () => {
+  // 20 of 30 days flat - the player isn't being trained, not injured.
+  const days = ones(30).map((g, i) => (i % 3 === 0 ? g : 0));
+  const result = measureGrowthPace(dailyD(days), 18.5, "D")!;
+  eq(result.skippedNoTrainingDays, 0, "kept");
+  eq(result.measuredDays, 30, "measured");
+  near(result.basePerSeason, (10 / 30) * 112, "the real, low rate");
+});
+
+check("a training camp (5 days at double) is skipped", () => {
+  const days = ones(40);
+  [20, 21, 22, 23, 24].forEach((i) => (days[i] = 2));
+  const result = measureGrowthPace(dailyD(days), 18.5, "D")!;
+  eq(result.skippedCampDays, 5, "camp days");
+  eq(result.measuredDays, 35, "measured");
+  near(result.basePerSeason, 112, "normal training rate");
+});
+
+check("three good days in a row are not a camp", () => {
+  const days = ones(40);
+  [20, 21, 22].forEach((i) => (days[i] = 2));
+  const result = measureGrowthPace(dailyD(days), 18.5, "D")!;
+  eq(result.skippedCampDays, 0, "kept");
+  eq(result.measuredDays, 40, "measured");
+});
+
+check("gaps in the history are kept, not judged", () => {
+  // A 20-day gap, then 20 daily days: the gap can't be classified, so it counts.
+  const daily = dailyD(ones(20));
+  const result = measureGrowthPace([dDay(40, 380, 190, 190), ...daily], 18.5, "D")!;
+  eq(result.measuredDays, 40, "measured");
+  eq(result.skippedNoTrainingDays + result.skippedCampDays, 0, "nothing skipped");
 });
 
 check("no pace from a single usable day", () => {
@@ -293,18 +387,18 @@ check("before 22 a balanced on-curve player at 100% stays on the curve", () => {
 });
 
 check("from 22 the projection follows the age-adjusted curve", () => {
-  // 1093 on the plain curve; this team's players slow to 0.87 from 22.
+  // 1093 on the plain curve; this team's players slow to 0.95 from 22.
   const onCurve = skills({ defence: 450, passing: 225, aggression: 225 });
-  eq(projectPositionRating(onCurve, 18, paceOf("D", 1, 101), 25), Math.round(450 + 391 + 0.87 * 252));
+  eq(projectPositionRating(onCurve, 18, paceOf("D", 1, 101), 25), Math.round(450 + 391 + 0.95 * 252));
 });
 
 check("a pace measured at an older age is read against that age's factor", () => {
-  // 87% at 23 is a 1.00 pace for a 23-year-old here, so an on-curve player
-  // keeps to the age-adjusted curve: 938 + (78 + 77) * 0.87.
+  // 95% at 23 is a 1.00 pace for a 23-year-old here, so an on-curve player
+  // keeps to the age-adjusted curve: 938 + (78 + 77) * 0.95.
   const onCurve = skills({ defence: 938, passing: 469, aggression: 469 });
   eq(
-    projectPositionRating(onCurve, 23, paceOf("D", 0.87, 78, {}, 23), 25),
-    Math.round(938 + 0.87 * 155)
+    projectPositionRating(onCurve, 23, paceOf("D", 0.95, 78, {}, 23), 25),
+    Math.round(938 + 0.95 * 155)
   );
 });
 
@@ -324,10 +418,10 @@ check("non-main skills keep their own rate and feed the bonus", () => {
 });
 
 check("projection stops at 35", () => {
-  // Measured at 30 at that age's typical pace: 1423 + (1596 - 1423) * 0.47.
+  // Measured at 30 at that age's typical pace: 1423 + (1596 - 1423) * 0.49.
   const onCurve = skills({ defence: 1423, passing: 711.5, aggression: 711.5 });
-  const pace = paceOf("D", 0.47, 38, {}, 30);
-  eq(projectPositionRating(onCurve, 30, pace, 40), Math.round(1423 + 0.47 * 173), "value");
+  const pace = paceOf("D", 0.49, 38, {}, 30);
+  eq(projectPositionRating(onCurve, 30, pace, 40), Math.round(1423 + 0.49 * 173), "value");
   eq(projectPositionRating(onCurve, 30, pace, 40), projectPositionRating(onCurve, 30, pace, 35), "capped");
 });
 

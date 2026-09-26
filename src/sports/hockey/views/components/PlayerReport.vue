@@ -14,6 +14,7 @@ import { getExactAge, readEntryOverallRating } from "@/sports/hockey/skillHistor
 import {
   GrowthPace,
   PACE_MIN_SPAN_DAYS,
+  PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
   bestPositionRating,
   dateAtAge,
@@ -215,19 +216,34 @@ const isUnbalanced = (pace: GrowthPace) =>
 const paceTitle = (player: HockeyPlayer) => {
   const pace = paceFor(player);
   if (!pace) {
-    return recentHistory.value === null
-      ? "Growth pace could not be loaded"
-      : `Needs two days with skills at least ${PACE_MIN_SPAN_DAYS} days apart, within the last ${PACE_WINDOW_DAYS} days of history`;
+    if (recentHistory.value === null) return "Growth pace could not be loaded";
+    const stored = historySummaries.value.get(player.id)?.days ?? 0;
+    return (
+      `Needs ${PACE_PROVISIONAL_MIN_DAYS} days of training within the last ${PACE_WINDOW_DAYS} ` +
+      `days of history (${stored} day${stored === 1 ? "" : "s"} stored)`
+    );
   }
   const lines = [
     `${signed(pace.pointsPerSeason)} skill points/season into ${pace.position} skills ` +
       `= ${signed(pace.basePerSeason)} base/season when balanced`,
     `${signed(pace.bonusPerSeason)} bonus/season = ${signed(pace.gainPerSeason)} rating/season (no XP)`,
-    `(${pace.spanDays} days, ${pace.fromDate} to ${pace.toDate})`,
+    `(${pace.measuredDays} days measured, ${pace.fromDate} to ${pace.toDate})`,
     pace.expectedPerSeason === null
       ? "No top-player pace to compare against at this age"
       : `Top-player pace at ${Math.floor(pace.midAge)}: ${signed(pace.expectedPerSeason)}/season`,
   ];
+  const skipped = [
+    pace.skippedNoTrainingDays > 0 ? `${pace.skippedNoTrainingDays} no-training days` : "",
+    pace.skippedCampDays > 0 ? `${pace.skippedCampDays} training-camp days` : "",
+  ].filter(Boolean);
+  if (skipped.length > 0) {
+    lines.push(`Skipped ${skipped.join(" and ")} (injury, no training, or camp)`);
+  }
+  if (pace.provisional) {
+    lines.unshift(
+      `Provisional: only ${pace.measuredDays} days of data - settles at ${PACE_MIN_SPAN_DAYS}`
+    );
+  }
   if (isUnbalanced(pace)) {
     lines.push(
       `The base itself moved ${signed(pace.ratingMovedPerSeason)}/season - ` +
@@ -296,8 +312,11 @@ const atAgeByPlayer = computed(() => {
       title:
         `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the top-player pace ` +
-        "from here on, slowing after 21 and 24 as this team's players do. Any lagging main " +
-        "skill is caught up first; other skills keep their current rate.",
+        "from here on, slowing slightly from 22 and more from 25, as this team's players do. Any lagging main " +
+        "skill is caught up first; other skills keep their current rate." +
+        (pace.provisional
+          ? ` Provisional: the pace rests on only ${pace.measuredDays} days of data.`
+          : ""),
     });
   });
   return values;
@@ -1031,7 +1050,14 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
         <template #pace="{ item }">
           <span
-            v-if="paceFor(item)?.pace != null"
+            v-if="paceFor(item)?.provisional && paceFor(item)?.pace != null"
+            class="projected"
+            :title="paceTitle(item)"
+          >
+            ~{{ Math.round(paceFor(item)!.pace! * 100) }}%
+          </span>
+          <span
+            v-else-if="paceFor(item)?.pace != null"
             class="completeness-badge"
             :class="paceBadgeClass(paceFor(item)!.pace!)"
             :title="paceTitle(item)"

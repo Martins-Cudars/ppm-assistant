@@ -110,6 +110,7 @@ const calculateData = () => {
     actualHistoryData,
     ownPaceProjection,
     pace,
+    provisional: growthPace?.provisional ?? false,
   };
 };
 
@@ -143,6 +144,7 @@ const renderChartWithLogic = () => {
     actualHistoryData,
     ownPaceProjection,
     pace,
+    provisional,
   } = calculateData();
 
   const datasets: ChartDataset<"line">[] = [
@@ -211,7 +213,7 @@ const renderChartWithLogic = () => {
 
   if (ownPaceProjection.length > 0 && pace !== null) {
     datasets.push({
-      label: `Projected at own pace (${Math.round(pace * 100)}%)`,
+      label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(pace * 100)}%${provisional ? ", provisional" : ""})`,
       data: ownPaceProjection,
       borderColor: "rgba(54, 162, 235, 1)",
       backgroundColor: "rgba(54, 162, 235, 1)",
