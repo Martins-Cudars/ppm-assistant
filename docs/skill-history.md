@@ -82,9 +82,10 @@ the deprecated `kr` field (the old name for `overallRating`).
   - The tooltip also shows how fast the rating itself moved, and it flags the case where
     that differs.
 - **Window.**
-  - The last 28 days (`PACE_WINDOW_DAYS`) before the player's latest day *with skills*,
-    not before today.
-  - There must be at least two such days, 14 or more days apart (`PACE_MIN_SPAN_DAYS`).
+  - The last 56 days (`PACE_WINDOW_DAYS`) before the player's latest day *with skills*,
+    not before today. It was 28 days at first, but single months proved too noisy: one
+    player ranged 52–64% month to month, and a projection from his best month overshot by 15%.
+  - There must be at least two such days, 28 or more days apart (`PACE_MIN_SPAN_DAYS`).
   - The tooltip gives the dates.
 - **Expected gain** at an age is the curve's slope for that year of age:
   `skill[floor+1] − skill[floor]`. There is no pace from 35 on, where the curve declines.
@@ -106,8 +107,10 @@ the deprecated `kr` field (the old name for `overallRating`).
   overshoots (404.64 for an OR of 403). So **projected OR** is `overallFromSkills()` of
   the same projected skills behind Skill @25.
 - **Projected Skill @25.**
-  - Future main-skill points are `pace × 2 × (curve gain from now to 25)`. Using the
-    curve keeps its slowdown with age.
+  - Future main-skill points are
+    `pace ÷ agePaceFactor(now) × 2 × (age-adjusted curve gain from now to 25)`. That carries
+    both the curve's slowdown and this team's slowdown after 21 and 24; see
+    `AGE_PACE_FACTORS` below.
   - `solveBalancedRating()` spends those points where they raise the rating most: the
     bottleneck first, then all main skills together. Any skill already ahead counts as paid
     for.
@@ -115,8 +118,8 @@ the deprecated `kr` field (the old name for `overallRating`).
     winger's bonus.
   - The result goes through `calculatePositions()`, which applies the 0.6 bonus cap.
   - The model assumes balanced training for the current best position from here on.
-  - A balanced player on the curve at 100% lands exactly on the curve. That invariant has
-    a test.
+  - A balanced player on the curve at 100% stays on the curve up to 21, and follows the
+    age-adjusted curve after that. Both invariants have tests.
 - **Report data.** One message, `SKILL_HISTORY_LATEST_WINDOW`.
   - The worker reads keys first, then only each player's window, so it never reads the
     full store.
@@ -141,36 +144,64 @@ don't**, at least for how gains split between skills. Checked against the Aug 28
 Weighting points by quality would have made the numbers worse. Re-run this check before
 adding it.
 
-### Known limitation: pace falls with age faster than the curve
+### Pace slows with age: `AGE_PACE_FACTORS`
 
-Across the squad, pace runs about:
+A single pace carried to 25 was too optimistic after 21. At this team, players train at a
+steady ~58% of the curve up to 21, then slow down faster than the curve does. So projections
+multiply each future year by an age factor, relative to ages 16–21:
 
-| Age | Pace |
-|---|---|
-| 16–22 | ~50–65% |
-| 23–25 | ~35–58% |
-| 26+ | ~7–42% |
+| From age | Factor | Players | Across three slicings |
+|---|---|---|---|
+| ≤21 | **1.00** | 23 | reference, ~58% pace |
+| 22 | **0.87** | 12 | 0.86 / 0.88 / 0.91 |
+| 25 | **0.64** | 13 | 0.62 / 0.64 / 0.68 |
+| 28 | **0.47** | 4 | 0.46 / 0.48 / 0.50 |
 
-Holding one pace ratio to 25 is therefore optimistic in a teenager's last few years before
-25. A possible fix is an age profile calibrated from the user's own squad.
+**How it's applied**:
 
-**Past facility changes don't affect Pace or the @25 projections.** The user's team upgraded its
-training facilities at some point; the date is unknown. Pace uses only each player's last
-28 days, so every player is measured under the current facilities. The age gap above is a
-same-period comparison, so the facility history doesn't explain it either. In 2025–2026,
-ages 24–29 run ~39–44% and ages 15–23 run ~50–60%.
+- A pace measured at age *a* is first divided by `agePaceFactor(a)`, giving the underlying
+  pace. A 23-year-old at 50% is doing what a 20-year-old at ~57% would.
+- Each future year then gains `underlying × curve step × agePaceFactor(that year)`, via
+  `adjustedCurveGainBetween()`. Non-main skills are scaled the same way.
+- A 100% on-curve player at 18 still stays on the curve up to 21. At 25 they reach **1060**
+  instead of 1093: 450 + (101 + 98 + 97 + 95) + (97 + 78 + 77) × 0.87.
+- The **Pace** column is unchanged. It shows the measured pace, not the underlying one.
 
-**It would matter for any age-profile calibration** built from longitudinal history.
-Median pace by age band and half-year (Aug 28 backup) shows no upgrade step anywhere since
-2022. Instead, the same age bands ran *faster* early on. For example, 15–17 ran 91% (2022
-H1), 75%, 66%, then settled around 50–55% from 2023 H2. The reason isn't established. It
-could be:
+**Why we compare players over the same months, not each player's own history.** The
+training facilities changed several times over ten seasons, and some players arrived from
+elite teams.
 
-- the upgrade predates the history;
-- survivorship, since only the players still on the team had their history gathered;
-- some other change in 2023.
+- **Octave Bezeau**, for example:
+  - He averaged ~64% at an elite team up to 18.
+  - He averaged ~50% on 12/15 facilities after his transfer.
+  - He dipped to 37–48% at 21–22.
+  - He rose back to ~55% after the upgrade around Nov 2025.
+- One player's history therefore mixes facility levels, and can't measure an age effect.
+- Different players over the same months all train under the same facilities, which is
+  exactly what "how will he grow **here**" needs.
+- The factors come from 56-day windows since 2025-12-01, after the last upgrade, on the
+  Aug 28 backup.
+- The same reasoning means past facility changes don't affect the Pace column either: it
+  only ever looks at the last 56 days.
 
-A calibration should use only windows from one stable era: roughly 2023 H2 onwards.
+**The 28+ band rests on 4 players,** and 22–24 on 12. To re-measure as history
+accumulates, or after the next facility or coach change, run
+`scripts/measure-age-factors.ts`. It uses the real `measureGrowthPace()`, and its header
+says how to run it. Then copy the factors into `AGE_PACE_FACTORS`. On the Aug 28 backup it
+prints 1.00 / 0.87 / 0.62 / 0.47.
+
+**Backtest on Octave**, who was actually 839 / 1825 at 25. Replaying the model at earlier
+ages:
+
+| Projected at | Projected | Error |
+|---|---|---|
+| 20 | 841 / 1828 | 0% |
+| 22 | 784 / 1709 | −7% |
+| 23 | 823 / 1788 | −2% |
+| 24 | 847 / 1838 | +1% |
+
+At 18 it overshoots by +28%, but that window is his last two months at the elite team
+(81% pace). That's the facility effect, not the model.
 
 ## Backup format
 
@@ -219,14 +250,14 @@ The repo has no test runner, so "verified" means it was actually run.
 | `parseBackup()` | **Verified.** 12 assertions against the compiled code (foreign files, unknown versions, missing `id`, `id` disagreeing with `playerId:date`, malformed dates, null rows). |
 | `importCaches()` / `exportAllCaches()` | **Verified.** 8 assertions (newest-wins merge, union, replace dropping stale keys, the `team-unknown` exclusion, and that import writes the file's keys rather than a DOM-derived one). |
 | Header layout with the notice | **Verified in the browser.** Measured at 1400px and 760px: no overflow, notice contained and full-width. |
-| Pace / projection / @25 math | **Verified.** 28 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, and 14 of 15 players aged 25+ get a recorded @25 value. |
+| Pace / projection / @25 math | **Verified.** 32 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
 | Pace and @25 columns, projection line, `SKILL_HISTORY_LATEST_WINDOW`, `SKILL_HISTORY_NEAR_DATES` | **Never run in the browser.** The worker's key-then-get read has no test at all. |
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 48 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 65 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -256,9 +287,9 @@ any mutation without re-fetching history, so it would replot stale data. `CLAUDE
 rule says prefer `chart.options` + `update()`; the comparison chart follows it, this one
 doesn't.
 
-**4. Add a test runner.** Vitest fits the existing Vite setup. Three files in
+**4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()` and `growthPace.ts`, 48 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 65 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

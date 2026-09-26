@@ -13,6 +13,7 @@ import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/typ
 import { getExactAge, readEntryOverallRating } from "@/sports/hockey/skillHistoryChart";
 import {
   GrowthPace,
+  PACE_MIN_SPAN_DAYS,
   PACE_WINDOW_DAYS,
   bestPositionRating,
   dateAtAge,
@@ -161,7 +162,7 @@ const paceTitle = (player: HockeyPlayer) => {
   if (!pace) {
     return recentHistory.value === null
       ? "Growth pace could not be loaded"
-      : `Needs two days with skills at least 14 days apart, within the last ${PACE_WINDOW_DAYS} days of history`;
+      : `Needs two days with skills at least ${PACE_MIN_SPAN_DAYS} days apart, within the last ${PACE_WINDOW_DAYS} days of history`;
   }
   const lines = [
     `${signed(pace.pointsPerSeason)} skill points/season into ${pace.position} skills ` +
@@ -239,8 +240,8 @@ const atAgeByPlayer = computed(() => {
       title:
         `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the top-player pace ` +
-        "from here on. Any lagging main skill is caught up first; other skills keep their " +
-        "current rate.",
+        "from here on, slowing after 21 and 24 as this team's players do. Any lagging main " +
+        "skill is caught up first; other skills keep their current rate.",
     });
   });
   return values;

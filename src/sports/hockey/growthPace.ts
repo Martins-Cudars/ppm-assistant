@@ -47,17 +47,62 @@ const SKILL_NAMES: SkillName[] = [
 ];
 
 /**
- * How far back from a player's latest usable entry the pace is measured. Long
- * enough to smooth day-to-day training noise, short enough to reflect the
- * player's current training rather than last season's.
+ * How far back from a player's latest usable entry the pace is measured.
+ *
+ * 56 rather than 28: single months are noisy. One player's 28-day paces ranged
+ * 52-64% within a season, and projecting from his best month overshot his
+ * actual rating at 25 by 15%. The cost is reacting to a training change about
+ * four weeks later.
  */
-export const PACE_WINDOW_DAYS = 28;
+export const PACE_WINDOW_DAYS = 56;
 
 /**
- * The shortest span a pace may be computed over. Two entries a few days apart
- * would extrapolate a single good or bad training day to a whole season.
+ * The shortest span a pace may be computed over - half the window, so a
+ * couple of weeks can't be extrapolated to a whole season.
  */
-export const PACE_MIN_SPAN_DAYS = 14;
+export const PACE_MIN_SPAN_DAYS = 28;
+
+/**
+ * How fast players train at each age, relative to ages 16-21, at the user's
+ * own team. Projections slow down by these factors on top of the top-player
+ * curve's own slowdown, which on its own was too optimistic after 21.
+ *
+ * Measured 2026-09-26 from the Aug 28 backup, 56-day windows since 2025-12-01,
+ * as median pace per age band divided by the 16-21 median (58%):
+ *
+ *   <=21   1.00   22 players, the reference
+ *   22-24  0.87   12 players  (0.86 / 0.88 / 0.91 across three slicings)
+ *   25-27  0.64   13 players  (0.62 / 0.64 / 0.68)
+ *   28+    0.47    4 players  (0.46 / 0.48 / 0.50)
+ *
+ * Why players compared over the same months, not each player's own history:
+ * the team's training facilities changed several times over ten seasons, and
+ * some players arrived from elite teams, so one player's history mixes
+ * facility levels. Different players over the same months all train under
+ * the same facilities, which is exactly what a projection at this team needs.
+ * 2025-12-01 is after the last upgrade (visible as a pace jump around Nov
+ * 2025). Age 15 measured ~0.9 on 5-7 players, but early weeks are often
+ * catch-up training, so it stays at 1.00.
+ *
+ * The 22-24 and especially 28+ bands rest on few players. Re-measure with
+ * scripts/measure-age-factors.ts as more history accumulates, or after the
+ * facilities change again.
+ */
+export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 22, factor: 0.87 },
+  { fromAge: 25, factor: 0.64 },
+  { fromAge: 28, factor: 0.47 },
+];
+
+/** The age factor for an exact age - see AGE_PACE_FACTORS. */
+export function agePaceFactor(age: number): number {
+  let factor = AGE_PACE_FACTORS[0].factor;
+  for (const band of AGE_PACE_FACTORS) {
+    if (age >= band.fromAge) factor = band.factor;
+  }
+  return factor;
+}
 
 /**
  * The age projections stop at. The top-player curve turns to decline after 35,
@@ -177,6 +222,29 @@ export function curveGainBetween(fromAge: number, toAge: number): number {
 }
 
 /**
+ * The curve's rise between two ages, each year weighted by agePaceFactor() -
+ * how much a player at 100% of the reference (ages 16-21) pace would actually
+ * gain at this team. The factor bands start on whole ages, and the walk steps
+ * through whole ages, so each segment sits in exactly one band.
+ */
+export function adjustedCurveGainBetween(fromAge: number, toAge: number): number {
+  const endAge = Math.min(toAge, PROJECTION_MAX_AGE);
+  let total = 0;
+  let age = fromAge;
+
+  while (age < endAge) {
+    const segmentEnd = Math.min(Math.floor(age) + 1, endAge);
+    const gain = expectedSeasonGain(age);
+    if (gain === null) break;
+
+    total += gain * agePaceFactor(age) * (segmentEnd - age);
+    age = segmentEnd;
+  }
+
+  return total;
+}
+
+/**
  * The player's recent growth pace for a position, or null when there isn't
  * enough history to measure one honestly.
  *
@@ -288,10 +356,12 @@ export function solveBalancedRating(
 
 /**
  * Where the player's rating for the paced position lands at `targetAge`, if
- * they keep being trained at the same fraction of the top-player rate.
+ * they keep being trained at the same fraction of the top-player rate -
+ * slowing with age as this team's players do (AGE_PACE_FACTORS).
  *
- * - The position's main skills get pace x (curve gain to the target) x the
- *   position's weights in skill points, spent as solveBalancedRating() says.
+ * - The position's main skills get (pace / age factor now) x (age-adjusted
+ *   curve gain to the target) x the position's weights in skill points,
+ *   spent as solveBalancedRating() says.
  * - Every other skill (e.g. shooting for a winger, which feeds the bonus)
  *   keeps growing at its own observed rate, scaled by the same curve factor.
  * - The result goes through calculatePositions(), so the bonus and its cap
@@ -407,17 +477,23 @@ export function projectSkills(
   const weights = mainWeights(pace.position);
   if (!weights) return null;
 
-  const curveGain = curveGainBetween(currentExactAge, targetAge);
+  // The measured pace already includes the age factor for the age it was
+  // measured at (a 23-year-old at 50% is doing what a 20-year-old at ~57%
+  // would). Divide it out, then let each future year apply its own factor.
+  const measuredFactor = agePaceFactor(pace.midAge);
+  const underlyingPace = Math.max(0, pace.pace) / measuredFactor;
+  const curveGain = adjustedCurveGainBetween(currentExactAge, targetAge);
   const weightSum = weights.reduce((sum, [, weight]) => sum + weight, 0);
-  const points = Math.max(0, pace.pace) * curveGain * weightSum;
+  const points = underlyingPace * curveGain * weightSum;
 
   const rating = solveBalancedRating(skills, pace.position, points);
   if (rating === null) return null;
 
   const main = new Map(weights);
-  // The observed rate was measured when the curve's slope was expectedPerSeason;
-  // scale it by the same curve the main skills follow.
-  const curveSeasons = curveGain / pace.expectedPerSeason;
+  // The observed rate was measured when the curve's slope was expectedPerSeason
+  // at that age's factor; scale it by the same age-adjusted curve the main
+  // skills follow.
+  const curveSeasons = curveGain / (pace.expectedPerSeason * measuredFactor);
 
   return Object.fromEntries(
     SKILL_NAMES.map((skill) => {
