@@ -285,7 +285,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 67 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 68 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -317,7 +317,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 67 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 68 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

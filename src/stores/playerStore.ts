@@ -8,6 +8,7 @@ import {
 import { collectPlayerData } from "@/services/dataCollector";
 import { getUserSettings } from "@/storage/userSettings";
 import { clearSkillHistory } from "@/storage/skillHistoryDb";
+import { PlayerCacheStorage } from "@/types/StoredPlayer";
 
 interface PlayerState {
   players: HockeyPlayer[];
@@ -15,6 +16,12 @@ interface PlayerState {
   cachedPlayers: HockeyPlayer[];
   currentSeasonDay: number;
   teamId: string;
+  /**
+   * The last squad overview's roster for this team, or null before one is
+   * saved. Decides who is "my team" - more reliably than teamId, which a sold
+   * player keeps in the cache until their profile is seen again.
+   */
+  squad: PlayerCacheStorage["squad"] | null;
   lang: string;
   sport: string;
   playerPage: string;
@@ -27,6 +34,7 @@ export const usePlayerStore = defineStore("player", {
     cachedPlayers: [],
     currentSeasonDay: 1,
     teamId: "unknown",
+    squad: null,
     lang: "en",
     sport: "hockey",
     playerPage: "player.html",
@@ -65,10 +73,11 @@ export const usePlayerStore = defineStore("player", {
     async loadFromCache() {
       try {
         // Use getAllPlayersFromAllCaches which works in extension pages without DOM
-        const { players, currentSeasonDay, teamId } = await getAllPlayersFromAllCaches();
+        const { players, currentSeasonDay, teamId, squad } = await getAllPlayersFromAllCaches();
         this.cachedPlayers = players;
         this.currentSeasonDay = currentSeasonDay;
         this.teamId = teamId;
+        this.squad = squad;
 
         const settings = await getUserSettings();
         this.lang = settings.lang;

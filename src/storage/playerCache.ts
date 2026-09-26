@@ -204,6 +204,8 @@ export async function getAllPlayersFromAllCaches(): Promise<{
   players: HockeyPlayer[];
   currentSeasonDay: number;
   teamId: string;
+  /** The last squad overview's roster, or null if none has been saved yet. */
+  squad: PlayerCacheStorage["squad"] | null;
 }> {
   try {
     // Get all storage data
@@ -217,7 +219,7 @@ export async function getAllPlayersFromAllCaches(): Promise<{
     console.log("[PlayerCache] Found hockey cache keys:", hockeyKeys);
 
     if (hockeyKeys.length === 0) {
-      return { players: [], currentSeasonDay: 1, teamId: "unknown" };
+      return { players: [], currentSeasonDay: 1, teamId: "unknown", squad: null };
     }
 
     // Use the first cache (or we could merge all caches if user has multiple teams)
@@ -225,7 +227,7 @@ export async function getAllPlayersFromAllCaches(): Promise<{
     const cache = allData[cacheKey] as PlayerCacheStorage;
 
     if (!cache || !cache.players) {
-      return { players: [], currentSeasonDay: 1, teamId: "unknown" };
+      return { players: [], currentSeasonDay: 1, teamId: "unknown", squad: null };
     }
 
     const players = Object.values(cache.players).map((data) =>
@@ -240,10 +242,11 @@ export async function getAllPlayersFromAllCaches(): Promise<{
       players,
       currentSeasonDay: cache.currentSeasonDay || 1,
       teamId: cache.teamId || "unknown",
+      squad: cache.squad ?? null,
     };
   } catch (error) {
     console.error("[PlayerCache] Failed to load from all caches:", error);
-    return { players: [], currentSeasonDay: 1, teamId: "unknown" };
+    return { players: [], currentSeasonDay: 1, teamId: "unknown", squad: null };
   }
 }
 

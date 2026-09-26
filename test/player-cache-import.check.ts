@@ -29,7 +29,9 @@ const store: Record<string, unknown> = {};
   },
 };
 
-const { importCaches, exportAllCaches } = await import("@/storage/playerCache");
+const { importCaches, exportAllCaches, getAllPlayersFromAllCaches } = await import(
+  "@/storage/playerCache"
+);
 
 let failures = 0;
 
@@ -128,6 +130,17 @@ await check("export skips team-unknown caches", async () => {
   const out = await exportAllCaches();
   eq(Object.keys(out).length, 1, "count");
   eq(KEY in out, true, "real key kept");
+});
+
+// The Player Report's "My team" filter reads the roster from here. Without it,
+// it falls back to teamId - which a sold player still carries.
+await check("the report's cache read returns the squad roster, or null", async () => {
+  const withRoster = { ...(cache({}) as object), squad: { playerIds: ["p1", "p2"], updatedAt: "x" } };
+  reset({ [KEY]: withRoster });
+  eq((await getAllPlayersFromAllCaches()).squad?.playerIds.join(","), "p1,p2", "roster");
+
+  reset({ [KEY]: cache({}) });
+  eq((await getAllPlayersFromAllCaches()).squad, null, "no roster yet");
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

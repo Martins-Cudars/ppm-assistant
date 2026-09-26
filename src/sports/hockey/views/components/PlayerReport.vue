@@ -43,6 +43,61 @@ const selectedCompleteness = ref("All");
 const selectedPosition = ref("All");
 const selectedHistory = ref("All");
 
+// Team filter. The cache holds every opponent whose profile was ever opened,
+// so the report opens on the user's own squad - and remembers the last choice.
+// Browser storage is a per-viewer convenience here: it can be missing or throw
+// (private windows, blocked site data), so every access falls back quietly.
+const TEAM_FILTER_KEY = "ppm-assistant:report:team";
+const TEAM_OPTIONS = ["My team", "Other teams", "All"] as const;
+type TeamOption = (typeof TEAM_OPTIONS)[number];
+
+const readTeamFilter = (): TeamOption => {
+  try {
+    const saved = localStorage.getItem(TEAM_FILTER_KEY);
+    return (TEAM_OPTIONS as readonly string[]).includes(saved ?? "")
+      ? (saved as TeamOption)
+      : "My team";
+  } catch {
+    return "My team";
+  }
+};
+
+const selectedTeam = ref<TeamOption>(readTeamFilter());
+watch(selectedTeam, (team) => {
+  try {
+    localStorage.setItem(TEAM_FILTER_KEY, team);
+  } catch {
+    // Not remembered this time; the filter still works.
+  }
+});
+
+// The last squad overview's roster when there is one: exact, and it drops
+// players who were sold but still carry our teamId in the cache. Otherwise,
+// fall back to matching the cache's own team id.
+const ownSquad = computed(() => (store.squad ? new Set(store.squad.playerIds) : null));
+const isMyPlayer = (player: HockeyPlayer) =>
+  ownSquad.value ? ownSquad.value.has(player.id) : player.teamId === store.teamId;
+
+// Without a roster or a team id there's no way to tell whose player is whose;
+// show everyone rather than an unexplained empty "My team". Derived, not
+// written back, so the remembered choice survives until it can apply again.
+const teamKnown = computed(() => store.squad !== null || store.teamId !== "unknown");
+const effectiveTeam = computed<TeamOption>(() => (teamKnown.value ? selectedTeam.value : "All"));
+
+const matchesTeam = (player: HockeyPlayer, team: TeamOption) =>
+  team === "All" || (team === "My team") === isMyPlayer(player);
+
+const getTeamCount = (team: TeamOption) =>
+  store.cachedPlayers.filter((p) => matchesTeam(p, team)).length;
+
+const myTeamTitle = computed(() => {
+  if (!teamKnown.value) return "Your team isn't known yet - open the squad overview in the game";
+  if (!store.squad) {
+    return "Cached players with your team id. Open the squad overview to exclude players you've sold.";
+  }
+  return `Players on the squad overview, last saved ${new Date(store.squad.updatedAt).toLocaleString()}`;
+});
+
 // Skill-history coverage per player, keyed by player id. Populated after the
 // cache loads; a player missing from the map simply has nothing stored.
 const historySummaries = ref<Map<string, SkillHistorySummary>>(new Map());
@@ -268,6 +323,9 @@ onMounted(async () => {
 const filteredPlayers = computed(() =>
   store.cachedPlayers.filter((player: HockeyPlayer) => {
     try {
+      // Team filter
+      if (!matchesTeam(player, effectiveTeam.value)) return false;
+
       // Freshness filter
       if (selectedFreshness.value !== "All") {
         const daysSinceUpdate = Math.floor(
@@ -803,6 +861,20 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
     <div class="filters white_box">
       <div class="filter-group">
+        <label>Team:</label>
+        <button
+          v-for="team in TEAM_OPTIONS"
+          :key="team"
+          @click="selectedTeam = team"
+          :class="{ active: effectiveTeam === team }"
+          :disabled="team !== 'All' && !teamKnown"
+          :title="team === 'My team' ? myTeamTitle : undefined"
+        >
+          {{ team }} ({{ getTeamCount(team) }})
+        </button>
+      </div>
+
+      <div class="filter-group">
         <label>Freshness:</label>
         <button
           v-for="freshness in ['All', 'Fresh', 'Stale', 'Very Stale']"
@@ -1262,6 +1334,11 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   background: #007bff;
   color: white;
   border-color: #007bff;
+}
+
+.filter-group button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .empty-state {
