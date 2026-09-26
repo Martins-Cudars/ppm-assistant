@@ -99,11 +99,16 @@ const paceOf = (
 ): GrowthPace => ({
   position,
   pointsPerSeason: 0,
+  basePerSeason: pace * expectedPerSeason,
+  bonusPerSeason: 0,
   gainPerSeason: pace * expectedPerSeason,
   ratingMovedPerSeason: 0,
   skillRates: skills(rates),
   expectedPerSeason,
   pace,
+  // Projections spend main-skill points from basePace; with no bonus growth
+  // the two are the same.
+  basePace: pace,
   midAge,
   fromDate: daysAgo(20),
   toDate: daysAgo(0),
@@ -151,9 +156,12 @@ check("balanced training: pace from points matches rating movement", () => {
   const result = measureGrowthPace([dDay(40, 400, 200, 200), dDay(0, 420, 210, 210)], 18.5, "D")!;
   near(result.pointsPerSeason, (40 / 40) * 112, "points");
   near(result.gainPerSeason, (20 / 40) * 112, "rating when balanced");
-  near(result.ratingMovedPerSeason, result.gainPerSeason, "rating moved the same");
+  near(result.ratingMovedPerSeason, result.basePerSeason, "rating moved the same");
   eq(result.expectedPerSeason, 101, "expected at midpoint age ~18.4");
   near(result.pace, result.gainPerSeason / 101, "pace");
+  // A defender's bonus skills (shooting, technical, offence) didn't move.
+  near(result.bonusPerSeason, 0, "no bonus growth");
+  near(result.pace, result.basePace, "so pace is the base pace");
 });
 
 check("catch-up: a bottleneck being filled doesn't inflate pace", () => {
@@ -161,15 +169,50 @@ check("catch-up: a bottleneck being filled doesn't inflate pace", () => {
   // bottleneck. Base 90 -> 119, but only 30.5 points went in.
   const result = measureGrowthPace([dDay(28, 90, 60, 60), dDay(0, 119, 61, 60.5)], 15.5, "D")!;
   near(result.ratingMovedPerSeason, (29 / 28) * 112, "rating moved ~1:1 with points");
-  near(result.gainPerSeason, (30.5 / 2 / 28) * 112, "pace counts 2 points per rating");
-  eq(result.gainPerSeason < 0.6 * result.ratingMovedPerSeason, true, "about half");
+  near(result.basePerSeason, (30.5 / 2 / 28) * 112, "pace counts 2 points per rating");
+  eq(result.basePerSeason < 0.6 * result.ratingMovedPerSeason, true, "about half");
 });
 
 check("non-bottleneck: points into a surplus skill still count", () => {
   // Passing and aggression are the bottleneck (40 / 0.5 = 80); defence isn't.
   const result = measureGrowthPace([dDay(40, 100, 40, 40), dDay(0, 120, 40, 40)], 18.5, "D")!;
   near(result.ratingMovedPerSeason, 0, "rating flat");
-  near(result.gainPerSeason, (20 / 2 / 40) * 112, "pace still > 0");
+  near(result.basePerSeason, (20 / 2 / 40) * 112, "pace still > 0");
+});
+
+/** A winger's day: W rates as min(offence, technical / 0.5, aggression / 0.5), bonus 0.45 x shooting. */
+const wDay = (ago: number, offence: number, technical: number, aggression: number, shooting: number) => ({
+  id: `1:${daysAgo(ago)}`,
+  playerId: "1",
+  date: daysAgo(ago),
+  skills: skills({ offence, technical, aggression, shooting }),
+  capturedAt: "2026-09-25T00:00:00.000Z",
+});
+
+// The top-player curve's skill is the position rating WITH bonus, so pace must
+// count bonus growth - a base-only pace read every winger and centre low.
+check("bonus growth counts: a winger training shooting", () => {
+  // Base 400 -> 420 balanced (+40 points), shooting +20: 0.45 x 20 of bonus.
+  const result = measureGrowthPace(
+    [wDay(40, 400, 200, 200, 100), wDay(0, 420, 210, 210, 120)],
+    18.5,
+    "W"
+  )!;
+  near(result.basePerSeason, (20 / 40) * 112, "base");
+  near(result.bonusPerSeason, 0.45 * (20 / 40) * 112, "bonus from shooting");
+  near(result.gainPerSeason, result.basePerSeason + result.bonusPerSeason, "gain = base + bonus");
+  near(result.pace! - result.basePace!, result.bonusPerSeason / 101, "pace adds the bonus");
+});
+
+check("a capped bonus can only grow with the base", () => {
+  // Shooting 400 -> 0.45 x 400 = 180, far over the 0.6 x base cap: more
+  // shooting buys nothing, so bonus growth is 0.6 x base growth.
+  const result = measureGrowthPace(
+    [wDay(40, 90, 45, 45, 380), wDay(0, 100, 50, 50, 400)],
+    18.5,
+    "W"
+  )!;
+  near(result.bonusPerSeason, 0.6 * result.basePerSeason, "capped");
 });
 
 check("no pace below the minimum span", () => {
@@ -217,6 +260,7 @@ check("pace is null (with a raw rate) once the curve stops growing", () => {
   eq(result.pace, null, "pace");
   eq(result.expectedPerSeason, null, "expected");
   eq(result.gainPerSeason > 0, true, "raw rate still reported");
+  eq(result.basePace, null, "base pace too");
 });
 
 // --- Spending points --------------------------------------------------------

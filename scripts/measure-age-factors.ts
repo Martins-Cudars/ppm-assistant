@@ -87,10 +87,12 @@ for (const [id, stored] of Object.entries(cache.players)) {
     const last = window[window.length - 1];
     if (last.skills && daysBetween(window[0].date, last.date) >= PACE_MIN_SPAN_DAYS) {
       const pace = measureGrowthPace(window, exactAgeNow, bestPositionRating(last.skills).name);
-      if (pace?.pace != null) {
+      // basePace, not pace: the projection applies these factors to the base
+      // (main-skill) part only, so they have to be measured on it.
+      if (pace?.basePace != null) {
         const band = bandOf(pace.midAge).fromAge;
         const bucket = paces.get(band) ?? { values: [], players: new Set<string>() };
-        bucket.values.push(pace.pace);
+        bucket.values.push(pace.basePace);
         bucket.players.add(id);
         paces.set(band, bucket);
       }

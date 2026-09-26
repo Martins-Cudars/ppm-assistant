@@ -154,8 +154,8 @@ const signed = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value)}`
  * points going into a skill that isn't the bottleneck yet.
  */
 const isUnbalanced = (pace: GrowthPace) =>
-  Math.abs(pace.ratingMovedPerSeason - pace.gainPerSeason) >
-  0.25 * Math.max(Math.abs(pace.gainPerSeason), 1);
+  Math.abs(pace.ratingMovedPerSeason - pace.basePerSeason) >
+  0.25 * Math.max(Math.abs(pace.basePerSeason), 1);
 
 const paceTitle = (player: HockeyPlayer) => {
   const pace = paceFor(player);
@@ -166,7 +166,8 @@ const paceTitle = (player: HockeyPlayer) => {
   }
   const lines = [
     `${signed(pace.pointsPerSeason)} skill points/season into ${pace.position} skills ` +
-      `= ${signed(pace.gainPerSeason)} rating/season when balanced`,
+      `= ${signed(pace.basePerSeason)} base/season when balanced`,
+    `${signed(pace.bonusPerSeason)} bonus/season = ${signed(pace.gainPerSeason)} rating/season (no XP)`,
     `(${pace.spanDays} days, ${pace.fromDate} to ${pace.toDate})`,
     pace.expectedPerSeason === null
       ? "No top-player pace to compare against at this age"
@@ -174,7 +175,7 @@ const paceTitle = (player: HockeyPlayer) => {
   ];
   if (isUnbalanced(pace)) {
     lines.push(
-      `The rating itself moved ${signed(pace.ratingMovedPerSeason)}/season - ` +
+      `The base itself moved ${signed(pace.ratingMovedPerSeason)}/season - ` +
         "skills are unbalanced, so it won't keep moving at that rate"
     );
   }

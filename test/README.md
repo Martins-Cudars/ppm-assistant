@@ -13,7 +13,7 @@ only targets `src` plus the vite configs, so nothing here affects `pnpm type-che
 |---|---|---|
 | `backup-parse.check.ts` | `parseBackup()` — envelope rejection and row filtering, 12 assertions | 2026-08-30, all pass |
 | `player-cache-import.check.ts` | `importCaches()` / `exportAllCaches()` — merge, replace, key handling, 8 assertions | 2026-09-25, all pass |
-| `growth-pace.check.ts` | `growthPace.ts` — skill-point pace (incl. catch-up and non-bottleneck cases), the balanced solver, projection (incl. the on-curve and age-adjusted invariants), age factors, overall rating and the @25 lookups, 32 assertions | 2026-09-26, all pass |
+| `growth-pace.check.ts` | `growthPace.ts` — skill-point pace (incl. catch-up and non-bottleneck cases, bonus growth and the bonus cap), the balanced solver, projection (incl. the on-curve and age-adjusted invariants), age factors, overall rating and the @25 lookups, 34 assertions | 2026-09-26, all pass |
 | `squad-rank.check.ts` | `squadRank.ts` — rank at position, neighbours and gaps, the 4-neighbour standings slice (shifting at the top and bottom), ties, the subject's cached copy ignored, ordinals, 13 assertions | 2026-09-25, all pass |
 
 ## Running them until there's a runner

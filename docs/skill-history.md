@@ -72,15 +72,43 @@ the deprecated `kr` field (the old name for `overallRating`).
 - **Training a skill that isn't the bottleneck.** The rating doesn't move at all, so a
   player being trained hard reads near 0%.
 
+**What the top-player curve measures.** `playerGrowthPrediction` (`settings.ts`) is a
+hand-built table, ages 15–45:
+
+- **`skill` is the position rating *with* bonus, no XP.** That's the first two parts of
+  "803 (502 + 64 + 237)" on the position card.
+- **"Total"** is `skill × (1 + exp ÷ 500)`, the rating with XP. The card's % compares
+  against Total.
+- **There is no top-player OR.**
+- Pace originally counted base growth only, and read every winger and centre 15–20 points
+  low, since shooting feeds their bonus at 0.45.
+- **Evidence** (Aug 28 backup, own players 21 and under): with bonus growth included, a
+  player's pace matches his current level as a share of the curve.
+
+| Player | Base-only pace | With bonus | Level vs curve |
+|---|---|---|---|
+| Verpakovski | 55% | 75% | 75% |
+| Laimītis | 53% | 73% | 73% |
+| Ansons | 53% | 70% | 70% |
+
+The youth median went from 55% to 66%.
+
 **The definitions:**
 
 - **Pace.**
-  - Start from the skill points per season that went into the best position's main skills.
-  - Divide by the weights' sum (2 for every hockey position).
-  - Divide again by the top-player gain per season at the same age. "Top-player" means
-    `playerGrowthPrediction`.
-  - The tooltip also shows how fast the rating itself moved, and it flags the case where
-    that differs.
+  - **Base part:** the skill points per season that went into the best position's main
+    skills, divided by the weights' sum (2 for every hockey position).
+  - **Bonus part:** the bonus skills' points per season times their bonus weights, e.g.
+    0.45 × shooting + 0.1 × defence for a winger.
+    - While the bonus sits at its 0.6 × base cap, it can only rise with the base, so it
+      counts as 0.6 × the base part.
+  - **Pace** = (base + bonus) ÷ the top-player gain per season at the same age.
+  - **`basePace`** is the base part alone. Projections spend main-skill points from it, and
+    project bonus skills at their own rates, so the bonus isn't counted twice. The age
+    factors are measured on it too.
+  - **The tooltip** shows points, base, bonus and rating per season. When the base itself
+    moved noticeably faster or slower than the points explain, it adds a hint that the
+    skills are unbalanced.
 - **Window.**
   - The last 56 days (`PACE_WINDOW_DAYS`) before the player's latest day *with skills*,
     not before today. It was 28 days at first, but single months proved too noisy: one
@@ -152,7 +180,7 @@ multiply each future year by an age factor, relative to ages 16–21:
 
 | From age | Factor | Players | Across three slicings |
 |---|---|---|---|
-| ≤21 | **1.00** | 23 | reference, ~58% pace |
+| ≤21 | **1.00** | 23 | reference, ~58% base pace (~66% with bonus) |
 | 22 | **0.87** | 12 | 0.86 / 0.88 / 0.91 |
 | 25 | **0.64** | 13 | 0.62 / 0.64 / 0.68 |
 | 28 | **0.47** | 4 | 0.46 / 0.48 / 0.50 |
@@ -250,14 +278,14 @@ The repo has no test runner, so "verified" means it was actually run.
 | `parseBackup()` | **Verified.** 12 assertions against the compiled code (foreign files, unknown versions, missing `id`, `id` disagreeing with `playerId:date`, malformed dates, null rows). |
 | `importCaches()` / `exportAllCaches()` | **Verified.** 8 assertions (newest-wins merge, union, replace dropping stale keys, the `team-unknown` exclusion, and that import writes the file's keys rather than a DOM-derived one). |
 | Header layout with the notice | **Verified in the browser.** Measured at 1400px and 760px: no overflow, notice contained and full-width. |
-| Pace / projection / @25 math | **Verified.** 32 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
+| Pace / projection / @25 math | **Verified.** 34 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
 | Pace and @25 columns, projection line, `SKILL_HISTORY_LATEST_WINDOW`, `SKILL_HISTORY_NEAR_DATES` | **Never run in the browser.** The worker's key-then-get read has no test at all. |
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 65 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 67 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -289,7 +317,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 65 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 67 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

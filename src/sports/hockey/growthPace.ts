@@ -68,7 +68,8 @@ export const PACE_MIN_SPAN_DAYS = 28;
  * curve's own slowdown, which on its own was too optimistic after 21.
  *
  * Measured 2026-09-26 from the Aug 28 backup, 56-day windows since 2025-12-01,
- * as median pace per age band divided by the 16-21 median (58%):
+ * as median BASE pace (basePace - the part projections scale) per age band
+ * divided by the 16-21 median (58%; about 66% once bonus growth is included):
  *
  *   <=21   1.00   22 players, the reference
  *   22-24  0.87   12 players  (0.86 / 0.88 / 0.91 across three slicings)
@@ -116,14 +117,26 @@ export interface GrowthPace {
   /** Skill points per season put into the position's main skills. */
   pointsPerSeason: number;
   /**
-   * The rating per season those points buy under balanced training -
+   * The base rating per season those points buy under balanced training -
    * pointsPerSeason divided by the position's summed weights (2 for every
-   * hockey position). This is what pace compares against the curve.
+   * hockey position).
+   */
+  basePerSeason: number;
+  /**
+   * How fast the position's bonus grows: while capped (at 0.6 x base) it
+   * rises with the base; otherwise it's the bonus skills' points per season
+   * times their bonus weights (e.g. 0.45 x shooting for a winger).
+   */
+  bonusPerSeason: number;
+  /**
+   * Base plus bonus per season - the growth of the position rating with bonus
+   * (no XP), which is what the top-player curve's `skill` column measures.
+   * This is what `pace` compares against the curve.
    */
   gainPerSeason: number;
   /**
    * How fast the position's base rating actually moved. Differs from
-   * gainPerSeason while a bottleneck is being caught up, or while points go
+   * basePerSeason while a bottleneck is being caught up, or while points go
    * into a skill that isn't the bottleneck. Shown for context only.
    */
   ratingMovedPerSeason: number;
@@ -134,8 +147,15 @@ export interface GrowthPace {
    * where the curve has none to compare against (35 and over).
    */
   expectedPerSeason: number | null;
-  /** gainPerSeason / expectedPerSeason, e.g. 0.57 for 57%. Null with it. */
+  /** gainPerSeason / expectedPerSeason, e.g. 0.66 for 66%. Null with it. */
   pace: number | null;
+  /**
+   * basePerSeason / expectedPerSeason: the main-skill part of the pace alone.
+   * Projections spend main-skill points from this, and project bonus skills
+   * at their own rates, so the bonus isn't counted twice. AGE_PACE_FACTORS
+   * are measured on this too.
+   */
+  basePace: number | null;
   /** The player's age at the middle of the window. */
   midAge: number;
   fromDate: string;
@@ -157,6 +177,14 @@ function mainWeights(positionName: string): [SkillName, number][] | null {
 
   return (Object.entries(rule.ratios) as [SkillName, number | undefined][])
     .filter((pair): pair is [SkillName, number] => typeof pair[1] === "number" && pair[1] > 0);
+}
+
+/** A position's bonus skills and their weights, e.g. W: shooting 0.45, defence 0.1. */
+function bonusWeights(positionName: string): [SkillName, number][] {
+  const rule = positionSettings.find((p) => p.name === positionName);
+  return (Object.entries(rule?.bonus ?? {}) as [SkillName, number | undefined][]).filter(
+    (pair): pair is [SkillName, number] => typeof pair[1] === "number" && pair[1] > 0
+  );
 }
 
 /** The position's base rating, unrounded - the bottleneck skill over its weight. */
@@ -285,7 +313,24 @@ export function measureGrowthPace(
 
   const pointsPerSeason = weights.reduce((sum, [skill]) => sum + skillRates[skill], 0);
   const weightSum = weights.reduce((sum, [, weight]) => sum + weight, 0);
-  const gainPerSeason = pointsPerSeason / weightSum;
+  const basePerSeason = pointsPerSeason / weightSum;
+
+  // The bonus counts too: the top-player curve's `skill` is the position rating
+  // WITH bonus (the profile card and chart already compare it that way), so a
+  // base-only pace understated every winger and centre - shooting feeds their
+  // bonus at 0.45. Measured from skill rates, not from how the capped bonus
+  // moved, for the same reason the base is: movement through min() and a cap
+  // misreports training. While the bonus sits at its cap it can only rise with
+  // the base, whatever the bonus skills do.
+  const bonus = bonusWeights(positionName);
+  const lastBase = positionBase(last.skills, weights);
+  const rawBonus = bonus.reduce((sum, [skill, weight]) => sum + (last.skills[skill] ?? 0) * weight, 0);
+  const bonusCapRatio = hockeyPlayerProfile.bonusCapRatio ?? 1;
+  const bonusPerSeason =
+    rawBonus >= lastBase * bonusCapRatio
+      ? basePerSeason * bonusCapRatio
+      : bonus.reduce((sum, [skill, weight]) => sum + Math.max(0, skillRates[skill]) * weight, 0);
+  const gainPerSeason = basePerSeason + bonusPerSeason;
 
   const midAge =
     (historyEntryAge(first, currentExactAge) + historyEntryAge(last, currentExactAge)) / 2;
@@ -294,13 +339,14 @@ export function measureGrowthPace(
   return {
     position: positionName,
     pointsPerSeason,
+    basePerSeason,
+    bonusPerSeason,
     gainPerSeason,
-    ratingMovedPerSeason: perSeason(
-      positionBase(last.skills, weights) - positionBase(first.skills, weights)
-    ),
+    ratingMovedPerSeason: perSeason(lastBase - positionBase(first.skills, weights)),
     skillRates,
     expectedPerSeason,
     pace: expectedPerSeason === null ? null : gainPerSeason / expectedPerSeason,
+    basePace: expectedPerSeason === null ? null : basePerSeason / expectedPerSeason,
     midAge,
     fromDate: first.date,
     toDate: last.date,
@@ -471,17 +517,22 @@ export function projectSkills(
   pace: GrowthPace | null,
   targetAge: number
 ): HockeySkills | null {
-  if (!skills || !pace || pace.pace === null || pace.expectedPerSeason === null) return null;
+  if (!skills || !pace || pace.basePace === null || pace.expectedPerSeason === null) return null;
   if (currentExactAge >= Math.min(targetAge, PROJECTION_MAX_AGE)) return null;
 
   const weights = mainWeights(pace.position);
   if (!weights) return null;
 
+  // Main skills are driven by the base part of the pace only. The bonus part
+  // comes from the bonus skills, which are projected below at their own rates
+  // and fed through the real bonus formula - using the full pace here would
+  // count the bonus twice.
+  //
   // The measured pace already includes the age factor for the age it was
   // measured at (a 23-year-old at 50% is doing what a 20-year-old at ~57%
   // would). Divide it out, then let each future year apply its own factor.
   const measuredFactor = agePaceFactor(pace.midAge);
-  const underlyingPace = Math.max(0, pace.pace) / measuredFactor;
+  const underlyingPace = Math.max(0, pace.basePace) / measuredFactor;
   const curveGain = adjustedCurveGainBetween(currentExactAge, targetAge);
   const weightSum = weights.reduce((sum, [, weight]) => sum + weight, 0);
   const points = underlyingPace * curveGain * weightSum;
@@ -519,7 +570,7 @@ export function projectionPoints(
   pace: GrowthPace | null,
   untilAge: number
 ): { x: number; y: number }[] {
-  if (!skills || !pace || pace.pace === null) return [];
+  if (!skills || !pace || pace.basePace === null) return [];
 
   const current = positionRating(skills, pace.position);
   if (current === null) return [];
