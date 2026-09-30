@@ -17,6 +17,7 @@ import {
   normalizePlayerId,
 } from "@/sports/basketball/capture";
 import { ratingSettings } from "@/sports/basketball/settings";
+import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import routes from "@/sports/basketball/routes";
 import { getLocalizedPageForLang } from "@/sports/routeDispatch";
 import { readSportTeamCache } from "@/storage/playerCache";
@@ -98,7 +99,8 @@ onMounted(async () => {
 });
 
 const idOf = (player: BasketballPlayer) => normalizePlayerId(player.id) ?? player.id;
-const exactAgeOf = (player: BasketballPlayer) => player.age + seasonDay.value / 112;
+const exactAgeOf = (player: BasketballPlayer) =>
+  player.age + seasonDay.value / basketballPlayerProfile.daysPerSeason;
 
 // --- Growth ----------------------------------------------------------------------
 // All computed once per load, not per cell: the columns and their sorts share them.

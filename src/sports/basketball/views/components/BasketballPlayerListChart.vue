@@ -26,6 +26,7 @@ import { onMounted, ref, computed, watch } from "vue";
 import Chart from "chart.js/auto";
 import { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
 import { getCurrentSeasonDay } from "@/utils/dom";
+import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 
 const props = defineProps<{
   players: BasketballPlayer[];
@@ -64,7 +65,7 @@ const getMetricValue = (player: BasketballPlayer, bestPosRating: number) => {
 
 const calculateData = () => {
   const seasonDay = getCurrentSeasonDay() || 1;
-  const seasonProgress = seasonDay / 112;
+  const seasonProgress = seasonDay / basketballPlayerProfile.daysPerSeason;
 
   const playersByPosition: Record<
     string,

@@ -61,22 +61,27 @@ export const PACE_MIN_SPAN_DAYS = 28;
 export const PACE_PROVISIONAL_MIN_DAYS = 7;
 
 /**
- * Camp allowance for projections. Per the game's rule (from the user) a
- * basketball camp allowance is 5 x 2 = 10 days a season; a camp day gains
- * 2.0x a normal day, and players went up to age 25. The history shows 10-day
- * high-gain windows about every 70 days, so a 112-day look-back can catch
- * more than 10 - the cap keeps projections to the rule.
+ * Camp allowance for projections. The game's rule (from the user) is 5 x 2 =
+ * 10 camp days a season, and the history agrees: one 10-day high-gain window
+ * every ~70 days, i.e. once per 70-day season. A camp day gains 2.0x a normal
+ * day. Players were sent up to age 24 (a handful of days at 25).
  */
 export const CAMP_MAX_DAYS_PER_SEASON = 10;
 export const CAMP_DAY_EXTRA = 1.0;
-export const CAMP_UNTIL_AGE = 26;
-export const CAMP_LOOKBACK_DAYS = 112;
+export const CAMP_UNTIL_AGE = 25;
+/**
+ * A season plus two weeks: with exactly 70 days, a player halfway through
+ * this season's camp would miss last season's full window and read 5. Two
+ * windows can then both fall inside, which the 10-day cap absorbs.
+ */
+export const CAMP_LOOKBACK_DAYS = 84;
 
 /**
- * Height stops growing at 18-22 (most at 20-22), at a steady per-player rate
- * until then. Projections extend a still-growing player's rate to this age.
+ * Height grows from 15 at a steady per-player rate (2.6-8.6 cm a season) and
+ * stops at 17.9-19.8 - most players around 19. Projections extend a
+ * still-growing player's rate to this age.
  */
-export const HEIGHT_STOP_AGE = 21;
+export const HEIGHT_STOP_AGE = 19;
 
 /** The fewest normal days a player needs at an age to set the reference there. */
 export const REFERENCE_MIN_DAYS = 28;
@@ -88,30 +93,31 @@ export const REFERENCE_LAST_AGE = 34;
 /**
  * Fallback reference, in skill points per normal (camp-free) day: the best
  * squad player at each age, smoothed, from the Sep 2026 backup (20 players,
- * 10,178 days). Used for ages the user's own history doesn't cover yet,
+ * 10,178 days, 70-day seasons). 28+ rests on one player, so the drop
+ * from 27 is uncertain. Used for ages the user's own history doesn't cover yet,
  * scaled to meet the measured curve - so a new user, or an age nobody on the
  * squad has reached, still gets a sensible shape.
  */
 export const DEFAULT_REFERENCE: Readonly<Record<number, number>> = {
-  15: 1.03,
+  15: 1.25,
   16: 1.15,
-  17: 1.11,
-  18: 1.2,
-  19: 1.05,
-  20: 1.05,
-  21: 1.01,
-  22: 0.93,
-  23: 0.93,
-  24: 0.93,
-  25: 0.79,
-  26: 0.68,
-  27: 0.62,
-  28: 0.49,
-  29: 0.35,
-  30: 0.24,
-  31: 0.14,
-  32: 0.07,
-  33: 0.03,
+  17: 1.13,
+  18: 1.13,
+  19: 1.03,
+  20: 1.03,
+  21: 0.96,
+  22: 0.91,
+  23: 0.91,
+  24: 0.91,
+  25: 0.76,
+  26: 0.65,
+  27: 0.6,
+  28: 0.23,
+  29: 0.17,
+  30: 0.13,
+  31: 0.07,
+  32: 0.03,
+  33: 0,
   34: 0,
 };
 
@@ -141,7 +147,7 @@ type Skilled = SkilledEntry<Skill> & HistoryEntry & { skills: BasketballSkills }
 
 const hasSkills = (entry: HistoryEntry): entry is Skilled => !!entry.skills;
 
-/** Age on an entry's date, counting a season as 112 calendar days. */
+/** Age on an entry's date, counting a season as daysPerSeason (70) calendar days. */
 export function entryAge(date: string, currentExactAge: number, today: number = Date.now()): number {
   const daysAgo = (today - Date.parse(`${date}T00:00:00`)) / 86_400_000;
   return currentExactAge - daysAgo / DAYS_PER_SEASON;
@@ -538,20 +544,17 @@ export function projectBasketball(
 export const POTENTIAL_AGE = 32;
 
 /**
- * Typical XP gained per season at each age on the user's squad, read off the
- * Sep 2026 cache (about 10 at 18, 30 at 22, 55-67 at 25-27, 96 at 34). XP isn't
- * in the daily history, so this rests on one snapshot; the player's own share
- * of it is used when higher.
+ * Typical XP gained per (70-day) season at each age on the user's squad, read
+ * off the Sep 2026 cache: about 2 at 17, 10 at 19, 17 at 21, 30 at 23, 38-47
+ * at 25, 55-67 at 26-28 and 96 at 35. XP isn't in the daily history, so this
+ * rests on one snapshot; the player's own share of it is used when higher.
  */
 export const TYPICAL_XP_PER_SEASON: readonly { fromAge: number; xp: number }[] = [
-  { fromAge: 15, xp: 1.5 },
-  { fromAge: 16, xp: 2.5 },
-  { fromAge: 17, xp: 3 },
-  { fromAge: 18, xp: 4 },
-  { fromAge: 19, xp: 5 },
-  { fromAge: 20, xp: 7 },
-  { fromAge: 22, xp: 8 },
-  { fromAge: 25, xp: 5 },
+  { fromAge: 15, xp: 1 },
+  { fromAge: 17, xp: 4 },
+  { fromAge: 21, xp: 7 },
+  { fromAge: 23, xp: 8 },
+  { fromAge: 28, xp: 4.5 },
 ];
 
 const xpPerSeasonAt = (age: number) =>
@@ -569,10 +572,16 @@ export function typicalXpAt(age: number): number {
   return xp;
 }
 
-/** XP at `targetAge`: typical gains at the player's own share, never below typical. */
+/**
+ * XP at `targetAge`: typical gains at the player's own share, never below
+ * typical. The own share only counts once typical XP is XP_SHARE_FROM or more:
+ * a 16-year-old's 4 XP against a typical 1.9 would otherwise read as 2.1x and
+ * double every future season.
+ */
+export const XP_SHARE_FROM = 10;
 export function projectBasketballXp(experience: number, currentExactAge: number, targetAge: number): number {
   const typicalNow = typicalXpAt(currentExactAge);
-  const share = typicalNow > 0 ? Math.max(1, experience / typicalNow) : 1;
+  const share = typicalNow >= XP_SHARE_FROM ? Math.max(1, experience / typicalNow) : 1;
   return experience + (typicalXpAt(targetAge) - typicalNow) * share;
 }
 

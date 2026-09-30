@@ -4,7 +4,9 @@ import { positionSettings } from "./settings";
 export const basketballPlayerProfile: PlayerCalculationProfile = {
   unknownPositionName: "?",
   requiresVisibility: false,
-  daysPerSeason: 112,
+  // A basketball season is 70 days, not hockey's 112 - the game header reads
+  // "Season: 64 (66/70)". Every basketball age derived from a date uses this.
+  daysPerSeason: 70,
   growthPrediction: [],
   positionSettings,
 };

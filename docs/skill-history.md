@@ -369,9 +369,18 @@ Hockey's storage kept its names; each other sport got its own.
 
 ### Research findings (2026-09-30)
 
+**A basketball season is 70 days, not hockey's 112.** The game header reads
+"Season: 64 (66/70)".
+- The profile was first set to 112, copied from hockey, which made every date-to-age
+  conversion wrong by a factor of 1.6. The user caught it: Valdis Eris showed "107 at 25"
+  (PF, October 2023), but at 25 (November 2024) he was C 157.
+- With 70 days, 18 of 20 players' histories start at exactly **15.0**, the age juniors join.
+  With 112 they had scattered from 16.9 to 19.5.
+- The ages below use 70-day seasons. Findings 1, 2 and 4 don't depend on age.
+
 The data is the user's own squad: 20 players, 10,178 days (10,158 day-to-day diffs), from
 September 2023 to September 2026, gathered with the training-progress walk. The ages covered
-are 15 to 34; only one player is past 28.
+are 15 to 35; only one player (Valdis, who joined at 19) is past 27.
 
 1. **Training: exactly one skill per day.**
    - Every one of the 10,158 diffs shows at most one rising skill. There were no multi-skill
@@ -387,51 +396,44 @@ are 15 to 34; only one player is past 28.
    - Runs are either 1–3 days or 9–19 days (injuries).
    - From 31, 22–38% of days *look* flat, but that is the gain rounding to 0.00 at the
      page's two decimals, not missing training.
-3. **Camps are team-wide 10-day windows, about every 70 days.**
+3. **Camps: one team-wide 10-day window per 70-day season.**
    - Observed windows: 2024-05-31, 08-16, 10-25, 12-31; 2025-03-15, 05-24, 08-01, 10-11,
      12-20; 2026-03-01, 05-09, 07-18, 09-25.
-   - That looks like ~16 camp days per 112-day season, but **the game rule (from the user) is
-     5 × 2 = 10 camp days a season**, so projections cap the allowance at 10.
+   - This matches **the game rule (from the user): 5 × 2 = 10 camp days a season**.
+     Projections cap the allowance at 10.
+   - The camp record looks back 84 days, not 70, so that a camp in progress doesn't hide
+     last season's full one.
    - Gains differ a lot by skill *for the same player* (one gained 0.74/day on speed and 1.13
      on passing). So basketball camp days are judged against the same skill's normal day
      (`perSkillCampBaseline`). Against the overall median, slow-skill camp days fell under
      1.6× and broke camps in two: one player read 0 camp days instead of 15.
    - **A camp day gives 2.0× a normal day** (median; p25–p75 1.82–2.13). Hockey's
      `CAMP_DAY_EXTRA = 1` holds.
-   - Players were sent at ages 15–25. Only 69 of 10,158 high days fell outside a window.
+   - Players were sent at ages 15–24, plus a handful of days at 25. Only 69 of 10,158 high
+     days fell outside a window.
    - Hockey's camp rule (4+ days above 1.6× the median) works once judged per skill.
 4. **OR = Σ floor(skill)**, exactly as in hockey. It matched 10,178 of 10,178 entries.
-5. **Height grows linearly, then stops.**
-   - Growth is +1 cm at a steady per-player interval: **4–14 cm per season**.
-   - It stops between **17.9 and 22.2** (most at 20–22).
-   - It never shrinks, and nobody grew after 22.2.
-   - Final height can't be predicted yet: no player was followed from 15 to the stop.
+5. **Height grows linearly from 15, then stops.**
+   - Growth is +1 cm at a steady per-player interval: **2.6–8.6 cm per season**.
+   - It stops between **17.9 and 19.8**, most players around 19 (`HEIGHT_STOP_AGE`).
+   - It never shrinks.
 6. **XP (current snapshot only):**
-   - about 0–4 at 15–16, ~10 at 18, ~17 at 20, ~30 at 22, ~40–47 at 24, ~55–67 at 25–27,
-     and 96 at 34;
-   - that is roughly **7–10 per season** from 20.
+   - about 0–4 at 16–17, ~10 at 19, ~17 at 21, ~30 at 23, ~38–47 at 25, ~55–67 at 26–28,
+     and 96 at 35;
+   - per season that is ~1 at 15–16, ~4 at 17–20, ~7–8 at 21–27, and ~4.5 from 28.
    - Daily history carries no XP, so it builds up only from the daily capture.
-7. **Age curve.** This is **not settled**, because the two readings disagree:
+7. **Age curve** (pooled normal-day gain, camps excluded):
 
-   | Age | 15–17 | 18 | 19–21 | 22–23 | 24 | 25 | 26–27 | 28 | 29 | 30 | 31 | 32 | 33 |
-   |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-   | Pooled normal-day gain | 0.96–1.03 | 0.94 | 0.83–0.87 | 0.81–0.82 | 0.76 | 0.64 | 0.57–0.59 | 0.49 | 0.35 | 0.24 | 0.14 | 0.06 | 0.03 |
+   | Age | 15–18 | 19–22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 |
+   |---|---|---|---|---|---|---|---|---|---|---|---|---|
+   | Gain per day | 0.88–0.93 | 0.80–0.81 | 0.78 | 0.75 | 0.64 | 0.55 | 0.48 | 0.23 | 0.17 | 0.13 | 0.08 | 0.03 |
 
-   - **Pooled** and **cross-section** (last 112 days only, same facilities for everyone):
-     gains fall from ~1.1 at 16–18 to ~0.96 at 19–21, ~0.83 at 22–24, and 0.57–0.67 at 25–27.
-   - **Within the same player:** year-on-year ratios are ≈1.0 from 17 to 24 and ~0.96 at
-     25–27. A player + age model agrees: flat to 24, then ~0.94 at 25–27.
-   - From 28 there is only one player (Valdis). His factor vs his own 27 is 0.87, 0.71,
-     0.67, 0.58, 0.46, and at 34 he declines at about −48 points per season.
-   - **The two readings can only be reconciled if facilities or coaches improved over
-     time.** Within-player flatness would then be improvement masking the age slowdown, as
-     in hockey. A step search found +12% around 2025-09-30 (10 of 11 players), but the model
-     doesn't confirm it as one step. The upgrade history is needed from the user.
-   - Also, gains *do* slow from 15–16. The fitted factor vs 18 is 0.74 at 15 and 0.88 at 16,
-     possibly because a new junior's first weeks are slower.
-8. **Season gain for the reference curve**, pooled, camps included, in skill points per
-   season: 15–17 ≈ 120–126, 18 ≈ 111, 19–21 ≈ 100, 22–23 ≈ 95, 24 ≈ 89, 25 ≈ 74,
-   26–27 ≈ 56–61, 28 ≈ 52, 29 ≈ 40, 30 ≈ 27, 31 ≈ 13, 32 ≈ 8, 33 ≈ 1.
+   - From 28 on this is one player (Valdis), so the cliff after 27 is uncertain.
+   - At 35 he declines by about 30 points a season.
+   - The within-player and facility-step analyses from the first pass used 112-day ages and
+     haven't been redone. The adaptive reference below doesn't need them.
+8. **Season gain** (pooled, camps included, per 70-day season): 15–16 ≈ 70, 17–18 ≈ 65,
+   19–22 ≈ 59–60, 23–24 ≈ 54, 25 ≈ 42, 26–27 ≈ 32–34, 28 ≈ 16, then down to ~0 by 33.
 
 ### Roadmap: what the captured data is for
 
@@ -501,8 +503,9 @@ This also sidesteps the unsettled age-curve question (research item 7).
     0.89, only because a different player was best.
   - Ages without data come from `DEFAULT_REFERENCE` (this research's smoothed curve),
     scaled to meet the nearest measured age.
-  - On the Sep 2026 backup: 1.21 at 15, 1.25 at 18 (the peak), 1.03 at 19–20, 0.91 at
-    22–24, 0.76 at 25, 0.60 at 27, 0.49 at 28, then down to 0.01 at 33.
+  - On the Sep 2026 backup: 1.25 at 15 (the peak, 13 players), 1.13–1.15 at 16–18, 1.03 at
+    19–20, 0.91 at 22–24, 0.76 at 25, 0.60 at 27, then 0.23 at 28 (one player), down to 0
+    at 33.
 - **Pace** = skill points per normal day over the last 56 days ÷ the reference at the
   window's midpoint age.
   - It is provisional from **7 days** (hockey: 14), because daily gains are steady.
@@ -511,21 +514,25 @@ This also sidesteps the unsettled age-curve question (research item 7).
     current age. That is by design: "as good as your best at this age".
 - **@25 projection** (`projectBasketball`):
   - Points = pace × the reference's points from now to 25.
-  - Camp days are added at 2×: last season's count, capped at 10, until age 26.
+  - Camp days are added at 2×: the last 84 days' count, capped at 10, until age 25.
   - Shooting and blocking keep their current share of training.
   - The rest goes into the five rated skills, spent balanced for each position (bottleneck
     first). The best resulting position wins, so a growing junior can project into another
     position.
-  - Height keeps its observed rate until 21 (`HEIGHT_STOP_AGE`).
+  - Height keeps its observed rate until 19 (`HEIGHT_STOP_AGE`).
   - Players already 25 or older show the value recorded in history instead.
 - **Potential ★:** the same model extended to 32, plus XP at the squad's typical rate
-  (`TYPICAL_XP_PER_SEASON`, read off the cache snapshot), or the player's own rate if higher.
-- **Sanity check on real data.** Projections for today's juniors are much higher than what
-  current 25-year-olds reached (OR ~1300–1500 vs ~900). That is not a bug:
-  - Current youth grow 115–140 OR a season (e.g. 340 → 624 from 16.6 to 18.6).
-  - Today's 25-year-olds were at OR ~250–320 at 19–20.
-  - The model extends today's rates. Whether juniors keep them is the open question the
-    next seasons of history will answer.
+  (`TYPICAL_XP_PER_SEASON`, read off the cache snapshot).
+  - A player's own rate is used if higher, but only once typical XP reaches 10
+    (`XP_SHARE_FROM`).
+  - Before that it's noise: a 16-year-old with 4 XP read as 2× typical and projected 185 XP.
+- **Sanity check on real data** (70-day seasons):
+  - Valdis's recorded @25 is C 157.
+  - Juniors project to OR ~920–1120 at 25, against 830–910 recorded for today's
+    25–27-year-olds.
+  - Skill @25 is ~230–345 for juniors, against 188–224 recorded.
+  - The model extends today's training rates, which are higher than when the current
+    25-year-olds were juniors.
 
 The basketball profile chart is not built yet.
 

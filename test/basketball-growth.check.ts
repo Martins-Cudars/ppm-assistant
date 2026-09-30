@@ -18,6 +18,9 @@ import {
   HEIGHT_STOP_AGE,
   PACE_PROVISIONAL_MIN_DAYS,
   POTENTIAL_AGE,
+  entryAge,
+  projectBasketballXp,
+  typicalXpAt,
   ReferenceCurve,
   basketballOverall,
   buildReferenceCurve,
@@ -90,6 +93,12 @@ function history(
 const flatCurve = (perDay: number): ReferenceCurve =>
   Array.from({ length: 20 }, (_, k) => ({ age: 15 + k, perDay, source: "squad" as const }));
 
+// --- Season length -------------------------------------------------------------
+
+check("a basketball season is 70 days: 70 days ago the player was a year younger", () => {
+  near(entryAge(iso(70), 20, TODAY), 19, 0.01);
+});
+
 // --- Camp detection -------------------------------------------------------------
 
 check("per-skill camp baseline: a camp over a slow and a fast skill is one run", () => {
@@ -113,9 +122,9 @@ check("flat days are skipped and counted", () => {
 // --- Reference curve ------------------------------------------------------------
 
 check("reference: the best player at each age, non-increasing after the peak", () => {
-  // Two players with 2 seasons each, on whole-age boundaries: A was 18-20, B 22-24.
-  const a = history(224, ["passing"], (i) => (i <= 112 ? 1.2 : 1.0), { playerId: "A" });
-  const b = history(224, ["passing"], (i) => (i <= 112 ? 0.8 : 0.9), { playerId: "B" });
+  // Two players with 2 seasons (70 days each) on whole-age boundaries: A was 18-20, B 22-24.
+  const a = history(140, ["passing"], (i) => (i <= 70 ? 1.2 : 1.0), { playerId: "A" });
+  const b = history(140, ["passing"], (i) => (i <= 70 ? 0.8 : 0.9), { playerId: "B" });
   const curve = buildReferenceCurve(
     new Map([["A", a], ["B", b]]),
     new Map([["A", 20], ["B", 24]]),
@@ -168,9 +177,9 @@ check("pace: skill shares follow the schedule", () => {
   near(pace.skillShares.shooting, 0.25, 0.03);
 });
 
-check("camp allowance is capped at the game's 10 days a season", () => {
-  // Over a season: two 10-day camps, 70 days apart.
-  const entries = history(130, ["passing"], (i) => ((i >= 20 && i < 30) || (i >= 90 && i < 100) ? 2 : 1));
+check("camp allowance: a camp in progress doesn't hide last season's, capped at 10", () => {
+  // Last season's full camp 75-80 days back, and 5 days into this season's.
+  const entries = history(130, ["passing"], (i) => ((i >= 50 && i < 60) || i >= 126 ? 2 : 1));
   const pace = measureBasketballPace(entries, 18, flatCurve(1), TODAY)!;
   eq(pace.campDaysPerSeason, CAMP_MAX_DAYS_PER_SEASON);
   eq(pace.campDaysAssumed, false);
@@ -178,17 +187,18 @@ check("camp allowance is capped at the game's 10 days a season", () => {
 
 check("height: steady growth measured; none once it has stopped", () => {
   const growing = history(120, ["passing"], () => 1, { height: (i) => 180 + Math.floor(i / 28) });
-  near(measureBasketballPace(growing, 17, flatCurve(1), TODAY)!.heightPerSeason, 4, 0.1);
+  // 1 cm every 28 days = 2.5 cm per 70-day season.
+  near(measureBasketballPace(growing, 17, flatCurve(1), TODAY)!.heightPerSeason, 2.5, 0.1);
   const stopped = history(120, ["passing"], () => 1, { height: (i) => (i < 40 ? 180 + i / 10 : 184) });
   eq(measureBasketballPace(stopped, 17, flatCurve(1), TODAY)!.heightPerSeason, 0);
 });
 
 // --- Projection ------------------------------------------------------------------
 
-check("points: pace 100% on a flat curve, no camps past 26 = reference x days", () => {
-  near(referencePointsBetween(flatCurve(1), 27, 29, 10), 224, 1e-9);
-  // Before 26 the camp days add CAMP_DAY_EXTRA each.
-  near(referencePointsBetween(flatCurve(1), 20, 21, 10), 122, 1e-9);
+check("points: pace 100% on a flat curve = reference x 70 days a season", () => {
+  near(referencePointsBetween(flatCurve(1), 27, 29, 10), 140, 1e-9, "no camps from 25");
+  // Before 25 the camp days add CAMP_DAY_EXTRA each.
+  near(referencePointsBetween(flatCurve(1), 20, 21, 10), 80, 1e-9, "with camps");
 });
 
 check("balanced solver: points spent at the position's weights, bottleneck first", () => {
@@ -206,10 +216,10 @@ check("projection: all points land; shooting keeps its share; OR adds up", () =>
   const pace = measureBasketballPace(entries, 20, flatCurve(1), TODAY)!;
   const now = entries[entries.length - 1].skills;
   const projection = projectBasketball(now, 190, 27, { ...pace, campDaysPerSeason: 0 }, flatCurve(1), 28)!;
-  near(projection.points, 112, 1e-6, "points");
-  near(projection.skills.shooting - now.shooting, 28, 1, "shooting share");
+  near(projection.points, 70, 1e-6, "points");
+  near(projection.skills.shooting - now.shooting, 17.5, 1, "shooting share");
   const added = SKILLS.reduce((sum, s) => sum + projection.skills[s] - now[s], 0);
-  near(added, 112, 1e-3, "every point placed");
+  near(added, 70, 1e-3, "every point placed");
   near(projection.overall, basketballOverall(projection.skills), 0);
 });
 
@@ -219,6 +229,14 @@ check("projection: height grows at its rate until the stop age, then holds", () 
   const skills = entries[entries.length - 1].skills;
   const projection = projectBasketball(skills, 184, 17, pace, flatCurve(1), 25)!;
   eq(projection.height, Math.floor(184 + pace.heightPerSeason * (HEIGHT_STOP_AGE - 17)));
+});
+
+check("XP: a junior's own share doesn't multiply future seasons", () => {
+  // 4 XP at 16.9 is ~2x typical, but that early it's noise: typical gains only.
+  near(projectBasketballXp(4, 16.9, 18.9), 4 + typicalXpAt(18.9) - typicalXpAt(16.9), 1e-9);
+  // From typical XP 10 on, a busier player keeps their share.
+  const at22 = typicalXpAt(22);
+  near(projectBasketballXp(at22 * 2, 22, 23), at22 * 2 + (typicalXpAt(23) - at22) * 2, 1e-9);
 });
 
 check("potential: at or past the peak age shows the current value", () => {
