@@ -331,9 +331,8 @@ checked on 2026-10-01 has months back to April 2024. The page logic is shared in
 `heightColumn: 9`). The pager, the month bounds and the `(T:…)` markers were verified
 identical on the live site.
 
-One early observation for the research: on that page **only one skill seems to move per day**
-(the `(T:…)` marker sits on a single cell). Basketball may train one skill a day rather than
-splitting training like hockey. Check this across the squad before modelling the split.
+An early observation was that only one skill moves per day. The research below confirmed
+it across the whole squad.
 
 ### Storage, per sport
 
@@ -368,7 +367,72 @@ Hockey's storage kept its names; each other sport got its own.
   `normalizePlayerId()` pulls the number out (`data=` or the last path segment). It rejects
   anything else, so no phantom players.
 
+### Research findings (2026-09-30)
+
+The data is the user's own squad: 20 players, 10,178 days (10,158 day-to-day diffs), from
+September 2023 to September 2026, gathered with the training-progress walk. The ages covered
+are 15 to 34; only one player is past 28.
+
+1. **Training: exactly one skill per day.**
+   - Every one of the 10,158 diffs shows at most one rising skill. There were no multi-skill
+     days at all.
+   - The manager's schedule decides the skill; each player rotates through a set, e.g.
+     `BPTV…`.
+   - **Pace is therefore just total skill points per day.** Hockey's "unbalanced 15-year-old"
+     problem (a split across skills) doesn't exist here.
+   - Gains are very steady: the same skill in the same month varies by only ~3% (CV).
+   - Gains barely depend on the skill trained: within a player-month the range is 0.95×
+     (technical, blocking, speed) to 1.05× (aggression, jumping, shooting).
+2. **No-training days are rare:** 1–7% of days up to age 27.
+   - Runs are either 1–3 days or 9–19 days (injuries).
+   - From 31, 22–38% of days *look* flat, but that is the gain rounding to 0.00 at the
+     page's two decimals, not missing training.
+3. **Camps are team-wide 10-day windows, about every 70 days.**
+   - Observed windows: 2024-05-31, 08-16, 10-25, 12-31; 2025-03-15, 05-24, 08-01, 10-11,
+     12-20; 2026-03-01, 05-09, 07-18, 09-25.
+   - That is roughly 16 camp days per 112-day season.
+   - **A camp day gives 2.0× a normal day** (median; p25–p75 1.82–2.13). Hockey's
+     `CAMP_DAY_EXTRA = 1` holds.
+   - Players were sent at ages 15–25. Only 69 of 10,158 high days fell outside a window.
+   - Hockey's camp detection (4+ days above 1.6× the median) will work; basketball runs are
+     full 10-day blocks.
+4. **OR = Σ floor(skill)**, exactly as in hockey. It matched 10,178 of 10,178 entries.
+5. **Height grows linearly, then stops.**
+   - Growth is +1 cm at a steady per-player interval: **4–14 cm per season**.
+   - It stops between **17.9 and 22.2** (most at 20–22).
+   - It never shrinks, and nobody grew after 22.2.
+   - Final height can't be predicted yet: no player was followed from 15 to the stop.
+6. **XP (current snapshot only):**
+   - about 0–4 at 15–16, ~10 at 18, ~17 at 20, ~30 at 22, ~40–47 at 24, ~55–67 at 25–27,
+     and 96 at 34;
+   - that is roughly **7–10 per season** from 20.
+   - Daily history carries no XP, so it builds up only from the daily capture.
+7. **Age curve.** This is **not settled**, because the two readings disagree:
+
+   | Age | 15–17 | 18 | 19–21 | 22–23 | 24 | 25 | 26–27 | 28 | 29 | 30 | 31 | 32 | 33 |
+   |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+   | Pooled normal-day gain | 0.96–1.03 | 0.94 | 0.83–0.87 | 0.81–0.82 | 0.76 | 0.64 | 0.57–0.59 | 0.49 | 0.35 | 0.24 | 0.14 | 0.06 | 0.03 |
+
+   - **Pooled** and **cross-section** (last 112 days only, same facilities for everyone):
+     gains fall from ~1.1 at 16–18 to ~0.96 at 19–21, ~0.83 at 22–24, and 0.57–0.67 at 25–27.
+   - **Within the same player:** year-on-year ratios are ≈1.0 from 17 to 24 and ~0.96 at
+     25–27. A player + age model agrees: flat to 24, then ~0.94 at 25–27.
+   - From 28 there is only one player (Valdis). His factor vs his own 27 is 0.87, 0.71,
+     0.67, 0.58, 0.46, and at 34 he declines at about −48 points per season.
+   - **The two readings can only be reconciled if facilities or coaches improved over
+     time.** Within-player flatness would then be improvement masking the age slowdown, as
+     in hockey. A step search found +12% around 2025-09-30 (10 of 11 players), but the model
+     doesn't confirm it as one step. The upgrade history is needed from the user.
+   - Also, gains *do* slow from 15–16. The fitted factor vs 18 is 0.74 at 15 and 0.88 at 16,
+     possibly because a new junior's first weeks are slower.
+8. **Season gain for the reference curve**, pooled, camps included, in skill points per
+   season: 15–17 ≈ 120–126, 18 ≈ 111, 19–21 ≈ 100, 22–23 ≈ 95, 24 ≈ 89, 25 ≈ 74,
+   26–27 ≈ 56–61, 28 ≈ 52, 29 ≈ 40, 30 ≈ 27, 31 ≈ 13, 32 ≈ 8, 33 ≈ 1.
+
 ### Roadmap: what the captured data is for
+
+Items 1, 2, 3, 6 and the XP part of 4 are answered in the research findings above. Item 5 is
+waiting on the facilities history.
 
 Research can start as soon as the squad's past is gathered with the training-progress walk. It
 no longer has to wait weeks for daily capture. Re-run hockey's analyses on basketball data, and

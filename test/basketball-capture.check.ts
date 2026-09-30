@@ -72,6 +72,12 @@ check("ids: a path-style link falls back to the last segment", () => {
   eq(normalizePlayerId("/en/player-profile/777"), "777");
 });
 
+// The first link in an overview name cell is the country flag. Its "id" must
+// never be taken for a player - this is what once stored nothing at all.
+check("ids: a country-flag link is rejected", () => {
+  eq(normalizePlayerId("https://basketball.powerplaymanager.com/en/country-profile.html?data=lva"), null);
+});
+
 check("ids: anything without a number is rejected, not stored", () => {
   eq(normalizePlayerId("unknown"), null, "unknown");
   eq(normalizePlayerId(""), null, "empty");

@@ -6,6 +6,15 @@ import { extractTeamIdFromUrl } from "./parsers";
  */
 
 /**
+ * A link to a team's page, in either language: "komanda.html" on the Latvian
+ * site, "team.html" on the English one (e.g. /en/team.html?data=39743-...).
+ * Matching only the Latvian name made every English page report the team as
+ * "unknown", which silently skipped caching the squad. "/team.html" keeps the
+ * slash so "team-news.html" and "team-settings.html" don't match.
+ */
+const TEAM_LINK = "a[href*='komanda.html'], a[href*='/team.html']";
+
+/**
  * Extract current season day from top info bar
  * Works for all sports - DOM structure is consistent
  *
@@ -41,7 +50,7 @@ export function getUserTeamId(): string {
   // Try top info bar first
   const topInfoDiv = document.querySelector(".top_info_team");
   if (topInfoDiv) {
-    const teamLink = topInfoDiv.querySelector("a[href*='komanda.html']");
+    const teamLink = topInfoDiv.querySelector(TEAM_LINK);
     if (teamLink) {
       const teamId = extractTeamIdFromUrl(teamLink.getAttribute("href") || "");
       if (teamId) return teamId;
@@ -49,7 +58,7 @@ export function getUserTeamId(): string {
   }
 
   // Fallback to navigation links
-  const navLinks = document.querySelectorAll("a[href*='komanda.html']");
+  const navLinks = document.querySelectorAll(TEAM_LINK);
   for (const link of navLinks) {
     const teamId = extractTeamIdFromUrl(link.getAttribute("href") || "");
     if (teamId) return teamId;
@@ -68,7 +77,7 @@ export function getPlayerTeamId(): string {
   const playerInfoDiv = document.querySelector(".player_info");
   if (!playerInfoDiv) return "unknown";
 
-  const teamLink = playerInfoDiv.querySelector("a[href*='komanda.html']");
+  const teamLink = playerInfoDiv.querySelector(TEAM_LINK);
   if (teamLink) {
     const teamId = extractTeamIdFromUrl(teamLink.getAttribute("href") || "");
     if (teamId) return teamId;
@@ -88,7 +97,7 @@ export function getTeamNameFromPlayerProfile(): string {
   const playerInfoDiv = document.querySelector(".player_info");
   if (!playerInfoDiv) return "unknown";
 
-  const teamLink = playerInfoDiv.querySelector("a[href*='komanda.html']");
+  const teamLink = playerInfoDiv.querySelector(TEAM_LINK);
   return teamLink?.textContent?.trim() || "unknown";
 }
 
@@ -102,6 +111,6 @@ export function getTeamNameFromUserPlayerList(): string {
   const topInfoDiv = document.querySelector(".top_info_team");
   if (!topInfoDiv) return "unknown";
 
-  const teamLink = topInfoDiv.querySelector("a[href*='komanda.html']");
+  const teamLink = topInfoDiv.querySelector(TEAM_LINK);
   return teamLink?.textContent?.trim() || "unknown";
 }
