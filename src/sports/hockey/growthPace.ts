@@ -30,6 +30,7 @@
 import { playerGrowthPrediction, positionSettings } from "@/sports/hockey/settings";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { calculatePositions } from "@/classes/playerCalculations";
+import { calculateSkillWithExp } from "@/base/calculations";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { historyEntryAge } from "@/sports/hockey/skillHistoryChart";
@@ -781,4 +782,107 @@ export function projectionPoints(
   }
 
   return points.length > 1 ? points : [];
+}
+
+/**
+ * The age "potential" projects to: roughly where skill with XP peaks. The
+ * top-player curve's skill keeps rising to 35, but XP keeps adding on top, so
+ * 32 is a practical peak. Further out than @25, so less certain - the same
+ * model, just extrapolated longer.
+ */
+export const POTENTIAL_AGE = 32;
+
+/**
+ * Typical XP as a share of the top-player table's `exp` at the same age, at
+ * the user's team. XP comes from ice time, and young players get less.
+ * Measured on the Aug 2026 cache: median 0.45 at 15-21, 0.63 from 22 (regulars
+ * mostly 0.55-0.75). Used as a floor, so a new player with no XP yet still
+ * projects typical XP rather than none.
+ */
+export const SQUAD_XP_SHARE: readonly { fromAge: number; share: number }[] = [
+  { fromAge: 0, share: 0.45 },
+  { fromAge: 22, share: 0.63 },
+];
+
+const squadXpShare = (age: number) =>
+  [...SQUAD_XP_SHARE].reverse().find((band) => age >= band.fromAge)!.share;
+
+/** The top-player table's `exp` at an exact age, interpolated between whole ages. */
+export function topExpAt(age: number): number {
+  const table = playerGrowthPrediction;
+  const first = table[0];
+  const last = table[table.length - 1];
+  if (age <= first.age) return first.exp;
+  if (age >= last.age) return last.exp;
+
+  const whole = Math.floor(age);
+  const from = table.find((p) => p.age === whole)!;
+  const to = table.find((p) => p.age === whole + 1)!;
+  return from.exp + (to.exp - from.exp) * (age - whole);
+}
+
+/**
+ * XP at `targetAge`: each future year gains the top player's XP gain for that
+ * year times the player's share - his own current share, but never below the
+ * squad's typical share for that age. XP isn't in the skill history, so this
+ * rests on today's value alone.
+ */
+export function projectExperience(
+  experience: number,
+  currentExactAge: number,
+  targetAge: number
+): number {
+  const topNow = topExpAt(currentExactAge);
+  const ownShare = topNow > 0 ? experience / topNow : 0;
+
+  let xp = experience;
+  let age = currentExactAge;
+  while (age < targetAge) {
+    const segmentEnd = Math.min(Math.floor(age) + 1, targetAge);
+    const share = Math.max(ownShare, squadXpShare(age));
+    xp += (topExpAt(segmentEnd) - topExpAt(age)) * share;
+    age = segmentEnd;
+  }
+  return xp;
+}
+
+export interface Potential {
+  /** Position rating with bonus, no XP, at POTENTIAL_AGE (or now, if past it). */
+  rating: number;
+  /** XP at POTENTIAL_AGE (or now). */
+  xp: number;
+  /** Rating with XP - what the stars show. */
+  ratingWithXp: number;
+  /** "current" for players at or past POTENTIAL_AGE: they're at their peak already. */
+  kind: "projected" | "current";
+}
+
+/**
+ * The player's projected peak: rating with XP at POTENTIAL_AGE, using the same
+ * model as the @25 columns (pace, age factors, camp allowance) plus projected
+ * XP. Players already at or past that age show where they are now - past XP
+ * isn't stored, so their actual peak can't be reconstructed.
+ */
+export function projectPotential(
+  skills: HockeySkills | undefined,
+  experience: number | undefined,
+  currentExactAge: number,
+  pace: GrowthPace | null,
+  current: { rating: number; ratingWithXp: number }
+): Potential | null {
+  if (currentExactAge >= POTENTIAL_AGE) {
+    return { ...current, xp: experience ?? 0, kind: "current" };
+  }
+  if (experience === undefined) return null;
+
+  const rating = projectPositionRating(skills, currentExactAge, pace, POTENTIAL_AGE);
+  if (rating === null) return null;
+
+  const xp = projectExperience(experience, currentExactAge, POTENTIAL_AGE);
+  return {
+    rating,
+    xp,
+    ratingWithXp: calculateSkillWithExp(rating, xp),
+    kind: "projected",
+  };
 }

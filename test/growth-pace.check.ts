@@ -26,6 +26,10 @@ import {
   overallFromSkills,
   projectOverallRating,
   projectPositionRating,
+  projectExperience,
+  projectPotential,
+  topExpAt,
+  POTENTIAL_AGE,
   projectionPoints,
   solveBalancedRating,
 } from "@/sports/hockey/growthPace";
@@ -523,6 +527,53 @@ check("the nearest day with skills is picked, within the tolerance", () => {
   const entries = [dDay(30, 400, 200, 200), ratingOnly(23), dDay(15, 410, 205, 205)];
   eq(entryNearestDate(entries, target, 14)?.date, daysAgo(15), "5 days beats 10; OR-only skipped");
   eq(entryNearestDate(entries, target, 4), null, "nothing with skills within 4 days");
+});
+
+// --- XP and potential ------------------------------------------------------------
+
+check("top-player XP comes from the table, interpolated between whole ages", () => {
+  near(topExpAt(18), 28, "18");
+  near(topExpAt(18.5), 33.5, "18.5");
+  near(topExpAt(14), 0, "below the table");
+  near(topExpAt(50), 472, "above the table");
+});
+
+check("XP below the squad share is lifted to it, and rises at 22", () => {
+  // Own share 0.3 at 18 - below the 0.45 floor, which applies until 22, then 0.63.
+  near(projectExperience(28 * 0.3, 18, 22), 28 * 0.3 + (74 - 28) * 0.45, "to 22");
+  near(
+    projectExperience(28 * 0.3, 18, 24),
+    28 * 0.3 + (74 - 28) * 0.45 + (102 - 74) * 0.63,
+    "to 24"
+  );
+});
+
+check("an own XP share above the squad's is kept", () => {
+  near(projectExperience(51 * 0.8, 20, 23), 51 * 0.8 + (88 - 51) * 0.8);
+});
+
+check("a new player with no XP still gets the squad's typical XP", () => {
+  near(projectExperience(0, 15, 16), 9 * 0.45);
+});
+
+check("potential is the projected rating at 32 with projected XP", () => {
+  const onCurve = skills({ defence: 450, passing: 225, aggression: 225 });
+  const pace = paceOf("D", 1, 101);
+  const result = projectPotential(onCurve, 10, 18, pace, { rating: 450, ratingWithXp: 460 })!;
+  eq(result.kind, "projected", "kind");
+  eq(result.rating, projectPositionRating(onCurve, 18, pace, POTENTIAL_AGE), "rating at 32");
+  near(result.xp, projectExperience(10, 18, POTENTIAL_AGE), "xp at 32");
+  eq(result.ratingWithXp, Math.round(result.rating * (1 + result.xp / 500)), "with XP");
+});
+
+check("at or past 32 the potential is where the player is now", () => {
+  const result = projectPotential(undefined, 200, 33, null, { rating: 1100, ratingWithXp: 1540 })!;
+  eq(result.kind, "current", "kind");
+  eq(result.ratingWithXp, 1540, "current value");
+});
+
+check("no potential without a pace", () => {
+  eq(projectPotential(skills({ defence: 450 }), 10, 18, null, { rating: 1, ratingWithXp: 1 }), null);
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

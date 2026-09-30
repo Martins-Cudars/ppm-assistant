@@ -285,6 +285,36 @@ windfalls.** The game lets a team send about 20 players to camp twice a season, 
 - **Where it shows:** the @25 tooltip states the allowance, and the Pace tooltip shows the
   camp days last season.
 
+### Stars and potential
+
+The Player Report shows two star columns. Both use `RatingStars`, the same component as the
+profile card. It shows 5 stars in three tiers, measured on rating **with XP**:
+- **silver:** up to 600
+- **gold:** up to 1500
+- **diamond:** up to 2600
+
+- **Skill ★** is today's position rating with XP, the same number as Pos Skill.
+- **Potential ★** is the projected **peak**: rating with XP at `POTENTIAL_AGE = 32`
+  (`projectPotential()`).
+  - The rating comes from the same model as Skill @25 (pace, age factors, camp allowance),
+    extended to 32.
+  - Players already 32 or older show their current value. Past XP isn't stored, so their
+    real peak can't be reconstructed.
+  - Projecting to 32 is further out than 25, so it's less certain, especially for teenagers.
+- **XP isn't in the skill history.** Only today's value is cached, so XP is projected
+  (`projectExperience()`):
+  - Each future year gains the top-player table's `exp` gain for that year × the player's
+    share.
+  - The share is his own share today (his XP ÷ the top player's at his age), but never
+    below the squad's typical share for the age (`SQUAD_XP_SHARE`).
+  - On the Aug 28 cache the typical share was 0.45 at 15–21 and 0.63 from 22. Young
+    players get less ice time. The floor stops a new player with 0 XP from projecting none.
+- **On the Aug 28 backup:** youth potential is ~1050–1325, all in gold. Veterans sit slightly
+  above their current value (e.g. Ābols 1137 → ~1221).
+- **A styling fix this needed:** the star SVGs are 500×500. The global `styles.css` shrinks
+  them to 16px, but it only loads on game pages, so `RatingStars` now sets the same size
+  itself. Without that, the report showed empty star cells.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
@@ -332,14 +362,14 @@ The repo has no test runner, so "verified" means it was actually run.
 | `parseBackup()` | **Verified.** 12 assertions against the compiled code (foreign files, unknown versions, missing `id`, `id` disagreeing with `playerId:date`, malformed dates, null rows). |
 | `importCaches()` / `exportAllCaches()` | **Verified.** 8 assertions (newest-wins merge, union, replace dropping stale keys, the `team-unknown` exclusion, and that import writes the file's keys rather than a DOM-derived one). |
 | Header layout with the notice | **Verified in the browser.** Measured at 1400px and 760px: no overflow, notice contained and full-width. |
-| Pace / projection / @25 math | **Verified.** 45 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
+| Pace / projection / @25 math | **Verified.** 52 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
 | Pace and @25 columns, projection line, `SKILL_HISTORY_LATEST_WINDOW`, `SKILL_HISTORY_NEAR_DATES` | **Never run in the browser.** The worker's key-then-get read has no test at all. |
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 79 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 86 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -371,7 +401,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 79 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 86 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

@@ -22,6 +22,9 @@ import {
   dateAtAge,
   entryNearestDate,
   measureGrowthPace,
+  POTENTIAL_AGE,
+  Potential,
+  projectPotential,
   overallFromSkills,
   projectOverallRating,
   projectPositionRating,
@@ -38,6 +41,8 @@ import PlayerDataFreshness from "./PlayerDataFreshness.vue";
 import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import RatingStars from "@/components/RatingStars.vue";
+import { ratingSettings } from "@/sports/hockey/settings";
 
 const store = usePlayerStore();
 const activeTab = ref<"table" | "graph">("table");
@@ -623,6 +628,57 @@ const openPlayerProfile = (playerId: string) => {
   window.open(url, "_blank");
 };
 
+// Projected peak (rating with XP at POTENTIAL_AGE) per player, for the
+// Potential stars. Computed once per load, like the pace.
+const potentialByPlayer = computed(() => {
+  const values = new Map<string, Potential | null>();
+  store.cachedPlayers.forEach((player: HockeyPlayer) => {
+    const best = player.getBestPosition();
+    values.set(
+      player.id,
+      projectPotential(player.skills, player.experience, exactAgeOf(player), paceFor(player), {
+        rating: best.ratingWithBonus,
+        ratingWithXp: best.ratingWithXp,
+      })
+    );
+  });
+  return values;
+});
+
+const potentialFor = (player: HockeyPlayer): Potential | null =>
+  potentialByPlayer.value.get(player.id) ?? null;
+
+/** "gold tier, 22%" - the same tiering RatingStars draws. */
+const tierLabel = (value: number) => {
+  const { low, medium, high } = ratingSettings;
+  const [tier, from, to] =
+    value < low ? ["silver", 0, low] : value < medium ? ["gold", low, medium] : ["diamond", medium, high];
+  const fill = Math.min(100, Math.round(((value - from) / (to - from)) * 100));
+  return `${tier} tier, ${fill}%`;
+};
+
+const skillStarsTitle = (player: HockeyPlayer) => {
+  const value = player.getBestPosition().ratingWithXp;
+  return `${value} (skill with XP) - ${tierLabel(value)}`;
+};
+
+const potentialTitle = (player: HockeyPlayer) => {
+  const potential = potentialFor(player);
+  if (!potential) return "No pace to project from";
+  if (potential.kind === "current") {
+    return (
+      `${potential.ratingWithXp} now - at or past peak age (${POTENTIAL_AGE}), so this is ` +
+      `the current skill with XP. ${tierLabel(potential.ratingWithXp)}`
+    );
+  }
+  return (
+    `~${potential.ratingWithXp} at ${POTENTIAL_AGE}: rating ~${potential.rating} (no XP) + XP ` +
+    `~${Math.round(potential.xp)}. ${tierLabel(potential.ratingWithXp)}. Same model as Skill ` +
+    `@${PROJECTION_AGE}, extended to ${POTENTIAL_AGE}; XP grows at the player's own share of ` +
+    "top-player XP, never below the squad's typical share for the age."
+  );
+};
+
 /*
  * Heatmap shading. Magnitude is one hue, light -> dark (never green -> red,
  * which reads as good/bad and fails colour-blind readers). Skills and growth
@@ -744,6 +800,15 @@ const tableColumns = computed<Column[]>(() => [
     sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
   },
   {
+    header: "Skill ★",
+    key: "skillStars",
+    slot: "skillStars",
+    sortable: true,
+    group: "Position",
+    align: "center",
+    sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
+  },
+  {
     header: "Pos TQ", // Position Training Quality
     key: "positionTQ",
     slot: "positionTQ",
@@ -793,6 +858,15 @@ const tableColumns = computed<Column[]>(() => [
     sortValue: (p: HockeyPlayer) => atAgeFor(p)?.or ?? null,
     cellStyle: (p: HockeyPlayer) =>
       heatStyle(atAgeFor(p)?.or, columnMax.value.orAtAge.min, columnMax.value.orAtAge.max, GROWTH_RAMP),
+  },
+  {
+    header: "Potential ★",
+    key: "potential",
+    slot: "potential",
+    sortable: true,
+    group: "Growth",
+    align: "center",
+    sortValue: (p: HockeyPlayer) => potentialFor(p)?.ratingWithXp ?? null,
   },
 
   // Info
@@ -1112,6 +1186,19 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
             <span class="history-since">{{ historyFor(item)!.firstDate.slice(0, 7) }}</span>
           </span>
           <span v-else class="history-none" :title="historyTitle(item)">-</span>
+        </template>
+
+        <template #skillStars="{ item }">
+          <span :title="skillStarsTitle(item)">
+            <RatingStars :skill="item.getBestPosition().ratingWithXp" :settings="ratingSettings" />
+          </span>
+        </template>
+
+        <template #potential="{ item }">
+          <span v-if="potentialFor(item)" :title="potentialTitle(item)">
+            <RatingStars :skill="potentialFor(item)!.ratingWithXp" :settings="ratingSettings" />
+          </span>
+          <span v-else class="history-none" :title="potentialTitle(item)">-</span>
         </template>
 
         <template #pace="{ item }">
