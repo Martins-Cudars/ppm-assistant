@@ -8,6 +8,7 @@ import {
 import { collectPlayerData } from "@/services/dataCollector";
 import { getUserSettings } from "@/storage/userSettings";
 import { clearSkillHistory } from "@/storage/skillHistoryDb";
+import { SPORTS } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 
 interface PlayerState {
@@ -106,10 +107,15 @@ export const usePlayerStore = defineStore("player", {
      * Destructive and unrecoverable: confirm with the user first.
      */
     async clearAllStoredData(): Promise<number | null> {
-      const [, clearedHistory] = await Promise.all([
+      // Every sport's history, matching clearAllCaches() and the backup the
+      // clear dialog offers first - both cover every sport.
+      const [, ...clearedBySport] = await Promise.all([
         clearAllCaches(),
-        clearSkillHistory(),
+        ...SPORTS.map((sport) => clearSkillHistory(sport)),
       ]);
+      const clearedHistory = clearedBySport.some((count) => count === null)
+        ? null
+        : clearedBySport.reduce<number>((sum, count) => sum + (count ?? 0), 0);
       this.cachedPlayers = [];
 
       if (clearedHistory === null) {

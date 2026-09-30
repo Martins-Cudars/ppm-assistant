@@ -17,8 +17,11 @@ import {
   BACKUP_VERSION,
   BackupFile,
   ImportMode,
+  OtherSport,
   ParsedBackup,
+  SUPPORTED_BACKUP_VERSIONS,
 } from "@/types/Backup";
+import { SPORTS, Sport } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { exportAllCaches, importCaches } from "@/storage/playerCache";
@@ -38,16 +41,26 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * plausible-looking file with no history in it, which is worse than no file at
  * all because the user would keep it and trust it.
  */
+const OTHER_SPORTS = SPORTS.filter((sport): sport is OtherSport => sport !== "hockey");
+
 export async function createBackup(): Promise<BackupFile | null> {
-  const [playerCaches, skillHistory] = await Promise.all([
+  const [playerCaches, skillHistory, ...others] = await Promise.all([
     exportAllCaches(),
-    exportSkillHistory(),
+    exportSkillHistory("hockey"),
+    ...OTHER_SPORTS.map((sport) => exportSkillHistory(sport)),
   ]);
 
-  if (skillHistory === null) {
+  // Any sport's read failing aborts the whole export - a file missing one
+  // sport's history would look complete and be trusted.
+  if (skillHistory === null || others.some((entries) => entries === null)) {
     console.error("[Backup] Aborting export: could not read skill history");
     return null;
   }
+
+  const sportSkillHistory: BackupFile["sportSkillHistory"] = {};
+  OTHER_SPORTS.forEach((sport, i) => {
+    sportSkillHistory[sport] = others[i]!;
+  });
 
   return {
     format: BACKUP_FORMAT,
@@ -56,6 +69,7 @@ export async function createBackup(): Promise<BackupFile | null> {
     extensionVersion: chrome.runtime.getManifest().version,
     playerCaches,
     skillHistory,
+    sportSkillHistory,
   };
 }
 
@@ -87,9 +101,9 @@ export function downloadBackup(backup: BackupFile): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function isValidEntry(value: unknown): value is SkillHistoryEntry {
+function isValidEntry(value: unknown): value is SkillHistoryEntry<unknown> {
   if (typeof value !== "object" || value === null) return false;
-  const entry = value as Partial<SkillHistoryEntry>;
+  const entry = value as Partial<SkillHistoryEntry<unknown>>;
 
   return (
     typeof entry.id === "string" &&
@@ -140,14 +154,25 @@ export function parseBackup(text: string): ParsedBackup {
     throw new Error("That file isn't a PPM Assistant backup.");
   }
 
-  if (candidate.version !== BACKUP_VERSION) {
+  if (candidate.version === undefined || !SUPPORTED_BACKUP_VERSIONS.includes(candidate.version)) {
     throw new Error(
       `Backup version ${candidate.version} isn't supported by this version of the extension.`
     );
   }
 
   const rawEntries = Array.isArray(candidate.skillHistory) ? candidate.skillHistory : [];
-  const skillHistory = rawEntries.filter(isValidEntry);
+  const skillHistory = rawEntries.filter(isValidEntry) as SkillHistoryEntry[];
+  let skippedEntries = rawEntries.length - skillHistory.length;
+
+  // Version 1 files have none; each sport's rows are filtered the same way.
+  const sportSkillHistory: BackupFile["sportSkillHistory"] = {};
+  OTHER_SPORTS.forEach((sport) => {
+    const raw = candidate.sportSkillHistory?.[sport];
+    const rows = Array.isArray(raw) ? raw : [];
+    const valid = rows.filter(isValidEntry);
+    skippedEntries += rows.length - valid.length;
+    sportSkillHistory[sport] = valid;
+  });
 
   const rawCaches =
     typeof candidate.playerCaches === "object" && candidate.playerCaches !== null
@@ -172,8 +197,9 @@ export function parseBackup(text: string): ParsedBackup {
       extensionVersion: candidate.extensionVersion ?? "unknown",
       playerCaches,
       skillHistory,
+      sportSkillHistory,
     },
-    skippedEntries: rawEntries.length - skillHistory.length,
+    skippedEntries,
     skippedCaches,
   };
 }
@@ -203,27 +229,41 @@ export async function restoreBackup(
   backup: BackupFile,
   mode: ImportMode
 ): Promise<RestoreResult> {
-  if (mode === "replace") {
-    const cleared = await clearSkillHistory();
-    if (cleared === null) {
-      throw new Error("Could not clear the existing history - nothing was changed.");
+  // Each sport's history goes to its own store, hockey's from the original
+  // field. Done sport by sport, so a failure names the one that broke.
+  const histories: [Sport, SkillHistoryEntry<unknown>[]][] = [
+    ["hockey", backup.skillHistory],
+    ...OTHER_SPORTS.map((sport): [Sport, SkillHistoryEntry<unknown>[]] => [
+      sport,
+      backup.sportSkillHistory?.[sport] ?? [],
+    ]),
+  ];
+
+  let entriesWritten = 0;
+  for (const [sport, entries] of histories) {
+    if (mode === "replace") {
+      const cleared = await clearSkillHistory(sport);
+      if (cleared === null) {
+        throw new Error(`Could not clear the existing ${sport} history - nothing more was changed.`);
+      }
     }
-  }
 
-  // Merge mode needs no clear: the worker's upsert merges per field, so the
-  // file and the store compose rather than overwrite.
-  const { written } = await upsertSkillHistoryEntries(backup.skillHistory);
+    // Merge mode needs no clear: the worker's upsert merges per field, so the
+    // file and the store compose rather than overwrite.
+    const { written } = await upsertSkillHistoryEntries(entries, sport);
 
-  // upsertSkillHistoryEntries() swallows its errors and reports 0, so this is
-  // the only signal that the write failed - and after a replace-mode clear the
-  // user needs to be told to retry rather than left assuming it worked.
-  if (backup.skillHistory.length > 0 && written === 0) {
-    throw new Error(
-      "The history could not be written. Your backup file is unchanged - try importing it again."
-    );
+    // upsertSkillHistoryEntries() swallows its errors and reports 0, so this is
+    // the only signal that the write failed - and after a replace-mode clear
+    // the user needs to be told to retry rather than left assuming it worked.
+    if (entries.length > 0 && written === 0) {
+      throw new Error(
+        `The ${sport} history could not be written. Your backup file is unchanged - try importing it again.`
+      );
+    }
+    entriesWritten += written;
   }
 
   const playersWritten = await importCaches(backup.playerCaches, mode);
 
-  return { entriesWritten: written, playersWritten };
+  return { entriesWritten, playersWritten };
 }

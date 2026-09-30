@@ -5,24 +5,27 @@
  */
 
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { PlayerCacheStorage } from "@/types/StoredPlayer";
+import { PlayerCacheStorage, StoredPlayerData } from "@/types/StoredPlayer";
 import { ImportMode } from "@/types/Backup";
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { generateStorageKey } from "./storageKeys";
+import { generateStorageKey, isTeamCacheKey, teamPrefix } from "./storageKeys";
+import { Sport } from "@/types/Sport";
 import { serializePlayer, deserializePlayer } from "./serialization";
 
 /**
  * Loads the entire cache structure from chrome.storage.local (async)
  * @returns Promise with PlayerCacheStorage or null if no cache exists or on error
  */
-async function loadCache(): Promise<PlayerCacheStorage | null> {
+async function loadCache<TData = StoredPlayerData>(
+  sport: Sport = "hockey"
+): Promise<PlayerCacheStorage<TData> | null> {
   try {
-    const key = generateStorageKey();
+    const key = generateStorageKey(sport);
     const result = await chrome.storage.local.get(key);
     if (!result[key]) {
       return null;
     }
-    return result[key] as PlayerCacheStorage;
+    return result[key] as PlayerCacheStorage<TData>;
   } catch (error) {
     console.error("[PlayerCache] Failed to load cache:", error);
     return null;
@@ -33,9 +36,12 @@ async function loadCache(): Promise<PlayerCacheStorage | null> {
  * Saves the cache structure to chrome.storage.local (async)
  * @param cache - Cache structure to save
  */
-async function saveCache(cache: PlayerCacheStorage): Promise<void> {
+async function saveCache<TData>(
+  cache: PlayerCacheStorage<TData>,
+  sport: Sport = "hockey"
+): Promise<void> {
   try {
-    const key = generateStorageKey();
+    const key = generateStorageKey(sport);
     await chrome.storage.local.set({ [key]: cache });
   } catch (error) {
     if (error instanceof Error && error.message.includes("QUOTA_BYTES")) {
@@ -51,8 +57,10 @@ async function saveCache(cache: PlayerCacheStorage): Promise<void> {
  * Initializes a new empty cache structure
  * @returns New empty PlayerCacheStorage
  */
-function initializeCache(): PlayerCacheStorage {
-  const teamId = generateStorageKey().split("-").pop() || "unknown";
+function initializeCache<TData = StoredPlayerData>(
+  sport: Sport = "hockey"
+): PlayerCacheStorage<TData> {
+  const teamId = generateStorageKey(sport).split("-").pop() || "unknown";
 
   // Get current season day from the page
   let seasonDay = 1;
@@ -152,11 +160,14 @@ export async function getAllPlayers(): Promise<HockeyPlayer[]> {
  * both load, modify and save the same cache key, so whichever saved second
  * would silently drop the other's change.
  */
-export async function saveSquadRoster(playerIds: string[]): Promise<void> {
+export async function saveSquadRoster(
+  playerIds: string[],
+  sport: Sport = "hockey"
+): Promise<void> {
   try {
-    const cache = (await loadCache()) ?? initializeCache();
+    const cache = (await loadCache<unknown>(sport)) ?? initializeCache<unknown>(sport);
     cache.squad = { playerIds, updatedAt: new Date().toISOString() };
-    await saveCache(cache);
+    await saveCache(cache, sport);
   } catch (error) {
     console.error("[PlayerCache] Failed to save squad roster:", error);
   }
@@ -213,7 +224,7 @@ export async function getAllPlayersFromAllCaches(): Promise<{
 
     // Find all hockey team cache keys
     const hockeyKeys = Object.keys(allData).filter((key) =>
-      key.startsWith("ppm-assistant:hockey:team-") && !key.includes("unknown")
+      key.startsWith(teamPrefix("hockey")) && !key.includes("unknown")
     );
 
     console.log("[PlayerCache] Found hockey cache keys:", hockeyKeys);
@@ -250,8 +261,33 @@ export async function getAllPlayersFromAllCaches(): Promise<{
   }
 }
 
-/** Prefix every hockey team cache key shares. */
-const TEAM_CACHE_PREFIX = "ppm-assistant:hockey:team-";
+/**
+ * Writes already-serialised players into a sport's team cache in one save,
+ * keyed by id. For sports without a HockeyPlayer-style merge step (basketball):
+ * the squad overview and profile always carry that moment's full data, so the
+ * newest capture simply replaces the stored copy.
+ */
+export async function saveStoredPlayers<TData extends { baseInfo: { id: string } }>(
+  stored: TData[],
+  sport: Sport
+): Promise<void> {
+  if (stored.length === 0) return;
+  try {
+    const cache = (await loadCache<TData>(sport)) ?? initializeCache<TData>(sport);
+    stored.forEach((player) => {
+      cache.players[player.baseInfo.id] = player;
+    });
+    cache.lastModified = new Date().toISOString();
+    try {
+      cache.currentSeasonDay = getCurrentSeasonDay();
+    } catch {
+      // Keep the previous season day; this write is still worth making.
+    }
+    await saveCache(cache, sport);
+  } catch (error) {
+    console.error(`[PlayerCache] Failed to save ${sport} players:`, error);
+  }
+}
 
 /**
  * Every team cache, raw and keyed by storage key, for the backup file.
@@ -271,7 +307,7 @@ export async function exportAllCaches(): Promise<Record<string, PlayerCacheStora
     const caches: Record<string, PlayerCacheStorage> = {};
 
     Object.keys(allData)
-      .filter((key) => key.startsWith(TEAM_CACHE_PREFIX) && !key.includes("unknown"))
+      .filter((key) => isTeamCacheKey(key) && !key.includes("unknown"))
       .forEach((key) => {
         caches[key] = allData[key] as PlayerCacheStorage;
       });
@@ -302,9 +338,7 @@ export async function importCaches(
   mode: ImportMode
 ): Promise<number> {
   const allData = await chrome.storage.local.get(null);
-  const existingKeys = Object.keys(allData).filter((key) =>
-    key.startsWith(TEAM_CACHE_PREFIX)
-  );
+  const existingKeys = Object.keys(allData).filter(isTeamCacheKey);
 
   const toWrite: Record<string, PlayerCacheStorage> = {};
   let importedPlayers = 0;
@@ -372,20 +406,19 @@ export async function clearCache(): Promise<void> {
 }
 
 /**
- * Clears ALL hockey caches (for all teams) - used by Player Report
+ * Clears every sport's team caches - used by the Player Report's Clear All.
+ * Every sport, because the backup it offers first covers every sport too.
  */
 export async function clearAllCaches(): Promise<void> {
   try {
     const allData = await chrome.storage.local.get(null);
-    const hockeyKeys = Object.keys(allData).filter((key) =>
-      key.startsWith("ppm-assistant:hockey:team-")
-    );
+    const cacheKeys = Object.keys(allData).filter(isTeamCacheKey);
 
-    if (hockeyKeys.length > 0) {
-      await chrome.storage.local.remove(hockeyKeys);
-      console.log(`[PlayerCache] Cleared ${hockeyKeys.length} hockey cache(s):`, hockeyKeys);
+    if (cacheKeys.length > 0) {
+      await chrome.storage.local.remove(cacheKeys);
+      console.log(`[PlayerCache] Cleared ${cacheKeys.length} team cache(s):`, cacheKeys);
     } else {
-      console.log("[PlayerCache] No hockey caches found to clear");
+      console.log("[PlayerCache] No team caches found to clear");
     }
   } catch (error) {
     console.error("[PlayerCache] Failed to clear all caches:", error);

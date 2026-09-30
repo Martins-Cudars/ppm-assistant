@@ -34,12 +34,19 @@ export type SkillHistorySource =
  * shown on the training page - only cumulative values are stored. Deltas can
  * be derived later by diffing consecutive entries if ever needed.
  */
-export interface SkillHistoryEntry {
+export interface SkillHistoryEntry<TSkills = HockeySkills> {
   id: string; // `${playerId}:${date}` composite key, e.g. "23869664:2026-07-14"
   playerId: string;
   date: string; // ISO "YYYY-MM-DD"
   overallRating?: number; // "KR" on the LV training page, #index_skill on the profile
-  skills?: HockeySkills; // absent when the player's attributes aren't visible
+  skills?: TSkills; // absent when the player's attributes aren't visible
+  /**
+   * Basketball only, so far: the rating depends on height (a modifier per cm
+   * outside the position's range), and XP isn't recoverable later. Hockey
+   * never stored these; they're optional so hockey entries are unchanged.
+   */
+  height?: number;
+  experience?: number;
   capturedAt: string; // ISO timestamp of when this row was parsed
   source?: SkillHistorySource;
 

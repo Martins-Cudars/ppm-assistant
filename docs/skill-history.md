@@ -4,7 +4,8 @@ Everywhere else the extension keeps only the latest snapshot of a player. This i
 store that remembers what a player looked like on a given day, so growth can be charted
 against the projection instead of guessed at.
 
-Hockey only. Nothing here is wired into soccer or basketball.
+Built for hockey; basketball **capture** now runs too (see [Basketball](#basketball)). Growth
+analysis is still hockey only, and nothing is wired into soccer.
 
 ## How data gets in
 
@@ -315,6 +316,71 @@ profile card. It shows 5 stars in three tiers, measured on rating **with XP**:
   them to 16px, but it only loads on game pages, so `RatingStars` now sets the same size
   itself. Without that, the report showed empty star cells.
 
+## Basketball
+
+Basketball has **no training-progress page**, so there's no past to back-fill. History
+exists only from the day capture started, one entry per player per day. Every day not
+captured is gone for good, which is why capture shipped before anything that reads it.
+
+### Storage, per sport
+
+Hockey's storage kept its names; each other sport got its own.
+
+| | Hockey | Basketball |
+|---|---|---|
+| History (IndexedDB, same DB) | `skillHistory` | `skillHistory_basketball` |
+| Player cache (`chrome.storage.local`) | `ppm-assistant:hockey:team-<id>` | `ppm-assistant:basketball:team-<id>` |
+| Backup field | `skillHistory` | `sportSkillHistory.basketball` |
+
+- **The worker is at `DB_VERSION` 2.** The upgrade only *creates* missing stores, so hockey
+  data never moved.
+- **Messages and APIs.** Every message and every client function takes an optional `sport`,
+  defaulting to hockey. Hockey's callers didn't change.
+- **Backup v2** adds `sportSkillHistory`. v1 files still import.
+- **Clear All** clears every sport, matching the backup.
+- **Ids can't collide.** With separate stores, an id reused across sports (whether PPM
+  does that is still unknown) lands in different places.
+
+### Capture (`src/sports/basketball/capture.ts`)
+
+- **Squad overview:** the whole team goes into the cache, the roster is saved, and today's
+  history is written.
+- **Profile:** any player, including other teams'.
+- **What each entry stores:** skills and OR, plus **height** and **XP**. Hockey never stored
+  those.
+  - Basketball's rating is `min(skill ÷ weight)` over 5 skills (Σw = 3.0 for every
+    position), × a height modifier, so a projection needs the height.
+  - XP can't be recovered later.
+- **Ids.** The squad-overview parser keeps the whole profile *link* as the player id, so
+  `normalizePlayerId()` pulls the number out (`data=` or the last path segment). It rejects
+  anything else, so no phantom players.
+
+### Roadmap: what the captured data is for
+
+Research comes after about 4–8 weeks of capture. Re-run hockey's analyses on basketball data,
+and turn each answer into a constant documented like hockey's:
+
+1. **Training split.** Do gains follow `trainingRatios` (e.g. PG 100/80/80/20/20)? Does
+   training quality matter?
+2. **No-training days:** all 7 skills flat. How common are they, and how long are the runs?
+3. **Camps.** There's a camp page (`treninnometne`, route commented out). Find the days per
+   season, the multiplier and the ages.
+4. **XP share** by age.
+5. **Age slowdown**, measured by comparing players over the same months. Make
+   `scripts/measure-age-factors.ts` sport-aware.
+6. **Height:** does it change with age?
+7. **Reference curve** from the user's own data, since there's no top-player table.
+   - A level curve (rating by age) is possible now.
+   - A growth curve needs the captured history.
+   - It gets labelled "your squad", not "top player".
+
+**Report and squad-rank card:** these can come before the research. `squadRank.ts` is
+already sport-agnostic, and the report needs a sport switch plus basketball's columns: 7
+skills, height, PG/SG/SF/PF/C.
+
+**Pace, @25, potential and the chart** come after the research, through the growth-model
+split in outstanding item 5.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
@@ -322,11 +388,12 @@ Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
 ```jsonc
 {
   "format": "ppm-assistant-backup",  // absent -> rejected outright
-  "version": 1,                      // unknown -> rejected outright
+  "version": 2,                      // 1 and 2 accepted; unknown -> rejected outright
   "exportedAt": "2026-08-30T…",
   "extensionVersion": "3.2.0",
   "playerCaches": { "ppm-assistant:hockey:team-12345": { /* PlayerCacheStorage */ } },
-  "skillHistory": [ /* SkillHistoryEntry[] */ ]
+  "skillHistory": [ /* hockey's SkillHistoryEntry[] - the field every version has */ ],
+  "sportSkillHistory": { "basketball": [ /* v2+: every other sport, by sport */ ] }
 }
 ```
 
@@ -369,7 +436,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 86 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 97 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -401,15 +468,15 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 86 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 97 assertions (five files, including basketball capture) — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.
 
-**5. Cross-sport.** `SkillHistoryEntry.skills` is typed `HockeySkills` and
-`readEntryBaseRating()` hardcodes `hockeyPlayerProfile`. Before soccer or basketball capture
-can be added, settle whether PPM reuses player ids across sports — the entry id carries no
-sport segment while the worker is shared by all three, so colliding ids would cross-
-contaminate.
+**5. Cross-sport - storage done, growth model not yet.** Every store is now keyed by sport, so
+reused ids can't collide (see [Basketball](#basketball)). What's left is the growth model:
+`growthPace.ts` still imports hockey's settings directly. Split it into a sport profile when
+basketball's growth work starts (roadmap phase 4), shaped by what the research finds, not
+guessed now.
 
 For bugs rather than features, see [known-issues.md](known-issues.md).

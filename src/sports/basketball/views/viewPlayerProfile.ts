@@ -1,6 +1,8 @@
 import { createApp } from "vue";
 import { parseBasketballPlayerFromProfilePage } from "@/sports/basketball/parsers/playerProfile";
 import BasketballPlayerSidebar from "./components/BasketballPlayerSidebar.vue";
+import { captureBasketballPlayers } from "@/sports/basketball/capture";
+import { getPlayerTeamId } from "@/utils/dom";
 
 const viewPlayerProfile = () => {
   const playerTable = document.getElementById("table-1");
@@ -12,6 +14,13 @@ const viewPlayerProfile = () => {
   const player = parseBasketballPlayerFromProfilePage(playerTable, playerInfo);
   player.calculatePositions();
   player.calculatePositionTrainingQualities();
+
+  // Any player, other teams' included - the only history source for them.
+  const teamId = getPlayerTeamId();
+  captureBasketballPlayers([player], "PlayerProfile", {
+    ownSquad: false,
+    teamId: teamId !== "unknown" ? teamId : undefined,
+  });
 
   const contentColumn = document.querySelector(".column_left");
 

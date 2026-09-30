@@ -20,6 +20,7 @@ import {
   SkillHistorySummary,
 } from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
+import { Sport } from "@/types/Sport";
 
 async function sendSkillHistoryMessage(
   message: SkillHistoryMessage
@@ -33,7 +34,8 @@ async function sendSkillHistoryMessage(
  * idempotent.
  */
 export async function upsertSkillHistoryEntries(
-  entries: SkillHistoryEntry[]
+  entries: SkillHistoryEntry<unknown>[],
+  sport: Sport = "hockey"
 ): Promise<{ written: number }> {
   if (entries.length === 0) {
     return { written: 0 };
@@ -42,6 +44,7 @@ export async function upsertSkillHistoryEntries(
   try {
     const response = await sendSkillHistoryMessage({
       type: "SKILL_HISTORY_UPSERT",
+      sport,
       entries,
     });
     return { written: response.type === "SKILL_HISTORY_UPSERT" ? response.written : 0 };
@@ -58,11 +61,11 @@ export async function upsertSkillHistoryEntries(
  * without a message per row. Players with no history are simply absent from
  * the map - callers should treat a miss as "nothing stored".
  */
-export async function getSkillHistorySummaries(): Promise<
+export async function getSkillHistorySummaries(sport: Sport = "hockey"): Promise<
   Map<string, SkillHistorySummary>
 > {
   try {
-    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_SUMMARY" });
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_SUMMARY", sport });
     if (response.type !== "SKILL_HISTORY_SUMMARY") {
       return new Map();
     }
@@ -77,9 +80,9 @@ export async function getSkillHistorySummaries(): Promise<
  * Measures the store's footprint. Reads every record on the worker side, so
  * call it only where the numbers are shown - not as a cheap liveness check.
  */
-export async function getSkillHistoryStats(): Promise<SkillHistoryStats> {
+export async function getSkillHistoryStats(sport: Sport = "hockey"): Promise<SkillHistoryStats> {
   try {
-    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_STATS" });
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_STATS", sport });
     if (response.type !== "SKILL_HISTORY_STATS") {
       return { records: 0, players: 0, jsonBytes: 0 };
     }
@@ -98,9 +101,11 @@ export async function getSkillHistoryStats(): Promise<SkillHistoryStats> {
  * that treated failure as "no history" would hand the user a backup file with
  * nothing in it, which they would then keep and rely on.
  */
-export async function exportSkillHistory(): Promise<SkillHistoryEntry[] | null> {
+export async function exportSkillHistory(
+  sport: Sport = "hockey"
+): Promise<SkillHistoryEntry[] | null> {
   try {
-    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_EXPORT" });
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_EXPORT", sport });
     return response.type === "SKILL_HISTORY_EXPORT" ? response.entries : null;
   } catch (error) {
     console.error("[SkillHistoryDb] Failed to export history:", error);
@@ -117,11 +122,13 @@ export async function exportSkillHistory(): Promise<SkillHistoryEntry[] | null> 
  * be a statement about the players rather than about the failure.
  */
 export async function getLatestSkillHistoryWindow(
-  days: number
+  days: number,
+  sport: Sport = "hockey"
 ): Promise<Map<string, SkillHistoryEntry[]> | null> {
   try {
     const response = await sendSkillHistoryMessage({
       type: "SKILL_HISTORY_LATEST_WINDOW",
+      sport,
       days,
     });
     if (response.type !== "SKILL_HISTORY_LATEST_WINDOW" || response.entries === null) {
@@ -144,13 +151,15 @@ export async function getLatestSkillHistoryWindow(
  */
 export async function getSkillHistoryNearDates(
   targets: { playerId: string; date: string }[],
-  days: number
+  days: number,
+  sport: Sport = "hockey"
 ): Promise<Map<string, SkillHistoryEntry[]> | null> {
   if (targets.length === 0) return new Map();
 
   try {
     const response = await sendSkillHistoryMessage({
       type: "SKILL_HISTORY_NEAR_DATES",
+      sport,
       targets,
       days,
     });
@@ -178,11 +187,13 @@ function groupByPlayer(entries: SkillHistoryEntry[]): Map<string, SkillHistoryEn
  * Retrieves all stored history entries for a player, ascending by date.
  */
 export async function getSkillHistoryForPlayer(
-  playerId: string
+  playerId: string,
+  sport: Sport = "hockey"
 ): Promise<SkillHistoryEntry[]> {
   try {
     const response = await sendSkillHistoryMessage({
       type: "SKILL_HISTORY_GET",
+      sport,
       playerId,
     });
     return response.type === "SKILL_HISTORY_GET" ? response.entries : [];
@@ -208,9 +219,9 @@ export async function getSkillHistoryForPlayer(
  * There is no undo - history is rebuilt only by re-running the gather walks
  * that produced it - so callers should confirm with the user first.
  */
-export async function clearSkillHistory(): Promise<number | null> {
+export async function clearSkillHistory(sport: Sport = "hockey"): Promise<number | null> {
   try {
-    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_CLEAR" });
+    const response = await sendSkillHistoryMessage({ type: "SKILL_HISTORY_CLEAR", sport });
     return response.type === "SKILL_HISTORY_CLEAR" ? response.cleared : null;
   } catch (error) {
     console.error("[SkillHistoryDb] Failed to clear history:", error);

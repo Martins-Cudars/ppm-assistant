@@ -2,6 +2,7 @@ import { createApp } from "vue";
 import { parseBasketballPlayerFromListRow } from "@/sports/basketball/parsers/playerRows";
 import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vue";
 import type { BasketballPlayerListItem } from "./types";
+import { captureBasketballPlayers } from "@/sports/basketball/capture";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -56,6 +57,15 @@ const viewPlayerList = () => {
         : undefined,
     });
   });
+
+  // Store the whole squad: cache, roster and today's history. Basketball has
+  // no history page, so these daily snapshots are the only history there is.
+  // Not awaited - the table below shouldn't wait on storage.
+  captureBasketballPlayers(
+    items.map((item) => item.player),
+    "PlayersList",
+    { ownSquad: true }
+  );
 
   if (!table.parentNode) {
     console.error("Table has no parent node");

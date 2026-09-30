@@ -13,9 +13,18 @@ import {
   SkillHistoryStats,
   SkillHistorySummary,
 } from "@/types/SkillHistory";
+import { Sport } from "@/types/Sport";
 
-export type SkillHistoryMessage =
-  | { type: "SKILL_HISTORY_UPSERT"; entries: SkillHistoryEntry[] }
+/**
+ * Every message may name a sport; each sport has its own object store, so the
+ * same player id in two games never collides. Absent means hockey - the only
+ * sport before basketball, whose callers never had to say.
+ */
+export type SkillHistoryMessage = { sport?: Sport } & SkillHistoryRequest;
+
+type SkillHistoryRequest =
+  // Any sport's entries: the worker merges them without reading the skills.
+  | { type: "SKILL_HISTORY_UPSERT"; entries: SkillHistoryEntry<unknown>[] }
   | { type: "SKILL_HISTORY_GET"; playerId: string }
   // Coverage for every player at once. Takes no arguments: a summary is five
   // small fields, and the callers that need one need the whole set, so paying

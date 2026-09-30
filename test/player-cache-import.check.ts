@@ -143,4 +143,28 @@ await check("the report's cache read returns the squad roster, or null", async (
   eq((await getAllPlayersFromAllCaches()).squad, null, "no roster yet");
 });
 
+// Basketball caches live beside hockey's under their own prefix; a backup has
+// to carry them both ways, and replace mode treats them like any other key.
+const BASKETBALL = "ppm-assistant:basketball:team-9";
+
+await check("export includes basketball caches beside hockey's", async () => {
+  reset({
+    [KEY]: cache({ p1: player("2026-08-01T00:00:00Z", 800) }),
+    [BASKETBALL]: cache({ b1: player("2026-09-01T00:00:00Z", 300) }),
+    "ppm-assistant:settings": { lang: "en" },
+  });
+  const out = await exportAllCaches();
+  eq(Object.keys(out).sort().join(","), [BASKETBALL, KEY].sort().join(","), "both, and nothing else");
+});
+
+await check("import writes basketball caches, and replace drops stale ones", async () => {
+  reset({ [BASKETBALL]: cache({ old: player("2026-01-01T00:00:00Z", 1) }) });
+  await importCaches({ [KEY]: cache({ p1: player("2026-08-01T00:00:00Z", 800) }) }, "replace");
+  eq(BASKETBALL in store, false, "stale basketball key removed on replace");
+
+  reset({});
+  await importCaches({ [BASKETBALL]: cache({ b1: player("2026-09-01T00:00:00Z", 300) }) }, "merge");
+  eq(BASKETBALL in store, true, "basketball key written from the file");
+});
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

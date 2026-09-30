@@ -16,6 +16,7 @@
 
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { Sport } from "@/types/Sport";
 
 /**
  * Marks a file as ours. Import rejects anything without it rather than trying
@@ -28,7 +29,17 @@ export const BACKUP_FORMAT = "ppm-assistant-backup";
  * versions it doesn't know: reading a newer file with older code would drop
  * whatever the new version added, silently, during a restore.
  */
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
+
+/**
+ * Versions import still reads. 2 only added `sportSkillHistory` beside the
+ * unchanged hockey `skillHistory`, so a version-1 file is simply one with no
+ * other sports in it.
+ */
+export const SUPPORTED_BACKUP_VERSIONS: readonly number[] = [1, 2];
+
+/** Sports whose history lives outside the original hockey `skillHistory` field. */
+export type OtherSport = Exclude<Sport, "hockey">;
 
 export interface BackupFile {
   format: typeof BACKUP_FORMAT;
@@ -39,7 +50,10 @@ export interface BackupFile {
   extensionVersion: string;
   /** Storage key -> cache, verbatim. Keys matter: see importCaches(). */
   playerCaches: Record<string, PlayerCacheStorage>;
+  /** Hockey's history - the field every version has had. */
   skillHistory: SkillHistoryEntry[];
+  /** Version 2+: every other sport's history, by sport. */
+  sportSkillHistory?: Partial<Record<OtherSport, SkillHistoryEntry<unknown>[]>>;
 }
 
 /**

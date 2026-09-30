@@ -4,15 +4,25 @@
  */
 
 import { getUserTeamId } from "@/utils/dom";
+import { SPORTS, Sport } from "@/types/Sport";
 
 /**
- * Generates the localStorage key for the current team
- * Format: ppm-assistant:hockey:team-{teamId}
- * @returns Storage key string
+ * Generates the storage key for the current team's player cache.
+ * Format: ppm-assistant:{sport}:team-{teamId} - hockey's key is unchanged.
  */
-export function generateStorageKey(): string {
+export function generateStorageKey(sport: Sport = "hockey"): string {
   const teamId = getUserTeamId();
-  return `ppm-assistant:hockey:team-${teamId}`;
+  return `${teamPrefix(sport)}${teamId}`;
+}
+
+/** The prefix every team cache key of a sport shares. */
+export function teamPrefix(sport: Sport): string {
+  return `ppm-assistant:${sport}:team-`;
+}
+
+/** Whether a storage key is any sport's team cache. */
+export function isTeamCacheKey(key: string): boolean {
+  return SPORTS.some((sport) => key.startsWith(teamPrefix(sport)));
 }
 
 /**

@@ -15,10 +15,15 @@ import {
   SkillHistorySummary,
 } from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
+import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
 
 const DB_NAME = "ppm-assistant-skill-history";
-const DB_VERSION = 1;
-const STORE_NAME = "skillHistory";
+/**
+ * 2 added one object store per sport beside hockey's original "skillHistory".
+ * The upgrade only ever creates missing stores - it never touches existing
+ * data - so hockey's history and backups needed no migration.
+ */
+const DB_VERSION = 2;
 const PLAYER_INDEX = "by_playerId";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -33,10 +38,13 @@ function openDb(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
-        store.createIndex(PLAYER_INDEX, "playerId", { unique: false });
-      }
+      SPORTS.forEach((sport) => {
+        const name = historyStoreName(sport);
+        if (!db.objectStoreNames.contains(name)) {
+          const store = db.createObjectStore(name, { keyPath: "id" });
+          store.createIndex(PLAYER_INDEX, "playerId", { unique: false });
+        }
+      });
     };
 
     request.onsuccess = () => resolve(request.result);
@@ -60,9 +68,9 @@ function openDb(): Promise<IDBDatabase> {
  * incoming entry has nothing to say.
  */
 function mergeEntry(
-  existing: SkillHistoryEntry | undefined,
-  incoming: SkillHistoryEntry
-): SkillHistoryEntry {
+  existing: SkillHistoryEntry<unknown> | undefined,
+  incoming: SkillHistoryEntry<unknown>
+): SkillHistoryEntry<unknown> {
   if (!existing) return incoming;
 
   return {
@@ -70,10 +78,15 @@ function mergeEntry(
     ...incoming,
     overallRating: incoming.overallRating ?? existing.overallRating ?? existing.kr,
     skills: incoming.skills ?? existing.skills,
+    height: incoming.height ?? existing.height,
+    experience: incoming.experience ?? existing.experience,
   };
 }
 
-async function upsertEntries(entries: SkillHistoryEntry[]): Promise<number> {
+async function upsertEntries(
+  entries: SkillHistoryEntry<unknown>[],
+  sport: Sport
+): Promise<number> {
   if (entries.length === 0) {
     return 0;
   }
@@ -81,13 +94,15 @@ async function upsertEntries(entries: SkillHistoryEntry[]): Promise<number> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(historyStoreName(sport), "readwrite");
+    const store = tx.objectStore(historyStoreName(sport));
 
     entries.forEach((entry) => {
       const existingRequest = store.get(entry.id);
       existingRequest.onsuccess = () => {
-        store.put(mergeEntry(existingRequest.result as SkillHistoryEntry | undefined, entry));
+        store.put(
+          mergeEntry(existingRequest.result as SkillHistoryEntry<unknown> | undefined, entry)
+        );
       };
     });
 
@@ -96,12 +111,12 @@ async function upsertEntries(entries: SkillHistoryEntry[]): Promise<number> {
   });
 }
 
-async function getEntriesForPlayer(playerId: string): Promise<SkillHistoryEntry[]> {
+async function getEntriesForPlayer(playerId: string, sport: Sport): Promise<SkillHistoryEntry[]> {
   const db = await openDb();
 
   const entries = await new Promise<SkillHistoryEntry[]>((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(historyStoreName(sport), "readonly");
+    const store = tx.objectStore(historyStoreName(sport));
     const index = store.index(PLAYER_INDEX);
     const request = index.getAll(IDBKeyRange.only(playerId));
 
@@ -146,12 +161,12 @@ function parseEntryKey(key: IDBValidKey): { playerId: string; date: string } | n
  * fall out of the key set. That keeps summarising a whole squad cheap even
  * when each player holds hundreds of days.
  */
-async function getSummaries(): Promise<SkillHistorySummary[]> {
+async function getSummaries(sport: Sport): Promise<SkillHistorySummary[]> {
   const db = await openDb();
 
   const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).getAllKeys();
+    const tx = db.transaction(historyStoreName(sport), "readonly");
+    const request = tx.objectStore(historyStoreName(sport)).getAllKeys();
 
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -193,13 +208,14 @@ type ParsedKey = { key: IDBValidKey; playerId: string; date: string };
  * caller that needs a few weeks per player never pays for the whole store.
  */
 async function getEntriesForSelectedKeys(
-  select: (keys: ParsedKey[]) => ParsedKey[]
+  select: (keys: ParsedKey[]) => ParsedKey[],
+  sport: Sport
 ): Promise<SkillHistoryEntry[]> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(historyStoreName(sport), "readonly");
+    const store = tx.objectStore(historyStoreName(sport));
     const entries: SkillHistoryEntry[] = [];
 
     const keysRequest = store.getAllKeys();
@@ -229,7 +245,7 @@ async function getEntriesForSelectedKeys(
  * day. Anchoring on each player's latest day rather than today means a player
  * last seen a while ago still returns the weeks before that sighting.
  */
-function getLatestWindowEntries(days: number): Promise<SkillHistoryEntry[]> {
+function getLatestWindowEntries(days: number, sport: Sport): Promise<SkillHistoryEntry[]> {
   return getEntriesForSelectedKeys((keys) => {
     const latest = new Map<string, string>();
     keys.forEach(({ playerId, date }) => {
@@ -238,7 +254,7 @@ function getLatestWindowEntries(days: number): Promise<SkillHistoryEntry[]> {
     });
 
     return keys.filter(({ playerId, date }) => daysBetween(date, latest.get(playerId)!) <= days);
-  });
+  }, sport);
 }
 
 /**
@@ -247,7 +263,8 @@ function getLatestWindowEntries(days: number): Promise<SkillHistoryEntry[]> {
  */
 function getEntriesNearDates(
   targets: { playerId: string; date: string }[],
-  days: number
+  days: number,
+  sport: Sport
 ): Promise<SkillHistoryEntry[]> {
   const targetDates = new Map(targets.map(({ playerId, date }) => [playerId, date]));
 
@@ -255,7 +272,8 @@ function getEntriesNearDates(
     keys.filter(({ playerId, date }) => {
       const target = targetDates.get(playerId);
       return target !== undefined && Math.abs(daysBetween(target, date)) <= days;
-    })
+    }),
+    sport
   );
 }
 
@@ -264,12 +282,12 @@ function getEntriesNearDates(
  * that genuinely need values rather than keys: the footprint measurement and
  * the backup export.
  */
-async function getAllEntries(): Promise<SkillHistoryEntry[]> {
+async function getAllEntries(sport: Sport): Promise<SkillHistoryEntry[]> {
   const db = await openDb();
 
   return new Promise<SkillHistoryEntry[]>((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).getAll();
+    const tx = db.transaction(historyStoreName(sport), "readonly");
+    const request = tx.objectStore(historyStoreName(sport)).getAll();
 
     request.onsuccess = () => resolve(request.result as SkillHistoryEntry[]);
     request.onerror = () => reject(request.error);
@@ -283,8 +301,8 @@ async function getAllEntries(): Promise<SkillHistoryEntry[]> {
  * is the entire point, so the key-only shortcut doesn't apply. One getAll() per
  * call, so keep it to places that actually display the numbers.
  */
-async function getStats(): Promise<SkillHistoryStats> {
-  const entries = await getAllEntries();
+async function getStats(sport: Sport): Promise<SkillHistoryStats> {
+  const entries = await getAllEntries(sport);
 
   const players = new Set<string>();
   let jsonBytes = 0;
@@ -314,12 +332,12 @@ async function getStats(): Promise<SkillHistoryStats> {
  * number actually removed, rather than a count that a concurrent capture
  * could have changed between two separate transactions.
  */
-async function clearEntries(): Promise<number> {
+async function clearEntries(sport: Sport): Promise<number> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(historyStoreName(sport), "readwrite");
+    const store = tx.objectStore(historyStoreName(sport));
     let cleared = 0;
 
     const countRequest = store.count();
@@ -335,8 +353,11 @@ async function clearEntries(): Promise<number> {
 
 chrome.runtime.onMessage.addListener(
   (message: SkillHistoryMessage, _sender, sendResponse: (response: SkillHistoryResponse) => void) => {
+    // Messages from before basketball carry no sport; they're hockey's.
+    const sport: Sport = message.sport ?? "hockey";
+
     if (message.type === "SKILL_HISTORY_UPSERT") {
-      upsertEntries(message.entries)
+      upsertEntries(message.entries, sport)
         .then((written) => sendResponse({ type: "SKILL_HISTORY_UPSERT", written }))
         .catch((error) => {
           console.error("[Background] Failed to upsert skill history:", error);
@@ -346,7 +367,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_GET") {
-      getEntriesForPlayer(message.playerId)
+      getEntriesForPlayer(message.playerId, sport)
         .then((entries) => sendResponse({ type: "SKILL_HISTORY_GET", entries }))
         .catch((error) => {
           console.error("[Background] Failed to load skill history:", error);
@@ -356,7 +377,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_SUMMARY") {
-      getSummaries()
+      getSummaries(sport)
         .then((summaries) => sendResponse({ type: "SKILL_HISTORY_SUMMARY", summaries }))
         .catch((error) => {
           console.error("[Background] Failed to summarise skill history:", error);
@@ -366,7 +387,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_STATS") {
-      getStats()
+      getStats(sport)
         .then((stats) => sendResponse({ type: "SKILL_HISTORY_STATS", stats }))
         .catch((error) => {
           console.error("[Background] Failed to measure skill history:", error);
@@ -379,7 +400,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_CLEAR") {
-      clearEntries()
+      clearEntries(sport)
         .then((cleared) => sendResponse({ type: "SKILL_HISTORY_CLEAR", cleared }))
         .catch((error) => {
           console.error("[Background] Failed to clear skill history:", error);
@@ -390,7 +411,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_EXPORT") {
-      getAllEntries()
+      getAllEntries(sport)
         .then((entries) => sendResponse({ type: "SKILL_HISTORY_EXPORT", entries }))
         .catch((error) => {
           console.error("[Background] Failed to export skill history:", error);
@@ -401,7 +422,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_LATEST_WINDOW") {
-      getLatestWindowEntries(message.days)
+      getLatestWindowEntries(message.days, sport)
         .then((entries) => sendResponse({ type: "SKILL_HISTORY_LATEST_WINDOW", entries }))
         .catch((error) => {
           console.error("[Background] Failed to read recent skill history:", error);
@@ -412,7 +433,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SKILL_HISTORY_NEAR_DATES") {
-      getEntriesNearDates(message.targets, message.days)
+      getEntriesNearDates(message.targets, message.days, sport)
         .then((entries) => sendResponse({ type: "SKILL_HISTORY_NEAR_DATES", entries }))
         .catch((error) => {
           console.error("[Background] Failed to read skill history near dates:", error);

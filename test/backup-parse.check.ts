@@ -132,4 +132,29 @@ check("tolerates missing optional envelope fields", () => {
   eq(r.backup.extensionVersion, "unknown", "version");
 });
 
+// --- Version 2: per-sport history ------------------------------------------------
+
+check("a version 1 file still imports, with no other sports", () => {
+  const r = parseBackup(JSON.stringify({ ...good, version: 1 }));
+  eq(r.backup.skillHistory.length, 2, "hockey history kept");
+  eq(r.backup.sportSkillHistory?.basketball?.length, 0, "no basketball");
+});
+
+check("basketball history is read and filtered like hockey's", () => {
+  const v2 = {
+    ...good,
+    version: 2,
+    sportSkillHistory: {
+      basketball: [
+        { ...entry("777", "2026-09-01"), height: 201, experience: 12 },
+        { playerId: "777", date: "2026-09-02" }, // no id - would abort the write
+      ],
+    },
+  };
+  const r = parseBackup(JSON.stringify(v2));
+  eq(r.backup.sportSkillHistory?.basketball?.length, 1, "valid row kept");
+  eq(r.skippedEntries, 1, "bad row counted with hockey's");
+  eq(r.backup.skillHistory.length, 2, "hockey untouched");
+});
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

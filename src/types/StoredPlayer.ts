@@ -1,8 +1,15 @@
 import { HockeyPlayerInfo, HockeySkills, ScoutingStatus } from "@/sports/hockey/classes/HockeyPlayer";
+import { Sport } from "@/types/Sport";
 
-export interface StoredPlayerData {
-  baseInfo: HockeyPlayerInfo;
-  skills: HockeySkills | null;
+/**
+ * One cached player. Generic over the sport's player info and skills; the
+ * defaults are hockey's, so hockey code reads it exactly as before.
+ */
+export interface StoredPlayerData<TInfo = HockeyPlayerInfo, TSkills = HockeySkills> {
+  /** Absent on everything written before basketball - which is all hockey. */
+  sport?: Sport;
+  baseInfo: TInfo;
+  skills: TSkills | null;
   trainingQualities: Record<string, number> | null; // Generic record for training qualities
   experience: number | null;
   injuryDays: number;
@@ -15,9 +22,9 @@ export interface StoredPlayerData {
   };
 }
 
-export interface PlayerCacheStorage {
+export interface PlayerCacheStorage<TData = StoredPlayerData> {
   players: {
-    [playerId: string]: StoredPlayerData; // One current object per player (no history)
+    [playerId: string]: TData; // One current object per player (no history)
   };
   teamId: string;
   currentSeasonDay: number; // Current season day when data was collected
