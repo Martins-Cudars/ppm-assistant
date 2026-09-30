@@ -128,6 +128,29 @@ export function serializeBasketballPlayer(
 }
 
 /**
+ * A cached basketball player back as a BasketballPlayer, with positions and
+ * training qualities recalculated - so ratings always follow the current
+ * position model (height included) rather than whatever was stored.
+ */
+export function deserializeBasketballPlayer(stored: StoredBasketballPlayer): BasketballPlayer {
+  const player = new BasketballPlayer(
+    stored.baseInfo,
+    new Date(stored.metadata.updatedAt),
+    true,
+    stored.metadata.seasonDay,
+    stored.skills ?? undefined,
+    stored.experience ?? undefined,
+    (stored.trainingQualities as BasketballSkills | null) ?? undefined
+  );
+  player.teamId = stored.baseInfo.teamId;
+  player.teamName = stored.baseInfo.teamName;
+  player.injuryDays = stored.injuryDays;
+  player.calculatePositions();
+  player.calculatePositionTrainingQualities();
+  return player;
+}
+
+/**
  * Stores what a page shows: the players in the cache and today's history, in
  * one write each. `ownSquad` marks the squad overview - its players are the
  * roster, saved after the cache write rather than alongside it, since both

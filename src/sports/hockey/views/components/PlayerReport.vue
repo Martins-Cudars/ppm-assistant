@@ -42,6 +42,8 @@ import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
+import "@/components/reportTable.css";
 import { ratingSettings } from "@/sports/hockey/settings";
 
 const store = usePlayerStore();
@@ -679,45 +681,8 @@ const potentialTitle = (player: HockeyPlayer) => {
   );
 };
 
-/*
- * Heatmap shading. Magnitude is one hue, light -> dark (never green -> red,
- * which reads as good/bad and fails colour-blind readers). Skills and growth
- * are two separate contexts on screen, so each gets its own hue. Both ramps
- * were checked with the dataviz palette validator: monotone lightness, even
- * steps (every gap >= 0.06 L), a single hue. The lightest step is allowed to
- * fade toward the white surface - it means "near zero", and every value is
- * printed in the cell anyway. Dark ink on the four light steps, white on the
- * two dark ones (>= 4.77:1).
- */
-const SKILL_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"];
-const GROWTH_RAMP = ["#fde0d0", "#f8bd9e", "#f39a6e", "#eb6834", "#c24e1c", "#983b17"];
-
-/** Below this share of the scale a cell stays unshaded, so near-zero values recede. */
-const HEAT_FLOOR = 0.15;
-
-/**
- * The shade for a value between `min` and `max`. Skills use 0..max - an
- * untrained skill really is near zero. Growth values cluster (Pace mostly
- * 55-75%, @25 mostly 700-870), so they use the column's min..max instead;
- * on 0..max nearly every growth cell landed in the two darkest steps.
- */
-const heatStyle = (
-  value: number | null | undefined,
-  min: number,
-  max: number,
-  ramp: string[]
-) => {
-  if (value == null || !(max > min)) return undefined;
-  const share = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  if (share < HEAT_FLOOR) return undefined;
-
-  const step = Math.min(
-    ramp.length - 1,
-    Math.floor(((share - HEAT_FLOOR) / (1 - HEAT_FLOOR)) * ramp.length)
-  );
-  return { background: ramp[step], color: step >= ramp.length - 2 ? "#fff" : "#1f2328" };
-};
-
+// Heatmap ramps and shading live in @/components/heatmap, shared with the
+// basketball report.
 type SkillKey = keyof NonNullable<HockeyPlayer["skills"]>;
 
 // Each skill column shades against its own max in the current view, so a
@@ -1336,19 +1301,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 </template>
 
 <style scoped>
-.full-player-table {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.white_box {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
+/* The page frame (.full-player-table, .white_box) is in @/components/reportTable.css. */
 
 .header-section {
   display: flex;
@@ -1473,260 +1426,8 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   border-color: #007bff;
 }
 
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-group label {
-  font-weight: 600;
-  min-width: 100px;
-}
-
-.filter-group button {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-
-.filter-group button:hover {
-  background: #f8f9fa;
-}
-
-.filter-group button.active {
-  background: #007bff;
-  color: white;
-  border-color: #007bff;
-}
-
-.filter-group button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 16px;
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-/*
- * The report table. The shared SortableTable gives cells the game's class
- * names (th1, tr0td1...), which PPM's stylesheet colours on game pages - but
- * this is an extension page without that stylesheet, so everything rendered
- * white. These rules give it its own look, scoped to the report.
- */
-.report-table {
-  /* A bounded scroll box, so the sticky header and Name column have
-     something to stick within. */
-  max-height: calc(100vh - 140px);
-  overflow: auto;
-  padding: 0;
-}
-
-.report-table :deep(.table) {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-  font-size: 13px;
-  --sortable-header-bg: #fff;
-}
-
-.report-table :deep(.table td) {
-  padding: 5px 8px;
-  white-space: nowrap;
-  border-bottom: 1px solid #eef0f2;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-table :deep(.group-row td) {
-  /* Pinned to the height SortableTable's sticky column row sits below. */
-  box-sizing: border-box;
-  height: 22px;
-  line-height: 13px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #57606a;
-  background: #eef1f5;
-  border-bottom: 1px solid #d0d7de;
-}
-
-.report-table :deep(.group-row td:nth-child(even)) {
-  background: #e4e9ef;
-}
-
-.report-table :deep(.column-row td) {
-  font-weight: 600;
-  color: #24292f;
-  background: #fff;
-  border-bottom: 2px solid #d0d7de;
-}
-
-.report-table :deep(.column-row td.sortable:hover) {
-  background: #f3f6f9;
-}
-
-/* Zebra rows and hover. The Name column is sticky, so it needs an opaque
-   background of its own that follows the row's. */
-.report-table :deep(tbody tr td) {
-  background-color: #fff;
-}
-
-.report-table :deep(tbody tr:nth-child(even) td) {
-  background-color: #fafbfc;
-}
-
-.report-table :deep(tbody tr:hover td) {
-  background-color: #eef4fc;
-}
-
-/* Heatmap cells carry an inline background; keep it on hover so the colour
-   never flickers away, and outline the row instead. */
-.report-table :deep(tbody tr:hover td[style]) {
-  box-shadow: inset 0 1px 0 #9ec5f4, inset 0 -1px 0 #9ec5f4;
-}
-
-.report-table :deep(.group-start) {
-  border-left: 2px solid #d0d7de;
-}
-
-.report-table :deep(tbody td:first-child) {
-  box-shadow: 1px 0 0 #d0d7de;
-}
-
-.position-chip {
-  display: inline-block;
-  min-width: 22px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #24292f;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  text-align: center;
-}
-
-.heat-legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: #57606a;
-}
-
-.heat-legend__swatches {
-  display: inline-flex;
-  margin-left: 6px;
-}
-
-.heat-legend__swatches span {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-}
-
-.player-link {
-  color: #007bff;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.player-link:hover {
-  text-decoration: underline;
-}
-
-.name-cell {
-  font-weight: 500;
-}
-
-.scouted-badge {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  text-align: center;
-  border-radius: 50%;
-  font-weight: bold;
-}
-
-.scouted-badge.scouted {
-  background: #d4edda;
-  color: #155724;
-}
-
-.scouted-badge.in_progress {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.scouted-badge.unscouted {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.completeness-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.history-stats {
-  color: #666;
-  font-size: 13px;
-  cursor: help;
-}
-
-.history-cell {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-.history-since {
-  color: #666;
-  font-size: 11px;
-}
-
-.history-none {
-  color: #999;
-}
-
-/* A projection, not a recorded value - see AtAgeValue. */
-.projected {
-  color: #666;
-  font-style: italic;
-}
-
-/* On a heatmap cell the cell picks dark or white ink for contrast; grey would
-   be unreadable on the dark steps. The ~ and italics still mark it. */
-.report-table td[style] .projected {
-  color: inherit;
-}
+/* Filters, table, chips, legend, links and history cells: see
+   @/components/reportTable.css, shared with the basketball report. */
 
 .badge-full {
   background: #d4edda;

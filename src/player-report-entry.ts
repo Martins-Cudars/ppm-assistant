@@ -1,9 +1,9 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import PlayerReport from "./sports/hockey/views/components/PlayerReport.vue";
+import ReportShell from "./components/ReportShell.vue";
 
-// Mount the Player Report component
-const app = createApp(PlayerReport);
+// Mount the Player Report page: one tab per sport.
+const app = createApp(ReportShell);
 const pinia = createPinia();
 app.use(pinia);
 app.mount("#app");

@@ -42,11 +42,16 @@ export interface SquadRank {
 /** How many other players the standings slice shows by default. */
 export const DEFAULT_NEIGHBOURS = 4;
 
+/** Hockey's and basketball's positions; "C" is a centre in both games. */
 export const POSITION_NOUN: Record<string, string> = {
   G: "goalie",
   D: "defender",
   W: "winger",
   C: "centre",
+  PG: "point guard",
+  SG: "shooting guard",
+  SF: "small forward",
+  PF: "power forward",
 };
 
 /** 1st, 2nd, 3rd, 4th ... 11th, 12th, 13th ... 21st. */

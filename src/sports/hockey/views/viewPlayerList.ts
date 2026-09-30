@@ -6,6 +6,7 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
 import { saveSquadRoster } from "@/storage/playerCache";
+import { createPlayerReportButton } from "@/base/playerReportButton";
 import { captureTodaysHistoryEntries } from "@/storage/skillHistoryCapture";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
@@ -146,39 +147,7 @@ const viewPlayerList = () => {
   captureTodaysHistoryEntries(players, "PlayersList");
 
   // Add button to open Player Report in new tab
-  const playerReportButton = document.createElement("button");
-  playerReportButton.textContent = "📊 Player Report";
-  // height, line-height and margin are declared deliberately, not redundantly:
-  // the game's global button rule sets all three (height: 25px, line-height:
-  // 18px, margin: 0 5px), and an injected button inherits whatever it doesn't
-  // declare for itself. Left to the game, box-sizing: border-box means the
-  // 20px of vertical padding below eats the whole 25px box and the label
-  // overflows it.
-  playerReportButton.style.cssText = `
-    height: auto;
-    line-height: normal;
-    margin: 0 0 15px;
-    padding: 10px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: background 0.2s;
-  `;
-  playerReportButton.onmouseover = () => {
-    playerReportButton.style.background = "#0056b3";
-  };
-  playerReportButton.onmouseout = () => {
-    playerReportButton.style.background = "#007bff";
-  };
-  playerReportButton.onclick = () => {
-    const extensionUrl = chrome.runtime.getURL("player-report.html");
-    window.open(extensionUrl, "_blank");
-  };
+  const playerReportButton = createPlayerReportButton("hockey");
 
   // Insert button before the table
   if (table.parentNode) {

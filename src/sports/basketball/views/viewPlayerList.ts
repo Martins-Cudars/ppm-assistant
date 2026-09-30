@@ -3,6 +3,7 @@ import { parseBasketballPlayerFromListRow } from "@/sports/basketball/parsers/pl
 import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vue";
 import type { BasketballPlayerListItem } from "./types";
 import { captureBasketballPlayers } from "@/sports/basketball/capture";
+import { createPlayerReportButton } from "@/base/playerReportButton";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -74,6 +75,7 @@ const viewPlayerList = () => {
 
   const appContainer = document.createElement("div");
   appContainer.id = "ppm-assistant-basketball-list";
+  table.parentNode.insertBefore(createPlayerReportButton("basketball"), table);
   table.parentNode.replaceChild(appContainer, table);
 
   const app = createApp(BasketballPlayerListTable, {

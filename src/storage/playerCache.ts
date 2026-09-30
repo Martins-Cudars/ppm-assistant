@@ -208,6 +208,55 @@ export async function getCurrentSquad(): Promise<{
 }
 
 /**
+ * A sport's team cache as stored, for extension pages (no game DOM, so no
+ * generateStorageKey()). Like getAllPlayersFromAllCaches(), it reads the first
+ * team cache of the sport - one team per sport is the norm.
+ */
+export async function readSportTeamCache<TData>(
+  sport: Sport
+): Promise<PlayerCacheStorage<TData> | null> {
+  try {
+    const allData = await chrome.storage.local.get(null);
+    const key = Object.keys(allData).find(
+      (candidate) => candidate.startsWith(teamPrefix(sport)) && !candidate.includes("unknown")
+    );
+    return key ? (allData[key] as PlayerCacheStorage<TData>) : null;
+  } catch (error) {
+    console.error(`[PlayerCache] Failed to read the ${sport} cache:`, error);
+    return null;
+  }
+}
+
+/**
+ * The logged-in team's current squad for a sport, as stored - the sport-
+ * agnostic form of getCurrentSquad(), for sports that deserialise their own
+ * player class. Runs on a game page (uses the team id in the page).
+ */
+export async function getCurrentSquadStored<TData extends { baseInfo: { teamId?: string } }>(
+  sport: Sport
+): Promise<{ players: TData[]; rosterUpdatedAt: string | null }> {
+  try {
+    const cache = await loadCache<TData>(sport);
+    if (!cache) return { players: [], rosterUpdatedAt: null };
+
+    if (cache.squad) {
+      const players = cache.squad.playerIds
+        .map((id) => cache.players[id])
+        .filter((data): data is TData => data !== undefined);
+      return { players, rosterUpdatedAt: cache.squad.updatedAt };
+    }
+
+    const players = Object.values(cache.players).filter(
+      (data) => data.baseInfo.teamId === cache.teamId
+    );
+    return { players, rosterUpdatedAt: null };
+  } catch (error) {
+    console.error(`[PlayerCache] Failed to load the ${sport} squad:`, error);
+    return { players: [], rosterUpdatedAt: null };
+  }
+}
+
+/**
  * Retrieves all cached players from ALL teams (for extension pages)
  * @returns Promise with array of HockeyPlayer instances and cache metadata
  */

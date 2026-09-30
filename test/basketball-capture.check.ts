@@ -9,7 +9,11 @@
  */
 
 import { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
-import { buildBasketballEntry, normalizePlayerId } from "@/sports/basketball/capture";
+import {
+  buildBasketballEntry,
+  deserializeBasketballPlayer,
+  normalizePlayerId,
+} from "@/sports/basketball/capture";
 
 let failures = 0;
 
@@ -95,6 +99,44 @@ check("unread fields are left out, so the merge keeps stored values", () => {
 
 check("no entry for a player without a usable id", () => {
   eq(buildBasketballEntry(makePlayer("unknown"), "PlayersList"), null);
+});
+
+// The report and the squad-rank card rebuild players from the cache; the
+// ratings must come out as if the player had been parsed from the page.
+check("a cached player comes back with the same position ratings, height included", () => {
+  const original = makePlayer("42", { height: 214, experience: 30 });
+  original.calculatePositions();
+  const restored = deserializeBasketballPlayer({
+    sport: "basketball",
+    baseInfo: {
+      id: "42",
+      name: original.name,
+      age: original.age,
+      careerLongitivity: original.careerLongitivity,
+      overallRating: original.overallRating,
+      averageTrainingRatio: original.averageTrainingRatio,
+      height: 214,
+      teamId: "9",
+    },
+    skills,
+    trainingQualities: null,
+    experience: 30,
+    injuryDays: 0,
+    scoutingStatus: "SCOUTED",
+    metadata: {
+      updatedAt: "2026-10-01T10:00:00.000Z",
+      seasonDay: 40,
+      dataCompleteness: "partial",
+      lastViewSource: "PlayersList",
+    },
+  });
+  eq(
+    restored.getPositions().map((p) => `${p.name}:${p.ratingWithXp}`).join(" "),
+    original.getPositions().map((p) => `${p.name}:${p.ratingWithXp}`).join(" "),
+    "all five positions"
+  );
+  eq(restored.teamId, "9", "team id carried over");
+  eq(restored.updatedAt.toISOString(), "2026-10-01T10:00:00.000Z", "updated at");
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

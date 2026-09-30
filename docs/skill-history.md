@@ -374,9 +374,32 @@ and turn each answer into a constant documented like hockey's:
    - A growth curve needs the captured history.
    - It gets labelled "your squad", not "top player".
 
-**Report and squad-rank card:** these can come before the research. `squadRank.ts` is
-already sport-agnostic, and the report needs a sport switch plus basketball's columns: 7
-skills, height, PG/SG/SF/PF/C.
+### Report and squad-rank card (done)
+
+- **Report page: one tab per sport** (`ReportShell.vue`).
+  - It opens on the sport in the URL. The basketball squad overview's "📊 Player Report"
+    button opens `?sport=basketball`.
+  - Otherwise it opens on the last tab used.
+  - Each report loads its data only when its tab is shown.
+- **`BasketballReport.vue`** has the same look as hockey's: `SortableTable`, plus heatmap
+  and styles now shared in `@/components/heatmap.ts` and `@/components/reportTable.css`.
+  - **Filters:** team (from the roster) and position (PG / SG / SF / PF / C).
+  - **Column groups:**
+    - Player: name, age, CL, OR, Exp, **Height**
+    - Skills: the 7 skills, with the heatmap
+    - Position: best position, Pos Skill, Skill ★ on the 300 / 600 / 900 scale, TQ
+    - **All positions:** ratings for all 5. Basketball players move between positions,
+      and height decides the fit.
+    - Data: history days, last updated
+  - No growth columns until the research is in.
+  - Backup and Clear stay on the Hockey tab; they already cover every sport.
+- **Squad-rank card.** The card is now the shared `SquadRankCard.vue`, which is given a
+  ranked subject, a squad loader and a profile link.
+  - Hockey and basketball each have a thin wrapper around it.
+  - The basketball profile sidebar shows it, e.g. "the 3rd best point guard".
+  - Basketball ranks by best-position rating with XP, height included.
+  - Players are rebuilt from the cache by `deserializeBasketballPlayer()`, which recalculates
+    their positions.
 
 **Pace, @25, potential and the chart** come after the research, through the growth-model
 split in outstanding item 5.
@@ -436,7 +459,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 97 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -468,7 +491,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 97 assertions (five files, including basketball capture) — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 98 assertions (five files, including basketball capture) — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.
