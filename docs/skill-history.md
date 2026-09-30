@@ -390,12 +390,16 @@ are 15 to 34; only one player is past 28.
 3. **Camps are team-wide 10-day windows, about every 70 days.**
    - Observed windows: 2024-05-31, 08-16, 10-25, 12-31; 2025-03-15, 05-24, 08-01, 10-11,
      12-20; 2026-03-01, 05-09, 07-18, 09-25.
-   - That is roughly 16 camp days per 112-day season.
+   - That looks like ~16 camp days per 112-day season, but **the game rule (from the user) is
+     5 × 2 = 10 camp days a season**, so projections cap the allowance at 10.
+   - Gains differ a lot by skill *for the same player* (one gained 0.74/day on speed and 1.13
+     on passing). So basketball camp days are judged against the same skill's normal day
+     (`perSkillCampBaseline`). Against the overall median, slow-skill camp days fell under
+     1.6× and broke camps in two: one player read 0 camp days instead of 15.
    - **A camp day gives 2.0× a normal day** (median; p25–p75 1.82–2.13). Hockey's
      `CAMP_DAY_EXTRA = 1` holds.
    - Players were sent at ages 15–25. Only 69 of 10,158 high days fell outside a window.
-   - Hockey's camp detection (4+ days above 1.6× the median) will work; basketball runs are
-     full 10-day blocks.
+   - Hockey's camp rule (4+ days above 1.6× the median) works once judged per skill.
 4. **OR = Σ floor(skill)**, exactly as in hockey. It matched 10,178 of 10,178 entries.
 5. **Height grows linearly, then stops.**
    - Growth is +1 cm at a steady per-player interval: **4–14 cm per season**.
@@ -432,7 +436,7 @@ are 15 to 34; only one player is past 28.
 ### Roadmap: what the captured data is for
 
 Items 1, 2, 3, 6 and the XP part of 4 are answered in the research findings above. Item 5 is
-waiting on the facilities history.
+sidestepped by the adaptive reference below, and item 7 is that reference.
 
 Research can start as soon as the squad's past is gathered with the training-progress walk. It
 no longer has to wait weeks for daily capture. Re-run hockey's analyses on basketball data, and
@@ -469,7 +473,8 @@ turn each answer into a constant documented like hockey's:
     - **All positions:** ratings for all 5. Basketball players move between positions,
       and height decides the fit.
     - Data: history days, last updated
-  - No growth columns until the research is in.
+  - **Growth:** Pace, Skill @25, OR @25 and Potential ★ (see the growth model below). A
+    collapsible "Pace reference" panel shows the curve and which player sets it at each age.
   - Backup and Clear stay on the Hockey tab; they already cover every sport.
 - **Squad-rank card.** The card is now the shared `SquadRankCard.vue`, which is given a
   ranked subject, a squad loader and a profile link.
@@ -479,8 +484,50 @@ turn each answer into a constant documented like hockey's:
   - Players are rebuilt from the cache by `deserializeBasketballPlayer()`, which recalculates
     their positions.
 
-**Pace, @25, potential and the chart** come after the research, through the growth-model
-split in outstanding item 5.
+### Growth model: adaptive reference (`src/sports/basketball/growthModel.ts`)
+
+The user's idea: **the best squad player at each age counts as 100%.** Basketball has no
+top-player table, and the squad's own best trained under the same facilities and coaches.
+This also sidesteps the unsettled age-curve question (research item 7).
+
+- **Reference curve** (`buildReferenceCurve`), rebuilt from all stored history on every
+  report load:
+  - Per player and whole age: skill points per normal day. No-training and camp days are
+    skipped with the shared `src/base/gainCleaning.ts`, which hockey uses too.
+  - A player counts at an age with ≥28 measured days, mostly day by day. That keeps sparse
+    profile-visit history of other teams' players out.
+  - Take the best player's value at each age, then make the curve **non-increasing after
+    the peak** (pool-adjacent-violators). The raw best is jagged: 24 read 0.96, above 23's
+    0.89, only because a different player was best.
+  - Ages without data come from `DEFAULT_REFERENCE` (this research's smoothed curve),
+    scaled to meet the nearest measured age.
+  - On the Sep 2026 backup: 1.21 at 15, 1.25 at 18 (the peak), 1.03 at 19–20, 0.91 at
+    22–24, 0.76 at 25, 0.60 at 27, 0.49 at 28, then down to 0.01 at 33.
+- **Pace** = skill points per normal day over the last 56 days ÷ the reference at the
+  window's midpoint age.
+  - It is provisional from **7 days** (hockey: 14), because daily gains are steady.
+  - It is full at 28 days.
+  - Several players read ~100%, because the current best players are measured at their own
+    current age. That is by design: "as good as your best at this age".
+- **@25 projection** (`projectBasketball`):
+  - Points = pace × the reference's points from now to 25.
+  - Camp days are added at 2×: last season's count, capped at 10, until age 26.
+  - Shooting and blocking keep their current share of training.
+  - The rest goes into the five rated skills, spent balanced for each position (bottleneck
+    first). The best resulting position wins, so a growing junior can project into another
+    position.
+  - Height keeps its observed rate until 21 (`HEIGHT_STOP_AGE`).
+  - Players already 25 or older show the value recorded in history instead.
+- **Potential ★:** the same model extended to 32, plus XP at the squad's typical rate
+  (`TYPICAL_XP_PER_SEASON`, read off the cache snapshot), or the player's own rate if higher.
+- **Sanity check on real data.** Projections for today's juniors are much higher than what
+  current 25-year-olds reached (OR ~1300–1500 vs ~900). That is not a bug:
+  - Current youth grow 115–140 OR a season (e.g. 340 → 624 from 16.6 to 18.6).
+  - Today's 25-year-olds were at OR ~250–320 at 19–20.
+  - The model extends today's rates. Whether juniors keep them is the open question the
+    next seasons of history will answer.
+
+The basketball profile chart is not built yet.
 
 ## Backup format
 

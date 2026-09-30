@@ -34,6 +34,7 @@ import { calculateSkillWithExp } from "@/base/calculations";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { historyEntryAge } from "@/sports/hockey/skillHistoryChart";
+import { cleanedGains, daysBetween } from "@/base/gainCleaning";
 
 type SkillName = keyof HockeySkills;
 
@@ -71,15 +72,8 @@ export const PACE_MIN_SPAN_DAYS = 28;
  */
 export const PACE_PROVISIONAL_MIN_DAYS = 14;
 
-/**
- * A training camp: this many consecutive days, each gaining more than
- * CAMP_GAIN_RATIO x the window's median daily gain. Camps roughly double
- * training for 7-14 days; on the Aug 2026 backup they showed as 4-13 day runs
- * on the same dates across the youth squad. Ordinary good days come in runs of
- * 1-3.
- */
-const CAMP_MIN_RUN_DAYS = 4;
-const CAMP_GAIN_RATIO = 1.6;
+// Camp detection (CAMP_MIN_RUN_DAYS, CAMP_GAIN_RATIO) and the no-training rule
+// are shared with basketball: see src/base/gainCleaning.ts.
 
 /**
  * The camp allowance projections add back. Pace skips camp days so it
@@ -97,13 +91,6 @@ export const CAMP_DAY_EXTRA = 1.0;
 export const CAMP_UNTIL_AGE = 22;
 /** How far back a player's own camp record is read: one season. */
 export const CAMP_LOOKBACK_DAYS = 112;
-
-/**
- * Above this share of no-training days the player isn't being trained at all
- * (too old, or no training set), so skipping them would measure a handful of
- * leftover days. The pace then keeps them and honestly reads low.
- */
-const NOT_TRAINING_SHARE = 0.5;
 
 /**
  * How fast players train at each age, relative to ages 16-21, at the user's
@@ -227,12 +214,6 @@ export interface GrowthPace {
 }
 
 /** Whole days between two ISO dates. UTC arithmetic, so DST can't skew it. */
-function daysBetween(fromIso: string, toIso: string): number {
-  return Math.round(
-    (Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / 86_400_000
-  );
-}
-
 /** A position's main skills and their weights, e.g. D: defence 1, passing 0.5, aggression 0.5. */
 function mainWeights(positionName: string): [SkillName, number][] | null {
   const rule = positionSettings.find((p) => p.name === positionName);
@@ -374,7 +355,7 @@ export function measureGrowthPace(
   if (!first || first === last) return null;
 
   const spanDays = daysBetween(first.date, last.date);
-  const cleaned = cleanedGains(usable.slice(usable.indexOf(first)), spanDays);
+  const cleaned = cleanedGains(usable.slice(usable.indexOf(first)), SKILL_NAMES, spanDays);
   if (cleaned.measuredDays < PACE_PROVISIONAL_MIN_DAYS) return null;
 
   // The camp record reads a full season, not just the pace window - camps come
@@ -389,7 +370,7 @@ export function measureGrowthPace(
     ? CAMP_MAX_DAYS_PER_SEASON
     : Math.min(
         CAMP_MAX_DAYS_PER_SEASON,
-        cleanedGains(usable.slice(usable.indexOf(seasonStart)), seasonSpan).skippedCampDays
+        cleanedGains(usable.slice(usable.indexOf(seasonStart)), SKILL_NAMES, seasonSpan).skippedCampDays
       );
 
   const perSeason = (value: number) =>
@@ -449,104 +430,6 @@ export function measureGrowthPace(
     provisional: cleaned.measuredDays < PACE_MIN_SPAN_DAYS,
     campDaysPerSeason,
     campDaysAssumed,
-  };
-}
-
-type Interval = { days: number; gains: Record<SkillName, number>; total: number };
-
-/**
- * Per-skill gains over a window, leaving out days that aren't normal training.
- *
- * PPM has no rest days: a player gains nothing only when injured, too old, or
- * with no training selected. So a day where all seven skills stand still is
- * skipped - even a single one, since injuries can be that short. Crucially it
- * is ALL skills, not the position's main skills: on the Aug 2026 backup, 23%
- * of days left the main skills flat, but on 87% of those another skill grew
- * (training simply went elsewhere that day) - real training that must count.
- * Only the remaining 13%, every skill flat, were true no-training days.
- *
- * Training camps (about double training for 7-14 days) are skipped too, so the
- * pace describes normal training rather than whichever event a window caught.
- *
- * Only 1-day intervals can be judged. Longer ones - gaps, or history from
- * occasional profile visits - are always kept, so sparse history is measured
- * endpoint to endpoint exactly as before.
- */
-function cleanedGains(
-  window: (SkillHistoryEntry & { skills: HockeySkills })[],
-  spanDays: number
-): {
-  gains: Record<SkillName, number>;
-  measuredDays: number;
-  skippedNoTrainingDays: number;
-  skippedCampDays: number;
-} {
-  const intervals: Interval[] = [];
-  for (let i = 1; i < window.length; i++) {
-    const gains = Object.fromEntries(
-      SKILL_NAMES.map((skill) => [
-        skill,
-        (window[i].skills[skill] ?? 0) - (window[i - 1].skills[skill] ?? 0),
-      ])
-    ) as Record<SkillName, number>;
-    intervals.push({
-      days: daysBetween(window[i - 1].date, window[i].date),
-      gains,
-      total: SKILL_NAMES.reduce((sum, skill) => sum + gains[skill], 0),
-    });
-  }
-
-  const isDaily = (interval: Interval) => interval.days === 1;
-  const isFlat = (interval: Interval) => isDaily(interval) && Math.abs(interval.total) < 0.01;
-
-  const skip = new Set<Interval>();
-
-  // Mostly flat means not being trained at all - keep those days, so the
-  // pace reads low rather than measuring whatever few days are left.
-  const flatDays = intervals.filter(isFlat).length;
-  if (flatDays <= NOT_TRAINING_SHARE * spanDays) {
-    intervals.filter(isFlat).forEach((interval) => skip.add(interval));
-  }
-
-  // Camps: runs of consecutive days well above this window's normal day.
-  const normalDays = intervals
-    .filter((interval) => isDaily(interval) && !isFlat(interval))
-    .map((interval) => interval.total)
-    .sort((a, b) => a - b);
-  let skippedCampDays = 0;
-  if (normalDays.length > 0) {
-    const threshold = CAMP_GAIN_RATIO * normalDays[Math.floor(normalDays.length / 2)];
-    let run: Interval[] = [];
-    const closeRun = () => {
-      if (run.length >= CAMP_MIN_RUN_DAYS) {
-        run.forEach((interval) => skip.add(interval));
-        skippedCampDays += run.length;
-      }
-      run = [];
-    };
-    for (const interval of intervals) {
-      if (isDaily(interval) && interval.total > threshold) run.push(interval);
-      else closeRun();
-    }
-    closeRun();
-  }
-
-  const gains = Object.fromEntries(SKILL_NAMES.map((skill) => [skill, 0])) as Record<
-    SkillName,
-    number
-  >;
-  let measuredDays = 0;
-  for (const interval of intervals) {
-    if (skip.has(interval)) continue;
-    measuredDays += interval.days;
-    SKILL_NAMES.forEach((skill) => (gains[skill] += interval.gains[skill]));
-  }
-
-  return {
-    gains,
-    measuredDays,
-    skippedNoTrainingDays: flatDays <= NOT_TRAINING_SHARE * spanDays ? flatDays : 0,
-    skippedCampDays,
   };
 }
 

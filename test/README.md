@@ -13,9 +13,10 @@ only targets `src` plus the vite configs, so nothing here affects `pnpm type-che
 |---|---|---|
 | `backup-parse.check.ts` | `parseBackup()` — envelope rejection and row filtering, v1 files and v2 per-sport history, 14 assertions | 2026-10-01, all pass |
 | `player-cache-import.check.ts` | `importCaches()` / `exportAllCaches()` — merge, replace, key handling, the roster read the team filter uses, basketball caches in export/import, 11 assertions | 2026-10-01, all pass |
-| `growth-pace.check.ts` | `growthPace.ts` — skill-point pace (incl. catch-up and non-bottleneck cases, bonus growth and the bonus cap), the balanced solver, projection (incl. the on-curve and age-adjusted invariants), no-training and camp days, provisional pace, the camp allowance, age factors, overall rating, the @25 lookups, XP and potential, 52 assertions | 2026-09-26, all pass |
+| `growth-pace.check.ts` | `growthPace.ts` — skill-point pace (incl. catch-up and non-bottleneck cases, bonus growth and the bonus cap), the balanced solver, projection (incl. the on-curve and age-adjusted invariants), no-training and camp days, provisional pace, the camp allowance, age factors, overall rating, the @25 lookups, XP and potential, 52 assertions | 2026-09-30, all pass (rerun after camp and no-training cleaning moved to `base/gainCleaning.ts`) |
 | `squad-rank.check.ts` | `squadRank.ts` — rank at position, neighbours and gaps, the 4-neighbour standings slice (shifting at the top and bottom), ties, the subject's cached copy ignored, ordinals, 13 assertions | 2026-09-25, all pass |
 | `basketball-capture.check.ts` | `sports/basketball/capture.ts` — player-id normalising (links, data=, path, rejects), the daily entry incl. height and XP, unread fields left out, rebuilding a cached player, 8 assertions | 2026-10-01, all pass |
+| `basketball-growth.check.ts` | `sports/basketball/growthModel.ts` and the shared `base/gainCleaning.ts` — the per-skill camp baseline, flat days, the reference curve (best per age, non-increasing after the peak, default fill), pace and provisional pace, skill shares, the 10-day camp cap, height growth, reference points, the balanced solver, projection bookkeeping, the height stop, potential, 14 checks | 2026-09-30, all pass |
 
 ## Running them until there's a runner
 
