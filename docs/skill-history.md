@@ -318,9 +318,22 @@ profile card. It shows 5 stars in three tiers, measured on rating **with XP**:
 
 ## Basketball
 
-Basketball has **no training-progress page**, so there's no past to back-fill. History
-exists only from the day capture started, one entry per player per day. Every day not
-captured is gone for good, which is why capture shipped before anything that reads it.
+Basketball **does** have a training-progress page, the same as hockey's (`/en/training-progress`,
+`/lv/treninu-progress`). It was first thought not to, which is why the daily capture below
+shipped first. The page shows, per day:
+- OR;
+- all 7 skills with decimals;
+- **height** (the `Hgt` / `Aug` column).
+
+So history can be back-filled with the same **Gather history** walk as hockey. One player
+checked on 2026-10-01 has months back to April 2024. The page logic is shared in
+`src/base/trainingProgress.ts`, and each sport passes only its column map (basketball adds
+`heightColumn: 9`). The pager, the month bounds and the `(T:…)` markers were verified
+identical on the live site.
+
+One early observation for the research: on that page **only one skill seems to move per day**
+(the `(T:…)` marker sits on a single cell). Basketball may train one skill a day rather than
+splitting training like hockey. Check this across the squad before modelling the split.
 
 ### Storage, per sport
 
@@ -357,18 +370,19 @@ Hockey's storage kept its names; each other sport got its own.
 
 ### Roadmap: what the captured data is for
 
-Research comes after about 4–8 weeks of capture. Re-run hockey's analyses on basketball data,
-and turn each answer into a constant documented like hockey's:
+Research can start as soon as the squad's past is gathered with the training-progress walk. It
+no longer has to wait weeks for daily capture. Re-run hockey's analyses on basketball data, and
+turn each answer into a constant documented like hockey's:
 
-1. **Training split.** Do gains follow `trainingRatios` (e.g. PG 100/80/80/20/20)? Does
-   training quality matter?
+1. **Training split.** Do gains follow `trainingRatios` (e.g. PG 100/80/80/20/20), or is it
+   one skill per day as the page suggests? Does training quality matter?
 2. **No-training days:** all 7 skills flat. How common are they, and how long are the runs?
 3. **Camps.** There's a camp page (`treninnometne`, route commented out). Find the days per
    season, the multiplier and the ages.
 4. **XP share** by age.
 5. **Age slowdown**, measured by comparing players over the same months. Make
    `scripts/measure-age-factors.ts` sport-aware.
-6. **Height:** does it change with age?
+6. **Height:** does it change with age? The training-progress page stores it per day, so gathered history answers this directly.
 7. **Reference curve** from the user's own data, since there's no top-player table.
    - A level curve (rating by age) is possible now.
    - A growth curve needs the captured history.

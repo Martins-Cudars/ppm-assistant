@@ -6,6 +6,7 @@ const multilangRoutes = {
   // editLine: ["/en/edit-line", "/lv/rediget-mainu"],
   // nextGame: ["/en/next-game", "/lv/nakosa-spele"],
   market: ["/en/market", "/lv/speletaju-tirgus"],
+  trainingProgress: ["/en/training-progress", "/lv/treninu-progress"],
   // trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
 };
 
