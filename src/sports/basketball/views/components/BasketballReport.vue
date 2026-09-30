@@ -51,6 +51,11 @@ import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/typ
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import GrowthComparisonChart, {
+  type GrowthReference,
+  type GrowthSeries,
+} from "@/components/GrowthComparisonChart.vue";
+import { buildSquadBestCurve, historyPoints } from "@/sports/basketball/historyChart";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
@@ -120,6 +125,37 @@ const curve = computed<ReferenceCurve>(() =>
 );
 
 const measuredCurve = computed(() => curve.value.filter((p) => p.source === "squad"));
+
+// --- Growth comparison chart ------------------------------------------------------
+
+const activeTab = ref<"table" | "graph">("table");
+
+// Every filtered player's history on one chart. A player with no stored days
+// still shows as a dot at today's value.
+const comparisonSeries = computed<GrowthSeries[]>(() =>
+  filtered.value.map((player) => {
+    const entries = history.value?.get(idOf(player)) ?? [];
+    const exactAge = exactAgeOf(player);
+    const skill = historyPoints(entries, exactAge, "skill", player.height);
+    const or = historyPoints(entries, exactAge, "or", player.height);
+    return {
+      id: idOf(player),
+      label: player.name,
+      skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
+      or: or.length > 0 ? or : [{ x: exactAge, y: player.overallRating }],
+    };
+  })
+);
+
+// The grey line: the best any squad player had on reaching each age.
+const squadBestReference = computed<GrowthReference>(() => {
+  const best = buildSquadBestCurve(
+    history.value ?? new Map(),
+    new Map(players.value.map((p) => [idOf(p), exactAgeOf(p)])),
+    new Map(players.value.map((p) => [idOf(p), p.height]))
+  );
+  return { label: "Your squad's best at each age", ...best };
+});
 
 const referenceTitle = (point: ReferencePoint) =>
   point.source === "squad"
@@ -572,6 +608,13 @@ const profileUrl = (player: BasketballPlayer) =>
       </span>
     </div>
 
+    <div class="view-tabs white_box">
+      <button :class="{ active: activeTab === 'table' }" @click="activeTab = 'table'">Table</button>
+      <button :class="{ active: activeTab === 'graph' }" @click="activeTab = 'graph'">
+        Growth Comparison
+      </button>
+    </div>
+
     <div class="filters white_box">
       <div class="filter-group">
         <label>Team:</label>
@@ -606,6 +649,13 @@ const profileUrl = (player: BasketballPlayer) =>
     <div v-else-if="filtered.length === 0" class="empty-state white_box">
       No players match the current filters.
     </div>
+
+    <GrowthComparisonChart
+      v-else-if="activeTab === 'graph'"
+      :series="comparisonSeries"
+      :reference="squadBestReference"
+      :loading="history === null"
+    />
 
     <template v-else>
       <p class="heat-legend">
@@ -740,6 +790,31 @@ const profileUrl = (player: BasketballPlayer) =>
 .bb-header h2 {
   margin: 0;
   font-size: 20px;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.view-tabs button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.view-tabs button:hover {
+  background: #f8f9fa;
+}
+
+.view-tabs button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
 }
 
 .reference {

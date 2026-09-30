@@ -32,6 +32,11 @@ import {
 } from "@/sports/basketball/growthModel";
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import { cleanedGains } from "@/base/gainCleaning";
+import {
+  buildSquadBestCurve,
+  historyPoints,
+  projectionPoints,
+} from "@/sports/basketball/historyChart";
 
 let failures = 0;
 const check = (name: string, fn: () => void) => {
@@ -245,6 +250,51 @@ check("potential: at or past the peak age shows the current value", () => {
   });
   eq(potential?.kind, "current");
   eq(potential?.ratingWithXp, 177);
+});
+
+// --- Chart data ------------------------------------------------------------------
+
+check("chart: history points are dated by age and thinned to ~2 weeks", () => {
+  const entries = history(70, ["passing"], () => 1);
+  const points = historyPoints(entries, 20, "or", 190, TODAY);
+  if (points.length < 5 || points.length > 8) throw new Error(`${points.length} points`);
+  near(points[0].x, 19, 0.02, "first day is a season ago");
+  near(points[points.length - 1].x, 20, 0.02, "last day is today");
+});
+
+check("chart: OR-only days don't swallow a window's skill days", () => {
+  const entries = history(28, ["passing"], () => 1).map((e, i) =>
+    i % 2 === 0 ? e : { ...e, skills: undefined, overallRating: 400 }
+  );
+  const skill = historyPoints(entries, 20, "skill", 190, TODAY);
+  if (skill.length < 2) throw new Error("skill line lost its points");
+  if (skill.some((p) => !Number.isFinite(p.y))) throw new Error("non-numeric point");
+});
+
+check("chart: squad best is the highest value on reaching each whole age", () => {
+  // Same schedule, A trains twice as fast; both are 20 today with a season of history.
+  const a = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 2, { playerId: "A" });
+  const b = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 1, { playerId: "B" });
+  const best = buildSquadBestCurve(
+    new Map([["A", a], ["B", b]]),
+    new Map([["A", 20], ["B", 20]]),
+    new Map([["A", 190], ["B", 190]]),
+    TODAY
+  );
+  eq(best.or.map((p) => p.x).join(","), "19,20");
+  near(best.or[1].y, Math.max(...a.slice(-1).map((e) => basketballOverall(e.skills))), 0, "A sets 20");
+});
+
+check("chart: projection starts at today's rating and never falls with a positive pace", () => {
+  const entries = history(56, ["passing", "technical", "speed"], () => 1);
+  const pace = measureBasketballPace(entries, 18, flatCurve(1), TODAY)!;
+  const skills = entries[entries.length - 1].skills;
+  const points = projectionPoints(skills, 190, 18, pace, flatCurve(1), 25);
+  near(points[0].x, 18, 0, "starts now");
+  eq(points[points.length - 1].x, 25);
+  points.slice(1).forEach((p, i) => {
+    if (p.y < points[i].y) throw new Error(`fell at ${p.x}`);
+  });
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

@@ -534,7 +534,25 @@ This also sidesteps the unsettled age-curve question (research item 7).
   - The model extends today's training rates, which are higher than when the current
     25-year-olds were juniors.
 
-The basketball profile chart is not built yet.
+### Charts (`src/sports/basketball/historyChart.ts`)
+
+- **Profile chart** (`BasketballGrowthChart.vue`), mounted right below the profile box. The
+  basketball layout has no `.column_center_inner`: the table sits in a `.white_box` in
+  `.column_center_half`. It shows:
+  - grey dashed: your squad's best rating on reaching each whole age (no XP), from
+    `buildSquadBestCurve`. It is the level counterpart of the pace reference; hockey draws a
+    top-player table here;
+  - red: today's best-position rating, with and without XP;
+  - blue: stored history, each day rated with that day's height;
+  - dashed blue: the projection at the player's own pace, the same model as the @25 column.
+- **Report → Growth Comparison tab:** every filtered player by age on the shared
+  `src/components/GrowthComparisonChart.vue`.
+  - It has a Skill / OR toggle, an age range, Hide / Show All, and the same squad-best
+    grey line.
+  - The component takes prebuilt series, so hockey's report could move to it too.
+- History is thinned to one point per ~14 days by the shared
+  `src/base/historyDownsample.ts`, which hockey re-exports.
+- Neither chart has been seen in a browser yet.
 
 ## Backup format
 

@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import { parseBasketballPlayerFromProfilePage } from "@/sports/basketball/parsers/playerProfile";
 import BasketballPlayerSidebar from "./components/BasketballPlayerSidebar.vue";
+import BasketballGrowthChart from "./components/BasketballGrowthChart.vue";
 import { captureBasketballPlayers } from "@/sports/basketball/capture";
 import { getPlayerTeamId } from "@/utils/dom";
 
@@ -33,6 +34,18 @@ const viewPlayerProfile = () => {
 
   const sidebarApp = createApp(BasketballPlayerSidebar, { player });
   sidebarApp.mount(sidebarContainer);
+
+  // Growth chart right below the profile box. Basketball's layout differs from
+  // hockey's: the table sits in .profile_player_center inside a .white_box in
+  // .column_center_half (no .column_center_inner), checked on the live site.
+  const chartContainer = document.createElement("div");
+  chartContainer.id = "ppm-assistant-basketball-chart";
+  const profileBox = playerTable.closest(".white_box");
+  const centerColumn = document.querySelector(".column_center_half");
+  if (profileBox) profileBox.after(chartContainer);
+  else if (centerColumn) centerColumn.appendChild(chartContainer);
+  else playerTable.parentNode?.appendChild(chartContainer);
+  createApp(BasketballGrowthChart, { player }).mount(chartContainer);
 };
 
 export default viewPlayerProfile;
