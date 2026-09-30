@@ -96,7 +96,8 @@ const paceOf = (
   pace: number,
   expectedPerSeason: number,
   rates: Partial<HockeySkills> = {},
-  midAge = 18
+  midAge = 18,
+  campDaysPerSeason = 0
 ): GrowthPace => ({
   position,
   pointsPerSeason: 0,
@@ -118,6 +119,8 @@ const paceOf = (
   skippedNoTrainingDays: 0,
   skippedCampDays: 0,
   provisional: false,
+  campDaysPerSeason,
+  campDaysAssumed: false,
 });
 
 check("expected gain is the slope of the year the age falls in", () => {
@@ -306,6 +309,41 @@ check("three good days in a row are not a camp", () => {
   const result = measureGrowthPace(dailyD(days), 18.5, "D")!;
   eq(result.skippedCampDays, 0, "kept");
   eq(result.measuredDays, 40, "measured");
+});
+
+// --- Camp allowance -------------------------------------------------------------
+// The game allows up to 14 camp days per player per season, until 22 here.
+// Pace skips camps; projections add the player's own camp days back.
+
+check("a player's camp days are read from his last season", () => {
+  const withCamp = (length: number) => {
+    const days = ones(120);
+    for (let i = 50; i < 50 + length; i++) days[i] = 2;
+    return measureGrowthPace(dailyD(days), 18.5, "D")!;
+  };
+  eq(withCamp(14).campDaysPerSeason, 14, "full camp");
+  eq(withCamp(14).campDaysAssumed, false, "from history");
+  eq(withCamp(5).campDaysPerSeason, 5, "short camp");
+  eq(measureGrowthPace(dailyD(ones(120)), 18.5, "D")!.campDaysPerSeason, 0, "no camp");
+});
+
+check("without a season of history the full allowance is assumed", () => {
+  const result = measureGrowthPace(dailyD(ones(60)), 15.5, "D")!;
+  eq(result.campDaysPerSeason, 14, "assumed 14");
+  eq(result.campDaysAssumed, true, "flagged");
+});
+
+check("camps add to every year before 22, and nothing after", () => {
+  near(adjustedCurveGainBetween(18, 25, 14), 391 * (1 + 14 / 112) + 0.95 * 252, "18 -> 25");
+  near(adjustedCurveGainBetween(22, 25, 14), adjustedCurveGainBetween(22, 25), "none from 22");
+});
+
+check("the projection includes the camp allowance", () => {
+  const onCurve = skills({ defence: 450, passing: 225, aggression: 225 });
+  eq(
+    projectPositionRating(onCurve, 18, paceOf("D", 1, 101, {}, 18, 14), 25),
+    Math.round(450 + 391 * (1 + 14 / 112) + 0.95 * 252)
+  );
 });
 
 check("gaps in the history are kept, not judged", () => {

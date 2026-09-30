@@ -12,6 +12,8 @@ import {
 import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
 import { getExactAge, readEntryOverallRating } from "@/sports/hockey/skillHistoryChart";
 import {
+  CAMP_LOOKBACK_DAYS,
+  CAMP_UNTIL_AGE,
   GrowthPace,
   PACE_MIN_SPAN_DAYS,
   PACE_PROVISIONAL_MIN_DAYS,
@@ -159,7 +161,9 @@ const loadHistoryMeta = async () => {
   const [summaries, stats, recent, atAge] = await Promise.all([
     getSkillHistorySummaries(),
     getSkillHistoryStats(),
-    getLatestSkillHistoryWindow(PACE_WINDOW_DAYS),
+    // A full season, not just the pace window: the camp allowance reads the
+    // player's last season of camps. The pace itself still uses 56 days.
+    getLatestSkillHistoryWindow(CAMP_LOOKBACK_DAYS),
     getSkillHistoryNearDates(atAgeTargets, AT_AGE_TOLERANCE_DAYS),
   ]);
   historySummaries.value = summaries;
@@ -239,6 +243,11 @@ const paceTitle = (player: HockeyPlayer) => {
   if (skipped.length > 0) {
     lines.push(`Skipped ${skipped.join(" and ")} (injury, no training, or camp)`);
   }
+  lines.push(
+    pace.campDaysAssumed
+      ? "Camp days last season: unknown (less than a season of history)"
+      : `Camp days last season: ${pace.campDaysPerSeason}`
+  );
   if (pace.provisional) {
     lines.unshift(
       `Provisional: only ${pace.measuredDays} days of data - settles at ${PACE_MIN_SPAN_DAYS}`
@@ -251,6 +260,18 @@ const paceTitle = (player: HockeyPlayer) => {
     );
   }
   return lines.join("\n");
+};
+
+/** How the projection accounts for training camps, for the @25 title. */
+const campAllowanceText = (pace: GrowthPace, exactAge: number) => {
+  if (exactAge >= CAMP_UNTIL_AGE) return "";
+  if (pace.campDaysPerSeason === 0) {
+    return "No camps last season, so none are assumed.";
+  }
+  return (
+    `Includes ${pace.campDaysPerSeason} camp days a season until ${CAMP_UNTIL_AGE} ` +
+    (pace.campDaysAssumed ? "(assumed: less than a season of history)." : "(from last season).")
+  );
 };
 
 const paceBadgeClass = (pace: number) => ({
@@ -313,7 +334,8 @@ const atAgeByPlayer = computed(() => {
         `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the top-player pace ` +
         "from here on, slowing slightly from 22 and more from 25, as this team's players do. Any lagging main " +
-        "skill is caught up first; other skills keep their current rate." +
+        "skill is caught up first; other skills keep their current rate. " +
+        campAllowanceText(pace, exactAge) +
         (pace.provisional
           ? ` Provisional: the pace rests on only ${pace.measuredDays} days of data.`
           : ""),

@@ -245,19 +245,45 @@ ages:
 
 | Projected at | Projected | Error |
 |---|---|---|
-| 20 | 813 / 1768 | −3% |
+| 20 | 822 / 1788 | −2% |
 | 22 | 815 / 1774 | −3% |
 | 23 | 823 / 1788 | −2% |
 | 24 | 847 / 1838 | +1% |
 
-At 18 it overshoots by +13%. That window is his last two months at the elite team, so it's
-the facility effect, not the model. Before camps were skipped it overshot by +28%. At 22 the
-error went from −7% to −3%, once the 17 injury days in that window were skipped.
+At 18 it overshoots by +17%. That window is his last two months at the elite team, so it's
+the facility effect, not the model. At 22 the error went from −7% to −3%, once the 17 injury
+days in that window were skipped.
 
-**Known gap: camps are skipped in the projection too.** If camps recur (the youth had one in
-Feb and one in June, about one per 112-day season), each adds roughly 14 extra days of
-training a season. The @25 projections for players under 22 may therefore run about 10%
-low. If that holds, a "camp allowance" per season is the fix.
+### Camp allowance
+
+Pace skips camp days, so it describes normal training. **But camps are a regular budget, not
+windfalls.** The game lets a team send about 20 players to camp twice a season, with at most
+14 camp days per player per 112-day season. The projection therefore adds them back.
+
+**What the Aug 28 backup shows:**
+
+- **A camp day gains 1.98× a normal day** (median over 466 camp days), so each camp day adds
+  about one extra day of training (`CAMP_DAY_EXTRA = 1`).
+- **Blocks come once a season.** They started Jul 13, Nov 2, Feb 23 and Jun 13, with full
+  blocks of 13–14 days.
+- **Only players under 22 go.** All 21 players seen at camp were 15.9–21.9, none older.
+  That's `CAMP_UNTIL_AGE = 22`.
+
+**How the allowance works:**
+
+- **Per player, from his own record.** It counts the camp days in his last 112 days of
+  history (0–14, `campDaysPerSeason`). Players you don't send get none.
+- **New players:** with less than a season of history, the full 14 are assumed until his own
+  record exists.
+- **Report fetch:** the report fetches 112 days so the whole season is visible. The pace
+  itself still uses the last 56.
+- **The boost:** each year before 22 grows by `1 + camp days ÷ 112` on top of the age factor,
+  via `adjustedCurveGainBetween(from, to, campDaysPerSeason)`. Every skill gets it, as camps
+  boost all training.
+- **Size of the effect:** it adds about **+6–7%** to @25 for 15–16-year-olds on the full 14
+  days. It shrinks to 0–2% by 20–21, as fewer camp seasons remain.
+- **Where it shows:** the @25 tooltip states the allowance, and the Pace tooltip shows the
+  camp days last season.
 
 ## Backup format
 
@@ -306,14 +332,14 @@ The repo has no test runner, so "verified" means it was actually run.
 | `parseBackup()` | **Verified.** 12 assertions against the compiled code (foreign files, unknown versions, missing `id`, `id` disagreeing with `playerId:date`, malformed dates, null rows). |
 | `importCaches()` / `exportAllCaches()` | **Verified.** 8 assertions (newest-wins merge, union, replace dropping stale keys, the `team-unknown` exclusion, and that import writes the file's keys rather than a DOM-derived one). |
 | Header layout with the notice | **Verified in the browser.** Measured at 1400px and 760px: no overflow, notice contained and full-width. |
-| Pace / projection / @25 math | **Verified.** 41 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
+| Pace / projection / @25 math | **Verified.** 45 assertions in `test/growth-pace.check.ts`, plus replays of the Aug 28 backup: the catch-up player goes from 98% to 57%, every balanced player stays within 3 points of its rating-based pace, 14 of 15 players aged 25+ get a recorded @25 value, and the Octave backtest lands within 7% from age 20 onward. |
 | Pace and @25 columns, projection line, `SKILL_HISTORY_LATEST_WINDOW`, `SKILL_HISTORY_NEAR_DATES` | **Never run in the browser.** The worker's key-then-get read has no test at all. |
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 75 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+The 79 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
 shows how to run them meanwhile, and wiring them up is item 4 below.
 
@@ -345,7 +371,7 @@ doesn't.
 
 **4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
 [`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 75 assertions — they just need a runner instead of the
+`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 79 assertions — they just need a runner instead of the
 throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
 targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
 `historyEntryAge`.

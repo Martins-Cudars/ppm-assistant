@@ -81,6 +81,23 @@ const CAMP_MIN_RUN_DAYS = 4;
 const CAMP_GAIN_RATIO = 1.6;
 
 /**
+ * The camp allowance projections add back. Pace skips camp days so it
+ * describes normal training, but camps aren't windfalls: the game lets a team
+ * send ~20 players twice a season, at most 14 camp days per player per 112-day
+ * season. Leaving them out of projections made campers' @25 ~10% too low.
+ *
+ * From the Aug 2026 backup: a camp day gains 1.98x a normal day (median over
+ * 466 camp days), so each one adds about one extra day of training; blocks
+ * started Jul 13, Nov 2, Feb 23 and Jun 13 - one per season; and all 21
+ * players seen at camp were 15.9-21.9, none 22 or older.
+ */
+export const CAMP_MAX_DAYS_PER_SEASON = 14;
+export const CAMP_DAY_EXTRA = 1.0;
+export const CAMP_UNTIL_AGE = 22;
+/** How far back a player's own camp record is read: one season. */
+export const CAMP_LOOKBACK_DAYS = 112;
+
+/**
  * Above this share of no-training days the player isn't being trained at all
  * (too old, or no training set), so skipping them would measure a handful of
  * leftover days. The pace then keeps them and honestly reads low.
@@ -199,6 +216,13 @@ export interface GrowthPace {
   skippedCampDays: number;
   /** Fewer than PACE_MIN_SPAN_DAYS measured days: shown, but marked. */
   provisional: boolean;
+  /**
+   * Camp days a season the projection assumes until CAMP_UNTIL_AGE: the camp
+   * days in the player's last season of history (0-14), or the full 14 when
+   * there isn't a season of history yet (campDaysAssumed).
+   */
+  campDaysPerSeason: number;
+  campDaysAssumed: boolean;
 }
 
 /** Whole days between two ISO dates. UTC arithmetic, so DST can't skew it. */
@@ -292,8 +316,18 @@ export function curveGainBetween(fromAge: number, toAge: number): number {
  * how much a player at 100% of the reference (ages 16-21) pace would actually
  * gain at this team. The factor bands start on whole ages, and the walk steps
  * through whole ages, so each segment sits in exactly one band.
+ *
+ * Years before CAMP_UNTIL_AGE also get the camp allowance: each camp day a
+ * season adds CAMP_DAY_EXTRA of a normal day to the 112-day season. 22 is a
+ * whole age too, so no segment straddles it.
  */
-export function adjustedCurveGainBetween(fromAge: number, toAge: number): number {
+export function adjustedCurveGainBetween(
+  fromAge: number,
+  toAge: number,
+  campDaysPerSeason = 0
+): number {
+  const campBoost =
+    1 + (campDaysPerSeason * CAMP_DAY_EXTRA) / hockeyPlayerProfile.daysPerSeason;
   const endAge = Math.min(toAge, PROJECTION_MAX_AGE);
   let total = 0;
   let age = fromAge;
@@ -303,7 +337,8 @@ export function adjustedCurveGainBetween(fromAge: number, toAge: number): number
     const gain = expectedSeasonGain(age);
     if (gain === null) break;
 
-    total += gain * agePaceFactor(age) * (segmentEnd - age);
+    const camps = age < CAMP_UNTIL_AGE ? campBoost : 1;
+    total += gain * agePaceFactor(age) * camps * (segmentEnd - age);
     age = segmentEnd;
   }
 
@@ -340,6 +375,21 @@ export function measureGrowthPace(
   const spanDays = daysBetween(first.date, last.date);
   const cleaned = cleanedGains(usable.slice(usable.indexOf(first)), spanDays);
   if (cleaned.measuredDays < PACE_PROVISIONAL_MIN_DAYS) return null;
+
+  // The camp record reads a full season, not just the pace window - camps come
+  // once a season, so 56 days can easily miss one. Without a season of
+  // history, assume the full allowance until the player's own record exists.
+  const seasonStart = usable.find(
+    (entry) => daysBetween(entry.date, last.date) <= CAMP_LOOKBACK_DAYS
+  )!;
+  const seasonSpan = daysBetween(seasonStart.date, last.date);
+  const campDaysAssumed = daysBetween(usable[0].date, last.date) < CAMP_LOOKBACK_DAYS;
+  const campDaysPerSeason = campDaysAssumed
+    ? CAMP_MAX_DAYS_PER_SEASON
+    : Math.min(
+        CAMP_MAX_DAYS_PER_SEASON,
+        cleanedGains(usable.slice(usable.indexOf(seasonStart)), seasonSpan).skippedCampDays
+      );
 
   const perSeason = (value: number) =>
     (value / cleaned.measuredDays) * hockeyPlayerProfile.daysPerSeason;
@@ -396,6 +446,8 @@ export function measureGrowthPace(
     skippedNoTrainingDays: cleaned.skippedNoTrainingDays,
     skippedCampDays: cleaned.skippedCampDays,
     provisional: cleaned.measuredDays < PACE_MIN_SPAN_DAYS,
+    campDaysPerSeason,
+    campDaysAssumed,
   };
 }
 
@@ -676,7 +728,9 @@ export function projectSkills(
   // would). Divide it out, then let each future year apply its own factor.
   const measuredFactor = agePaceFactor(pace.midAge);
   const underlyingPace = Math.max(0, pace.basePace) / measuredFactor;
-  const curveGain = adjustedCurveGainBetween(currentExactAge, targetAge);
+  // Pace is camp-free, so the camps the player will attend before 22 are added
+  // back here - to every skill, as camps boost all training.
+  const curveGain = adjustedCurveGainBetween(currentExactAge, targetAge, pace.campDaysPerSeason);
   const weightSum = weights.reduce((sum, [, weight]) => sum + weight, 0);
   const points = underlyingPace * curveGain * weightSum;
 
