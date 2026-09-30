@@ -274,12 +274,6 @@ const campAllowanceText = (pace: GrowthPace, exactAge: number) => {
   );
 };
 
-const paceBadgeClass = (pace: number) => ({
-  "badge-full": pace >= 1,
-  "badge-partial": pace >= 0.7 && pace < 1,
-  "badge-minimal": pace < 0.7,
-});
-
 /**
  * A player's skill and OR at PROJECTION_AGE: recorded from history for players
  * already past it, projected for everyone younger. One shape for both, so the
@@ -629,93 +623,115 @@ const openPlayerProfile = (playerId: string) => {
   window.open(url, "_blank");
 };
 
+/*
+ * Heatmap shading. Magnitude is one hue, light -> dark (never green -> red,
+ * which reads as good/bad and fails colour-blind readers). Skills and growth
+ * are two separate contexts on screen, so each gets its own hue. Both ramps
+ * were checked with the dataviz palette validator: monotone lightness, even
+ * steps (every gap >= 0.06 L), a single hue. The lightest step is allowed to
+ * fade toward the white surface - it means "near zero", and every value is
+ * printed in the cell anyway. Dark ink on the four light steps, white on the
+ * two dark ones (>= 4.77:1).
+ */
+const SKILL_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"];
+const GROWTH_RAMP = ["#fde0d0", "#f8bd9e", "#f39a6e", "#eb6834", "#c24e1c", "#983b17"];
+
+/** Below this share of the scale a cell stays unshaded, so near-zero values recede. */
+const HEAT_FLOOR = 0.15;
+
+/**
+ * The shade for a value between `min` and `max`. Skills use 0..max - an
+ * untrained skill really is near zero. Growth values cluster (Pace mostly
+ * 55-75%, @25 mostly 700-870), so they use the column's min..max instead;
+ * on 0..max nearly every growth cell landed in the two darkest steps.
+ */
+const heatStyle = (
+  value: number | null | undefined,
+  min: number,
+  max: number,
+  ramp: string[]
+) => {
+  if (value == null || !(max > min)) return undefined;
+  const share = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  if (share < HEAT_FLOOR) return undefined;
+
+  const step = Math.min(
+    ramp.length - 1,
+    Math.floor(((share - HEAT_FLOOR) / (1 - HEAT_FLOOR)) * ramp.length)
+  );
+  return { background: ramp[step], color: step >= ramp.length - 2 ? "#fff" : "#1f2328" };
+};
+
+type SkillKey = keyof NonNullable<HockeyPlayer["skills"]>;
+
+// Each skill column shades against its own max in the current view, so a
+// player's profile reads as a pattern: a defender's defence dark, offence light.
+const columnMax = computed(() => {
+  const max = (read: (p: HockeyPlayer) => number | null | undefined) =>
+    Math.max(0, ...filteredPlayers.value.map((p) => read(p) ?? 0));
+  // Min..max over the players that have a value, for the growth columns.
+  const range = (read: (p: HockeyPlayer) => number | null | undefined) => {
+    const values = filteredPlayers.value
+      .map(read)
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    return values.length > 0
+      ? { min: Math.min(...values), max: Math.max(...values) }
+      : { min: 0, max: 0 };
+  };
+  const skill = (key: SkillKey) => max((p) => p.skills?.[key]);
+  return {
+    goalie: skill("goalie"),
+    defence: skill("defence"),
+    offence: skill("offence"),
+    shooting: skill("shooting"),
+    passing: skill("passing"),
+    technical: skill("technical"),
+    aggression: skill("aggression"),
+    pace: range((p) => paceFor(p)?.pace),
+    skillAtAge: range((p) => atAgeFor(p)?.skill),
+    orAtAge: range((p) => atAgeFor(p)?.or),
+  };
+});
+
+const skillColumn = (header: string, key: SkillKey): Column => ({
+  header,
+  key: `skills.${key}`,
+  group: "Skills",
+  align: "right",
+  sortable: true,
+  sortValue: (p: HockeyPlayer) => p.skills?.[key] ?? 0,
+  slot: key,
+  cellStyle: (p: HockeyPlayer) =>
+    heatStyle(p.skills?.[key], 0, columnMax.value[key], SKILL_RAMP),
+});
+
+// Grouped so the 26 columns read in blocks, with Growth beside Position -
+// the two sets most often compared.
 const tableColumns = computed<Column[]>(() => [
-  // Basic Info
-  {
-    header: "Name",
-    key: "name",
-    slot: "name",
-    sortable: true,
-    cellClass: "name-cell",
-  },
-  {
-    header: "Age",
-    key: "age",
-    sortable: true,
-  },
-  {
-    header: "CL", // Career Longevity
-    key: "careerLongitivity",
-    sortable: true,
-  },
-  {
-    header: "OR",
-    key: "overallRating",
-    sortable: true,
-  },
-  {
-    header: "Exp",
-    key: "experience",
-    sortable: true,
-  },
+  // Player
+  { header: "Name", key: "name", slot: "name", sortable: true, cellClass: "name-cell", group: "Player" },
+  { header: "Age", key: "age", sortable: true, group: "Player", align: "right" },
+  { header: "CL", key: "careerLongitivity", sortable: true, group: "Player", align: "right" }, // Career Longevity
+  { header: "OR", key: "overallRating", sortable: true, group: "Player", align: "right" },
+  { header: "Exp", key: "experience", sortable: true, group: "Player", align: "right" },
 
-  // Skills (7 columns)
-  {
-    header: "Goa",
-    key: "skills.goalie",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.goalie ?? 0,
-    slot: "goalie",
-  },
-  {
-    header: "Def",
-    key: "skills.defence",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.defence ?? 0,
-    slot: "defence",
-  },
-  {
-    header: "Off",
-    key: "skills.offence",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.offence ?? 0,
-    slot: "offence",
-  },
-  {
-    header: "Sho",
-    key: "skills.shooting",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.shooting ?? 0,
-    slot: "shooting",
-  },
-  {
-    header: "Pas",
-    key: "skills.passing",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.passing ?? 0,
-    slot: "passing",
-  },
-  {
-    header: "Tec",
-    key: "skills.technical",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.technical ?? 0,
-    slot: "technical",
-  },
-  {
-    header: "Agg",
-    key: "skills.aggression",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => p.skills?.aggression ?? 0,
-    slot: "aggression",
-  },
+  // Skills
+  skillColumn("Goa", "goalie"),
+  skillColumn("Def", "defence"),
+  skillColumn("Off", "offence"),
+  skillColumn("Sho", "shooting"),
+  skillColumn("Pas", "passing"),
+  skillColumn("Tec", "technical"),
+  skillColumn("Agg", "aggression"),
 
-  // Position and Rating
+  // Position
   {
     header: "Best Pos",
     key: "position",
     slot: "position",
     sortable: true,
+    group: "Position",
+    align: "center",
     sortValue: (p: HockeyPlayer) => p.getBestPosition().name,
   },
   {
@@ -723,6 +739,8 @@ const tableColumns = computed<Column[]>(() => [
     key: "skill",
     slot: "skill",
     sortable: true,
+    group: "Position",
+    align: "right",
     sortValue: (p: HockeyPlayer) => p.getBestPosition().ratingWithXp,
   },
   {
@@ -730,40 +748,73 @@ const tableColumns = computed<Column[]>(() => [
     key: "positionTQ",
     slot: "positionTQ",
     sortable: true,
+    group: "Position",
+    align: "right",
     sortValue: (p: HockeyPlayer) => p.getBestPositionTrainingQuality().totalTrainingQuality,
   },
 
-  // Additional Info
+  // Growth
   {
-    header: "Side",
-    key: "preferredSide",
+    header: "Pace",
+    key: "pace",
+    slot: "pace",
     sortable: true,
+    group: "Growth",
+    align: "right",
+    // Null sorts last, so players with no measurable pace stay out of the way.
+    sortValue: (p: HockeyPlayer) => paceFor(p)?.pace ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(paceFor(p)?.pace, columnMax.value.pace.min, columnMax.value.pace.max, GROWTH_RAMP),
+  },
+  // Recorded and projected values sort together on purpose - see AtAgeValue.
+  {
+    header: `Skill @${PROJECTION_AGE}`,
+    key: "skillAtAge",
+    slot: "skillAtAge",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.skill ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(
+        atAgeFor(p)?.skill,
+        columnMax.value.skillAtAge.min,
+        columnMax.value.skillAtAge.max,
+        GROWTH_RAMP
+      ),
   },
   {
-    header: "Injury",
-    key: "injuryDays",
+    header: `OR @${PROJECTION_AGE}`,
+    key: "orAtAge",
+    slot: "orAtAge",
     sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.or ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(atAgeFor(p)?.or, columnMax.value.orAtAge.min, columnMax.value.orAtAge.max, GROWTH_RAMP),
   },
+
+  // Info
+  { header: "Side", key: "preferredSide", sortable: true, group: "Info", align: "center" },
+  { header: "Injury", key: "injuryDays", sortable: true, group: "Info", align: "right" },
   {
     header: "Team",
     key: "teamName",
     slot: "team",
     sortable: true,
+    group: "Info",
     sortValue: (p: HockeyPlayer) => p.teamName ?? p.teamId ?? "",
   },
 
-  // Status
-  {
-    header: "Scouted",
-    key: "scoutingStatus",
-    slot: "scouted",
-    sortable: true,
-  },
+  // Data
+  { header: "Scouted", key: "scoutingStatus", slot: "scouted", sortable: true, group: "Data", align: "center" },
   {
     header: "Completeness",
     key: "completeness",
     slot: "completeness",
     sortable: true,
+    group: "Data",
     sortValue: (p: HockeyPlayer) => {
       const c = calculateCompleteness(p);
       return c === "full" ? 3 : c === "partial" ? 2 : 1;
@@ -774,6 +825,7 @@ const tableColumns = computed<Column[]>(() => [
     key: "freshness",
     slot: "freshness",
     sortable: true,
+    group: "Data",
     sortValue: (p: HockeyPlayer) =>
       Math.floor(
         (new Date().getTime() - p.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
@@ -784,37 +836,16 @@ const tableColumns = computed<Column[]>(() => [
     key: "history",
     slot: "history",
     sortable: true,
+    group: "Data",
     // Day count, so sorting groups the players still needing a gather run.
     sortValue: (p: HockeyPlayer) => historySummaries.value.get(p.id)?.days ?? 0,
-  },
-  {
-    header: "Pace",
-    key: "pace",
-    slot: "pace",
-    sortable: true,
-    // Null sorts last, so players with no measurable pace stay out of the way.
-    sortValue: (p: HockeyPlayer) => paceFor(p)?.pace ?? null,
-  },
-  // Recorded and projected values sort together on purpose - see AtAgeValue.
-  {
-    header: `Skill @${PROJECTION_AGE}`,
-    key: "skillAtAge",
-    slot: "skillAtAge",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.skill ?? null,
-  },
-  {
-    header: `OR @${PROJECTION_AGE}`,
-    key: "orAtAge",
-    slot: "orAtAge",
-    sortable: true,
-    sortValue: (p: HockeyPlayer) => atAgeFor(p)?.or ?? null,
   },
   {
     header: "Last Updated",
     key: "updatedAt",
     slot: "updatedAt",
     sortable: true,
+    group: "Data",
     sortValue: (p: HockeyPlayer) => p.updatedAt.getTime(),
   },
 ]);
@@ -973,11 +1004,24 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       <p v-else>No players match the selected filters.</p>
     </div>
 
-    <div v-else class="table-container white_box">
+    <p v-else-if="filteredPlayers.length > 0" class="heat-legend">
+      Shading: darker = higher within the column.
+      <span class="heat-legend__swatches" aria-hidden="true">
+        <span v-for="c in SKILL_RAMP" :key="c" :style="{ background: c }"></span>
+      </span>
+      Skills
+      <span class="heat-legend__swatches" aria-hidden="true">
+        <span v-for="c in GROWTH_RAMP" :key="c" :style="{ background: c }"></span>
+      </span>
+      Growth (lowest to highest in view)
+    </p>
+
+    <div v-if="filteredPlayers.length > 0" class="table-container report-table white_box">
       <SortableTable
         :items="filteredPlayers"
         :columns="tableColumns"
         :defaultSort="{ key: 'updatedAt', dir: 'desc' }"
+        sticky
       >
         <template #name="{ item }">
           <a @click.prevent="openPlayerProfile(item.id)" class="player-link">
@@ -986,7 +1030,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
         </template>
 
         <template #position="{ item }">
-          {{ item.getBestPosition().name }}
+          <span class="position-chip">{{ item.getBestPosition().name }}</span>
         </template>
 
         <!-- Individual Skill Slots -->
@@ -1078,12 +1122,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           >
             ~{{ Math.round(paceFor(item)!.pace! * 100) }}%
           </span>
-          <span
-            v-else-if="paceFor(item)?.pace != null"
-            class="completeness-badge"
-            :class="paceBadgeClass(paceFor(item)!.pace!)"
-            :title="paceTitle(item)"
-          >
+          <span v-else-if="paceFor(item)?.pace != null" :title="paceTitle(item)">
             {{ Math.round(paceFor(item)!.pace! * 100) }}%
           </span>
           <span v-else class="history-none" :title="paceTitle(item)">-</span>
@@ -1400,6 +1439,126 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   overflow-x: auto;
 }
 
+/*
+ * The report table. The shared SortableTable gives cells the game's class
+ * names (th1, tr0td1...), which PPM's stylesheet colours on game pages - but
+ * this is an extension page without that stylesheet, so everything rendered
+ * white. These rules give it its own look, scoped to the report.
+ */
+.report-table {
+  /* A bounded scroll box, so the sticky header and Name column have
+     something to stick within. */
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  padding: 0;
+}
+
+.report-table :deep(.table) {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 13px;
+  --sortable-header-bg: #fff;
+}
+
+.report-table :deep(.table td) {
+  padding: 5px 8px;
+  white-space: nowrap;
+  border-bottom: 1px solid #eef0f2;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table :deep(.group-row td) {
+  /* Pinned to the height SortableTable's sticky column row sits below. */
+  box-sizing: border-box;
+  height: 22px;
+  line-height: 13px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #57606a;
+  background: #eef1f5;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.report-table :deep(.group-row td:nth-child(even)) {
+  background: #e4e9ef;
+}
+
+.report-table :deep(.column-row td) {
+  font-weight: 600;
+  color: #24292f;
+  background: #fff;
+  border-bottom: 2px solid #d0d7de;
+}
+
+.report-table :deep(.column-row td.sortable:hover) {
+  background: #f3f6f9;
+}
+
+/* Zebra rows and hover. The Name column is sticky, so it needs an opaque
+   background of its own that follows the row's. */
+.report-table :deep(tbody tr td) {
+  background-color: #fff;
+}
+
+.report-table :deep(tbody tr:nth-child(even) td) {
+  background-color: #fafbfc;
+}
+
+.report-table :deep(tbody tr:hover td) {
+  background-color: #eef4fc;
+}
+
+/* Heatmap cells carry an inline background; keep it on hover so the colour
+   never flickers away, and outline the row instead. */
+.report-table :deep(tbody tr:hover td[style]) {
+  box-shadow: inset 0 1px 0 #9ec5f4, inset 0 -1px 0 #9ec5f4;
+}
+
+.report-table :deep(.group-start) {
+  border-left: 2px solid #d0d7de;
+}
+
+.report-table :deep(tbody td:first-child) {
+  box-shadow: 1px 0 0 #d0d7de;
+}
+
+.position-chip {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #24292f;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+}
+
+.heat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #57606a;
+}
+
+.heat-legend__swatches {
+  display: inline-flex;
+  margin-left: 6px;
+}
+
+.heat-legend__swatches span {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+}
+
 .player-link {
   color: #007bff;
   text-decoration: none;
@@ -1476,6 +1635,12 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   font-style: italic;
 }
 
+/* On a heatmap cell the cell picks dark or white ink for contrast; grey would
+   be unreadable on the dark steps. The ~ and italics still mark it. */
+.report-table td[style] .projected {
+  color: inherit;
+}
+
 .badge-full {
   background: #d4edda;
   color: #155724;
@@ -1496,10 +1661,5 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
   white-space: nowrap;
 }
 
-/* Reduce padding and center skill columns */
-.table :deep(td:nth-child(n+6):nth-child(-n+12)) {
-  padding: 2px 6px;
-  text-align: center;
-  font-size: 13px;
-}
+
 </style>
