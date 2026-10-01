@@ -75,7 +75,12 @@ const viewPlayerList = () => {
 
   const appContainer = document.createElement("div");
   appContainer.id = "ppm-assistant-basketball-list";
-  table.parentNode.insertBefore(createPlayerReportButton("basketball"), table);
+  // The game wraps this table in a <center>, which would centre the inline
+  // button; a full-width left-aligned row puts it on the left, as in hockey.
+  const buttonRow = document.createElement("div");
+  buttonRow.style.textAlign = "left";
+  buttonRow.appendChild(createPlayerReportButton("basketball"));
+  table.parentNode.insertBefore(buttonRow, table);
   table.parentNode.replaceChild(appContainer, table);
 
   const app = createApp(BasketballPlayerListTable, {
