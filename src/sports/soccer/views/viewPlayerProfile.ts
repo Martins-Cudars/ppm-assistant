@@ -43,12 +43,16 @@ const viewPlayerProfile = () => {
   const sidebarApp = createApp(SoccerPlayerSidebar, { player });
   sidebarApp.mount(sidebarContainer);
 
-  const profileCenter = document.querySelector(".profile_player_center");
-  if (!profileCenter) return new Error("Profile center not found");
-
+  // Right below the profile box, full column width - the table's own column
+  // (.profile_player_center) is too narrow for the chart. Same layout as
+  // basketball's profile.
   const chartContainer = document.createElement("div");
   chartContainer.id = "ppm-assistant-soccer-chart";
-  profileCenter.appendChild(chartContainer);
+  const profileBox = table.closest(".white_box");
+  const profileCenter = document.querySelector(".profile_player_center");
+  if (profileBox) profileBox.after(chartContainer);
+  else if (profileCenter) profileCenter.appendChild(chartContainer);
+  else return new Error("Profile center not found");
 
   const chartApp = createApp(SoccerPlayerGrowthChart, { player });
   chartApp.mount(chartContainer);

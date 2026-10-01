@@ -5,7 +5,8 @@
  * and basketball's (shared SortableTable, heatmap, reportTable.css and
  * GrowthComparisonChart), soccer's own columns.
  *
- * Growth columns (pace, @25, potential) come in phase 4 - see
+ * Growth columns (pace, @25, potential) use the shared growth model with
+ * soccer's constants - src/sports/soccer/growthPace.ts and
  * docs/skill-history.md, Soccer. Backup and Clear live on the Hockey tab;
  * they already cover every sport.
  */
@@ -17,6 +18,23 @@ import { positionSettings, ratingSettings } from "@/sports/soccer/settings";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { getSoccerPlayerPageForLang } from "@/sports/soccer/routes";
 import { soccerHistoryPoints, topPlayerSkillCurve } from "@/sports/soccer/historyChart";
+import {
+  CAMP_UNTIL_AGE,
+  PACE_MIN_SPAN_DAYS,
+  PACE_PROVISIONAL_MIN_DAYS,
+  PACE_WINDOW_DAYS,
+  POTENTIAL_AGE,
+  Potential,
+  SoccerGrowthPace,
+  bestPositionRating,
+  dateAtAge,
+  entryNearestDate,
+  measureGrowthPace,
+  overallFromSkills,
+  projectOverallRating,
+  projectPositionRating,
+  projectPotential,
+} from "@/sports/soccer/growthPace";
 import { readSportTeamCache } from "@/storage/playerCache";
 import {
   exportSkillHistory,
@@ -32,7 +50,7 @@ import GrowthComparisonChart, {
   type GrowthReference,
   type GrowthSeries,
 } from "@/components/GrowthComparisonChart.vue";
-import { SKILL_RAMP, heatStyle } from "@/components/heatmap";
+import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
 const loading = ref(true);
@@ -81,6 +99,178 @@ onMounted(async () => {
 const idOf = (player: SoccerPlayer) => normalizePlayerId(player.id) ?? player.id;
 const exactAgeOf = (player: SoccerPlayer) =>
   player.age + seasonDay.value / soccerPlayerProfile.daysPerSeason;
+
+// --- Growth ----------------------------------------------------------------------
+// Computed once per load, not per cell: the columns and their sorts share them.
+// The model is hockey's, shared (src/base/growthModel.ts), with soccer's
+// constants (src/sports/soccer/growthPace.ts).
+
+/** The age the @25 columns report: projected for younger players, recorded for older. */
+const PROJECTION_AGE = 25;
+/** How far from the computed "turned 25" date a recorded day may be. */
+const AT_AGE_TOLERANCE_DAYS = 14;
+
+const entriesFor = (player: SoccerPlayer) => history.value?.get(idOf(player)) ?? [];
+
+const paceByPlayer = computed(() => {
+  const paces = new Map<string, SoccerGrowthPace | null>();
+  if (!history.value) return paces;
+  players.value.forEach((player) => {
+    // Paced for the current best position - projections assume balanced
+    // training for it from here on.
+    paces.set(
+      idOf(player),
+      measureGrowthPace(entriesFor(player), exactAgeOf(player), player.getBestPosition().name)
+    );
+  });
+  return paces;
+});
+const paceFor = (player: SoccerPlayer) => paceByPlayer.value.get(idOf(player)) ?? null;
+
+const signed = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value)}`;
+
+const paceTitle = (player: SoccerPlayer) => {
+  const pace = paceFor(player);
+  if (!pace) {
+    if (history.value === null) return "History could not be loaded";
+    const stored = summaries.value.get(idOf(player))?.days ?? 0;
+    return (
+      `Needs ${PACE_PROVISIONAL_MIN_DAYS} days of training within the last ${PACE_WINDOW_DAYS} ` +
+      `days of history (${stored} day${stored === 1 ? "" : "s"} stored)`
+    );
+  }
+  const age = Math.floor(pace.midAge);
+  const lines = [
+    `${signed(pace.pointsPerSeason)} skill points/season into ${pace.position} skills ` +
+      `= ${signed(pace.basePerSeason)} base/season when balanced`,
+    `${signed(pace.bonusPerSeason)} bonus/season = ${signed(pace.gainPerSeason)} rating/season (no XP)`,
+    `(${pace.measuredDays} days measured, ${pace.fromDate} to ${pace.toDate})`,
+    pace.expectedPerSeason === null
+      ? "No reference pace to compare against at this age"
+      : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` +
+        (age <= 23 ? "the top-player table" : "your squad's own slowdown after 23"),
+  ];
+  const skipped = [
+    pace.skippedNoTrainingDays > 0 ? `${pace.skippedNoTrainingDays} no-training days` : "",
+    pace.skippedCampDays > 0 ? `${pace.skippedCampDays} training-camp days` : "",
+  ].filter(Boolean);
+  if (skipped.length > 0) lines.push(`Skipped ${skipped.join(" and ")}`);
+  lines.push(
+    pace.campDaysAssumed
+      ? "Camp days last season: unknown (less than a season of history)"
+      : `Camp days last season: ${pace.campDaysPerSeason}`
+  );
+  if (pace.provisional) {
+    lines.unshift(`Provisional: only ${pace.measuredDays} days of data - settles at ${PACE_MIN_SPAN_DAYS}`);
+  }
+  return lines.join("\n");
+};
+
+/** How the projection accounts for camps, for the @25 title. */
+const campAllowanceText = (pace: SoccerGrowthPace, exactAge: number) => {
+  if (exactAge >= CAMP_UNTIL_AGE) return "";
+  if (pace.campDaysPerSeason === 0) return "No camps last season, so none are assumed. ";
+  return (
+    `Includes ${pace.campDaysPerSeason} camp days a season until ${CAMP_UNTIL_AGE} ` +
+    (pace.campDaysAssumed ? "(assumed: less than a season of history). " : "(from last season). ")
+  );
+};
+
+/**
+ * Skill and OR at PROJECTION_AGE: recorded from history for players past it,
+ * projected for younger ones. One shape for both, so a 19-year-old's
+ * projection sorts against what a 27-year-old actually reached.
+ */
+type AtAgeValue = { skill: number | null; or: number | null; kind: "recorded" | "projected"; title: string };
+
+const atAgeByPlayer = computed(() => {
+  const values = new Map<string, AtAgeValue | null>();
+  players.value.forEach((player) => {
+    const id = idOf(player);
+    const exactAge = exactAgeOf(player);
+
+    if (exactAge >= PROJECTION_AGE) {
+      const entry = entryNearestDate(
+        entriesFor(player),
+        dateAtAge(exactAge, PROJECTION_AGE),
+        AT_AGE_TOLERANCE_DAYS
+      );
+      if (!entry) {
+        values.set(id, null);
+        return;
+      }
+      const best = bestPositionRating(entry.skills);
+      values.set(id, {
+        skill: best.rating,
+        or: entry.overallRating ?? overallFromSkills(entry.skills),
+        kind: "recorded",
+        title: `Recorded ${entry.date}, when the player was about ${PROJECTION_AGE} (best position ${best.name}, no XP)`,
+      });
+      return;
+    }
+
+    const pace = paceFor(player);
+    if (pace?.pace === null || pace?.pace === undefined) {
+      values.set(id, null);
+      return;
+    }
+    values.set(id, {
+      skill: projectPositionRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      or: projectOverallRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      kind: "projected",
+      title:
+        `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
+        `${pace.position} training at ${Math.round(pace.pace * 100)}% of the reference pace from ` +
+        "here on (the top-player table to 23, your squad's own slowdown after). Any lagging main " +
+        "skill is caught up first; other skills keep their current rate. " +
+        campAllowanceText(pace, exactAge) +
+        (pace.provisional ? `Provisional: the pace rests on only ${pace.measuredDays} days of data.` : ""),
+    });
+  });
+  return values;
+});
+const atAgeFor = (player: SoccerPlayer) => atAgeByPlayer.value.get(idOf(player)) ?? null;
+
+const atAgeMissingTitle = (player: SoccerPlayer) => {
+  if (history.value === null) return "History could not be loaded";
+  if (exactAgeOf(player) >= PROJECTION_AGE) {
+    return `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${PROJECTION_AGE}`;
+  }
+  return "No pace to project from";
+};
+
+const potentialByPlayer = computed(() => {
+  const values = new Map<string, Potential | null>();
+  players.value.forEach((player) => {
+    const best = player.getBestPosition();
+    values.set(
+      idOf(player),
+      projectPotential(player.skills, player.experience, exactAgeOf(player), paceFor(player), {
+        rating: best.ratingWithBonus,
+        ratingWithXp: best.ratingWithXp,
+      })
+    );
+  });
+  return values;
+});
+const potentialFor = (player: SoccerPlayer) => potentialByPlayer.value.get(idOf(player)) ?? null;
+
+const potentialTitle = (player: SoccerPlayer) => {
+  const potential = potentialFor(player);
+  if (!potential) return "No pace to project from";
+  if (potential.kind === "current") {
+    return (
+      `${potential.ratingWithXp} now - at or past peak age (${POTENTIAL_AGE}), so this is the ` +
+      `current skill with XP. ${tierLabel(potential.ratingWithXp)}`
+    );
+  }
+  return (
+    `~${potential.ratingWithXp} at ${POTENTIAL_AGE}: rating ~${potential.rating} (no XP) + XP ` +
+    `~${Math.round(potential.xp)}. ${tierLabel(potential.ratingWithXp)}. Same model as Skill ` +
+    `@${PROJECTION_AGE}, extended to ${POTENTIAL_AGE}; XP grows at the player's own share of ` +
+    "top-player XP, never below the squad's typical share for the age."
+  );
+};
 
 // --- Filters -------------------------------------------------------------------
 // Same team rule as the other sports: the squad overview's roster when there
@@ -158,6 +348,21 @@ const columnMax = computed(() => {
   return result;
 });
 
+// Growth columns shade min..max over the players that have a value.
+const growthRange = computed(() => {
+  const range = (read: (p: SoccerPlayer) => number | null | undefined) => {
+    const values = filtered.value
+      .map(read)
+      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    return values.length > 0 ? { min: Math.min(...values), max: Math.max(...values) } : { min: 0, max: 0 };
+  };
+  return {
+    pace: range((p) => paceFor(p)?.pace),
+    skill: range((p) => atAgeFor(p)?.skill),
+    or: range((p) => atAgeFor(p)?.or),
+  };
+});
+
 const skillColumn = (header: string, key: SkillKey): Column => ({
   header,
   key: `skills.${key}`,
@@ -224,6 +429,49 @@ const columns = computed<Column[]>(() => [
     align: "right",
     sortValue: (p: SoccerPlayer) =>
       p.trainingQualities ? p.getBestPositionTrainingQuality().totalTrainingQuality : null,
+  },
+
+  {
+    header: "Pace",
+    key: "pace",
+    slot: "pace",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: SoccerPlayer) => paceFor(p)?.pace ?? null,
+    cellStyle: (p: SoccerPlayer) =>
+      heatStyle(paceFor(p)?.pace, growthRange.value.pace.min, growthRange.value.pace.max, GROWTH_RAMP),
+  },
+  {
+    header: `Skill @${PROJECTION_AGE}`,
+    key: "skillAtAge",
+    slot: "skillAtAge",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: SoccerPlayer) => atAgeFor(p)?.skill ?? null,
+    cellStyle: (p: SoccerPlayer) =>
+      heatStyle(atAgeFor(p)?.skill, growthRange.value.skill.min, growthRange.value.skill.max, GROWTH_RAMP),
+  },
+  {
+    header: `OR @${PROJECTION_AGE}`,
+    key: "orAtAge",
+    slot: "orAtAge",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: SoccerPlayer) => atAgeFor(p)?.or ?? null,
+    cellStyle: (p: SoccerPlayer) =>
+      heatStyle(atAgeFor(p)?.or, growthRange.value.or.min, growthRange.value.or.max, GROWTH_RAMP),
+  },
+  {
+    header: "Potential ★",
+    key: "potential",
+    slot: "potential",
+    sortable: true,
+    group: "Growth",
+    align: "center",
+    sortValue: (p: SoccerPlayer) => potentialFor(p)?.ratingWithXp ?? null,
   },
 
   ...POSITIONS.map(positionColumn),
@@ -367,7 +615,11 @@ const topPlayerReference: GrowthReference = {
         <span class="heat-legend__swatches" aria-hidden="true">
           <span v-for="c in SKILL_RAMP" :key="c" :style="{ background: c }"></span>
         </span>
-        Skills and positions. Growth columns (pace, @25, potential) come in the next phase.
+        Skills and positions
+        <span class="heat-legend__swatches" aria-hidden="true">
+          <span v-for="c in GROWTH_RAMP" :key="c" :style="{ background: c }"></span>
+        </span>
+        Growth (lowest to highest in view)
       </p>
 
       <div class="table-container report-table white_box">
@@ -390,6 +642,42 @@ const topPlayerReference: GrowthReference = {
           </template>
           <template #positionTQ="{ item }">
             {{ item.trainingQualities ? item.getBestPositionTrainingQuality().totalTrainingQuality : "-" }}
+          </template>
+          <template #pace="{ item }">
+            <span
+              v-if="paceFor(item)?.pace != null"
+              :class="{ projected: paceFor(item)!.provisional }"
+              :title="paceTitle(item)"
+            >
+              {{ paceFor(item)!.provisional ? "~" : "" }}{{ Math.round(paceFor(item)!.pace! * 100) }}%
+            </span>
+            <span v-else class="history-none" :title="paceTitle(item)">-</span>
+          </template>
+          <template #skillAtAge="{ item }">
+            <span
+              v-if="atAgeFor(item)?.skill != null"
+              :class="{ projected: atAgeFor(item)!.kind === 'projected' }"
+              :title="atAgeFor(item)!.title"
+            >
+              {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.skill }}
+            </span>
+            <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
+          </template>
+          <template #orAtAge="{ item }">
+            <span
+              v-if="atAgeFor(item)?.or != null"
+              :class="{ projected: atAgeFor(item)!.kind === 'projected' }"
+              :title="atAgeFor(item)!.title"
+            >
+              {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.or }}
+            </span>
+            <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
+          </template>
+          <template #potential="{ item }">
+            <span v-if="potentialFor(item)" :title="potentialTitle(item)">
+              <RatingStars :skill="potentialFor(item)!.ratingWithXp" :settings="ratingSettings" />
+            </span>
+            <span v-else class="history-none" :title="potentialTitle(item)">-</span>
           </template>
           <template v-for="name in POSITIONS" :key="name" #[`position-${name}`]="{ item }">
             {{ positionRating(item, name) ?? "-" }}

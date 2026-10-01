@@ -678,6 +678,40 @@ The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Ga
     midfielder, side forward, centre forward.
 - Growth columns (pace, @25, potential) and the profile chart are phase 4.
 
+### Phase 4: shared growth model, pace / @25 / potential, profile chart (done)
+
+- **One growth model for hockey and soccer.** `src/base/growthModel.ts` holds hockey's model
+  as `createGrowthModel(config)`.
+  - Every function is unchanged, with the constants moved into a `GrowthConfig`: skills,
+    positions, bonus cap, season length, table, `referenceSlopeOverrides`, age factors,
+    pace windows, camps, XP shares, max/potential age, and the camp-detection options.
+  - `src/sports/hockey/growthPace.ts` is now hockey's config and re-exports the same names.
+    Hockey's 52 checks pass with the test file unedited.
+- **Soccer config** (`src/sports/soccer/growthPace.ts`): the phase 2 constants.
+  - The table up to 23, the squad shape from 24.
+  - Camps 14 / 2× / until 22, judged **per skill** (one skill a day).
+  - XP shares 0.45 / 0.52.
+  - **Age factors 1.4 at 15 and 1.18 at 16** (1.0 from 17). Juniors pace 0.70 / 0.59
+    against ~0.50 from 17. Without these, a 15-year-old's catch-up pace was carried to
+    25: ~554 projected, where today's 25-year-olds reached 410–450. With them, juniors
+    project 405–470.
+- **Dry run on the real backup:**
+  - paces mostly 50–64%;
+  - recorded @25 for the 25+ players (e.g. CD 447, SD 422/436, CF 431);
+  - camp days ≤ 14;
+  - one outlier: a 19-year-old with 42 XP (1.7× typical) projects a potential of 1,235,
+    because his own XP share is extrapolated, as in hockey.
+- **The Soccer report gets a Growth group:** Pace, Skill @25, OR @25, Potential ★, with
+  hockey's tooltips. Pace's tooltip names the reference for that age.
+- **Profile chart** (`SoccerPlayerGrowthChart.vue`) rebuilt on hockey's pattern:
+  - top-player table base and with XP;
+  - today's points;
+  - history (`soccerHistoryPoints`);
+  - the own-pace projection;
+  - an age filter.
+  - It now mounts below the profile box at full width; `.profile_player_center` alone was
+    too narrow. The old `renderPotentialChart` in `src/charts.ts` has no users left.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
