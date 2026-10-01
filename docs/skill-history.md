@@ -572,6 +572,43 @@ This also sidesteps the unsettled age-curve question (research item 7).
   `src/base/historyDownsample.ts`, which hockey re-exports.
 - Neither chart has been seen in a browser yet.
 
+## Soccer
+
+Soccer is built like hockey, not basketball:
+- the shared `calculatePositions` with a 0.35 bonus cap;
+- 8 positions and 9 skills;
+- a top-player table (`playerGrowthPrediction` in `settings.ts`);
+- **112-day seasons** (the header reads "Season: 54 (25/112)");
+- secondaries at exact fractions of the main skill (402 → 201/301), so training is
+  position-split.
+
+The user chose hockey's growth model, generalised. The work is phased like basketball.
+
+### Phase 1: plumbing and capture (done)
+
+- **Sport plumbing.** `"soccer"` is in `SPORTS`, which gives the `skillHistory_soccer` store
+  (the worker is at `DB_VERSION` 3, add-only), the cache keys
+  `ppm-assistant:soccer:team-<id>`, the backup's `sportSkillHistory.soccer` and a Soccer
+  report tab.
+- **Routes in both languages**, checked on the live menu:
+  - `overview-of-players`, `player`, `players-practice`, `lineup`, `player-market`,
+    `training-camp`, `training-progress`.
+  - Soccer used to be Latvian-only, so nothing ran for an English player.
+- **Parsers** live in `src/sports/soccer/parsers/players.ts`, shared by the views and
+  capture. Ids come from the profile link, never the country flag.
+- **Capture** (`src/sports/soccer/capture.ts`):
+  - the squad overview stores the cache, roster and today's history;
+  - a profile stores any player;
+  - an unscouted player gives an OR-only day, and BasePlayer's estimated XP is never stored.
+  - The id, date and number helpers are shared in `src/base/captureUtils.ts`.
+- **Training progress plus Gather walk:** `viewTrainingProgress.ts` passes the 9 skill
+  columns to the shared `runTrainingProgressView`.
+- **The report tab is a phase-1 stub:** squad, history days per player and totals, enough
+  to check the gather.
+- **Public account:** soccer's id isn't known, so it's caught by slug and name.
+- **Verification limit:** Chrome automation can't run scripts on the soccer domain; page
+  text and screenshots work.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):

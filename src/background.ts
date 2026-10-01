@@ -20,11 +20,11 @@ import { publicAccountCacheKeys } from "@/storage/publicAccount";
 
 const DB_NAME = "ppm-assistant-skill-history";
 /**
- * 2 added one object store per sport beside hockey's original "skillHistory".
- * The upgrade only ever creates missing stores - it never touches existing
- * data - so hockey's history and backups needed no migration.
+ * 2 added one object store per sport beside hockey's original "skillHistory";
+ * 3 added soccer's. The upgrade only ever creates missing stores - it never
+ * touches existing data - so no sport's history needed a migration.
  */
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const PLAYER_INDEX = "by_playerId";
 
 let dbPromise: Promise<IDBDatabase> | null = null;

@@ -77,7 +77,13 @@ export function isPublicAccount(): boolean {
   const teamLink = document.querySelector(".top_info_team")?.querySelector(TEAM_LINK);
   if (!teamLink) return false;
   const host = window.location.hostname;
-  const sport = host.startsWith("hockey.") ? "hockey" : host.startsWith("basketball.") ? "basketball" : null;
+  const sport = host.startsWith("hockey.")
+    ? "hockey"
+    : host.startsWith("basketball.")
+      ? "basketball"
+      : host.startsWith("soccer.")
+        ? "soccer"
+        : null;
   return isPublicAccountLink(teamLink.getAttribute("href") ?? "", teamLink.textContent ?? "", sport);
 }
 

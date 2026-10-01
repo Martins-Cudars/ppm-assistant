@@ -42,6 +42,10 @@ check("link: the public account's slug, name or known id", () => {
   eq(isPublicAccountLink("/en/team.html?data=39743-skanste-sentinels", "Skanste Sentinels", "basketball"), false, "own team");
   // 3323 is basketball's public id, not hockey's.
   eq(isPublicAccountLink("/en/team.html?data=3323-real-team", "Real Team", "hockey"), false, "other sport's id");
+  // Soccer has no listed public id; a link without data= must not match "no id".
+  eq(isPublicAccountLink("/en/team.html", "FC Skanste", "soccer"), false, "soccer, no id anywhere");
+  eq(isPublicAccountLink("/en/team.html?data=142317-fc-skanste", "FC Skanste", "soccer"), false, "soccer team");
+  eq(isPublicAccountLink("/en/team.html?data=1-public-account", "Public account", "soccer"), true, "soccer demo by slug");
 });
 
 check("report picks the user's cache even when the public one sorts first", () => {

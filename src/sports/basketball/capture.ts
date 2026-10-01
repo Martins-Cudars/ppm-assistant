@@ -21,39 +21,15 @@ import { StoredPlayerData } from "@/types/StoredPlayer";
 import { upsertSkillHistoryEntries } from "@/storage/skillHistoryDb";
 import { saveSquadRoster, saveStoredPlayers } from "@/storage/playerCache";
 import { getCurrentSeasonDay, getUserTeamId } from "@/utils/dom";
+import { isUsableNumber, normalizePlayerId, todayIsoDate } from "@/base/captureUtils";
 
 export type StoredBasketballPlayer = StoredPlayerData<BasketballPlayerInfo, BasketballSkills>;
 
 type CaptureSource = Extract<SkillHistorySource, "PlayersList" | "PlayerProfile">;
 
-/** Today as "YYYY-MM-DD" in local time - the same convention as hockey's capture. */
-function todayIsoDate(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
-const isUsableNumber = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value);
-
-/**
- * The numeric player id from whatever a parser stored. The squad-overview
- * parser keeps the whole profile link as the id; hockey pulls the number from
- * the link's `data=` parameter, and the profile parser falls back to the last
- * path segment. Accept all three, and reject anything that isn't a number, so
- * a stray link never becomes a phantom player.
- */
-export function normalizePlayerId(raw: string | undefined): string | null {
-  if (!raw) return null;
-  if (/^\d+$/.test(raw)) return raw;
-
-  const fromData = raw.split("data=")[1]?.split(/[-&#]/)[0];
-  if (fromData && /^\d+$/.test(fromData)) return fromData;
-
-  const fromPath = raw.split(/[?#]/)[0].split("/").pop()?.match(/^(\d+)/)?.[1];
-  return fromPath ?? null;
-}
+// Shared with every sport's capture; normalizePlayerId is re-exported so
+// basketball's existing imports keep working.
+export { normalizePlayerId } from "@/base/captureUtils";
 
 /**
  * Today's history entry for one player, or null when there's nothing worth a

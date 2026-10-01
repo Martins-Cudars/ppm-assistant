@@ -7,9 +7,9 @@
  * `sport` as an optional last argument defaulting to "hockey", and hockey's
  * existing storage (cache keys, history store, backup files) keeps its names.
  */
-export type Sport = "hockey" | "basketball";
+export type Sport = "hockey" | "basketball" | "soccer";
 
-export const SPORTS: readonly Sport[] = ["hockey", "basketball"];
+export const SPORTS: readonly Sport[] = ["hockey", "basketball", "soccer"];
 
 /**
  * The skill-history object store for a sport. Hockey's keeps its original

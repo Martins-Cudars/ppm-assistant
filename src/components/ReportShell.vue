@@ -9,9 +9,10 @@ import { ref, watch } from "vue";
 import { SPORTS, Sport } from "@/types/Sport";
 import PlayerReport from "@/sports/hockey/views/components/PlayerReport.vue";
 import BasketballReport from "@/sports/basketball/views/components/BasketballReport.vue";
+import SoccerReport from "@/sports/soccer/views/components/SoccerReport.vue";
 
 const SPORT_KEY = "ppm-assistant:report:sport";
-const LABEL: Record<Sport, string> = { hockey: "Hockey", basketball: "Basketball" };
+const LABEL: Record<Sport, string> = { hockey: "Hockey", basketball: "Basketball", soccer: "Soccer" };
 
 const isSport = (value: string | null): value is Sport =>
   value !== null && (SPORTS as readonly string[]).includes(value);
@@ -54,7 +55,8 @@ watch(sport, (value) => {
     <!-- Mounted per tab rather than hidden, so each report loads its own data
          only when shown. -->
     <PlayerReport v-if="sport === 'hockey'" />
-    <BasketballReport v-else />
+    <BasketballReport v-else-if="sport === 'basketball'" />
+    <SoccerReport v-else />
   </div>
 </template>
 

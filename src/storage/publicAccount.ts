@@ -16,7 +16,8 @@ import { Sport } from "@/types/Sport";
 import { teamPrefix } from "@/storage/cacheKeys";
 
 /** Known public-account team ids - a backstop in case the slug or name is localised. */
-export const PUBLIC_ACCOUNT_TEAM_IDS: Readonly<Record<Sport, string>> = {
+// Soccer's id isn't known yet - its slug and name are still recognised.
+export const PUBLIC_ACCOUNT_TEAM_IDS: Readonly<Partial<Record<Sport, string>>> = {
   hockey: "5289",
   basketball: "3323",
 };
@@ -26,7 +27,10 @@ export function isPublicAccountLink(href: string, name: string, sport: Sport | n
   if (/public-account/i.test(href)) return true;
   if (/^public account$/i.test(name.trim())) return true;
   const id = href.match(/data=(\d+)/)?.[1];
-  return sport !== null && id === PUBLIC_ACCOUNT_TEAM_IDS[sport];
+  // Both must exist: soccer has no listed id, and a link without data= has no
+  // id - undefined === undefined would brand a real team as the demo.
+  const publicId = sport !== null ? PUBLIC_ACCOUNT_TEAM_IDS[sport] : undefined;
+  return id !== undefined && publicId !== undefined && id === publicId;
 }
 
 type CacheLike = {
