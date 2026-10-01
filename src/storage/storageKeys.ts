@@ -4,7 +4,8 @@
  */
 
 import { getUserTeamId } from "@/utils/dom";
-import { SPORTS, Sport } from "@/types/Sport";
+import { Sport } from "@/types/Sport";
+import { teamPrefix } from "./cacheKeys";
 
 /**
  * Generates the storage key for the current team's player cache.
@@ -15,15 +16,8 @@ export function generateStorageKey(sport: Sport = "hockey"): string {
   return `${teamPrefix(sport)}${teamId}`;
 }
 
-/** The prefix every team cache key of a sport shares. */
-export function teamPrefix(sport: Sport): string {
-  return `ppm-assistant:${sport}:team-`;
-}
-
-/** Whether a storage key is any sport's team cache. */
-export function isTeamCacheKey(key: string): boolean {
-  return SPORTS.some((sport) => key.startsWith(teamPrefix(sport)));
-}
+// Key shapes live in cacheKeys.ts (no dependencies); re-exported for existing imports.
+export { isTeamCacheKey, teamPrefix } from "./cacheKeys";
 
 /**
  * Detects if a new season has started based on season day values

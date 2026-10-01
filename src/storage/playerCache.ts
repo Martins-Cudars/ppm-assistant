@@ -8,7 +8,8 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { PlayerCacheStorage, StoredPlayerData } from "@/types/StoredPlayer";
 import { ImportMode } from "@/types/Backup";
 import { getCurrentSeasonDay } from "@/utils/dom";
-import { generateStorageKey, isTeamCacheKey, teamPrefix } from "./storageKeys";
+import { generateStorageKey, isTeamCacheKey } from "./storageKeys";
+import { pickTeamCacheKey } from "./publicAccount";
 import { Sport } from "@/types/Sport";
 import { serializePlayer, deserializePlayer } from "./serialization";
 
@@ -209,17 +210,15 @@ export async function getCurrentSquad(): Promise<{
 
 /**
  * A sport's team cache as stored, for extension pages (no game DOM, so no
- * generateStorageKey()). Like getAllPlayersFromAllCaches(), it reads the first
- * team cache of the sport - one team per sport is the norm.
+ * generateStorageKey()). Picks the user's cache with pickTeamCacheKey(): never
+ * the logged-out public account's, and the newest squad if there are several.
  */
 export async function readSportTeamCache<TData>(
   sport: Sport
 ): Promise<PlayerCacheStorage<TData> | null> {
   try {
     const allData = await chrome.storage.local.get(null);
-    const key = Object.keys(allData).find(
-      (candidate) => candidate.startsWith(teamPrefix(sport)) && !candidate.includes("unknown")
-    );
+    const key = pickTeamCacheKey(allData, sport);
     return key ? (allData[key] as PlayerCacheStorage<TData>) : null;
   } catch (error) {
     console.error(`[PlayerCache] Failed to read the ${sport} cache:`, error);
@@ -271,19 +270,14 @@ export async function getAllPlayersFromAllCaches(): Promise<{
     // Get all storage data
     const allData = await chrome.storage.local.get(null);
 
-    // Find all hockey team cache keys
-    const hockeyKeys = Object.keys(allData).filter((key) =>
-      key.startsWith(teamPrefix("hockey")) && !key.includes("unknown")
-    );
+    // The user's hockey cache: never the logged-out public account's, and the
+    // newest squad if there are several (see pickTeamCacheKey).
+    const cacheKey = pickTeamCacheKey(allData, "hockey");
+    console.log("[PlayerCache] Using hockey cache:", cacheKey);
 
-    console.log("[PlayerCache] Found hockey cache keys:", hockeyKeys);
-
-    if (hockeyKeys.length === 0) {
+    if (!cacheKey) {
       return { players: [], currentSeasonDay: 1, teamId: "unknown", squad: null };
     }
-
-    // Use the first cache (or we could merge all caches if user has multiple teams)
-    const cacheKey = hockeyKeys[0];
     const cache = allData[cacheKey] as PlayerCacheStorage;
 
     if (!cache || !cache.players) {

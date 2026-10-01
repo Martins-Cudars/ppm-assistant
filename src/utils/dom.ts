@@ -1,4 +1,5 @@
 import { extractTeamIdFromUrl } from "./parsers";
+import { isPublicAccountLink } from "@/storage/publicAccount";
 
 /**
  * DOM parsing utilities that work across all sports
@@ -65,6 +66,19 @@ export function getUserTeamId(): string {
   }
 
   return "unknown";
+}
+
+/**
+ * Whether this page belongs to the game's logged-out "Public account" demo
+ * team (see src/storage/publicAccount.ts). Judged by the header's own-team
+ * link, the same one getUserTeamId() reads.
+ */
+export function isPublicAccount(): boolean {
+  const teamLink = document.querySelector(".top_info_team")?.querySelector(TEAM_LINK);
+  if (!teamLink) return false;
+  const host = window.location.hostname;
+  const sport = host.startsWith("hockey.") ? "hockey" : host.startsWith("basketball.") ? "basketball" : null;
+  return isPublicAccountLink(teamLink.getAttribute("href") ?? "", teamLink.textContent ?? "", sport);
 }
 
 /**

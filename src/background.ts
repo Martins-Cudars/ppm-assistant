@@ -16,6 +16,7 @@ import {
 } from "@/types/SkillHistory";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
+import { publicAccountCacheKeys } from "@/storage/publicAccount";
 
 const DB_NAME = "ppm-assistant-skill-history";
 /**
@@ -350,6 +351,63 @@ async function clearEntries(sport: Sport): Promise<number> {
     tx.onerror = () => reject(tx.error);
   });
 }
+
+/**
+ * Deletes every stored day of the given players from a sport's store, in one
+ * transaction. Entries are keyed `${playerId}:${date}`, so each player is one
+ * key range. Returns how many entries went.
+ */
+async function deleteEntriesForPlayers(playerIds: string[], sport: Sport): Promise<number> {
+  if (playerIds.length === 0) return 0;
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(historyStoreName(sport), "readwrite");
+    const store = tx.objectStore(historyStoreName(sport));
+    let removed = 0;
+
+    playerIds.forEach((playerId) => {
+      const range = IDBKeyRange.bound(`${playerId}:`, `${playerId}:￿`);
+      const countRequest = store.count(range);
+      countRequest.onsuccess = () => {
+        removed += countRequest.result;
+        store.delete(range);
+      };
+    });
+
+    tx.oncomplete = () => resolve(removed);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Removes what the extension stored from the game's logged-out "Public
+ * account" demo team before it learned to ignore it (src/main.ts now skips
+ * those pages): the team cache, and every history day of its players. Runs
+ * whenever the worker starts; once clean it finds nothing and does nothing.
+ *
+ * Safe to delete by player id: a demo-team player is never on the user's team.
+ */
+async function purgePublicAccountData(): Promise<void> {
+  const allData = await chrome.storage.local.get(null);
+  for (const sport of SPORTS) {
+    const keys = publicAccountCacheKeys(allData, sport);
+    if (keys.length === 0) continue;
+    const playerIds = keys.flatMap((key) =>
+      Object.keys((allData[key] as { players?: Record<string, unknown> } | undefined)?.players ?? {})
+    );
+    const removed = await deleteEntriesForPlayers(playerIds, sport);
+    await chrome.storage.local.remove(keys);
+    console.log(
+      `[Background] Removed public-account data (${sport}): ${keys.join(", ")}, ` +
+        `${playerIds.length} players, ${removed} history entries`
+    );
+  }
+}
+
+purgePublicAccountData().catch((error) => {
+  console.error("[Background] Public-account cleanup failed:", error);
+});
 
 chrome.runtime.onMessage.addListener(
   (message: SkillHistoryMessage, _sender, sendResponse: (response: SkillHistoryResponse) => void) => {

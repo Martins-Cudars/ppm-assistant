@@ -56,6 +56,24 @@ Every value field on `SkillHistoryEntry` is optional. Consumers must filter for 
 they need — use the readers in `src/sports/hockey/skillHistoryChart.ts`, which also handle
 the deprecated `kr` field (the old name for `overallRating`).
 
+### The logged-out "Public account" (`src/storage/publicAccount.ts`)
+
+When nobody is logged in, PPM shows a shared demo team, "Public account": basketball
+`team.html?data=3323-public-account`, hockey 5289 "Public Account".
+- **What went wrong:** the extension cached it as the user's team (2026-10-01). The report
+  read the *first* team cache key, `team-3323` sorts before `team-39743`, and the Basketball
+  tab showed 15 demo players instead of the user's 20.
+- **Detection:** the page even has a "Log out" link, so login state can't tell it apart; only
+  the header's own-team link can.
+- Three layers now handle it:
+  - **`src/main.ts`** does nothing on a public-account page (`isPublicAccount()`: a
+    `public-account` slug, the name "Public account", or a known public id). No cache, no
+    history, no UI.
+  - **`pickTeamCacheKey()`**, used by both report readers: never a public cache, then the
+    newest squad overview (falling back to the last write) when there are several teams.
+  - **A background cleanup** on worker start removes public team caches and every history
+    day of their players. It is idempotent and logs what it removed.
+
 ## Growth pace and projection
 
 `src/sports/hockey/growthPace.ts` holds the logic, all pure functions. The same code drives:
