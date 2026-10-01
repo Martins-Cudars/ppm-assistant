@@ -2,6 +2,7 @@
   <div class="player-sidebar">
     <SoccerPlayerAbility :player="player" />
     <SoccerPlayerPotential :player="player" />
+    <SoccerSquadRank :player="player" />
   </div>
 </template>
 
@@ -9,6 +10,7 @@
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 import SoccerPlayerAbility from "./SoccerPlayerAbility.vue";
 import SoccerPlayerPotential from "./SoccerPlayerPotential.vue";
+import SoccerSquadRank from "./SoccerSquadRank.vue";
 
 defineProps<{
   player: SoccerPlayer;

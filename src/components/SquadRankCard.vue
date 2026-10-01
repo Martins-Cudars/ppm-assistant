@@ -41,7 +41,8 @@ import {
   rankInSquad,
 } from "@/sports/hockey/squadRank";
 
-const props = defineProps<{
+const props = withDefaults(
+  defineProps<{
   name: string;
   /** Null when the player has no position rating to rank - the card stays hidden. */
   subject: RankedPlayer | null;
@@ -49,14 +50,22 @@ const props = defineProps<{
   isMember: boolean;
   loadSquad: () => Promise<{ players: RankedPlayer[]; rosterUpdatedAt: string | null }>;
   profileUrl: (playerId: string) => string;
-}>();
+  /**
+   * Position code -> noun, e.g. SD -> "side defender". Per sport, since codes
+   * clash: soccer's SF is a side forward, basketball's a small forward.
+   * Positions missing from it aren't ranked.
+   */
+  positionNouns?: Record<string, string>;
+}>(),
+  { positionNouns: () => POSITION_NOUN }
+);
 
 const result = ref<SquadRank | null>(null);
 const rosterUpdatedAt = ref<string | null>(null);
 
 // A player cached without calculated positions reads as "?" with a zero
 // rating. Rank only real positions.
-const isRankable = (player: RankedPlayer) => player.position in POSITION_NOUN;
+const isRankable = (player: RankedPlayer) => player.position in props.positionNouns;
 
 onMounted(async () => {
   const subject = props.subject;
@@ -75,7 +84,7 @@ const sentence = computed(() => {
   if (!rank) return "";
 
   const verb = props.isMember ? "is" : "would be";
-  const noun = POSITION_NOUN[rank.position] ?? rank.position;
+  const noun = props.positionNouns[rank.position] ?? rank.position;
 
   if (rank.total === 1) return `${props.name} ${verb} the only ${noun} on the team`;
   const place = rank.rank === 1 ? "the best" : `the ${ordinal(rank.rank)} best`;

@@ -13,6 +13,12 @@ import {
   serializeSoccerPlayer,
 } from "@/sports/soccer/capture";
 import { normalizePlayerId } from "@/base/captureUtils";
+import {
+  soccerBestRating,
+  soccerEntryAge,
+  soccerEntryOverall,
+  soccerHistoryPoints,
+} from "@/sports/soccer/historyChart";
 
 // serializeSoccerPlayer() reads the season day from the game page; under node
 // there is none, so stub a page without the info bar (getCurrentSeasonDay -> 1).
@@ -92,6 +98,26 @@ check("a cached player comes back with the same position ratings", () => {
   );
   eq(restored.getBestPosition().name, "CD");
   eq(restored.teamId, "142317");
+});
+
+check("chart: a day's rating is the player's best position with bonus, no XP", () => {
+  const player = makePlayer("42");
+  player.calculatePositions();
+  eq(soccerBestRating(skills), player.getBestPosition().ratingWithBonus);
+});
+
+check("chart: OR falls back to the floored skills when a day has none", () => {
+  eq(soccerEntryOverall({ date: "2026-10-01", overallRating: 1565 }), 1565);
+  eq(soccerEntryOverall({ date: "2026-10-01", skills: { ...skills, defence: 433.9 } }), 1565);
+});
+
+check("chart: 112 days ago the player was a year younger; points are thinned", () => {
+  const today = Date.parse("2026-10-01T12:00:00");
+  const iso = (d: number) => new Date(today - d * 86_400_000).toISOString().slice(0, 10);
+  if (Math.abs(soccerEntryAge(iso(112), 25, today) - 24) > 0.01) throw new Error("age");
+  const entries = Array.from({ length: 113 }, (_, i) => ({ date: iso(112 - i), skills }));
+  const points = soccerHistoryPoints(entries, 25, "skill", today);
+  if (points.length < 7 || points.length > 10) throw new Error(`${points.length} points`);
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

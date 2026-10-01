@@ -655,6 +655,29 @@ The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Ga
 7. **Level:** the squad's best rating is ~60–70% of the table's level at 18–25 (e.g. 447 vs
    720 at 25), as with hockey's youth paces.
 
+### Phase 3: report tab and squad-rank card (done)
+
+- **`SoccerReport.vue`**, with the same look as the other sports:
+  - team filter (roster, remembered) and position filter (GK, SD, CD, SM, CM, SF, CF);
+  - column groups:
+    - Player: name, age, CL, OR, Exp
+    - Skills: the 9 skills, with the heatmap
+    - Position: best position, Pos Skill, Skill ★ on 400/800/1200, Pos TQ (only when
+      training qualities were read)
+    - All positions: all 7
+    - Data: history days, last updated
+  - **Table / Growth Comparison tabs.** The comparison uses the shared
+    `GrowthComparisonChart`, with the top-player table as the grey Skill reference. The
+    table has no OR column, so the OR view has no reference.
+  - Chart data lives in `src/sports/soccer/historyChart.ts`: best-position rating with bonus,
+    no XP, the hockey convention.
+- **`SoccerSquadRank.vue`** in the profile sidebar, ranked by best-position rating with XP.
+  - `SquadRankCard` now takes **per-sport `positionNouns`**, since codes clash: soccer's SF is
+    a side forward, basketball's a small forward.
+  - Soccer's nouns: goalkeeper, side defender, centre-back, side midfielder, central
+    midfielder, side forward, centre forward.
+- Growth columns (pace, @25, potential) and the profile chart are phase 4.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
