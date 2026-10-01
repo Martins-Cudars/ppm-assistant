@@ -96,7 +96,11 @@ The logic now lives in the shared `src/base/growthModel.ts`; `src/sports/hockey/
 binds it to hockey's constants. All pure functions. The same code drives:
 
 - the Player Report's **Pace** column
-- the Player Report's **Skill @25** and **OR @25** columns
+- the Player Report's **Skill @25** and **OR @25** columns, and **Skill @32** / **OR @32**
+  (all three sports, added 2026-10-01): the rating without XP and the OR behind Potential's
+  stars. Both are recorded for players already 32 or older (hockey fetches the days around
+  each one's 32nd birthday, as it does for 25), and projected otherwise. For a projected
+  player, Skill @32 equals Potential's no-XP rating.
 - the dashed **Projected at own pace** line on the profile chart
 
 **Pace counts skill points, not rating movement.** A position's base rating is
@@ -510,7 +514,7 @@ turn each answer into a constant documented like hockey's:
     - **All positions:** ratings for all 5. Basketball players move between positions,
       and height decides the fit.
     - Data: history days, last updated
-  - **Growth:** Pace, Skill @25, OR @25 and Potential ★ (see the growth model below). A
+  - **Growth:** Pace, Skill @25, OR @25, Skill @32, OR @32 and Potential ★ (see the growth model below). A
     collapsible "Pace reference" panel shows the curve and which player sets it at each age.
   - Backup and Clear stay on the Hockey tab; they already cover every sport.
 - **Squad-rank card.** The card is now the shared `SquadRankCard.vue`, which is given a

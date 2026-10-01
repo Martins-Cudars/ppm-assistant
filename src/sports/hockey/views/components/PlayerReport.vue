@@ -132,6 +132,8 @@ const AT_AGE_TOLERANCE_DAYS = 14;
 // Entries around the day each player aged PROJECTION_AGE+ turned that age.
 // Null when the read failed, so it shows as "-" rather than as "no history".
 const atAgeHistory = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
+// The same around POTENTIAL_AGE (32), for the @32 columns' recorded values.
+const atAge32History = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
 
 // Storage footprint of the history store, shown in the header.
 const historyStats = ref<SkillHistoryStats | null>(null);
@@ -157,29 +159,32 @@ const currentSeasonDay = computed(() => store.currentSeasonDay);
 const loadHistoryMeta = async () => {
   // Players already past PROJECTION_AGE get their recorded value, looked up
   // around the day each turned it. Needs the cache loaded first for ages.
-  const atAgeTargets = store.cachedPlayers
-    .filter((player: HockeyPlayer) => exactAgeOf(player) >= PROJECTION_AGE)
-    .map((player: HockeyPlayer) => ({
-      playerId: player.id,
-      date: dateAtAge(exactAgeOf(player), PROJECTION_AGE),
-    }));
+  const targetsAt = (age: number) =>
+    store.cachedPlayers
+      .filter((player: HockeyPlayer) => exactAgeOf(player) >= age)
+      .map((player: HockeyPlayer) => ({
+        playerId: player.id,
+        date: dateAtAge(exactAgeOf(player), age),
+      }));
 
   // Independent of each other, so don't serialise them.
-  const [summaries, stats, recent, atAge] = await Promise.all([
+  const [summaries, stats, recent, atAge, atAge32] = await Promise.all([
     getSkillHistorySummaries(),
     getSkillHistoryStats(),
     // A full season, not just the pace window: the camp allowance reads the
     // player's last season of camps. The pace itself still uses 56 days.
     getLatestSkillHistoryWindow(CAMP_LOOKBACK_DAYS),
-    getSkillHistoryNearDates(atAgeTargets, AT_AGE_TOLERANCE_DAYS),
+    getSkillHistoryNearDates(targetsAt(PROJECTION_AGE), AT_AGE_TOLERANCE_DAYS),
+    getSkillHistoryNearDates(targetsAt(POTENTIAL_AGE), AT_AGE_TOLERANCE_DAYS),
   ]);
   historySummaries.value = summaries;
   historyStats.value = stats;
   recentHistory.value = recent;
   atAgeHistory.value = atAge;
-  if (recent === null || atAge === null) {
+  atAge32History.value = atAge32;
+  if (recent === null || atAge === null || atAge32 === null) {
     setNotice(
-      `Growth history could not be loaded - the Pace and @${PROJECTION_AGE} columns are incomplete.`,
+      `Growth history could not be loaded - the Pace, @${PROJECTION_AGE} and @${POTENTIAL_AGE} columns are incomplete.`,
       true
     );
   }
@@ -296,15 +301,23 @@ type AtAgeValue = {
 
 const exactAgeOf = (player: HockeyPlayer) => getExactAge(player, currentSeasonDay.value || 1);
 
-const atAgeByPlayer = computed(() => {
+/**
+ * Skill and OR at `targetAge` for every player: recorded from `nearHistory`
+ * (the days around each older player's birthday) or projected. Used at 25
+ * and at POTENTIAL_AGE.
+ */
+const atAgeValues = (
+  targetAge: number,
+  nearHistory: Map<string, SkillHistoryEntry[]> | null
+): Map<string, AtAgeValue | null> => {
   const values = new Map<string, AtAgeValue | null>();
 
   store.cachedPlayers.forEach((player: HockeyPlayer) => {
     const exactAge = exactAgeOf(player);
 
-    if (exactAge >= PROJECTION_AGE) {
-      const target = dateAtAge(exactAge, PROJECTION_AGE);
-      const entries = atAgeHistory.value?.get(player.id) ?? [];
+    if (exactAge >= targetAge) {
+      const target = dateAtAge(exactAge, targetAge);
+      const entries = nearHistory?.get(player.id) ?? [];
       const entry = entryNearestDate(entries, target, AT_AGE_TOLERANCE_DAYS);
       if (!entry) {
         values.set(player.id, null);
@@ -315,7 +328,7 @@ const atAgeByPlayer = computed(() => {
         skill: best.rating,
         or: readEntryOverallRating(entry) ?? overallFromSkills(entry.skills),
         kind: "recorded",
-        title: `Recorded ${entry.date}, when the player was about ${PROJECTION_AGE} (best position ${best.name}, no XP)`,
+        title: `Recorded ${entry.date}, when the player was about ${targetAge} (best position ${best.name}, no XP)`,
       });
       return;
     }
@@ -328,11 +341,11 @@ const atAgeByPlayer = computed(() => {
       return;
     }
     values.set(player.id, {
-      skill: projectPositionRating(player.skills, exactAge, pace, PROJECTION_AGE),
-      or: projectOverallRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      skill: projectPositionRating(player.skills, exactAge, pace, targetAge),
+      or: projectOverallRating(player.skills, exactAge, pace, targetAge),
       kind: "projected",
       title:
-        `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
+        `Projected: ${pace.position} rating (no XP) at ${targetAge}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the top-player pace ` +
         "from here on, slowing slightly from 22 and more from 25, as this team's players do. Any lagging main " +
         "skill is caught up first; other skills keep their current rate. " +
@@ -343,16 +356,23 @@ const atAgeByPlayer = computed(() => {
     });
   });
   return values;
-});
+};
+
+const atAgeByPlayer = computed(() => atAgeValues(PROJECTION_AGE, atAgeHistory.value));
+// The same at 32: the skill and OR behind Potential's stars (which add XP).
+const atAge32ByPlayer = computed(() => atAgeValues(POTENTIAL_AGE, atAge32History.value));
 
 const atAgeFor = (player: HockeyPlayer): AtAgeValue | null =>
   atAgeByPlayer.value.get(player.id) ?? null;
+const atAge32For = (player: HockeyPlayer): AtAgeValue | null =>
+  atAge32ByPlayer.value.get(player.id) ?? null;
 
-const atAgeMissingTitle = (player: HockeyPlayer) => {
-  if (exactAgeOf(player) >= PROJECTION_AGE) {
-    return atAgeHistory.value === null
+const atAgeMissingTitle = (player: HockeyPlayer, targetAge = PROJECTION_AGE) => {
+  if (exactAgeOf(player) >= targetAge) {
+    const nearHistory = targetAge === PROJECTION_AGE ? atAgeHistory.value : atAge32History.value;
+    return nearHistory === null
       ? "History could not be loaded"
-      : `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${PROJECTION_AGE}`;
+      : `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${targetAge}`;
   }
   return "No pace to project from";
 };
@@ -711,6 +731,8 @@ const columnMax = computed(() => {
     pace: range((p) => paceFor(p)?.pace),
     skillAtAge: range((p) => atAgeFor(p)?.skill),
     orAtAge: range((p) => atAgeFor(p)?.or),
+    skillAt32: range((p) => atAge32For(p)?.skill),
+    orAt32: range((p) => atAge32For(p)?.or),
   };
 });
 
@@ -823,6 +845,29 @@ const tableColumns = computed<Column[]>(() => [
     sortValue: (p: HockeyPlayer) => atAgeFor(p)?.or ?? null,
     cellStyle: (p: HockeyPlayer) =>
       heatStyle(atAgeFor(p)?.or, columnMax.value.orAtAge.min, columnMax.value.orAtAge.max, GROWTH_RAMP),
+  },
+  // The skill and OR behind Potential's stars, before XP.
+  {
+    header: `Skill @${POTENTIAL_AGE}`,
+    key: "skillAt32",
+    slot: "skillAt32",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: HockeyPlayer) => atAge32For(p)?.skill ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(atAge32For(p)?.skill, columnMax.value.skillAt32.min, columnMax.value.skillAt32.max, GROWTH_RAMP),
+  },
+  {
+    header: `OR @${POTENTIAL_AGE}`,
+    key: "orAt32",
+    slot: "orAt32",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: HockeyPlayer) => atAge32For(p)?.or ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(atAge32For(p)?.or, columnMax.value.orAt32.min, columnMax.value.orAt32.max, GROWTH_RAMP),
   },
   {
     header: "Potential ★",
@@ -1200,6 +1245,28 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
             {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.or }}
           </span>
           <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
+        </template>
+
+        <template #skillAt32="{ item }">
+          <span
+            v-if="atAge32For(item)?.skill != null"
+            :class="{ projected: atAge32For(item)!.kind === 'projected' }"
+            :title="atAge32For(item)!.title"
+          >
+            {{ atAge32For(item)!.kind === "projected" ? "~" : "" }}{{ atAge32For(item)!.skill }}
+          </span>
+          <span v-else class="history-none" :title="atAgeMissingTitle(item, POTENTIAL_AGE)">-</span>
+        </template>
+
+        <template #orAt32="{ item }">
+          <span
+            v-if="atAge32For(item)?.or != null"
+            :class="{ projected: atAge32For(item)!.kind === 'projected' }"
+            :title="atAge32For(item)!.title"
+          >
+            {{ atAge32For(item)!.kind === "projected" ? "~" : "" }}{{ atAge32For(item)!.or }}
+          </span>
+          <span v-else class="history-none" :title="atAgeMissingTitle(item, POTENTIAL_AGE)">-</span>
         </template>
 
         <template #updatedAt="{ item }">

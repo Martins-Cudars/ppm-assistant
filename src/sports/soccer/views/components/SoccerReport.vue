@@ -183,16 +183,16 @@ const campAllowanceText = (pace: SoccerGrowthPace, exactAge: number) => {
  */
 type AtAgeValue = { skill: number | null; or: number | null; kind: "recorded" | "projected"; title: string };
 
-const atAgeByPlayer = computed(() => {
+const atAgeValues = (targetAge: number) => {
   const values = new Map<string, AtAgeValue | null>();
   players.value.forEach((player) => {
     const id = idOf(player);
     const exactAge = exactAgeOf(player);
 
-    if (exactAge >= PROJECTION_AGE) {
+    if (exactAge >= targetAge) {
       const entry = entryNearestDate(
         entriesFor(player),
-        dateAtAge(exactAge, PROJECTION_AGE),
+        dateAtAge(exactAge, targetAge),
         AT_AGE_TOLERANCE_DAYS
       );
       if (!entry) {
@@ -204,7 +204,7 @@ const atAgeByPlayer = computed(() => {
         skill: best.rating,
         or: entry.overallRating ?? overallFromSkills(entry.skills),
         kind: "recorded",
-        title: `Recorded ${entry.date}, when the player was about ${PROJECTION_AGE} (best position ${best.name}, no XP)`,
+        title: `Recorded ${entry.date}, when the player was about ${targetAge} (best position ${best.name}, no XP)`,
       });
       return;
     }
@@ -215,11 +215,11 @@ const atAgeByPlayer = computed(() => {
       return;
     }
     values.set(id, {
-      skill: projectPositionRating(player.skills, exactAge, pace, PROJECTION_AGE),
-      or: projectOverallRating(player.skills, exactAge, pace, PROJECTION_AGE),
+      skill: projectPositionRating(player.skills, exactAge, pace, targetAge),
+      or: projectOverallRating(player.skills, exactAge, pace, targetAge),
       kind: "projected",
       title:
-        `Projected: ${pace.position} rating (no XP) at ${PROJECTION_AGE}, assuming balanced ` +
+        `Projected: ${pace.position} rating (no XP) at ${targetAge}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the reference pace from ` +
         "here on (the top-player table to 23, your squad's own slowdown after). Any lagging main " +
         "skill is caught up first; other skills keep their current rate. " +
@@ -228,13 +228,17 @@ const atAgeByPlayer = computed(() => {
     });
   });
   return values;
-});
+};
+const atAgeByPlayer = computed(() => atAgeValues(PROJECTION_AGE));
+// The same at 32: the skill and OR behind Potential's stars (which add XP).
+const atAge32ByPlayer = computed(() => atAgeValues(POTENTIAL_AGE));
 const atAgeFor = (player: SoccerPlayer) => atAgeByPlayer.value.get(idOf(player)) ?? null;
 
-const atAgeMissingTitle = (player: SoccerPlayer) => {
+const atAge32For = (player: SoccerPlayer) => atAge32ByPlayer.value.get(idOf(player)) ?? null;
+const atAgeMissingTitle = (player: SoccerPlayer, targetAge = PROJECTION_AGE) => {
   if (history.value === null) return "History could not be loaded";
-  if (exactAgeOf(player) >= PROJECTION_AGE) {
-    return `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${PROJECTION_AGE}`;
+  if (exactAgeOf(player) >= targetAge) {
+    return `No stored day with skills within ${AT_AGE_TOLERANCE_DAYS} days of when the player turned ${targetAge}`;
   }
   return "No pace to project from";
 };
@@ -360,6 +364,8 @@ const growthRange = computed(() => {
     pace: range((p) => paceFor(p)?.pace),
     skill: range((p) => atAgeFor(p)?.skill),
     or: range((p) => atAgeFor(p)?.or),
+    skill32: range((p) => atAge32For(p)?.skill),
+    or32: range((p) => atAge32For(p)?.or),
   };
 });
 
@@ -463,6 +469,28 @@ const columns = computed<Column[]>(() => [
     sortValue: (p: SoccerPlayer) => atAgeFor(p)?.or ?? null,
     cellStyle: (p: SoccerPlayer) =>
       heatStyle(atAgeFor(p)?.or, growthRange.value.or.min, growthRange.value.or.max, GROWTH_RAMP),
+  },
+  {
+    header: `Skill @${POTENTIAL_AGE}`,
+    key: "skillAt32",
+    slot: "skillAt32",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: SoccerPlayer) => atAge32For(p)?.skill ?? null,
+    cellStyle: (p: SoccerPlayer) =>
+      heatStyle(atAge32For(p)?.skill, growthRange.value.skill32.min, growthRange.value.skill32.max, GROWTH_RAMP),
+  },
+  {
+    header: `OR @${POTENTIAL_AGE}`,
+    key: "orAt32",
+    slot: "orAt32",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: SoccerPlayer) => atAge32For(p)?.or ?? null,
+    cellStyle: (p: SoccerPlayer) =>
+      heatStyle(atAge32For(p)?.or, growthRange.value.or32.min, growthRange.value.or32.max, GROWTH_RAMP),
   },
   {
     header: "Potential ★",
@@ -672,6 +700,26 @@ const topPlayerReference: GrowthReference = {
               {{ atAgeFor(item)!.kind === "projected" ? "~" : "" }}{{ atAgeFor(item)!.or }}
             </span>
             <span v-else class="history-none" :title="atAgeMissingTitle(item)">-</span>
+          </template>
+          <template #skillAt32="{ item }">
+            <span
+              v-if="atAge32For(item)?.skill != null"
+              :class="{ projected: atAge32For(item)!.kind === 'projected' }"
+              :title="atAge32For(item)!.title"
+            >
+              {{ atAge32For(item)!.kind === "projected" ? "~" : "" }}{{ atAge32For(item)!.skill }}
+            </span>
+            <span v-else class="history-none" :title="atAgeMissingTitle(item, POTENTIAL_AGE)">-</span>
+          </template>
+          <template #orAt32="{ item }">
+            <span
+              v-if="atAge32For(item)?.or != null"
+              :class="{ projected: atAge32For(item)!.kind === 'projected' }"
+              :title="atAge32For(item)!.title"
+            >
+              {{ atAge32For(item)!.kind === "projected" ? "~" : "" }}{{ atAge32For(item)!.or }}
+            </span>
+            <span v-else class="history-none" :title="atAgeMissingTitle(item, POTENTIAL_AGE)">-</span>
           </template>
           <template #potential="{ item }">
             <span v-if="potentialFor(item)" :title="potentialTitle(item)">
