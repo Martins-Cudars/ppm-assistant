@@ -15,6 +15,7 @@
 import { createApp, h, reactive } from "vue";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { Sport } from "@/types/Sport";
+import { stripThousands } from "@/base/captureUtils";
 import { upsertSkillHistoryEntries } from "@/storage/skillHistoryDb";
 import {
   clearGatherSession,
@@ -68,8 +69,9 @@ const MAX_MONTHS = 240;
  */
 function parseCellNumber(cell: Element | undefined): number {
   const raw = (cell?.textContent || "").split("(")[0].replace(/\s/g, "");
-  return raw.length > 0 ? parseFloat(raw) : NaN;
+  return raw.length > 0 ? parseFloat(stripThousands(raw)) : NaN;
 }
+
 
 /**
  * Parses the Datums cell into an ISO "YYYY-MM-DD" date string. Prefers a

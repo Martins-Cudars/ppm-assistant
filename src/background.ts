@@ -17,6 +17,7 @@ import {
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
 import { publicAccountCacheKeys } from "@/storage/publicAccount";
+import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
 
 const DB_NAME = "ppm-assistant-skill-history";
 /**
@@ -407,6 +408,47 @@ async function purgePublicAccountData(): Promise<void> {
 
 purgePublicAccountData().catch((error) => {
   console.error("[Background] Public-account cleanup failed:", error);
+});
+
+/**
+ * One-time repair of ORs the training-progress parser cut at an English
+ * thousands comma ("1,598" stored as 1 - 8,436 soccer days in the user's
+ * history). See repairedOverallRating(). Flagged in chrome.storage so it walks
+ * the stores once, not on every worker start.
+ */
+async function repairTruncatedOverallRatings(): Promise<void> {
+  const flag = await chrome.storage.local.get(OR_THOUSANDS_REPAIR_FLAG);
+  if (flag[OR_THOUSANDS_REPAIR_FLAG]) return;
+
+  const db = await openDb();
+  for (const sport of SPORTS) {
+    const repaired = await new Promise<number>((resolve, reject) => {
+      const tx = db.transaction(historyStoreName(sport), "readwrite");
+      const request = tx.objectStore(historyStoreName(sport)).openCursor();
+      let count = 0;
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const entry = cursor.value as SkillHistoryEntry<Record<string, number>>;
+        const overallRating = repairedOverallRating(entry);
+        if (overallRating !== null) {
+          cursor.update({ ...entry, overallRating });
+          count++;
+        }
+        cursor.continue();
+      };
+      tx.oncomplete = () => resolve(count);
+      tx.onerror = () => reject(tx.error);
+    });
+    if (repaired > 0) {
+      console.log(`[Background] Repaired ${repaired} truncated OR value(s) (${sport})`);
+    }
+  }
+  await chrome.storage.local.set({ [OR_THOUSANDS_REPAIR_FLAG]: new Date().toISOString() });
+}
+
+repairTruncatedOverallRatings().catch((error) => {
+  console.error("[Background] OR repair failed:", error);
 });
 
 chrome.runtime.onMessage.addListener(

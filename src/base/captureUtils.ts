@@ -37,3 +37,14 @@ export function parseDigits(text: string | null | undefined): number {
   const digits = (text ?? "").replace(/\D/g, "");
   return digits ? parseInt(digits, 10) : NaN;
 }
+
+/**
+ * Drops English thousands commas - "1,598" -> "1598" - for parseFloat (callers
+ * strip spaces, the other separator, themselves). Skills use "." for decimals
+ * ("72.02"), so a comma is only a separator when exactly 3 digits follow it.
+ * Before this the training-progress parser read "1,598" as 1, and every soccer
+ * OR of 1000+ was stored as 1 (repaired in src/background.ts).
+ */
+export function stripThousands(raw: string): string {
+  return raw.replace(/,(?=\d{3}(?!\d))/g, "");
+}

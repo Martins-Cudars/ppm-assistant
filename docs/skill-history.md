@@ -609,6 +609,52 @@ The user chose hockey's growth model, generalised. The work is phased like baske
 - **Verification limit:** Chrome automation can't run scripts on the soccer domain; page
   text and screenshots work.
 
+### Phase 2: research findings (2026-10-01)
+
+The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Gather walk on
+2026-10-01.
+
+1. **The age mapping is right.** Histories start at 15.0–15.9, the age juniors join, so
+   112-day seasons are confirmed. Basketball's 112-vs-70 mistake doesn't apply here.
+2. **Bug found: OR cut at the English thousands comma.**
+   - The training-progress page prints "1,598", and `parseFloat` stopped at the comma, so
+     8,436 soccer days were stored with OR 1.
+   - Fixed by `stripThousands()` (in `base/captureUtils.ts`, used by the shared parser).
+   - Stored days are repaired once by the worker, using `repairedOverallRating()`. That is
+     safe because OR = Σ floor(skill) holds on every other day in all three sports.
+   - A dry run on the backup repaired exactly the 8,436, with 0 mismatches left.
+3. **Training: one skill a day, but at the position's ratios.**
+   - 96% of days raise exactly one skill (4% are flat).
+   - Over a season the gains land on the position's ratios. An SM gains technical 0.52,
+     speed 0.75, passing 0.54 and heading 0.25 of its midfield gain, against ratios 0.5 /
+     0.75 / 0.5 / 0.25.
+   - So hockey's measure applies directly: points into the position's skills ÷ Σweights.
+   - Bonus shooting gets ~0.5 of main for SM/CM, ~0.75 for SF/CF and ~0.2 for defenders.
+4. **Camps:**
+   - runs of **7 or 14 days** at **2.0×** a normal day (p25–p75 1.93–2.11);
+   - mostly 14 camp days per player per season, matching the rule (user: 2 × 7 = 14 a
+     season);
+   - used up to age 21–22, like hockey: `CAMP_MAX_DAYS_PER_SEASON` 14, `CAMP_UNTIL_AGE` 22.
+5. **The top-player table is fine as a level up to 23, wrong as a growth shape after it.**
+
+   | Age | 15–18 | 19–21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 |
+   |---|---|---|---|---|---|---|---|---|---|---|
+   | Squad, median base gain per season | 44→37 | 32 | 29 | 27 | 25 | 24 | 19 | 16 | 12 | 10 |
+   | Table slope | 62–68 | 65–70 | 60 | 50 | 20 | 15 | 10 | 7 | 5 | 3 |
+   | Reference slope used | table | table | table | table | 46 | 44 | 35 | 30 | 22 | 19 |
+
+   - Against the raw table a typical player read ~50% up to 23, then 124–230% at 24–27.
+   - **User's choice:** the table up to 23; from 24 the reference follows the squad's own
+     decline, scaled to meet the table at 23 (`own[age] / own[23] × 50`).
+   - Measured against that, pace stays ~0.53–0.55 at 24–28, the same as for juniors, so
+     **no separate age factors are needed** (all 1.0).
+   - 15–16-year-olds read higher (0.6–0.7) as they catch up; that is left in, as in hockey.
+   - Ages 30–34 are extrapolated (one player): 14, 9, 5, 2, 0.
+6. **XP share** of the table's `exp`: ~0.45 under 22 (0.34–0.71) and ~0.52 from 22. Used as
+   the floor, as in hockey.
+7. **Level:** the squad's best rating is ~60–70% of the table's level at 18–25 (e.g. 447 vs
+   720 at 25), as with hockey's youth paces.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
