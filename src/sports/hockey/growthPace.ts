@@ -125,8 +125,9 @@ export const POTENTIAL_AGE = 32;
  * Typical XP as a share of the top-player table's `exp` at the same age, at
  * the user's team. XP comes from ice time, and young players get less.
  * Measured on the Aug 2026 cache: median 0.45 at 15-21, 0.63 from 22 (regulars
- * mostly 0.55-0.75). Used as a floor, so a new player with no XP yet still
- * projects typical XP rather than none.
+ * mostly 0.55-0.75). Future XP accrues at this share for everyone - a
+ * player's own past share isn't carried forward (see projectExperience in
+ * src/base/growthModel.ts).
  */
 export const SQUAD_XP_SHARE: readonly { fromAge: number; share: number }[] = [
   { fromAge: 0, share: 0.45 },

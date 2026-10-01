@@ -76,7 +76,24 @@ When nobody is logged in, PPM shows a shared demo team, "Public account": basket
 
 ## Growth pace and projection
 
-`src/sports/hockey/growthPace.ts` holds the logic, all pure functions. The same code drives:
+> **Potential: future XP (all sports, 2026-10-01).** Projected XP is today's XP plus the
+> squad's **typical** share of the table's XP gain for each future year (hockey 0.45 / 0.63,
+> soccer 0.45 / 0.52, basketball `TYPICAL_XP_PER_SEASON`).
+> - A player's own past share is no longer carried forward. It reflects playing time
+>   wherever he was, not at this team.
+> - **What found it:** Herberts Dzelzs, a soccer CF bought at 18 from an elite team, had 42 XP
+>   at 19 (1.69× the table; the squad sits at 0.34–0.71). His own share took him to 401 XP
+>   at 32 and a **1,235 potential: 5 diamond stars** for a ~685 rating. With the typical
+>   share he projects ~150 XP and **891**.
+> - His history also showed that the drop after the transfer was in **shooting** (his old
+>   team trained it hard, 8–30 per 28 days; this team trains only the CF ratio skills, 0–6),
+>   not in base training (~60% before, 62% now). His pace window is entirely at this team,
+>   so the rating side was already right.
+> - Future work: once daily captures hold a season of a player's XP at this team, his
+>   measured in-team rate could replace the typical share.
+
+The logic now lives in the shared `src/base/growthModel.ts`; `src/sports/hockey/growthPace.ts`
+binds it to hockey's constants. All pure functions. The same code drives:
 
 - the Player Report's **Pace** column
 - the Player Report's **Skill @25** and **OR @25** columns
@@ -539,11 +556,9 @@ This also sidesteps the unsettled age-curve question (research item 7).
     position.
   - Height keeps its observed rate until 19 (`HEIGHT_STOP_AGE`).
   - Players already 25 or older show the value recorded in history instead.
-- **Potential ★:** the same model extended to 32, plus XP at the squad's typical rate
-  (`TYPICAL_XP_PER_SEASON`, read off the cache snapshot).
-  - A player's own rate is used if higher, but only once typical XP reaches 10
-    (`XP_SHARE_FROM`).
-  - Before that it's noise: a 16-year-old with 4 XP read as 2× typical and projected 185 XP.
+- **Potential ★:** the same model extended to 32, plus XP: today's XP plus the squad's
+  typical rate from here (`TYPICAL_XP_PER_SEASON`, read off the cache snapshot). A player's
+  own past rate isn't carried forward; see "Potential: future XP" under Growth pace.
 - **Sanity check on real data** (70-day seasons):
   - Valdis's recorded @25 is C 157.
   - Juniors project to OR ~920–1120 at 25, against 830–910 recorded for today's
@@ -699,8 +714,9 @@ The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Ga
   - paces mostly 50–64%;
   - recorded @25 for the 25+ players (e.g. CD 447, SD 422/436, CF 431);
   - camp days ≤ 14;
-  - one outlier: a 19-year-old with 42 XP (1.7× typical) projects a potential of 1,235,
-    because his own XP share is extrapolated, as in hockey.
+  - one outlier: a 19-year-old with 42 XP (1.7× typical) projected a potential of 1,235,
+    because his own XP share was extrapolated. Fixed by the XP rule ("Potential: future
+    XP" under Growth pace): he now projects 891.
 - **The Soccer report gets a Growth group:** Pace, Skill @25, OR @25, Potential ★, with
   hockey's tooltips. Pace's tooltip names the reference for that age.
 - **Profile chart** (`SoccerPlayerGrowthChart.vue`) rebuilt on hockey's pattern:

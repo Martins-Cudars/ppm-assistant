@@ -538,8 +538,8 @@ check("top-player XP comes from the table, interpolated between whole ages", () 
   near(topExpAt(50), 472, "above the table");
 });
 
-check("XP below the squad share is lifted to it, and rises at 22", () => {
-  // Own share 0.3 at 18 - below the 0.45 floor, which applies until 22, then 0.63.
+check("future XP follows the squad share, which rises at 22", () => {
+  // Own share 0.3 at 18; future years add the squad's 0.45 until 22, then 0.63.
   near(projectExperience(28 * 0.3, 18, 22), 28 * 0.3 + (74 - 28) * 0.45, "to 22");
   near(
     projectExperience(28 * 0.3, 18, 24),
@@ -548,8 +548,11 @@ check("XP below the squad share is lifted to it, and rises at 22", () => {
   );
 });
 
-check("an own XP share above the squad's is kept", () => {
-  near(projectExperience(51 * 0.8, 20, 23), 51 * 0.8 + (88 - 51) * 0.8);
+// A high own share reflects playing time wherever the player was - a bought
+// elite-team junior at 1.7x once projected a 5-diamond potential. It's kept
+// as XP already earned, but future seasons add the squad's share.
+check("a high own XP share no longer carries over", () => {
+  near(projectExperience(51 * 0.8, 20, 23), 51 * 0.8 + (74 - 51) * 0.45 + (88 - 74) * 0.63);
 });
 
 check("a new player with no XP still gets the squad's typical XP", () => {

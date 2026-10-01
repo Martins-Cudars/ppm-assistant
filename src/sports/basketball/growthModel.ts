@@ -547,7 +547,7 @@ export const POTENTIAL_AGE = 32;
  * Typical XP gained per (70-day) season at each age on the user's squad, read
  * off the Sep 2026 cache: about 2 at 17, 10 at 19, 17 at 21, 30 at 23, 38-47
  * at 25, 55-67 at 26-28 and 96 at 35. XP isn't in the daily history, so this
- * rests on one snapshot; the player's own share of it is used when higher.
+ * rests on one snapshot. Future XP accrues at this rate for everyone.
  */
 export const TYPICAL_XP_PER_SEASON: readonly { fromAge: number; xp: number }[] = [
   { fromAge: 15, xp: 1 },
@@ -573,16 +573,14 @@ export function typicalXpAt(age: number): number {
 }
 
 /**
- * XP at `targetAge`: typical gains at the player's own share, never below
- * typical. The own share only counts once typical XP is XP_SHARE_FROM or more:
- * a 16-year-old's 4 XP against a typical 1.9 would otherwise read as 2.1x and
- * double every future season.
+ * XP at `targetAge`: the XP the player has now plus the squad's typical gains
+ * from here. A player's own past rate isn't carried forward - it reflects
+ * playing time wherever he was, not at this team (a bought soccer junior's
+ * elite-team share once projected a 5-diamond potential). The same rule as
+ * hockey and soccer (projectExperience in src/base/growthModel.ts).
  */
-export const XP_SHARE_FROM = 10;
 export function projectBasketballXp(experience: number, currentExactAge: number, targetAge: number): number {
-  const typicalNow = typicalXpAt(currentExactAge);
-  const share = typicalNow >= XP_SHARE_FROM ? Math.max(1, experience / typicalNow) : 1;
-  return experience + (typicalXpAt(targetAge) - typicalNow) * share;
+  return experience + typicalXpAt(targetAge) - typicalXpAt(currentExactAge);
 }
 
 export interface BasketballPotential {

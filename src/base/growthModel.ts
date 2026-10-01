@@ -70,7 +70,7 @@ export interface GrowthConfig<TSkills extends Skills> {
     /** How far back a player's own camp record is read. */
     lookbackDays: number;
   };
-  /** Typical XP as a share of the table's `exp`, by age - a floor for projected XP. */
+  /** Typical XP as a share of the table's `exp`, by age - the rate future XP is projected at. */
   xpShares: readonly { fromAge: number; share: number }[];
   /** Projections stop here: the curve turns to decline, and pace against it stops meaning anything. */
   projectionMaxAge: number;
@@ -554,20 +554,24 @@ export function createGrowthModel<TSkills extends Skills>(config: GrowthConfig<T
   }
 
   /**
-   * XP at `targetAge`: each future year gains the table's XP gain for that
-   * year times the player's share - his own current share, never below the
-   * squad's typical share for that age. Rests on today's XP alone.
+   * XP at `targetAge`: the XP the player has now, plus each future year's
+   * table XP gain times the squad's typical share for that age.
+   *
+   * The player's own share so far is deliberately not used: it reflects
+   * playing time wherever he was, not at this team. Herberts Dzelzs (soccer
+   * CF) arrived at 18 from an elite team with 42 XP at 19 - 1.7x the table,
+   * where the squad sits at 0.34-0.71 - and carrying that share to 32 gave
+   * 401 XP and a 1,235 potential (5 diamond stars) for a ~685 rating.
+   *
+   * Future work: once daily captures hold a season of a player's XP at this
+   * team, his measured in-team rate could replace the typical share.
    */
   function projectExperience(experience: number, currentExactAge: number, targetAge: number): number {
-    const topNow = topExpAt(currentExactAge);
-    const ownShare = topNow > 0 ? experience / topNow : 0;
-
     let xp = experience;
     let age = currentExactAge;
     while (age < targetAge) {
       const segmentEnd = Math.min(Math.floor(age) + 1, targetAge);
-      const share = Math.max(ownShare, squadXpShare(age));
-      xp += (topExpAt(segmentEnd) - topExpAt(age)) * share;
+      xp += (topExpAt(segmentEnd) - topExpAt(age)) * squadXpShare(age);
       age = segmentEnd;
     }
     return xp;
@@ -575,8 +579,9 @@ export function createGrowthModel<TSkills extends Skills>(config: GrowthConfig<T
 
   /**
    * The projected peak: rating with XP at the potential age, using the same
-   * model as the @25 columns plus projected XP. Players at or past that age
-   * show where they are now - past XP isn't stored.
+   * model as the @25 columns plus projected XP (today's XP plus the squad's
+   * typical rate - see projectExperience). Players at or past that age show
+   * where they are now - past XP isn't stored.
    */
   function projectPotential(
     skills: TSkills | undefined,

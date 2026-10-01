@@ -18,6 +18,7 @@ import {
   expectedSeasonGain,
   measureGrowthPace,
   projectPositionRating,
+  projectExperience,
   projectPotential,
   projectionPoints,
 } from "@/sports/soccer/growthPace";
@@ -126,6 +127,19 @@ check("a 15-year-old's catch-up pace isn't carried to 25", () => {
   const gain15 = projectPositionRating(skills, 17.5, at15, 25)!;
   const gain17 = projectPositionRating(skills, 17.5, at17, 25)!;
   if (gain15 >= gain17) throw new Error(`15-year-old projected ${gain15} >= ${gain17}`);
+});
+
+// Herberts Dzelzs: bought at 18 from an elite team, 42 XP at 19.2 (1.7x the
+// table, the squad sits at 0.34-0.71). His own share once projected 401 XP at
+// 32 and a 1,235 potential - 5 diamond stars - for a ~685 rating.
+check("an elite-team junior's XP isn't extrapolated: 42 + typical", () => {
+  // Table exp: 19 -> 22, 20 -> 35, 22 -> 62, 32 -> 238; shares 0.45 then 0.52.
+  const exp19_2 = 22 + (35 - 22) * 0.2;
+  const expected = 42 + (62 - exp19_2) * 0.45 + (238 - 62) * 0.52;
+  near(projectExperience(42, 19.2, 32), expected, 1e-6);
+  const rating = 685;
+  const withXp = Math.round(rating * (1 + expected / 500));
+  if (withXp >= 1200) throw new Error(`still diamond-capped: ${withXp}`);
 });
 
 check("potential: at or past 32 shows the current value", () => {

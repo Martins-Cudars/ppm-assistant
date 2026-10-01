@@ -236,12 +236,12 @@ check("projection: height grows at its rate until the stop age, then holds", () 
   eq(projection.height, Math.floor(184 + pace.heightPerSeason * (HEIGHT_STOP_AGE - 17)));
 });
 
-check("XP: a junior's own share doesn't multiply future seasons", () => {
-  // 4 XP at 16.9 is ~2x typical, but that early it's noise: typical gains only.
+check("XP: future seasons add the squad's typical XP, whatever the player's past rate", () => {
+  // 4 XP at 16.9 is ~2x typical: kept, but not multiplied forward.
   near(projectBasketballXp(4, 16.9, 18.9), 4 + typicalXpAt(18.9) - typicalXpAt(16.9), 1e-9);
-  // From typical XP 10 on, a busier player keeps their share.
+  // A busier player keeps the XP earned, but adds typical XP from here.
   const at22 = typicalXpAt(22);
-  near(projectBasketballXp(at22 * 2, 22, 23), at22 * 2 + (typicalXpAt(23) - at22) * 2, 1e-9);
+  near(projectBasketballXp(at22 * 2, 22, 23), at22 * 2 + (typicalXpAt(23) - at22), 1e-9);
 });
 
 check("potential: at or past the peak age shows the current value", () => {

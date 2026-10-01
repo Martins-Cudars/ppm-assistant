@@ -78,7 +78,9 @@ export const POTENTIAL_AGE = 32;
 
 /**
  * XP as a share of the table's `exp`, from the Oct 2026 cache: ~0.45 under 22
- * (0.34-0.71), ~0.52 from 22. A floor, as in hockey.
+ * (0.34-0.71), ~0.52 from 22. Future XP accrues at this share for everyone; a
+ * player's own past share isn't carried forward (an elite-team junior's 1.69
+ * once projected 401 XP at 32 - see projectExperience in growthModel.ts).
  */
 export const SQUAD_XP_SHARE: readonly { fromAge: number; share: number }[] = [
   { fromAge: 0, share: 0.45 },

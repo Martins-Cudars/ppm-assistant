@@ -339,8 +339,8 @@ const potentialTitle = (player: BasketballPlayer) => {
   return (
     `~${potential.ratingWithXp} at ${POTENTIAL_AGE}: ${potential.position} ~${potential.rating} ` +
     `(no XP) + XP ~${Math.round(potential.xp)}. ${tierLabel(potential.ratingWithXp)}. Same model ` +
-    `as Skill @${PROJECTION_AGE}, extended; XP grows at the squad's typical rate, or the ` +
-    "player's own if higher."
+    `as Skill @${PROJECTION_AGE}, extended; XP grows at the squad's typical rate from here ` +
+    "(past playing time elsewhere doesn't carry over)."
   );
 };
 
