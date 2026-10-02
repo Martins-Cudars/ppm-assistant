@@ -678,6 +678,43 @@ OR at each age. **OR only for now** - a roster page shows no skills - and the gr
   since capture is otherwise invisible.
 - **Not seen in a browser yet**: the two views, the notes, the toggle.
 
+#### The report table: "Compare with" Squad / League / Elite
+
+One toggle above the tabs drives the chart's reference line (`v-model:reference-key` on the
+shared chart) and two table columns. The choice is remembered in `localStorage`.
+
+- **What the scouted data is.** Pace is a *rate*; a roster visit gives a *level*. A rate
+  needs the same player seen twice, weeks apart. So the toggle does two different things:
+- **"OR vs best" (works from single visits):** the player's OR as a percentage of the
+  group's best OR at his exact age. `bestOrAt()` reads the group's line: linear between
+  points, the end value up to half a season past either end, "-" beyond. Squad uses
+  `buildSquadBestCurve().or`.
+- **Pace against League / Elite (needs revisits):**
+  - `scoutRatePairs()`: per player, the latest snapshot against the earliest one 42-105
+    days before it **on the same team**; OR change ÷ days, at the middle age. 42 days,
+    because each whole-number OR can sit several points under the true sum of the skills.
+  - `groupRateByAge()`: per age the **mean of the 3 fastest** players (the user's choice -
+    one alone is the luckiest rounding), non-increasing after the peak
+    (`smoothFromPeak()`, split out of `buildReferenceCurve` and shared). Ages nobody was
+    measured at take the squad curve's shape, scaled to the nearest measured age.
+  - The player's side is `ownOrRate()`: his own OR change per calendar day over the last
+    56 days of history (28 minimum). Both sides are calendar days and OR, so they are
+    like for like - and both include camp and no-training days, unlike the squad Pace,
+    which is per normal training day. The two numbers are not interchangeable.
+  - **A group needs 10 pairs from other teams** before its pace is used
+    (`scoutedPairCount()`). The user's own squad is snapshotted on every overview visit, so
+    counting it would make every group "ready" within weeks and measure the squad against
+    itself. Once a group is ready, the user's players are part of it like anyone else's.
+    Until then the Pace column stays
+    on Squad and the caption under the toggle says how many players were seen twice. When
+    it switches, the column header reads "Pace vs Elite".
+- **Projections do not follow the toggle** (the user's choice). In `projectBasketball` the
+  points are pace × the reference between two ages, so the reference's level cancels and
+  only its shape over ages would change anything; the scouted curve is OR-based and new.
+  Skill/OR @25, @32, Potential and the "Pace reference" panel stay on the squad model.
+- Never run in a browser. With the store new on 2026-10-02, the group pace cannot show
+  before mid-November 2026 at the earliest.
+
 ## Soccer
 
 Soccer is built like hockey, not basketball:
@@ -878,7 +915,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
-| Scouted rosters (basketball) | Parsing, merge, league list and the lines: **verified**, 13 checks in `test/scout-reference.check.ts`. The page markup was read from the live game on 2026-10-02 (EN and LV). The views, the on-page notes, the chart toggle and the v3 backup round trip: **never run in the browser.** |
+| Scouted rosters (basketball) | Parsing, merge, league list and the lines: **verified**, 18 checks in `test/scout-reference.check.ts`. The page markup was read from the live game on 2026-10-02 (EN and LV). The views, the on-page notes, the chart toggle and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
 The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were

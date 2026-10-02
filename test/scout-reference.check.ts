@@ -6,7 +6,10 @@
  * - sports/basketball/scoutCapture.ts: a row as today's snapshot.
  * - storage/scoutMerge.ts: same-day merge, and what a league page does to the
  *   stored league list.
- * - sports/basketball/scoutReference.ts: best OR per age, the league filter.
+ * - sports/basketball/scoutReference.ts: best OR per age, the league filter,
+ *   and the report table's side: a group's best OR at an exact age, growth
+ *   rates from players seen twice, the group's pace reference, a player's own
+ *   OR rate.
  */
 
 import { parseSeasonText } from "@/base/captureUtils";
@@ -16,12 +19,19 @@ import {
   teamIdFromHref,
 } from "@/sports/basketball/parsers/teamRoster";
 import { buildScoutSnapshot } from "@/sports/basketball/scoutCapture";
+import { ReferenceCurve } from "@/sports/basketball/growthModel";
 import {
+  RATE_MIN_PAIRS,
+  bestOrAt,
   bestOrByAge,
   buildScoutReferences,
+  groupRateByAge,
   isLeagueStale,
   leagueSnapshots,
+  ownOrRate,
   scoutCoverage,
+  scoutRatePairs,
+  scoutedPairCount,
 } from "@/sports/basketball/scoutReference";
 import { mergeScoutSnapshot, nextLeagueTeams } from "@/storage/scoutMerge";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
@@ -269,6 +279,132 @@ check("league list: a past season's table changes nothing, even with the user in
   eq(nextLeagueTeams(null, { ...past, isDefaultPage: true }, "39743", 64), null, "nothing stored either");
   // Without a readable header season the page is judged as before.
   eq(nextLeagueTeams(null, page(["11", "39743"]), "39743", null)?.teamIds, ["11", "39743"]);
+});
+
+// --- The table: level and pace against a group -------------------------------------
+
+check("best OR at an exact age: between points, just past the ends, null beyond", () => {
+  const line = [
+    { x: 19, y: 500, note: "A" },
+    { x: 20, y: 600, note: "B" },
+    { x: 22, y: 700, note: "C" },
+  ];
+  eq(bestOrAt(line, 19.25), { value: 525, note: "A" }, "a quarter of the way");
+  eq(bestOrAt(line, 21.5), { value: 675, note: "C" }, "across a missing age");
+  eq(bestOrAt(line, 20), { value: 600, note: "B" }, "on a point");
+  eq(bestOrAt(line, 18.6), { value: 500, note: "A" }, "just before the first");
+  eq(bestOrAt(line, 22.5), { value: 700, note: "C" }, "just past the last");
+  eq(bestOrAt(line, 18.4), null, "nobody that young");
+  eq(bestOrAt(line, 23), null, "nobody that old");
+  eq(bestOrAt([], 20), null, "no line");
+});
+
+const seen = (
+  playerId: string,
+  date: string,
+  age: number,
+  seasonDay: number,
+  overallRating: number,
+  extra: Partial<ScoutSnapshot> = {}
+): ScoutSnapshot => ({
+  ...snap(playerId, age, overallRating, extra),
+  id: `${playerId}:${date}`,
+  date,
+  seasonDay,
+});
+
+check("a rate needs the same player twice, 42-105 days apart, on the same team", () => {
+  const rates = scoutRatePairs([
+    // 56 days, +70 OR: 1.25 a day. Day 60 of age 19 to day 46 of age 20.
+    seen("1", "2026-10-02", 19, 60, 500, { name: "A" }),
+    seen("1", "2026-11-27", 20, 46, 570, { name: "A" }),
+    // Only 28 days apart.
+    seen("2", "2026-10-02", 21, 60, 600),
+    seen("2", "2026-10-30", 21, 18, 640),
+    // Transferred in between.
+    seen("3", "2026-10-02", 22, 60, 700),
+    seen("3", "2026-11-27", 23, 46, 760, { teamId: "9" }),
+    // Seen once.
+    seen("4", "2026-10-02", 24, 60, 800),
+    // Three visits: the latest against the earliest within range (not the 150-day-old one).
+    seen("5", "2026-06-30", 25, 30, 800),
+    seen("5", "2026-10-02", 26, 54, 900),
+    seen("5", "2026-11-27", 27, 40, 928),
+  ]);
+  eq(rates.map((r) => r.playerId), ["1", "5"]);
+  near(rates[0].perDay, 1.25, 1e-9);
+  eq(rates[0].days, 56);
+  eq(rates[0].age, 20, "the middle of 19.86 and 20.66");
+  near(rates[1].perDay, 0.5, 1e-9, "28 OR over 56 days");
+});
+
+check("the ready rule counts other teams' players only - the own squad can't make a group ready", () => {
+  // 20 own players seen on two overview visits, plus 3 scouted players.
+  const snapshots = [
+    ...Array.from({ length: 20 }, (_, i) => [
+      seen(`own${i}`, "2026-10-02", 20, 60, 500, { teamId: "39743", source: "PlayersList" }),
+      seen(`own${i}`, "2026-11-27", 21, 46, 550, { teamId: "39743", source: "PlayersList" }),
+    ]).flat(),
+    ...Array.from({ length: 3 }, (_, i) => [
+      seen(`far${i}`, "2026-10-02", 20, 60, 700, { teamId: "7" }),
+      seen(`far${i}`, "2026-11-27", 21, 46, 770, { teamId: "7" }),
+    ]).flat(),
+  ];
+  const rates = scoutRatePairs(snapshots);
+  eq(rates.length, 23, "everyone has a pair");
+  eq(scoutedPairCount(rates, "39743"), 3, "only the scouted ones count");
+  eq(scoutedPairCount(rates, "39743") >= RATE_MIN_PAIRS, false, "not ready");
+  eq(scoutedPairCount(rates, undefined), 23, "own team unknown: nothing to leave out");
+});
+
+const shape: ReferenceCurve = Array.from({ length: 20 }, (_, i) => ({
+  age: 15 + i,
+  perDay: 15 + i < 25 ? 1 : 0.5,
+  source: "default" as const,
+}));
+const rate = (playerId: string, age: number, perDay: number) => ({ playerId, age, perDay, days: 56 });
+
+check("a group's 100% is the mean of the top 3, never rising after the peak, gaps filled by shape", () => {
+  const curve = groupRateByAge(
+    [
+      rate("a", 20, 1.5), rate("b", 20, 1.2), rate("c", 20, 0.9), rate("d", 20, 0.1),
+      rate("e", 21, 0.8),
+      rate("f", 22, 1.0), rate("g", 22, 1.0), // a rise after the peak: pooled with 21
+      rate("h", 40, 9), // outside the curve's ages
+    ],
+    shape
+  );
+  const at = (age: number) => curve.find((p) => p.age === age)!;
+  near(at(20).perDay, 1.2, 1e-9, "(1.5 + 1.2 + 0.9) / 3, the fourth left out");
+  eq(at(20).top.map((r) => r.playerId), ["a", "b", "c"]);
+  near(at(21).perDay, 0.9, 1e-9, "21 and 22 averaged");
+  near(at(22).perDay, 0.9, 1e-9);
+  eq(at(21).source, "measured");
+  // 19 has no pairs: the shape (1.0 at both) scaled to meet 20.
+  near(at(19).perDay, 1.2, 1e-9);
+  eq(at(19).source, "filled");
+  // 26: the shape halves from 25 on, scaled from 22's 0.9.
+  near(at(26).perDay, 0.45, 1e-9);
+  eq(curve.length, 20, "15 to 34");
+  eq(groupRateByAge([], shape), [], "no pairs, no curve");
+  eq(RATE_MIN_PAIRS, 10);
+});
+
+check("a player's own OR rate: calendar days over his last 56, null under 28", () => {
+  const days = (count: number, perDay: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      date: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10),
+      or: Math.floor(500 + i * perDay),
+    }));
+  const own = ownOrRate(days(100, 1))!;
+  eq(own.days, 56);
+  near(own.perDay, 1, 1e-9);
+  eq(own.fromDate, "2026-02-13");
+  eq(own.toDate, "2026-04-10");
+  eq(ownOrRate(days(20, 1)), null, "19 days of span");
+  eq(ownOrRate([]), null);
+  // Like for like with a scouted pair: 0.7 a day read as 39 OR over 56 days.
+  near(ownOrRate(days(57, 0.7))!.perDay, 39 / 56, 1e-9);
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

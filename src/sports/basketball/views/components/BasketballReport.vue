@@ -42,6 +42,7 @@ import {
   basketballOverall,
   bestBasketballPosition,
   buildReferenceCurve,
+  entryAge,
   measureBasketballPace,
   projectBasketball,
   projectBasketballPotential,
@@ -56,10 +57,25 @@ import GrowthComparisonChart, {
   type GrowthReferenceOption,
   type GrowthSeries,
 } from "@/components/GrowthComparisonChart.vue";
-import { buildScoutReferences, scoutCoverage } from "@/sports/basketball/scoutReference";
+import {
+  GroupRatePoint,
+  OWN_RATE_MIN_DAYS,
+  OWN_RATE_WINDOW_DAYS,
+  RATE_MIN_DAYS,
+  RATE_MIN_PAIRS,
+  ScoutPoint,
+  bestOrAt,
+  buildScoutReferences,
+  groupRateByAge,
+  leagueSnapshots,
+  ownOrRate,
+  scoutCoverage,
+  scoutRatePairs,
+  scoutedPairCount,
+} from "@/sports/basketball/scoutReference";
 import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
-import { buildSquadBestCurve, historyPoints } from "@/sports/basketball/historyChart";
+import { buildSquadBestCurve, entryOverall, historyPoints } from "@/sports/basketball/historyChart";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
@@ -194,6 +210,176 @@ const referenceOptions = computed<GrowthReferenceOption[]>(() => [
   },
 ]);
 const scoutedCoverage = computed(() => scoutCoverage(scoutSnapshots.value));
+
+// --- Compare with: Squad / League / Elite ------------------------------------------
+// One choice for the chart's reference line and the table. In the table it
+// drives "OR vs best" (a level - works from single visits) and, once a group
+// has enough players seen twice, Pace (a rate). Projections stay on the squad.
+
+const COMPARE_KEY = "ppm-assistant:report:basketball:compare";
+const COMPARE_OPTIONS = [
+  { key: "squad", name: "Squad" },
+  { key: "league", name: "League" },
+  { key: "elite", name: "Elite" },
+] as const;
+type CompareKey = (typeof COMPARE_OPTIONS)[number]["key"];
+const isCompareKey = (value: unknown): value is CompareKey =>
+  COMPARE_OPTIONS.some((option) => option.key === value);
+
+const readCompare = (): CompareKey => {
+  try {
+    const saved = localStorage.getItem(COMPARE_KEY);
+    return isCompareKey(saved) ? saved : "squad";
+  } catch {
+    return "squad";
+  }
+};
+const compareWith = ref<CompareKey>(readCompare());
+watch(compareWith, (key) => {
+  try {
+    localStorage.setItem(COMPARE_KEY, key);
+  } catch {
+    // Not remembered this time; the toggle still works.
+  }
+});
+// The chart's own buttons write a plain string (or null); keep only our keys.
+const chartReferenceKey = computed<string | null>({
+  get: () => compareWith.value,
+  set: (key) => {
+    if (isCompareKey(key)) compareWith.value = key;
+  },
+});
+const compareName = computed(
+  () => COMPARE_OPTIONS.find((option) => option.key === compareWith.value)!.name
+);
+
+/** The chosen group's best-OR line: what "OR vs best" divides by. */
+const levelPoints = computed<ScoutPoint[]>(() => {
+  if (compareWith.value === "league") return scoutReferences.value.league.points;
+  if (compareWith.value === "elite") return scoutReferences.value.elite.points;
+  return squadBestReference.value.or;
+});
+
+type OrVsBest = { share: number; best: number; note?: string };
+const orVsBestByPlayer = computed(() => {
+  const values = new Map<string, OrVsBest | null>();
+  players.value.forEach((player) => {
+    const best = bestOrAt(levelPoints.value, exactAgeOf(player));
+    values.set(
+      idOf(player),
+      best && best.value > 0 && player.overallRating > 0
+        ? { share: player.overallRating / best.value, best: best.value, note: best.note }
+        : null
+    );
+  });
+  return values;
+});
+const orVsBestFor = (player: BasketballPlayer) => orVsBestByPlayer.value.get(idOf(player)) ?? null;
+const orVsBestTitle = (player: BasketballPlayer) => {
+  const value = orVsBestFor(player);
+  if (!value) {
+    return compareWith.value === "squad"
+      ? "No squad player was recorded at this age"
+      : `${compareName.value}: no scouted player of this age yet`;
+  }
+  const whose = value.note ? ` (${value.note})` : "";
+  return (
+    `OR ${player.overallRating} of ${Math.round(value.best)}: the best OR at age ` +
+    `${exactAgeOf(player).toFixed(1)} - ${compareName.value}${whose}`
+  );
+};
+
+/**
+ * The chosen group's pace reference, or null while it isn't usable: Squad has
+ * its own (normal-day) reference, and a scouted group needs RATE_MIN_PAIRS
+ * players seen twice.
+ */
+const groupRates = computed(() => {
+  if (compareWith.value === "squad") return null;
+  const snapshots =
+    compareWith.value === "league"
+      ? leagueSnapshots(scoutSnapshots.value, league.value)
+      : scoutSnapshots.value;
+  const pairs = scoutRatePairs(snapshots);
+  // Other teams' players only: your own squad is snapshotted on every overview
+  // visit and would make the group "ready" by itself. Once ready, your players
+  // are part of the group like anyone else's, as on the chart's line.
+  const scouted = scoutedPairCount(pairs, teamId.value !== "unknown" ? teamId.value : undefined);
+  return {
+    pairs: scouted,
+    curve: scouted >= RATE_MIN_PAIRS ? groupRateByAge(pairs, curve.value) : null,
+  };
+});
+const groupRateCurve = computed<GroupRatePoint[] | null>(() => groupRates.value?.curve ?? null);
+
+/** What the Pace column shows: the squad pace, or the pace against the chosen group. */
+type ShownPace = { pace: number; provisional: boolean; title: string };
+const shownPaceByPlayer = computed(() => {
+  const values = new Map<string, ShownPace | null>();
+  const rateCurve = groupRateCurve.value;
+  players.value.forEach((player) => {
+    const id = idOf(player);
+    if (!rateCurve) {
+      const pace = paceFor(player);
+      values.set(
+        id,
+        pace?.pace != null
+          ? { pace: pace.pace, provisional: pace.provisional, title: paceTitle(player) }
+          : null
+      );
+      return;
+    }
+    const entries = history.value?.get(id) ?? [];
+    const own = ownOrRate(
+      entries.flatMap((entry) => {
+        const or = entryOverall(entry);
+        return or !== null ? [{ date: entry.date, or }] : [];
+      })
+    );
+    // The window ends at the player's last stored day, which may be weeks ago.
+    const midAge = own
+      ? (entryAge(own.fromDate, exactAgeOf(player)) + entryAge(own.toDate, exactAgeOf(player))) / 2
+      : exactAgeOf(player);
+    const point = rateCurve.find((p) => p.age === Math.floor(midAge));
+    if (!own || !point || point.perDay <= 0) {
+      values.set(id, null);
+      return;
+    }
+    const names = point.top.map((rate) => rate.name ?? "a player").join(", ");
+    values.set(id, {
+      pace: own.perDay / point.perDay,
+      provisional: false,
+      title: [
+        `${round2(own.perDay)} OR per day (${own.fromDate} to ${own.toDate}, ${own.days} days)`,
+        `100% at ${point.age} = ${round2(point.perDay)} OR per day - ${compareName.value}: ` +
+          (point.source === "measured"
+            ? `mean of the fastest ${point.top.length} (${names})`
+            : "nobody measured at this age, filled from your squad's age curve"),
+        "Calendar days on both sides: camp and no-training days are included.",
+      ].join("\n"),
+    });
+  });
+  return values;
+});
+const shownPaceFor = (player: BasketballPlayer) => shownPaceByPlayer.value.get(idOf(player)) ?? null;
+const shownPaceMissingTitle = (player: BasketballPlayer) =>
+  groupRateCurve.value
+    ? `Needs ${OWN_RATE_MIN_DAYS} days of history within the last ${OWN_RATE_WINDOW_DAYS}`
+    : paceTitle(player);
+
+/** One line under the toggle: what the level rests on, and where Pace stands. */
+const compareCaption = computed(() => {
+  if (compareWith.value === "squad") {
+    return "Squad: the best any of your own players had on reaching each age. Pace: against your best player's training at each age.";
+  }
+  const level = scoutReferences.value[compareWith.value].caption;
+  const rates = groupRates.value!;
+  const pace = rates.curve
+    ? `Pace: against the fastest ${compareName.value} players at each age (${rates.pairs} from other teams seen twice).`
+    : `Pace still shows Squad: ${rates.pairs} of ${RATE_MIN_PAIRS} other teams' ${compareName.value} players seen twice, ` +
+      `${RATE_MIN_DAYS}+ days apart - reopen the same teams' Players pages later.`;
+  return `${level}. ${pace}`;
+});
 
 const referenceTitle = (point: ReferencePoint) =>
   point.source === "squad"
@@ -464,7 +650,8 @@ const growthRange = computed(() => {
       : { min: 0, max: 0 };
   };
   return {
-    pace: range((p) => paceFor(p)?.pace),
+    pace: range((p) => shownPaceFor(p)?.pace),
+    orVsBest: range((p) => orVsBestFor(p)?.share),
     skill: range((p) => atAgeFor(p)?.skill),
     or: range((p) => atAgeFor(p)?.or),
     skill32: range((p) => atAge32For(p)?.skill),
@@ -550,15 +737,31 @@ const columns = computed<Column[]>(() => [
   },
 
   {
-    header: "Pace",
+    header: "OR vs best",
+    key: "orVsBest",
+    slot: "orVsBest",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: BasketballPlayer) => orVsBestFor(p)?.share ?? null,
+    cellStyle: (p: BasketballPlayer) =>
+      heatStyle(
+        orVsBestFor(p)?.share,
+        growthRange.value.orVsBest.min,
+        growthRange.value.orVsBest.max,
+        GROWTH_RAMP
+      ),
+  },
+  {
+    header: groupRateCurve.value ? `Pace vs ${compareName.value}` : "Pace",
     key: "pace",
     slot: "pace",
     sortable: true,
     group: "Growth",
     align: "right",
-    sortValue: (p: BasketballPlayer) => paceFor(p)?.pace ?? null,
+    sortValue: (p: BasketballPlayer) => shownPaceFor(p)?.pace ?? null,
     cellStyle: (p: BasketballPlayer) =>
-      heatStyle(paceFor(p)?.pace, growthRange.value.pace.min, growthRange.value.pace.max, GROWTH_RAMP),
+      heatStyle(shownPaceFor(p)?.pace, growthRange.value.pace.min, growthRange.value.pace.max, GROWTH_RAMP),
   },
   {
     header: `Skill @${PROJECTION_AGE}`,
@@ -688,6 +891,21 @@ const profileUrl = (player: BasketballPlayer) =>
       </button>
     </div>
 
+    <div class="filters white_box compare">
+      <div class="filter-group">
+        <label>Compare with:</label>
+        <button
+          v-for="option in COMPARE_OPTIONS"
+          :key="option.key"
+          :class="{ active: compareWith === option.key }"
+          @click="compareWith = option.key"
+        >
+          {{ option.name }}
+        </button>
+      </div>
+      <span class="compare__caption">{{ compareCaption }}</span>
+    </div>
+
     <div class="filters white_box">
       <div class="filter-group">
         <label>Team:</label>
@@ -726,6 +944,7 @@ const profileUrl = (player: BasketballPlayer) =>
     <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :series="comparisonSeries"
+      v-model:reference-key="chartReferenceKey"
       :reference-options="referenceOptions"
       :loading="history === null"
     />
@@ -745,7 +964,8 @@ const profileUrl = (player: BasketballPlayer) =>
 
       <details v-if="measuredCurve.length > 0" class="reference white_box">
         <summary>
-          Pace reference: your best player at each age = 100%
+          {{ groupRateCurve ? "Squad reference (used by the @25, @32 and Potential projections)" : "Pace reference" }}:
+          your best player at each age = 100%
           ({{ measuredCurve.length }} ages measured from your history)
         </summary>
         <p class="reference__note">
@@ -799,15 +1019,21 @@ const profileUrl = (player: BasketballPlayer) =>
           <template #positionTQ="{ item }">
             {{ item.getBestPositionTrainingQuality().totalTrainingQuality || "-" }}
           </template>
+          <template #orVsBest="{ item }">
+            <span v-if="orVsBestFor(item)" :title="orVsBestTitle(item)">
+              {{ Math.round(orVsBestFor(item)!.share * 100) }}%
+            </span>
+            <span v-else class="history-none" :title="orVsBestTitle(item)">-</span>
+          </template>
           <template #pace="{ item }">
             <span
-              v-if="paceFor(item)?.pace != null"
-              :class="{ projected: paceFor(item)!.provisional }"
-              :title="paceTitle(item)"
+              v-if="shownPaceFor(item)"
+              :class="{ projected: shownPaceFor(item)!.provisional }"
+              :title="shownPaceFor(item)!.title"
             >
-              {{ paceFor(item)!.provisional ? "~" : "" }}{{ Math.round(paceFor(item)!.pace! * 100) }}%
+              {{ shownPaceFor(item)!.provisional ? "~" : "" }}{{ Math.round(shownPaceFor(item)!.pace * 100) }}%
             </span>
-            <span v-else class="history-none" :title="paceTitle(item)">-</span>
+            <span v-else class="history-none" :title="shownPaceMissingTitle(item)">-</span>
           </template>
           <template #skillAtAge="{ item }">
             <span
@@ -941,5 +1167,10 @@ const profileUrl = (player: BasketballPlayer) =>
   margin-left: auto;
   font-size: 12px;
   color: #888;
+}
+
+.compare__caption {
+  font-size: 12px;
+  color: #666;
 }
 </style>

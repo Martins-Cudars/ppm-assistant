@@ -96,7 +96,9 @@ const colorForIndex = (index: number) => `hsl(${(index * 137.508) % 360}, 65%, 4
 
 // The chosen reference option. One with no points on the current metric (the
 // scouted lines have no Skill) falls back to the first that has some.
-const selectedReferenceKey = ref<string | null>(null);
+// A model, so a caller with its own toggle (the basketball report's "Compare
+// with") stays in step; unbound, it is just local state.
+const selectedReferenceKey = defineModel<string | null>("referenceKey", { default: null });
 const activeReference = computed<GrowthReferenceOption | null>(() => {
   const usable = props.referenceOptions.filter(
     (option) => option.reference[activeMetric.value].length > 0
