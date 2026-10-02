@@ -17,6 +17,7 @@ import {
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
 import { publicAccountCacheKeys } from "@/storage/publicAccount";
+import { mergeHistoryEntry } from "@/storage/historyMerge";
 import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
 
 const DB_NAME = "ppm-assistant-skill-history";
@@ -59,32 +60,6 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-/**
- * Combines an incoming entry with whatever is already stored for that
- * player/day. The two capture paths each supply only part of an entry - the
- * training progress page has skills, the profile of an unscouted opponent has
- * only an overall rating - and they can land on the same key, so a plain put()
- * would let whichever ran last erase the other's fields.
- *
- * Incoming values win where present; existing values survive where the
- * incoming entry has nothing to say.
- */
-function mergeEntry(
-  existing: SkillHistoryEntry<unknown> | undefined,
-  incoming: SkillHistoryEntry<unknown>
-): SkillHistoryEntry<unknown> {
-  if (!existing) return incoming;
-
-  return {
-    ...existing,
-    ...incoming,
-    overallRating: incoming.overallRating ?? existing.overallRating ?? existing.kr,
-    skills: incoming.skills ?? existing.skills,
-    height: incoming.height ?? existing.height,
-    experience: incoming.experience ?? existing.experience,
-  };
-}
-
 async function upsertEntries(
   entries: SkillHistoryEntry<unknown>[],
   sport: Sport
@@ -103,7 +78,7 @@ async function upsertEntries(
       const existingRequest = store.get(entry.id);
       existingRequest.onsuccess = () => {
         store.put(
-          mergeEntry(existingRequest.result as SkillHistoryEntry<unknown> | undefined, entry)
+          mergeHistoryEntry(existingRequest.result as SkillHistoryEntry<unknown> | undefined, entry)
         );
       };
     });

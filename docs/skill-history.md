@@ -46,8 +46,16 @@ Two design points worth knowing before changing anything:
 
 - **Upserts merge, they don't overwrite.** Two paths can write the same `playerId:date` with
   different fields — the training page has skills, an unscouted opponent's profile has only
-  an OR. `mergeEntry()` keeps incoming values where present and existing ones where the
-  incoming entry is silent. A blind `put()` would let whichever ran last erase the other.
+  an OR. `mergeHistoryEntry()` (`src/storage/historyMerge.ts`) keeps incoming values where
+  present and existing ones where the incoming entry is silent. A blind `put()` would let
+  whichever ran last erase the other.
+  - **Decimals are not replaced by the same values rounded down.** The squad overview and
+    profiles show whole numbers; the training-progress page shows two decimals. A same-day
+    overview visit used to turn 72.94 into 72 (found by the 2026-10-01 branch review).
+  - Now the stored skills and their `source` are kept when the incoming ones are exactly
+    the stored ones floored.
+  - Decimals still replace stored whole numbers, so re-opening training progress (or
+    re-gathering) repairs days flattened before the fix.
 - **Summaries are derived from keys alone.** Since the id encodes player and date,
   `getSummaries()` uses `getAllKeys()` and never deserialises a record, so annotating a whole
   squad stays cheap at tens of thousands of rows.
@@ -91,6 +99,22 @@ When nobody is logged in, PPM shows a shared demo team, "Public account": basket
 >   so the rating side was already right.
 > - Future work: once daily captures hold a season of a player's XP at this team, his
 >   measured in-team rate could replace the typical share.
+
+> **Whole-number days can't be judged (all sports, 2026-10-01).**
+> - **The bug:** days captured from the squad overview or a profile store integer skills, so
+>   most normal training days show no change. `cleanedGains` skipped them as "no training"
+>   while still counting the gain when a number ticked up. That gives a pace up to ~1.8×
+>   too high.
+> - **The fix:** only a 1-day step between two decimal entries is judged for flat days and
+>   camps. A whole-number capture is recognised by its `source` (`PlayersList` /
+>   `PlayerProfile`) plus integer skills. Everything else is kept and measured endpoint to
+>   endpoint.
+> - **Effect on the backup:** 19 hockey players, each with ~20 whole-number days since the
+>   last gather, dropped by 1–9 points (e.g. 38% → 29%). Basketball and soccer barely
+>   moved.
+> - **Remaining bias:** a window ending on a whole-number day loses the fraction at its end,
+>   under a point per trained skill, so it reads slightly low. Re-gathering restores the
+>   decimals.
 
 The logic now lives in the shared `src/base/growthModel.ts`; `src/sports/hockey/growthPace.ts`
 binds it to hockey's constants. All pure functions. The same code drives:

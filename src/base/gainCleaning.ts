@@ -5,7 +5,36 @@
  */
 
 /** An entry that carries skills, for any sport's skill set. */
-export type SkilledEntry<K extends string> = { date: string; skills: Record<K, number> };
+export type SkilledEntry<K extends string> = {
+  date: string;
+  skills: Record<K, number>;
+  /** Where the day was captured - tells whole-number captures from decimal ones. */
+  source?: string;
+};
+
+/**
+ * Sources that store skills as whole numbers: the squad overview and the
+ * profile show integers, where the training-progress page has two decimals.
+ * Entries without a source are older training-progress days - decimal.
+ */
+const WHOLE_NUMBER_SOURCES = new Set(["PlayersList", "PlayerProfile"]);
+
+/**
+ * Whether an entry is a whole-number capture, whose day-to-day changes can't
+ * be judged: a normal training day of +0.7 usually shows as no change at all.
+ *
+ * Judged by the source, not by "has no decimals" alone - a decimal history
+ * passes through whole numbers too (410 / 205 / 205 is a normal day), and its
+ * flat days are real. The integer check covers a capture that kept its
+ * decimals through a same-day merge (src/storage/historyMerge.ts).
+ */
+export function isWholeNumberCapture<K extends string>(entry: SkilledEntry<K>): boolean {
+  return (
+    entry.source !== undefined &&
+    WHOLE_NUMBER_SOURCES.has(entry.source) &&
+    Object.values<number>(entry.skills).every((value) => Number.isInteger(value))
+  );
+}
 
 /**
  * A training camp: this many consecutive days, each gaining more than
@@ -35,13 +64,22 @@ export interface CleanedGains<K extends string> {
   gains: Record<K, number>;
   /** Days covered by the kept intervals. */
   measuredDays: number;
-  /** One-day intervals kept - the part measured day by day, not endpoint to endpoint. */
+  /**
+   * Judgeable one-day intervals kept - the part measured day by day from
+   * decimal entries, not endpoint to endpoint. Whole-number days don't count.
+   */
   measuredDailyDays: number;
   skippedNoTrainingDays: number;
   skippedCampDays: number;
 }
 
-type Interval<K extends string> = { days: number; gains: Record<K, number>; total: number };
+type Interval<K extends string> = {
+  days: number;
+  gains: Record<K, number>;
+  total: number;
+  /** A 1-day step between two decimal entries - the only kind that can be judged. */
+  judgeable: boolean;
+};
 
 export interface CleaningOptions {
   /**
@@ -70,9 +108,17 @@ const PER_SKILL_MIN_DAYS = 3;
  * Training camps (about double training for 7-14 days) are skipped too, so the
  * pace describes normal training rather than whichever event a window caught.
  *
- * Only 1-day intervals can be judged. Longer ones - gaps, or history from
- * occasional profile visits - are always kept, so sparse history is measured
- * endpoint to endpoint.
+ * Only 1-day intervals between two decimal entries can be judged. Everything
+ * else is always kept and so measured endpoint to endpoint:
+ *
+ * - longer intervals - gaps, or history from occasional profile visits;
+ * - days touching a whole-number capture (isWholeNumberCapture). Squad-overview
+ *   and profile days store integers, so most normal training days show no
+ *   change. Skipping those as "no training" while still counting the gain when
+ *   the number ticked up read a pace ~1.8x too high (0.7 points a day over 7
+ *   skills: 25 of 56 days looked flat). Kept, the average rate is right; a
+ *   window ending on a whole-number day only loses the fraction at its end
+ *   (under a point per trained skill), reading slightly low.
  */
 export function cleanedGains<K extends string>(
   window: SkilledEntry<K>[],
@@ -88,14 +134,18 @@ export function cleanedGains<K extends string>(
         (window[i].skills[skill] ?? 0) - (window[i - 1].skills[skill] ?? 0),
       ])
     ) as Record<K, number>;
+    const days = daysBetween(window[i - 1].date, window[i].date);
     intervals.push({
-      days: daysBetween(window[i - 1].date, window[i].date),
+      days,
       gains,
       total: skillNames.reduce((sum, skill) => sum + gains[skill], 0),
+      judgeable:
+        days === 1 && !isWholeNumberCapture(window[i - 1]) && !isWholeNumberCapture(window[i]),
     });
   }
 
-  const isDaily = (interval: Interval<K>) => interval.days === 1;
+  // "Daily" below always means judgeable: a 1-day step between decimal entries.
+  const isDaily = (interval: Interval<K>) => interval.judgeable;
   const isFlat = (interval: Interval<K>) => isDaily(interval) && Math.abs(interval.total) < 0.01;
 
   const skip = new Set<Interval<K>>();
