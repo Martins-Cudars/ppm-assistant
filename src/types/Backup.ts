@@ -16,6 +16,7 @@
 
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { Sport } from "@/types/Sport";
 
 /**
@@ -29,14 +30,15 @@ export const BACKUP_FORMAT = "ppm-assistant-backup";
  * versions it doesn't know: reading a newer file with older code would drop
  * whatever the new version added, silently, during a restore.
  */
-export const BACKUP_VERSION = 2;
+export const BACKUP_VERSION = 3;
 
 /**
  * Versions import still reads. 2 only added `sportSkillHistory` beside the
  * unchanged hockey `skillHistory`, so a version-1 file is simply one with no
- * other sports in it.
+ * other sports in it. 3 added the scouted data (`scoutSnapshots`, `leagues`)
+ * the same way: an older file is one with none.
  */
-export const SUPPORTED_BACKUP_VERSIONS: readonly number[] = [1, 2];
+export const SUPPORTED_BACKUP_VERSIONS: readonly number[] = [1, 2, 3];
 
 /** Sports whose history lives outside the original hockey `skillHistory` field. */
 export type OtherSport = Exclude<Sport, "hockey">;
@@ -54,6 +56,10 @@ export interface BackupFile {
   skillHistory: SkillHistoryEntry[];
   /** Version 2+: every other sport's history, by sport. */
   sportSkillHistory?: Partial<Record<OtherSport, SkillHistoryEntry<unknown>[]>>;
+  /** Version 3+: other teams' rosters, by sport (src/types/ScoutSnapshot.ts). */
+  scoutSnapshots?: Partial<Record<Sport, ScoutSnapshot[]>>;
+  /** Version 3+: the user's league per sport, which the LEAGUE line filters by. */
+  leagues?: Partial<Record<Sport, LeagueTeams>>;
 }
 
 /**

@@ -21,6 +21,22 @@
         <button @click="setPlayersVisible(true)">Show All</button>
       </div>
     </div>
+    <div v-if="!loading && series.length > 0 && referenceOptions.length > 1" class="reference-row">
+      <span class="reference-row__label">Reference line:</span>
+      <div class="chart-tabs">
+        <button
+          v-for="option in referenceOptions"
+          :key="option.key"
+          :class="{ active: activeReference?.key === option.key }"
+          :disabled="option.reference[activeMetric].length === 0"
+          :title="option.reference[activeMetric].length === 0 ? emptyReferenceTitle(option) : ''"
+          @click="selectedReferenceKey = option.key"
+        >
+          {{ option.name }}
+        </button>
+      </div>
+      <span v-if="referenceCaption" class="reference-row__caption">{{ referenceCaption }}</span>
+    </div>
     <p v-if="loading" class="loading-state">Loading player history...</p>
     <p v-else-if="series.length === 0" class="loading-state">
       No players to compare - adjust the filters above.
@@ -38,22 +54,34 @@
  * Every player's growth on one chart, by age - a sport-agnostic version of
  * hockey's PlayerGrowthComparisonChart. The caller builds the series (points
  * per metric) and an optional grey reference line; this only draws them.
+ *
+ * A caller with more than one reference passes `referenceOptions` instead; a
+ * toggle then chooses which one is drawn.
  */
-import { nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 
-type Point = { x: number; y: number };
+/** `note` is extra tooltip text - e.g. whose value a reference point is. */
+type Point = { x: number; y: number; note?: string };
 export type GrowthSeries = { id: string; label: string; skill: Point[]; or: Point[] };
 export type GrowthReference = { label: string; skill: Point[]; or: Point[] };
+/** One choice of the reference toggle: button name, the line, and what it is built from. */
+export type GrowthReferenceOption = {
+  key: string;
+  name: string;
+  reference: GrowthReference;
+  caption?: string;
+};
 
 const props = withDefaults(
   defineProps<{
     series: GrowthSeries[];
     reference?: GrowthReference | null;
+    referenceOptions?: GrowthReferenceOption[];
     loading?: boolean;
   }>(),
-  { reference: null, loading: false }
+  { reference: null, referenceOptions: () => [], loading: false }
 );
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
@@ -66,24 +94,49 @@ const activeMetric = ref<"skill" | "or">("skill");
 // same scheme as hockey's comparison chart.
 const colorForIndex = (index: number) => `hsl(${(index * 137.508) % 360}, 65%, 45%)`;
 
-const referenceCount = () => (props.reference && props.reference[activeMetric.value].length > 0 ? 1 : 0);
+// The chosen reference option. One with no points on the current metric (the
+// scouted lines have no Skill) falls back to the first that has some.
+const selectedReferenceKey = ref<string | null>(null);
+const activeReference = computed<GrowthReferenceOption | null>(() => {
+  const usable = props.referenceOptions.filter(
+    (option) => option.reference[activeMetric.value].length > 0
+  );
+  return usable.find((option) => option.key === selectedReferenceKey.value) ?? usable[0] ?? null;
+});
+const currentReference = computed<GrowthReference | null>(() =>
+  props.referenceOptions.length > 0 ? (activeReference.value?.reference ?? null) : props.reference
+);
+const referenceCaption = computed(() => activeReference.value?.caption ?? "");
+// Why a toggle button is disabled: the line exists but not on this metric, or
+// there is no data for it yet (its caption says how to get some).
+const emptyReferenceTitle = (option: GrowthReferenceOption) => {
+  const other = activeMetric.value === "skill" ? "or" : "skill";
+  if (option.reference[other].length > 0) {
+    return `Only on the ${other === "or" ? "OR" : "Skill"} tab`;
+  }
+  return option.caption ?? "No data for this line yet";
+};
+
+// The reference dataset is always first, even when empty, so switching it
+// only swaps its data - see the watcher below.
+const REFERENCE_DATASETS = 1;
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   const datasets: ChartDataset<"line">[] = [];
-  const reference = props.reference?.[activeMetric.value] ?? [];
-  if (reference.length > 0) {
-    datasets.push({
-      label: props.reference!.label,
-      data: reference,
-      borderColor: "#bbb",
-      backgroundColor: "transparent",
-      borderWidth: 2,
-      borderDash: [4, 4],
-      pointRadius: 0,
-      tension: 0.3,
-      order: 10,
-    });
-  }
+  datasets.push({
+    label: currentReference.value?.label ?? "",
+    data: currentReference.value?.[activeMetric.value] ?? [],
+    borderColor: "#bbb",
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderDash: [4, 4],
+    pointRadius: 0,
+    // No visible points, but hovering the line still finds them - a scouted
+    // reference names the player behind each one.
+    pointHitRadius: 8,
+    tension: 0.3,
+    order: 10,
+  });
   props.series.forEach((series, index) => {
     const data = series[activeMetric.value];
     if (data.length === 0) return;
@@ -143,12 +196,20 @@ const renderChart = () => {
           },
         },
         plugins: {
-          legend: { display: true, position: "top" },
+          legend: {
+            display: true,
+            position: "top",
+            // An empty reference line has nothing to show in the legend.
+            labels: {
+              filter: (item, data) => (data.datasets[item.datasetIndex ?? 0]?.data.length ?? 0) > 0,
+            },
+          },
           tooltip: {
             callbacks: {
               label: (context) => {
                 const point = context.raw as Point;
-                return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})`;
+                const note = point.note ? ` - ${point.note}` : "";
+                return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})${note}`;
               },
             },
           },
@@ -163,9 +224,8 @@ const renderChart = () => {
 
 const setPlayersVisible = (visible: boolean) => {
   if (!chartInstance) return;
-  const first = referenceCount();
   chartInstance.data.datasets.forEach((_, index) => {
-    if (index >= first) chartInstance!.setDatasetVisibility(index, visible);
+    if (index >= REFERENCE_DATASETS) chartInstance!.setDatasetVisibility(index, visible);
   });
   chartInstance.update();
 };
@@ -177,7 +237,17 @@ const rerender = async () => {
 };
 
 onMounted(rerender);
-watch([() => props.series, () => props.reference, () => props.loading, activeMetric], rerender);
+watch([() => props.series, () => props.loading, activeMetric], rerender);
+
+// A different reference line needs no new chart: swapping the first dataset's
+// data in place keeps the user's legend / Hide All selections.
+watch(currentReference, (reference) => {
+  const dataset = chartInstance?.data.datasets[0];
+  if (!chartInstance || !dataset) return;
+  dataset.label = reference?.label ?? "";
+  dataset.data = reference?.[activeMetric.value] ?? [];
+  chartInstance.update();
+});
 
 // An age-range change needs no new chart: mutating the bounds in place keeps
 // the user's legend / Hide All selections.
@@ -242,6 +312,43 @@ watch([minAge, maxAge], () => {
 }
 
 .chart-tabs button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.reference-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.reference-row__label {
+  color: #333;
+}
+
+.reference-row__caption {
+  color: #666;
+}
+
+.reference-row button {
+  padding: 4px 10px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.reference-row button:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.reference-row .chart-tabs button.active {
   background: #007bff;
   color: white;
   border-color: #007bff;

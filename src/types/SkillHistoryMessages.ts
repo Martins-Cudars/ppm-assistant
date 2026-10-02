@@ -13,6 +13,7 @@ import {
   SkillHistoryStats,
   SkillHistorySummary,
 } from "@/types/SkillHistory";
+import { ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { Sport } from "@/types/Sport";
 
 /**
@@ -51,9 +52,18 @@ type SkillHistoryRequest =
       type: "SKILL_HISTORY_NEAR_DATES";
       targets: { playerId: string; date: string }[];
       days: number;
-    };
+    }
+  // Scouted roster data (src/types/ScoutSnapshot.ts) - a separate store per
+  // sport in the same database. Small enough that export is the only read.
+  | { type: "SCOUT_UPSERT"; snapshots: ScoutSnapshot[] }
+  | { type: "SCOUT_EXPORT" }
+  | { type: "SCOUT_CLEAR" };
 
 export type SkillHistoryResponse =
+  | { type: "SCOUT_UPSERT"; written: number }
+  // Null on failure, for the same reasons as their skill-history counterparts.
+  | { type: "SCOUT_EXPORT"; snapshots: ScoutSnapshot[] | null }
+  | { type: "SCOUT_CLEAR"; cleared: number | null }
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
   | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] }
   | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] }

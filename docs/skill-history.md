@@ -615,6 +615,69 @@ This also sidesteps the unsettled age-curve question (research item 7).
   `src/base/historyDownsample.ts`, which hockey re-exports.
 - Neither chart has been seen in a browser yet.
 
+### Scouted rosters: the ELITE and LEAGUE lines (2026-10-02)
+
+Basketball has no ideal-growth data, and the squad-best line only reaches as high as the
+user's own players. The user's idea: collect real data from other teams and draw the best
+OR at each age. **OR only for now** - a roster page shows no skills - and the growth model
+(Pace, @25, @32, Potential) is unchanged.
+
+- **Two groups, both "the best OR at each age":**
+  - **ELITE**: among every captured player, whoever the team.
+  - **LEAGUE**: among players of the teams in the user's current league.
+- **Capture is on visit only** - no automated walk over other managers' pages (the user's
+  choice). Three pages feed it:
+
+| Page | View | Stores |
+|---|---|---|
+| Any team's Players page: `/en/players.html?data=<teamId>`, `/lv/speletaji.html` | `viewTeamRoster.ts` | one snapshot per player |
+| The user's squad overview | `viewPlayerList.ts` | the same snapshot for the user's own players |
+| The league table: `/en/league.html`, `/lv/liga.html` | `viewLeague.ts` | the league's team ids |
+
+- **The roster table** (checked live): `# Name Fun ScP Age Hgt AvQ CL Con Popularity OR`, 11
+  columns in both languages. Read by position (`parsers/teamRoster.ts`), because the headers
+  are translated; a table with another column count is ignored. The user's own Players page
+  has the same layout. The team name comes from `.ppm_menu_top_profil_name a`.
+- **Snapshots** (`src/types/ScoutSnapshot.ts`) live in their own object store per sport,
+  `scoutSnapshots_<sport>` (`DB_VERSION` 4), not in the skill history: reports, summaries
+  and `buildReferenceCurve` read that store as "the user's squad".
+  - Each row: `playerId`, `name`, `date`, `teamId`, `teamName`, `age`, `season`,
+    `seasonDay`, `overallRating`, `height`, `averageQuality`, `careerLongevity`, `source`.
+  - Age, season day and team are stored **per snapshot**, because players age and move.
+  - AvQ, CL and height aren't used yet. They are stored so the later research (training
+    per season, the effect of age and career longevity) needs no second round of visits -
+    that research needs the same player seen twice, weeks apart.
+  - Same-day repeats merge per field (`src/storage/scoutMerge.ts`).
+- **The league list** is one record in `chrome.storage.local`
+  (`ppm-assistant:basketball:league`): season, league id (`lva-iii-3`), name, team ids.
+  - One league has several tables. Late in a season the default league page is the
+    relegation round: 8 of 16 teams, and on 2026-10-02 it did not include the user. "League
+    standings" lists all 16.
+  - So `nextLeagueTeams()` treats a page as the user's league when it is the default page
+    (no `data` in the URL), or the user's team is in the table, or it is the league already
+    stored. Tables of the same league and season add up; a different league or a new season
+    **replaces** the list, so promotion and relegation follow the next visit.
+  - A table of any season but the current one (the header's) is ignored: the user's team
+    is in last season's standings too, and browsing them must not bring back a league
+    since left.
+  - The league and season come from the page's `season` / `country` / `league_level` /
+    `league_number` selectors. The user's own team is always in the list.
+  - LEAGUE is filtered at read time by each snapshot's own `teamId`, so a player who has
+    since left the league still counts for the day he was seen there.
+  - If a snapshot is from a later season than the list, the caption says the list is old.
+- **The lines** (`scoutReference.ts`): per whole age, the highest OR among all snapshots at
+  that age, plotted at that snapshot's exact age (age + season day ÷ 70). The tooltip names
+  the player and team. One player can be the best at several ages.
+- **The toggle** is in the shared `GrowthComparisonChart.vue` (`referenceOptions`): Squad
+  best · League · Elite. On the Skill tab only Squad best is available.
+  - The reference is always the first dataset, so switching it swaps the data in place and
+    keeps the legend and Hide All selections.
+  - A caption says what the line is built from, e.g. "Elite: best OR at each age among 212
+    players from 14 teams".
+- Each capture page shows a one-line "PPM Assistant: stored ..." note above the table,
+  since capture is otherwise invisible.
+- **Not seen in a browser yet**: the two views, the notes, the toggle.
+
 ## Soccer
 
 Soccer is built like hockey, not basketball:
@@ -763,14 +826,20 @@ Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):
 ```jsonc
 {
   "format": "ppm-assistant-backup",  // absent -> rejected outright
-  "version": 2,                      // 1 and 2 accepted; unknown -> rejected outright
+  "version": 3,                      // 1, 2 and 3 accepted; unknown -> rejected outright
   "exportedAt": "2026-08-30T…",
   "extensionVersion": "3.2.0",
   "playerCaches": { "ppm-assistant:hockey:team-12345": { /* PlayerCacheStorage */ } },
   "skillHistory": [ /* hockey's SkillHistoryEntry[] - the field every version has */ ],
-  "sportSkillHistory": { "basketball": [ /* v2+: every other sport, by sport */ ] }
+  "sportSkillHistory": { "basketball": [ /* v2+: every other sport, by sport */ ] },
+  "scoutSnapshots": { "basketball": [ /* v3+: ScoutSnapshot[], other teams' rosters */ ] },
+  "leagues": { "basketball": { /* v3+: LeagueTeams, the user's league */ } }
 }
 ```
+
+Scouted data follows the same rules as history: rows are filtered like history entries, a
+failed read aborts the export, Replace makes the store match the file (so a v1 or v2 file
+empties it), and Clear All removes it. In a merge the newer league list wins.
 
 **Import validation is load-bearing, not cosmetic.** The store's `keyPath` is `id`, so a
 single entry without one throws inside `put()` and aborts the whole transaction — taking
@@ -809,6 +878,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
+| Scouted rosters (basketball) | Parsing, merge, league list and the lines: **verified**, 13 checks in `test/scout-reference.check.ts`. The page markup was read from the live game on 2026-10-02 (EN and LV). The views, the on-page notes, the chart toggle and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
 The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were

@@ -8,6 +8,7 @@ import {
 import { collectPlayerData } from "@/services/dataCollector";
 import { getUserSettings } from "@/storage/userSettings";
 import { clearSkillHistory } from "@/storage/skillHistoryDb";
+import { clearLeagueTeams, clearScoutSnapshots } from "@/storage/scoutSnapshotDb";
 import { SPORTS } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 
@@ -113,6 +114,10 @@ export const usePlayerStore = defineStore("player", {
         clearAllCaches(),
         ...SPORTS.map((sport) => clearSkillHistory(sport)),
       ]);
+      // The scouted rosters and league lists go too - the backup covers them.
+      await Promise.all(
+        SPORTS.flatMap((sport) => [clearScoutSnapshots(sport), clearLeagueTeams(sport)])
+      );
       const clearedHistory = clearedBySport.some((count) => count === null)
         ? null
         : clearedBySport.reduce<number>((sum, count) => sum + (count ?? 0), 0);

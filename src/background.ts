@@ -19,14 +19,18 @@ import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
 import { publicAccountCacheKeys } from "@/storage/publicAccount";
 import { mergeHistoryEntry } from "@/storage/historyMerge";
 import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
+import { ScoutSnapshot, scoutStoreName } from "@/types/ScoutSnapshot";
+import { mergeScoutSnapshot } from "@/storage/scoutMerge";
 
 const DB_NAME = "ppm-assistant-skill-history";
 /**
  * 2 added one object store per sport beside hockey's original "skillHistory";
- * 3 added soccer's. The upgrade only ever creates missing stores - it never
- * touches existing data - so no sport's history needed a migration.
+ * 3 added soccer's; 4 added a scout-snapshot store per sport (other teams'
+ * rosters, see src/types/ScoutSnapshot.ts). The upgrade only ever creates
+ * missing stores - it never touches existing data - so no sport's history
+ * needed a migration.
  */
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const PLAYER_INDEX = "by_playerId";
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -46,6 +50,10 @@ function openDb(): Promise<IDBDatabase> {
         if (!db.objectStoreNames.contains(name)) {
           const store = db.createObjectStore(name, { keyPath: "id" });
           store.createIndex(PLAYER_INDEX, "playerId", { unique: false });
+        }
+        const scoutName = scoutStoreName(sport);
+        if (!db.objectStoreNames.contains(scoutName)) {
+          db.createObjectStore(scoutName, { keyPath: "id" });
         }
       });
     };
@@ -85,6 +93,41 @@ async function upsertEntries(
 
     tx.oncomplete = () => resolve(entries.length);
     tx.onerror = () => reject(tx.error);
+  });
+}
+
+/** Scouted roster snapshots: merged per player/day, like the history above. */
+async function upsertScoutSnapshots(snapshots: ScoutSnapshot[], sport: Sport): Promise<number> {
+  if (snapshots.length === 0) return 0;
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(scoutStoreName(sport), "readwrite");
+    const store = tx.objectStore(scoutStoreName(sport));
+
+    snapshots.forEach((snapshot) => {
+      const existingRequest = store.get(snapshot.id);
+      existingRequest.onsuccess = () => {
+        store.put(
+          mergeScoutSnapshot(existingRequest.result as ScoutSnapshot | undefined, snapshot)
+        );
+      };
+    });
+
+    tx.oncomplete = () => resolve(snapshots.length);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getAllScoutSnapshots(sport: Sport): Promise<ScoutSnapshot[]> {
+  const db = await openDb();
+
+  return new Promise<ScoutSnapshot[]>((resolve, reject) => {
+    const tx = db.transaction(scoutStoreName(sport), "readonly");
+    const request = tx.objectStore(scoutStoreName(sport)).getAll();
+
+    request.onsuccess = () => resolve(request.result as ScoutSnapshot[]);
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -309,12 +352,12 @@ async function getStats(sport: Sport): Promise<SkillHistoryStats> {
  * number actually removed, rather than a count that a concurrent capture
  * could have changed between two separate transactions.
  */
-async function clearEntries(sport: Sport): Promise<number> {
+async function clearEntries(sport: Sport, storeName = historyStoreName(sport)): Promise<number> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(historyStoreName(sport), "readwrite");
-    const store = tx.objectStore(historyStoreName(sport));
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
     let cleared = 0;
 
     const countRequest = store.count();
@@ -514,6 +557,36 @@ chrome.runtime.onMessage.addListener(
           console.error("[Background] Failed to read skill history near dates:", error);
           // null, not [] - see the note on the response type.
           sendResponse({ type: "SKILL_HISTORY_NEAR_DATES", entries: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SCOUT_UPSERT") {
+      upsertScoutSnapshots(message.snapshots, sport)
+        .then((written) => sendResponse({ type: "SCOUT_UPSERT", written }))
+        .catch((error) => {
+          console.error("[Background] Failed to upsert scout snapshots:", error);
+          sendResponse({ type: "SCOUT_UPSERT", written: 0 });
+        });
+      return true;
+    }
+
+    if (message.type === "SCOUT_EXPORT") {
+      getAllScoutSnapshots(sport)
+        .then((snapshots) => sendResponse({ type: "SCOUT_EXPORT", snapshots }))
+        .catch((error) => {
+          console.error("[Background] Failed to read scout snapshots:", error);
+          sendResponse({ type: "SCOUT_EXPORT", snapshots: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SCOUT_CLEAR") {
+      clearEntries(sport, scoutStoreName(sport))
+        .then((cleared) => sendResponse({ type: "SCOUT_CLEAR", cleared }))
+        .catch((error) => {
+          console.error("[Background] Failed to clear scout snapshots:", error);
+          sendResponse({ type: "SCOUT_CLEAR", cleared: null });
         });
       return true;
     }

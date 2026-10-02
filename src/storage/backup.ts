@@ -24,7 +24,17 @@ import {
 import { SPORTS, Sport } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import { ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { exportAllCaches, importCaches } from "@/storage/playerCache";
+import {
+  clearLeagueTeams,
+  clearScoutSnapshots,
+  exportScoutSnapshots,
+  readLeagueTeams,
+  saveLeagueTeams,
+  upsertScoutSnapshots,
+  validLeagueTeams,
+} from "@/storage/scoutSnapshotDb";
 import {
   clearSkillHistory,
   exportSkillHistory,
@@ -44,18 +54,31 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const OTHER_SPORTS = SPORTS.filter((sport): sport is OtherSport => sport !== "hockey");
 
 export async function createBackup(): Promise<BackupFile | null> {
-  const [playerCaches, skillHistory, ...others] = await Promise.all([
+  const [playerCaches, skillHistory, scouted, leagueLists, ...others] = await Promise.all([
     exportAllCaches(),
     exportSkillHistory("hockey"),
+    Promise.all(SPORTS.map((sport) => exportScoutSnapshots(sport))),
+    Promise.all(SPORTS.map((sport) => readLeagueTeams(sport))),
     ...OTHER_SPORTS.map((sport) => exportSkillHistory(sport)),
   ]);
 
   // Any sport's read failing aborts the whole export - a file missing one
   // sport's history would look complete and be trusted.
-  if (skillHistory === null || others.some((entries) => entries === null)) {
+  if (
+    skillHistory === null ||
+    others.some((entries) => entries === null) ||
+    scouted.some((snapshots) => snapshots === null)
+  ) {
     console.error("[Backup] Aborting export: could not read skill history");
     return null;
   }
+
+  const scoutSnapshots: BackupFile["scoutSnapshots"] = {};
+  const leagues: BackupFile["leagues"] = {};
+  SPORTS.forEach((sport, i) => {
+    if (scouted[i]!.length > 0) scoutSnapshots[sport] = scouted[i]!;
+    if (leagueLists[i]) leagues[sport] = leagueLists[i]!;
+  });
 
   const sportSkillHistory: BackupFile["sportSkillHistory"] = {};
   OTHER_SPORTS.forEach((sport, i) => {
@@ -70,6 +93,8 @@ export async function createBackup(): Promise<BackupFile | null> {
     playerCaches,
     skillHistory,
     sportSkillHistory,
+    scoutSnapshots,
+    leagues,
   };
 }
 
@@ -174,6 +199,21 @@ export function parseBackup(text: string): ParsedBackup {
     sportSkillHistory[sport] = valid;
   });
 
+  // Version 1 and 2 files have neither; snapshots are keyed like history
+  // entries, so the same row check applies.
+  const scoutSnapshots: BackupFile["scoutSnapshots"] = {};
+  const leagues: BackupFile["leagues"] = {};
+  SPORTS.forEach((sport) => {
+    const rows = candidate.scoutSnapshots?.[sport];
+    if (Array.isArray(rows)) {
+      const valid = rows.filter(isValidEntry) as unknown as ScoutSnapshot[];
+      skippedEntries += rows.length - valid.length;
+      if (valid.length > 0) scoutSnapshots[sport] = valid;
+    }
+    const league = validLeagueTeams(candidate.leagues?.[sport]);
+    if (league) leagues[sport] = league;
+  });
+
   const rawCaches =
     typeof candidate.playerCaches === "object" && candidate.playerCaches !== null
       ? candidate.playerCaches
@@ -198,6 +238,8 @@ export function parseBackup(text: string): ParsedBackup {
       playerCaches,
       skillHistory,
       sportSkillHistory,
+      scoutSnapshots,
+      leagues,
     },
     skippedEntries,
     skippedCaches,
@@ -261,6 +303,33 @@ export async function restoreBackup(
       );
     }
     entriesWritten += written;
+  }
+
+  // The scouted data, sport by sport. Replace makes the store match the file,
+  // which for a file from before version 3 means empty; merge only adds.
+  for (const sport of SPORTS) {
+    const snapshots = backup.scoutSnapshots?.[sport] ?? [];
+    if (mode === "replace") {
+      const cleared = await clearScoutSnapshots(sport);
+      if (cleared === null) {
+        throw new Error(`Could not clear the existing ${sport} scouted data.`);
+      }
+    }
+    const { written } = await upsertScoutSnapshots(snapshots, sport);
+    if (snapshots.length > 0 && written === 0) {
+      throw new Error(
+        `The ${sport} scouted data could not be written. Your backup file is unchanged - try importing it again.`
+      );
+    }
+
+    const league = backup.leagues?.[sport];
+    if (league) {
+      const stored = mode === "merge" ? await readLeagueTeams(sport) : null;
+      // In a merge the newer list wins - the league changes every season.
+      if (!stored || stored.updatedAt <= league.updatedAt) await saveLeagueTeams(league, sport);
+    } else if (mode === "replace") {
+      await clearLeagueTeams(sport);
+    }
   }
 
   const playersWritten = await importCaches(backup.playerCaches, mode);

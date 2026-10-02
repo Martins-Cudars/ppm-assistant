@@ -32,6 +32,15 @@ export function normalizePlayerId(raw: string | undefined): string | null {
   return fromPath ?? null;
 }
 
+/**
+ * Season and day from the header's "Season: 64 (68/70)" ("Sezona: 64 (68/70)"
+ * in Latvian), or null when the text has no such pattern.
+ */
+export function parseSeasonText(text: string): { season: number; seasonDay: number } | null {
+  const match = text.match(/(\d+)\s*\(\s*(\d+)\s*\/\s*\d+\s*\)/);
+  return match ? { season: parseInt(match[1], 10), seasonDay: parseInt(match[2], 10) } : null;
+}
+
 /** A number from page text, ignoring separators ("1 078" -> 1078); NaN when there are no digits. */
 export function parseDigits(text: string | null | undefined): number {
   const digits = (text ?? "").replace(/\D/g, "");

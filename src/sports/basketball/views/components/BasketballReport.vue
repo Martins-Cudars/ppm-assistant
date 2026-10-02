@@ -53,8 +53,12 @@ import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import GrowthComparisonChart, {
   type GrowthReference,
+  type GrowthReferenceOption,
   type GrowthSeries,
 } from "@/components/GrowthComparisonChart.vue";
+import { buildScoutReferences, scoutCoverage } from "@/sports/basketball/scoutReference";
+import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
+import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { buildSquadBestCurve, historyPoints } from "@/sports/basketball/historyChart";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
@@ -71,15 +75,24 @@ const seasonDay = ref(1);
 // the whole squad's past, not just recent weeks. Null when the read failed,
 // so growth cells show "-" with a reason rather than "no history".
 const history = ref<Map<string, SkillHistoryEntry<BasketballSkills>[]> | null>(new Map());
+// Other teams' rosters and the user's league, for the chart's League / Elite lines.
+const scoutSnapshots = ref<ScoutSnapshot[]>([]);
+const league = ref<LeagueTeams | null>(null);
 
 onMounted(async () => {
-  const [cache, historySummaries, stats, settings, allHistory] = await Promise.all([
-    readSportTeamCache<StoredBasketballPlayer>("basketball"),
-    getSkillHistorySummaries("basketball"),
-    getSkillHistoryStats("basketball"),
-    getUserSettings(),
-    exportSkillHistory("basketball"),
-  ]);
+  const [cache, historySummaries, stats, settings, allHistory, scouted, leagueTeams] =
+    await Promise.all([
+      readSportTeamCache<StoredBasketballPlayer>("basketball"),
+      getSkillHistorySummaries("basketball"),
+      getSkillHistoryStats("basketball"),
+      getUserSettings(),
+      exportSkillHistory("basketball"),
+      exportScoutSnapshots("basketball"),
+      readLeagueTeams("basketball"),
+    ]);
+  // A failed read just leaves the scouted lines empty; nothing else depends on them.
+  scoutSnapshots.value = scouted ?? [];
+  league.value = leagueTeams;
   if (cache) {
     players.value = Object.values(cache.players).map(deserializeBasketballPlayer);
     teamId.value = cache.teamId;
@@ -156,6 +169,31 @@ const squadBestReference = computed<GrowthReference>(() => {
   );
   return { label: "Your squad's best at each age", ...best };
 });
+
+// The scouted lines (other teams' rosters): OR only, so they are offered on
+// the chart's OR tab and the squad's own best stays the Skill reference.
+const scoutReferences = computed(() => buildScoutReferences(scoutSnapshots.value, league.value));
+const referenceOptions = computed<GrowthReferenceOption[]>(() => [
+  {
+    key: "squad",
+    name: "Squad best",
+    reference: squadBestReference.value,
+    caption: "The best any of your own players had on reaching each age",
+  },
+  {
+    key: "league",
+    name: "League",
+    reference: { label: "League best at each age", skill: [], or: scoutReferences.value.league.points },
+    caption: scoutReferences.value.league.caption,
+  },
+  {
+    key: "elite",
+    name: "Elite",
+    reference: { label: "Elite best at each age", skill: [], or: scoutReferences.value.elite.points },
+    caption: scoutReferences.value.elite.caption,
+  },
+]);
+const scoutedCoverage = computed(() => scoutCoverage(scoutSnapshots.value));
 
 const referenceTitle = (point: ReferencePoint) =>
   point.source === "squad"
@@ -631,6 +669,13 @@ const profileUrl = (player: BasketballPlayer) =>
         History: {{ historyStats.records.toLocaleString() }} records ·
         {{ historyStats.players }} players
       </span>
+      <span
+        class="history-stats"
+        title="Players seen on other teams' Players pages (and your own squad). They draw the League and Elite lines of the Growth Comparison chart."
+      >
+        Scouted: {{ scoutedCoverage.players.toLocaleString() }} players ·
+        {{ scoutedCoverage.teams }} teams
+      </span>
       <span class="bb-header__note">
         Backup and Clear are on the Hockey tab - they cover every sport.
       </span>
@@ -681,7 +726,7 @@ const profileUrl = (player: BasketballPlayer) =>
     <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :series="comparisonSeries"
-      :reference="squadBestReference"
+      :reference-options="referenceOptions"
       :loading="history === null"
     />
 

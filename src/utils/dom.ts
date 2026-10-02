@@ -1,5 +1,6 @@
 import { extractTeamIdFromUrl } from "./parsers";
 import { isPublicAccountLink } from "@/storage/publicAccount";
+import { parseSeasonText } from "@/base/captureUtils";
 
 /**
  * DOM parsing utilities that work across all sports
@@ -39,6 +40,14 @@ export function getCurrentSeasonDay(): number {
     }
   }
   return 1;
+}
+
+/**
+ * Season number and day from the top info bar ("Season: 64 (68/70)"), or null
+ * when the bar isn't there - e.g. on the extension's own pages.
+ */
+export function getCurrentSeason(): { season: number; seasonDay: number } | null {
+  return parseSeasonText(document.querySelector(".top_info_team")?.textContent ?? "");
 }
 
 /**

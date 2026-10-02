@@ -7,6 +7,8 @@ import viewLineup from "./views/viewLineup";
 import viewMarket from "./views/viewMarket";
 import viewTraining from "./views/viewTraining";
 import viewTrainingProgress from "./views/viewTrainingProgress";
+import viewTeamRoster from "./views/viewTeamRoster";
+import viewLeague from "./views/viewLeague";
 // import viewTrainingCamp from "./views/viewTrainingCamp";
 import { dispatchRoute } from "@/sports/routeDispatch";
 
@@ -22,6 +24,8 @@ const initBasketball = () => {
     { routes: routes.lines, run: viewLineup },
     { routes: routes.market, run: viewMarket },
     { routes: routes.trainingProgress, run: viewTrainingProgress },
+    { routes: routes.teamPlayers, run: viewTeamRoster },
+    { routes: routes.league, run: viewLeague },
   ]);
   // dispatchRoute(window.location.href, [{ routes: routes.trainingCamp, run: viewTrainingCamp }]);
   // TODO: Create next game view
