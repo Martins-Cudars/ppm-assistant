@@ -19,7 +19,7 @@ import { SPORTS, Sport, historyStoreName } from "@/types/Sport";
 import { publicAccountCacheKeys } from "@/storage/publicAccount";
 import { mergeHistoryEntry } from "@/storage/historyMerge";
 import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
-import { ScoutSnapshot, scoutStoreName } from "@/types/ScoutSnapshot";
+import { ScoutCoverage, ScoutSnapshot, scoutStoreName } from "@/types/ScoutSnapshot";
 import { mergeScoutSnapshot } from "@/storage/scoutMerge";
 
 const DB_NAME = "ppm-assistant-skill-history";
@@ -128,6 +128,31 @@ async function getAllScoutSnapshots(sport: Sport): Promise<ScoutSnapshot[]> {
 
     request.onsuccess = () => resolve(request.result as ScoutSnapshot[]);
     request.onerror = () => reject(request.error);
+  });
+}
+
+/** Distinct players, teams and ages, counted over the store in one cursor pass. */
+async function getScoutCoverage(sport: Sport): Promise<ScoutCoverage> {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const players = new Set<string>();
+    const teams = new Set<string>();
+    const ages = new Set<number>();
+    const tx = db.transaction(scoutStoreName(sport), "readonly");
+    const request = tx.objectStore(scoutStoreName(sport)).openCursor();
+
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      const snapshot = cursor.value as ScoutSnapshot;
+      players.add(snapshot.playerId);
+      if (snapshot.teamId) teams.add(snapshot.teamId);
+      if (typeof snapshot.age === "number") ages.add(snapshot.age);
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve({ players: players.size, teams: teams.size, ages: ages.size });
+    tx.onerror = () => reject(tx.error);
   });
 }
 
@@ -577,6 +602,16 @@ chrome.runtime.onMessage.addListener(
         .catch((error) => {
           console.error("[Background] Failed to read scout snapshots:", error);
           sendResponse({ type: "SCOUT_EXPORT", snapshots: null });
+        });
+      return true;
+    }
+
+    if (message.type === "SCOUT_COVERAGE") {
+      getScoutCoverage(sport)
+        .then((coverage) => sendResponse({ type: "SCOUT_COVERAGE", coverage }))
+        .catch((error) => {
+          console.error("[Background] Failed to count scout snapshots:", error);
+          sendResponse({ type: "SCOUT_COVERAGE", coverage: null });
         });
       return true;
     }

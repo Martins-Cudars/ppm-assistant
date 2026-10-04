@@ -6,8 +6,7 @@ import {
   teamIdFromHref,
 } from "@/base/scout/rosterParser";
 import { captureScoutSnapshots } from "@/base/scout/scoutCapture";
-import { scoutCoverage } from "@/base/scout/scoutReference";
-import { exportScoutSnapshots } from "@/storage/scoutSnapshotDb";
+import { getScoutCoverage } from "@/storage/scoutSnapshotDb";
 import { PUBLIC_ACCOUNT_TEAM_IDS } from "@/storage/publicAccount";
 import { Sport } from "@/types/Sport";
 import { getCurrentSeason, getUserTeamId } from "@/utils/dom";
@@ -66,14 +65,12 @@ const viewTeamRoster = (sport: Sport, layout: RosterLayout) => () => {
         showScoutNote(table, "could not store this roster.");
         return;
       }
-      const all = await exportScoutSnapshots(sport);
-      const coverage = all ? scoutCoverage(all) : null;
-      const ages = all ? new Set(all.map((snapshot) => snapshot.age)).size : 0;
+      const coverage = await getScoutCoverage(sport);
       showScoutNote(
         table,
         `stored ${rows.length} players of ${teamName ?? "this team"}` +
           (coverage
-            ? `. Scouted so far: ${coverage.players} players, ${coverage.teams} teams, ${ages} ages covered.`
+            ? `. Scouted so far: ${coverage.players} players, ${coverage.teams} teams, ${coverage.ages} ages covered.`
             : ".")
       );
     })

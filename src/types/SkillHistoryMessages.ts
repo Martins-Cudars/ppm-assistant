@@ -13,7 +13,7 @@ import {
   SkillHistoryStats,
   SkillHistorySummary,
 } from "@/types/SkillHistory";
-import { ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { ScoutCoverage, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { Sport } from "@/types/Sport";
 
 /**
@@ -57,13 +57,17 @@ type SkillHistoryRequest =
   // sport in the same database. Small enough that export is the only read.
   | { type: "SCOUT_UPSERT"; snapshots: ScoutSnapshot[] }
   | { type: "SCOUT_EXPORT" }
-  | { type: "SCOUT_CLEAR" };
+  | { type: "SCOUT_CLEAR" }
+  // Three counts for the roster page's note, worked out in the worker so the
+  // page isn't sent every stored snapshot just to count them.
+  | { type: "SCOUT_COVERAGE" };
 
 export type SkillHistoryResponse =
   | { type: "SCOUT_UPSERT"; written: number }
   // Null on failure, for the same reasons as their skill-history counterparts.
   | { type: "SCOUT_EXPORT"; snapshots: ScoutSnapshot[] | null }
   | { type: "SCOUT_CLEAR"; cleared: number | null }
+  | { type: "SCOUT_COVERAGE"; coverage: ScoutCoverage | null }
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
   | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] }
   | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] }

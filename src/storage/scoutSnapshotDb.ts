@@ -5,7 +5,7 @@
  * one small record in chrome.storage.local.
  */
 
-import { LeagueTeams, ScoutSnapshot, leagueStorageKey } from "@/types/ScoutSnapshot";
+import { LeagueTeams, ScoutCoverage, ScoutSnapshot, leagueStorageKey } from "@/types/ScoutSnapshot";
 import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 import { Sport } from "@/types/Sport";
 
@@ -38,6 +38,17 @@ export async function exportScoutSnapshots(sport: Sport): Promise<ScoutSnapshot[
     return response.type === "SCOUT_EXPORT" ? response.snapshots : null;
   } catch (error) {
     console.error("[ScoutSnapshotDb] Failed to read snapshots:", error);
+    return null;
+  }
+}
+
+/** Distinct players, teams and ages scouted in a sport, or null if the count failed. */
+export async function getScoutCoverage(sport: Sport): Promise<ScoutCoverage | null> {
+  try {
+    const response = await send({ type: "SCOUT_COVERAGE", sport });
+    return response.type === "SCOUT_COVERAGE" ? response.coverage : null;
+  } catch (error) {
+    console.error("[ScoutSnapshotDb] Failed to count snapshots:", error);
     return null;
   }
 }

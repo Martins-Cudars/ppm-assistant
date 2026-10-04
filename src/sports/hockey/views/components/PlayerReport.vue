@@ -3,13 +3,14 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
+import { exportSkillHistory } from "@/storage/skillHistoryDb";
 import {
-  exportSkillHistory,
-  getLatestSkillHistoryWindow,
-  getSkillHistoryNearDates,
-  getSkillHistoryStats,
-  getSkillHistorySummaries,
-} from "@/storage/skillHistoryDb";
+  groupByPlayer,
+  latestWindow,
+  nearDates,
+  statsFrom,
+  summariesFrom,
+} from "@/storage/historyQueries";
 import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { useCompareWith } from "@/base/scout/useCompareWith";
@@ -51,6 +52,8 @@ import {
 } from "@/storage/backup";
 import { ImportMode, ParsedBackup } from "@/types/Backup";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
+import CompareWithBar from "@/components/CompareWithBar.vue";
+import PercentCell from "@/components/PercentCell.vue";
 import GrowthComparisonChart, {
   type GrowthReference,
   type GrowthSeries,
@@ -179,6 +182,8 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const currentSeasonDay = computed(() => store.currentSeasonDay);
 
 // Re-read rather than derived, so it can also be used to resync after a clear.
+// One full read of the store; everything else is worked out from it here
+// (src/storage/historyQueries.ts) rather than asked of the worker again.
 const loadHistoryMeta = async () => {
   // Players already past PROJECTION_AGE get their recorded value, looked up
   // around the day each turned it. Needs the cache loaded first for ages.
@@ -191,15 +196,8 @@ const loadHistoryMeta = async () => {
       }));
 
   // Independent of each other, so don't serialise them.
-  const [summaries, stats, recent, atAge, atAge32, everything, scouted, leagueTeams] = await Promise.all([
-    getSkillHistorySummaries(),
-    getSkillHistoryStats(),
-    // A full season, not just the pace window: the camp allowance reads the
-    // player's last season of camps. The pace itself still uses 56 days.
-    getLatestSkillHistoryWindow(CAMP_LOOKBACK_DAYS),
-    getSkillHistoryNearDates(targetsAt(PROJECTION_AGE), AT_AGE_TOLERANCE_DAYS),
-    getSkillHistoryNearDates(targetsAt(POTENTIAL_AGE), AT_AGE_TOLERANCE_DAYS),
-    // The whole store - the read the backup does - for the chart and the squad's best OR.
+  const [everything, scouted, leagueTeams] = await Promise.all([
+    // The whole store - the read the backup does.
     exportSkillHistory("hockey"),
     exportScoutSnapshots("hockey"),
     readLeagueTeams("hockey"),
@@ -207,23 +205,28 @@ const loadHistoryMeta = async () => {
   // A failed read leaves the scouted lines empty; nothing else depends on them.
   scoutSnapshots.value = scouted ?? [];
   league.value = leagueTeams;
+
   if (everything === null) {
+    // Null, not empty: each column then says the read failed rather than
+    // that a player has no history.
     allHistory.value = null;
+    recentHistory.value = null;
+    atAgeHistory.value = null;
+    atAge32History.value = null;
+    historySummaries.value = new Map();
+    historyStats.value = null;
   } else {
-    const grouped = new Map<string, SkillHistoryEntry[]>();
-    everything.forEach((entry) => {
-      const list = grouped.get(entry.playerId);
-      if (list) list.push(entry);
-      else grouped.set(entry.playerId, [entry]);
-    });
-    allHistory.value = grouped;
+    const byPlayer = groupByPlayer(everything);
+    allHistory.value = byPlayer;
+    historySummaries.value = summariesFrom(byPlayer);
+    // A full season, not just the pace window: the camp allowance reads the
+    // player's last season of camps. The pace itself still uses 56 days.
+    recentHistory.value = latestWindow(byPlayer, CAMP_LOOKBACK_DAYS);
+    atAgeHistory.value = nearDates(byPlayer, targetsAt(PROJECTION_AGE), AT_AGE_TOLERANCE_DAYS);
+    atAge32History.value = nearDates(byPlayer, targetsAt(POTENTIAL_AGE), AT_AGE_TOLERANCE_DAYS);
+    historyStats.value = await statsFrom(everything);
   }
-  historySummaries.value = summaries;
-  historyStats.value = stats;
-  recentHistory.value = recent;
-  atAgeHistory.value = atAge;
-  atAge32History.value = atAge32;
-  if (recent === null || atAge === null || atAge32 === null) {
+  if (everything === null) {
     setNotice(
       `Growth history could not be loaded - the Pace, @${PROJECTION_AGE} and @${POTENTIAL_AGE} columns are incomplete.`,
       true
@@ -444,6 +447,7 @@ const squadReference = computed<GrowthReference>(() => ({
 
 const {
   COMPARE_OPTIONS,
+  compareColumns,
   compareWith,
   chartReferenceKey,
   compareCaption,
@@ -453,7 +457,6 @@ const {
   orVsBestTitle,
   shownPaceFor,
   shownPaceMissingTitle,
-  paceHeader,
 } = useCompareWith<HockeyPlayer>({
   sport: "hockey",
   daysPerSeason: hockeyPlayerProfile.daysPerSeason,
@@ -941,29 +944,7 @@ const tableColumns = computed<Column[]>(() => [
   },
 
   // Growth
-  {
-    header: "OR vs best",
-    key: "orVsBest",
-    slot: "orVsBest",
-    sortable: true,
-    group: "Growth",
-    align: "right",
-    sortValue: (p: HockeyPlayer) => orVsBestFor(p)?.share ?? null,
-    cellStyle: (p: HockeyPlayer) =>
-      heatStyle(orVsBestFor(p)?.share, columnMax.value.orVsBest.min, columnMax.value.orVsBest.max, GROWTH_RAMP),
-  },
-  {
-    header: paceHeader.value,
-    key: "pace",
-    slot: "pace",
-    sortable: true,
-    group: "Growth",
-    align: "right",
-    // Null sorts last, so players with no measurable pace stay out of the way.
-    sortValue: (p: HockeyPlayer) => shownPaceFor(p)?.pace ?? null,
-    cellStyle: (p: HockeyPlayer) =>
-      heatStyle(shownPaceFor(p)?.pace, columnMax.value.pace.min, columnMax.value.pace.max, GROWTH_RAMP),
-  },
+  ...compareColumns(columnMax.value),
   // Recorded and projected values sort together on purpose - see AtAgeValue.
   {
     header: `Skill @${PROJECTION_AGE}`,
@@ -1168,20 +1149,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       </button>
     </div>
 
-    <div class="filters white_box">
-      <div class="filter-group">
-        <label>Compare with:</label>
-        <button
-          v-for="option in COMPARE_OPTIONS"
-          :key="option.key"
-          :class="{ active: compareWith === option.key }"
-          @click="compareWith = option.key"
-        >
-          {{ option.name }}
-        </button>
-      </div>
-      <span class="compare__caption">{{ compareCaption }}</span>
-    </div>
+    <CompareWithBar v-model="compareWith" :options="COMPARE_OPTIONS" :caption="compareCaption" />
 
     <div class="filters white_box">
       <div class="filter-group">
@@ -1380,21 +1348,15 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
         </template>
 
         <template #orVsBest="{ item }">
-          <span v-if="orVsBestFor(item)" :title="orVsBestTitle(item)">
-            {{ Math.round(orVsBestFor(item)!.share * 100) }}%
-          </span>
-          <span v-else class="history-none" :title="orVsBestTitle(item)">-</span>
+          <PercentCell :value="orVsBestFor(item)?.share" :title="orVsBestTitle(item)" />
         </template>
 
         <template #pace="{ item }">
-          <span
-            v-if="shownPaceFor(item)"
-            :class="{ projected: shownPaceFor(item)!.provisional }"
-            :title="shownPaceFor(item)!.title"
-          >
-            {{ shownPaceFor(item)!.provisional ? "~" : "" }}{{ Math.round(shownPaceFor(item)!.pace * 100) }}%
-          </span>
-          <span v-else class="history-none" :title="shownPaceMissingTitle(item)">-</span>
+          <PercentCell
+            :value="shownPaceFor(item)?.pace"
+            :provisional="shownPaceFor(item)?.provisional"
+            :title="shownPaceFor(item)?.title ?? shownPaceMissingTitle(item)"
+          />
         </template>
 
         <template #skillAtAge="{ item }">
@@ -1692,8 +1654,4 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 
 
 
-.compare__caption {
-  font-size: 12px;
-  color: #666;
-}
 </style>

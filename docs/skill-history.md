@@ -752,7 +752,22 @@ Hockey was the first to follow; soccer is next.
   birthday would have become "your squad's best". Only players with a squad-overview,
   training-progress or legacy day count. On the 2026-10-01 backup it drops 31 of hockey's
   73 history players; hockey's 16-age line came out the same either way.
-- Basketball's report runs on the same composable. Its chart option is now named "Squad"
+- Basketball's report runs on the same composable.
+- **Optimised on 2026-10-04** (after a review across all three sports):
+  - **One history read per report.** `src/storage/historyQueries.ts` works out summaries,
+    storage stats, each player's recent window and the days around a birthday from the
+    full export the report already reads. Each mirrors its worker query.
+    - Hockey went from 7 history requests (2 full reads, 3 key scans) to 1.
+    - Basketball and soccer went from 3 requests to 1.
+    - Replayed on the 2026-10-01 backup against the worker's key-based logic: 0
+      mismatches in all three sports.
+    - The worker's SUMMARY / STATS / LATEST_WINDOW / NEAR_DATES messages now have no
+      callers. They are kept for now.
+  - **Shared toggle UI.** `src/components/CompareWithBar.vue` (the row and caption),
+    `src/components/PercentCell.vue` (both cells) and `compareColumns()` from
+    `useCompareWith` (both column definitions) replace three copies.
+  - **Roster note.** A `SCOUT_COVERAGE` message counts players, teams and ages in the
+    worker, instead of sending every snapshot to the page to count. Its chart option is now named "Squad"
   (it was "Squad best").
 - Hockey's capture, toggle and chart: **never run in a browser.**
 - **Soccer** followed the same day, with hockey's choices: under Squad, Pace stays against
@@ -971,9 +986,9 @@ The repo has no test runner, so "verified" means it was actually run.
 | Scouted rosters (basketball, hockey, soccer) | Parsing, merge, league list and the lines: **verified**, 23 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey and soccer 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey, soccer and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
-The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
-the expensive part to work out. There's no runner to hang them on yet — `test/README.md`
-shows how to run them meanwhile, and wiring them up is item 4 below.
+The assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
+the expensive part to work out. `pnpm check` (`scripts/run-checks.mjs`) bundles and runs
+every file; a real runner is still item 4 below.
 
 ## Outstanding work
 
@@ -1001,12 +1016,10 @@ any mutation without re-fetching history, so it would replot stale data. `CLAUDE
 rule says prefer `chart.options` + `update()`; the comparison chart follows it, this one
 doesn't.
 
-**4. Add a test runner.** Vitest fits the existing Vite setup. Four files in
-[`test/`](../test/README.md) are already written and passing — `parseBackup()`,
-`importCaches()`/`exportAllCaches()`, `growthPace.ts` and `squadRank.ts`, 98 assertions (five files, including basketball capture) — they just need a runner instead of the
-throwaway vite-bundle-then-node dance the README describes. After that, the obvious next
-targets are `downsampleHistory`, `mergeEntry`, `daysBetween`, `parseEntryKey`, `getLatestWindowEntries` and
-`historyEntryAge`.
+**4. Add a test runner.** Vitest fits the existing Vite setup. Since 2026-10-04 `pnpm check`
+runs all 13 check files in one command (`scripts/run-checks.mjs`), which replaced the
+throwaway `vite.check.mts`. A real runner would add watch mode and per-case reporting.
+Untested still: `downsampleHistory`, `parseEntryKey` and `historyEntryAge`.
 
 **5. Cross-sport - storage done, growth model not yet.** Every store is now keyed by sport, so
 reused ids can't collide (see [Basketball](#basketball)). What's left is the growth model:

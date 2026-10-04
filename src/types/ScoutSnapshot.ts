@@ -53,6 +53,13 @@ export interface LeagueTeams {
   updatedAt: string; // ISO timestamp
 }
 
+/** How much has been scouted: distinct players, teams and whole ages. */
+export interface ScoutCoverage {
+  players: number;
+  teams: number;
+  ages: number;
+}
+
 /** The scout-snapshot object store for a sport. */
 export function scoutStoreName(sport: Sport): string {
   return `scoutSnapshots_${sport}`;

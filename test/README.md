@@ -20,38 +20,22 @@ only targets `src` plus the vite configs, so nothing here affects `pnpm type-che
 | `soccer-capture.check.ts` | `sports/soccer/capture.ts` + `base/captureUtils.ts` — ids (profile link, plain, flag rejected, parser fallback), the daily entry, an unscouted OR-only day without estimated XP, rebuilding a cached player; `sports/soccer/historyChart.ts` day rating, OR fallback, 112-day ages and thinning, 7 checks | 2026-10-01, all pass |
 | `history-precision.check.ts` | `storage/historyMerge.ts` (decimals survive a same-day whole-number capture, decimals replace whole numbers, differing values win, OR-only merge) and `base/gainCleaning.ts` (whole-number captures told by source, whole-number daily history measured without skipping, a real flat day still skipped, a mixed window), 8 checks | 2026-10-01, all pass |
 | `scout-reference.check.ts` | Scouted rosters behind the Player Reports' League and Elite lines, every sport: `base/scout/rosterParser.ts` (basketball's, hockey's and soccer's roster layouts by column position, the profile link among a name cell's links, thousands separators, rejected rows, season text, the league identity), `base/scout/scoutCapture.ts` (a row as today's snapshot), `storage/scoutMerge.ts` (same-day merge; the league list - default page, full table adding to it, another league ignored, a new season replacing it, a past season's table ignored), `base/scout/scoutReference.ts` (best OR per age at the exact age, a player at two ages, the league filter with a player who moved, captions for empty and stale data; a group's best OR at an exact age, rates from players seen twice 42-105 days apart on one team, the ready rule counting other teams only, the top-3 mean made non-increasing with gaps filled by a sport's shape, a player's own calendar OR rate; hockey's 112-day ages and shape; the squad's best OR at each age, opponents seen only on their profile left out of it), 23 checks | 2026-10-04, all pass |
+| `history-queries.check.ts` | `storage/historyQueries.ts` - what the Player Reports work out from their one full history read: grouping in date order, summaries with gaps, stats bytes, the latest window anchored on each player's own last day, days near a target date, an empty store, 5 checks (replayed against the worker's key-based logic on the 2026-10-01 backup: 0 mismatches in all three sports) | 2026-10-04, all pass |
 | `history-repair.check.ts` | `base/captureUtils.ts` stripThousands + `storage/historyRepair.ts` — English thousands commas vs decimals, restoring a cut OR from the floored skills, leaving correct/unrepairable entries alone, 3 checks (dry run on the 2026-10-01 backup: 8,436 soccer days repaired, 0 mismatches left) | 2026-10-01, all pass |
 | `public-account.check.ts` | `storage/publicAccount.ts` — the public-account link (slug, name, per-sport known id), picking the user's cache when the public one sorts first, an unlisted public team found by team name, the newest of two real teams, the cleanup's key list, 5 checks | 2026-10-01, all pass |
 | `basketball-growth.check.ts` | `sports/basketball/growthModel.ts` and the shared `base/gainCleaning.ts` — the per-skill camp baseline, flat days, the reference curve (best per age, non-increasing after the peak, default fill), pace and provisional pace, skill shares, the 10-day camp cap, height growth, reference points, the balanced solver, projection bookkeeping, the height stop, typical-only future XP, potential, the 70-day season, chart data (history points, squad best, projection line), 20 checks | 2026-09-30, all pass |
 
-## Running them until there's a runner
-
-They import via the `@/` alias and pull in real modules, so they need bundling first. Build
-one as an SSR bundle with a throwaway vite config, then run it with node:
-
-```js
-// vite.check.mts, at the repo root
-import { defineConfig } from "vite";
-import path from "path";
-
-export default defineConfig({
-  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
-  build: {
-    target: "esnext", // player-cache-import.check.ts uses top-level await
-    outDir: process.env.OUT_DIR,
-    emptyOutDir: true,
-    ssr: true,
-    rollupOptions: {
-      input: path.resolve(__dirname, "test/backup-parse.check.ts"),
-      output: { entryFileNames: "check.mjs", format: "es" },
-    },
-  },
-});
-```
+## Running them
 
 ```bash
-OUT_DIR=/tmp/checks npx vite build --config vite.check.mts && node /tmp/checks/check.mjs
+pnpm check                 # every check file
+pnpm check growth-pace     # only files whose name contains "growth-pace"
 ```
+
+`scripts/run-checks.mjs` bundles each file as an SSR build (they import via the `@/` alias
+and pull in real modules) into `test/.tmp`, runs it with node, prints one line per file and
+cleans up. It exits non-zero when a check fails or a file won't build. There is no Vitest
+yet; this is the stopgap.
 
 Each file prints `PASS`/`FAIL` per case and a final `ALL PASS` or failure count.
 

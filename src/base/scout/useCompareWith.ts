@@ -32,6 +32,7 @@ import {
 } from "@/base/scout/scoutReference";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { Sport } from "@/types/Sport";
+import { GROWTH_RAMP, heatStyle } from "@/components/heatmap";
 
 /** What the Pace column shows for a player. */
 export type ShownPace = { pace: number; provisional: boolean; title: string };
@@ -250,8 +251,43 @@ export function useCompareWith<P>(inputs: CompareInputs<P>) {
     return `${level}. ${pace}`;
   });
 
+  /**
+   * The table's "OR vs best" and Pace columns, for the Growth group. Plain
+   * objects in SortableTable's Column shape (its type lives in a .vue file,
+   * which tsc can't read). Each report renders both with PercentCell.vue.
+   */
+  const compareColumns = (ranges: {
+    orVsBest: { min: number; max: number };
+    pace: { min: number; max: number };
+  }) => [
+    {
+      header: "OR vs best",
+      key: "orVsBest",
+      slot: "orVsBest",
+      sortable: true,
+      group: "Growth",
+      align: "right" as const,
+      sortValue: (player: P) => orVsBestFor(player)?.share ?? null,
+      cellStyle: (player: P) =>
+        heatStyle(orVsBestFor(player)?.share, ranges.orVsBest.min, ranges.orVsBest.max, GROWTH_RAMP),
+    },
+    {
+      header: paceHeader.value,
+      key: "pace",
+      slot: "pace",
+      sortable: true,
+      group: "Growth",
+      align: "right" as const,
+      // Null sorts last, so players with no measurable pace stay out of the way.
+      sortValue: (player: P) => shownPaceFor(player)?.pace ?? null,
+      cellStyle: (player: P) =>
+        heatStyle(shownPaceFor(player)?.pace, ranges.pace.min, ranges.pace.max, GROWTH_RAMP),
+    },
+  ];
+
   return {
     COMPARE_OPTIONS,
+    compareColumns,
     compareWith,
     chartReferenceKey,
     compareName,

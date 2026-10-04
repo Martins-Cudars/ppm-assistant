@@ -21,11 +21,8 @@ import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import routes from "@/sports/basketball/routes";
 import { getLocalizedPageForLang } from "@/sports/routeDispatch";
 import { readSportTeamCache } from "@/storage/playerCache";
-import {
-  exportSkillHistory,
-  getSkillHistoryStats,
-  getSkillHistorySummaries,
-} from "@/storage/skillHistoryDb";
+import { exportSkillHistory } from "@/storage/skillHistoryDb";
+import { groupByPlayer, statsFrom, summariesFrom } from "@/storage/historyQueries";
 import {
   BasketballPace,
   BasketballPotential,
@@ -52,6 +49,8 @@ import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/typ
 import { buildPlayerProfileUrl } from "@/utils/parsers";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import CompareWithBar from "@/components/CompareWithBar.vue";
+import PercentCell from "@/components/PercentCell.vue";
 import GrowthComparisonChart, {
   type GrowthReference,
   type GrowthSeries,
@@ -81,11 +80,11 @@ const scoutSnapshots = ref<ScoutSnapshot[]>([]);
 const league = ref<LeagueTeams | null>(null);
 
 onMounted(async () => {
-  const [cache, historySummaries, stats, settings, allHistory, scouted, leagueTeams] =
+  // One full read of the history; summaries and stats are worked out from it
+  // (src/storage/historyQueries.ts) rather than asked of the worker again.
+  const [cache, settings, allHistory, scouted, leagueTeams] =
     await Promise.all([
       readSportTeamCache<StoredBasketballPlayer>("basketball"),
-      getSkillHistorySummaries("basketball"),
-      getSkillHistoryStats("basketball"),
       getUserSettings(),
       exportSkillHistory("basketball"),
       exportScoutSnapshots("basketball"),
@@ -100,19 +99,15 @@ onMounted(async () => {
     squad.value = cache.squad ?? null;
     seasonDay.value = cache.currentSeasonDay || 1;
   }
-  summaries.value = historySummaries;
-  historyStats.value = stats;
   lang.value = settings.lang;
   if (allHistory === null) {
     history.value = null;
   } else {
-    const grouped = new Map<string, SkillHistoryEntry<BasketballSkills>[]>();
-    (allHistory as unknown as SkillHistoryEntry<BasketballSkills>[]).forEach((entry) => {
-      const list = grouped.get(entry.playerId);
-      if (list) list.push(entry);
-      else grouped.set(entry.playerId, [entry]);
-    });
-    history.value = grouped;
+    const entries = allHistory as unknown as SkillHistoryEntry<BasketballSkills>[];
+    const byPlayer = groupByPlayer(entries);
+    history.value = byPlayer;
+    summaries.value = summariesFrom(byPlayer);
+    historyStats.value = await statsFrom(entries);
   }
   loading.value = false;
 });
@@ -178,6 +173,7 @@ const squadBestReference = computed<GrowthReference>(() => {
 
 const {
   COMPARE_OPTIONS,
+  compareColumns,
   compareWith,
   chartReferenceKey,
   compareCaption,
@@ -573,33 +569,7 @@ const columns = computed<Column[]>(() => [
     sortValue: (p: BasketballPlayer) => p.getBestPositionTrainingQuality().totalTrainingQuality,
   },
 
-  {
-    header: "OR vs best",
-    key: "orVsBest",
-    slot: "orVsBest",
-    sortable: true,
-    group: "Growth",
-    align: "right",
-    sortValue: (p: BasketballPlayer) => orVsBestFor(p)?.share ?? null,
-    cellStyle: (p: BasketballPlayer) =>
-      heatStyle(
-        orVsBestFor(p)?.share,
-        growthRange.value.orVsBest.min,
-        growthRange.value.orVsBest.max,
-        GROWTH_RAMP
-      ),
-  },
-  {
-    header: paceHeader.value,
-    key: "pace",
-    slot: "pace",
-    sortable: true,
-    group: "Growth",
-    align: "right",
-    sortValue: (p: BasketballPlayer) => shownPaceFor(p)?.pace ?? null,
-    cellStyle: (p: BasketballPlayer) =>
-      heatStyle(shownPaceFor(p)?.pace, growthRange.value.pace.min, growthRange.value.pace.max, GROWTH_RAMP),
-  },
+  ...compareColumns(growthRange.value),
   {
     header: `Skill @${PROJECTION_AGE}`,
     key: "skillAtAge",
@@ -728,20 +698,7 @@ const profileUrl = (player: BasketballPlayer) =>
       </button>
     </div>
 
-    <div class="filters white_box compare">
-      <div class="filter-group">
-        <label>Compare with:</label>
-        <button
-          v-for="option in COMPARE_OPTIONS"
-          :key="option.key"
-          :class="{ active: compareWith === option.key }"
-          @click="compareWith = option.key"
-        >
-          {{ option.name }}
-        </button>
-      </div>
-      <span class="compare__caption">{{ compareCaption }}</span>
-    </div>
+    <CompareWithBar v-model="compareWith" :options="COMPARE_OPTIONS" :caption="compareCaption" />
 
     <div class="filters white_box">
       <div class="filter-group">
@@ -857,20 +814,14 @@ const profileUrl = (player: BasketballPlayer) =>
             {{ item.getBestPositionTrainingQuality().totalTrainingQuality || "-" }}
           </template>
           <template #orVsBest="{ item }">
-            <span v-if="orVsBestFor(item)" :title="orVsBestTitle(item)">
-              {{ Math.round(orVsBestFor(item)!.share * 100) }}%
-            </span>
-            <span v-else class="history-none" :title="orVsBestTitle(item)">-</span>
+            <PercentCell :value="orVsBestFor(item)?.share" :title="orVsBestTitle(item)" />
           </template>
           <template #pace="{ item }">
-            <span
-              v-if="shownPaceFor(item)"
-              :class="{ projected: shownPaceFor(item)!.provisional }"
-              :title="shownPaceFor(item)!.title"
-            >
-              {{ shownPaceFor(item)!.provisional ? "~" : "" }}{{ Math.round(shownPaceFor(item)!.pace * 100) }}%
-            </span>
-            <span v-else class="history-none" :title="shownPaceMissingTitle(item)">-</span>
+            <PercentCell
+              :value="shownPaceFor(item)?.pace"
+              :provisional="shownPaceFor(item)?.provisional"
+              :title="shownPaceFor(item)?.title ?? shownPaceMissingTitle(item)"
+            />
           </template>
           <template #skillAtAge="{ item }">
             <span
@@ -1006,8 +957,4 @@ const profileUrl = (player: BasketballPlayer) =>
   color: #888;
 }
 
-.compare__caption {
-  font-size: 12px;
-  color: #666;
-}
 </style>
