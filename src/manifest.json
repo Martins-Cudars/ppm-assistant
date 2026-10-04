@@ -1,13 +1,17 @@
 {
   "name": "PPM Assistant",
   "description": "Extends PPM with usefull comparisons, skill calculations etc",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "manifest_version": 3,
   "icons": {
     "128": "icon_128.png"
   },
   "action": {
     "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
   },
   "web_accessible_resources": [
     {

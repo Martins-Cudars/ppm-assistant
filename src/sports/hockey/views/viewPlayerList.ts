@@ -5,6 +5,10 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { getCurrentSeasonDay, getUserTeamId, getTeamNameFromUserPlayerList } from "@/utils/dom";
 import { collectBatchPlayerData } from "@/services/dataCollector";
+import { saveSquadRoster } from "@/storage/playerCache";
+import { createPlayerReportButton } from "@/base/playerReportButton";
+import { captureTodaysHistoryEntries } from "@/storage/skillHistoryCapture";
+import { captureSquadSnapshots } from "@/base/scout/squadSnapshots";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
 import { getPlayerPageForLang } from "@/sports/hockey/routes";
@@ -122,35 +126,33 @@ const viewPlayerList = () => {
     players.push(player);
   });
 
-  // Collect and cache all player data
-  collectBatchPlayerData(players, "PlayersList");
+  // Collect and cache all player data, then record this page's players as the
+  // current squad - the profile page's squad-rank card needs to know who is
+  // actually on the team. Chained, not parallel: both rewrite the same cache
+  // key, and whichever saved second would drop the other's change. Skipped
+  // without a team id, which would only write a team-unknown cache that
+  // clearInvalidCaches() deletes anyway.
+  collectBatchPlayerData(players, "PlayersList").then(() => {
+    if (teamId !== "unknown" && players.length > 0) {
+      saveSquadRoster(players.map((player) => player.id));
+    }
+  });
+
+  // Record today's snapshot for the whole squad in one round-trip. This page
+  // already parses overall rating and every skill for each row, so a single
+  // visit builds history for the entire team - no per-player gather walk and
+  // no extra navigation. Entries are keyed playerId:date, so revisiting the
+  // page the same day refreshes rather than duplicates, and the background
+  // worker merges rather than overwrites, so this composes with a gather walk
+  // that already covered today.
+  captureTodaysHistoryEntries(players, "PlayersList");
+
+  // The same players as scout snapshots, so the report's League and Elite
+  // lines include the user's own squad.
+  captureSquadSnapshots(players, "hockey");
 
   // Add button to open Player Report in new tab
-  const playerReportButton = document.createElement("button");
-  playerReportButton.textContent = "📊 Player Report";
-  playerReportButton.style.cssText = `
-    margin-bottom: 15px;
-    padding: 10px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: background 0.2s;
-  `;
-  playerReportButton.onmouseover = () => {
-    playerReportButton.style.background = "#0056b3";
-  };
-  playerReportButton.onmouseout = () => {
-    playerReportButton.style.background = "#007bff";
-  };
-  playerReportButton.onclick = () => {
-    const extensionUrl = chrome.runtime.getURL("player-report.html");
-    window.open(extensionUrl, "_blank");
-  };
+  const playerReportButton = createPlayerReportButton("hockey");
 
   // Insert button before the table
   if (table.parentNode) {

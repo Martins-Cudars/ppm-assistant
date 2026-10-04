@@ -6,6 +6,10 @@ const multilangRoutes = {
   // editLine: ["/en/edit-line", "/lv/rediget-mainu"],
   // nextGame: ["/en/next-game", "/lv/nakosa-spele"],
   market: ["/en/market", "/lv/speletaju-tirgus"],
+  trainingProgress: ["/en/training-progress", "/lv/treninu-progress"],
+  // Any team's roster (players.html?data=<teamId>) and the league table.
+  teamPlayers: ["/en/players", "/lv/speletaji"],
+  league: ["/en/league", "/lv/liga"],
   // trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
 };
 

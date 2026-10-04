@@ -84,7 +84,13 @@ export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement)
 
   return createPlayer(
     {
-      id: playerColumns[0]?.querySelector("a")?.getAttribute("href") ?? "unknown",
+      // The profile link specifically: the cell's *first* link is the country
+      // flag (country-profile.html?data=lva), which made every row's id a
+      // country code - capture rejected them all and stored nothing.
+      id:
+        playerColumns[0]
+          ?.querySelector('a[href*="player-profile"], a[href*="speletaja-profils"]')
+          ?.getAttribute("href") ?? "unknown",
       name: playerColumns[0]?.textContent?.trim() ?? "Unknown",
       age: parseNumber(playerColumns[4]?.textContent),
       averageTrainingRatio: parseNumber(playerColumns[6]?.textContent),

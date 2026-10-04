@@ -1,5 +1,5 @@
 {
-  "version": "3.1.0",
+  "version": "4.0.0",
   "source": "src/main.js",
   "targets": {
     "default": {
@@ -9,12 +9,14 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "dev": "vite build --watch",
-    "build": "vite build && vite build --config vite.player-report.config.mts",
+    "build": "vite build && vite build --config vite.player-report.config.mts && vite build --config vite.background.config.mts",
     "build:main": "vite build",
     "build:report": "vite build --config vite.player-report.config.mts",
+    "build:background": "vite build --config vite.background.config.mts",
     "preview": "vite preview",
-    "lint": "eslint src eslint.config.mjs vite.config.mts vite.player-report.config.mts",
+    "lint": "eslint src eslint.config.mjs vite.config.mts vite.player-report.config.mts vite.background.config.mts",
     "type-check": "tsc --noEmit",
+    "check": "node scripts/run-checks.mjs",
     "version:check": "node scripts/check-version.mjs",
     "version:bump-check": "node scripts/check-version-bump.mjs",
     "version:sync": "node scripts/sync-version.mjs",
@@ -26,21 +28,21 @@
     "node": ">=20.12.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
+    "@eslint/js": "^9.39.5",
     "@types/chart.js": "^2.9.41",
     "@types/chrome": "^0.0.252",
-    "@types/node": "^20.9.3",
-    "@vitejs/plugin-vue": "^6.0.2",
-    "eslint": "^9.34.0",
-    "globals": "^16.4.0",
-    "typescript": "^5.2.2",
-    "typescript-eslint": "^8.58.1",
-    "vite": "^5.0.0"
+    "@types/node": "^20.19.43",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.1",
+    "vite": "^6.4.3"
   },
   "dependencies": {
-    "chart.js": "^4.3.0",
+    "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
-    "vue": "^3.5.25"
+    "vue": "^3.5.43"
   },
   "pnpm": {
     "overrides": {

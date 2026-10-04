@@ -43,4 +43,17 @@ After building, load `./dist` folder as unpacked extension in `chrome://extensio
 3. Add route check in sport's init function
 4. If hiding original elements, add CSS rules and `include_globs` in manifest
 
+**Chart.js components**: Never apply `v-show` (or anything else that writes inline `display: none`) directly to a `<canvas>` Chart.js owns - put it on a wrapper element. Chart.js snapshots the canvas's inline style when the chart is created and restores it on `destroy()`, so a hidden-at-creation canvas gets permanently re-hidden by every subsequent re-render. Prefer mutating `chart.options` + `chart.update()` over destroy/recreate for option-only changes.
+
 **URL matching**: Routes use path without `.html` extension. The regex in init functions extracts `/lang/page-name` from URLs.
+
+## Feature Docs
+
+See `docs/skill-history.md` for the skill-history store (the three capture paths, the
+background-worker-owned IndexedDB, and the backup file format), plus what has actually been
+verified in a browser versus only type-checked, and the outstanding work. Read it before
+touching capture, the Player Report, or backup/restore.
+
+## Known Issues
+
+See `docs/known-issues.md` for bugs that were investigated but not resolved, including current hypotheses and what's already been ruled out. Check it before re-investigating a bug from scratch.

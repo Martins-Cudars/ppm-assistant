@@ -62,6 +62,11 @@ const getUrl = (path: string) => chrome.runtime.getURL(path);
   width: 80px; /* Increased to ensure 5 stars fit if they are larger, or just to be safe */
   height: 16px; /* Adjusted height to match icon size usually */
   background-repeat: repeat-x;
+  /* The star SVGs are 500x500. The global styles.css sizes them to 16px, but
+     it only loads on game pages - on the Player Report extension page they
+     rendered at full size, showing an empty corner. Same values as global. */
+  background-size: 16px;
+  background-position: left center;
   position: relative;
   vertical-align: middle;
 }
@@ -70,6 +75,8 @@ const getUrl = (path: string) => chrome.runtime.getURL(path);
   display: block;
   height: 100%;
   background-repeat: repeat-x;
+  background-size: 16px;
+  background-position: left center;
   position: absolute;
   top: 0;
   left: 0;

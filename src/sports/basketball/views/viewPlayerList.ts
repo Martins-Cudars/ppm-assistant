@@ -2,6 +2,9 @@ import { createApp } from "vue";
 import { parseBasketballPlayerFromListRow } from "@/sports/basketball/parsers/playerRows";
 import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vue";
 import type { BasketballPlayerListItem } from "./types";
+import { captureBasketballPlayers } from "@/sports/basketball/capture";
+import { createPlayerReportButton } from "@/base/playerReportButton";
+import { captureSquadSnapshots } from "@/base/scout/squadSnapshots";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -57,6 +60,22 @@ const viewPlayerList = () => {
     });
   });
 
+  // Store the whole squad: cache, roster and today's history. Basketball has
+  // no history page, so these daily snapshots are the only history there is.
+  // Not awaited - the table below shouldn't wait on storage.
+  captureBasketballPlayers(
+    items.map((item) => item.player),
+    "PlayersList",
+    { ownSquad: true }
+  );
+
+  // The same players as scout snapshots, so the report's ELITE and LEAGUE
+  // lines include the user's own squad.
+  captureSquadSnapshots(
+    items.map((item) => item.player),
+    "basketball"
+  );
+
   if (!table.parentNode) {
     console.error("Table has no parent node");
     return;
@@ -64,6 +83,12 @@ const viewPlayerList = () => {
 
   const appContainer = document.createElement("div");
   appContainer.id = "ppm-assistant-basketball-list";
+  // The game wraps this table in a <center>, which would centre the inline
+  // button; a full-width left-aligned row puts it on the left, as in hockey.
+  const buttonRow = document.createElement("div");
+  buttonRow.style.textAlign = "left";
+  buttonRow.appendChild(createPlayerReportButton("basketball"));
+  table.parentNode.insertBefore(buttonRow, table);
   table.parentNode.replaceChild(appContainer, table);
 
   const app = createApp(BasketballPlayerListTable, {

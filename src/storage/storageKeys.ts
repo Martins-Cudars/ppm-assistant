@@ -4,16 +4,20 @@
  */
 
 import { getUserTeamId } from "@/utils/dom";
+import { Sport } from "@/types/Sport";
+import { teamPrefix } from "./cacheKeys";
 
 /**
- * Generates the localStorage key for the current team
- * Format: ppm-assistant:hockey:team-{teamId}
- * @returns Storage key string
+ * Generates the storage key for the current team's player cache.
+ * Format: ppm-assistant:{sport}:team-{teamId} - hockey's key is unchanged.
  */
-export function generateStorageKey(): string {
+export function generateStorageKey(sport: Sport = "hockey"): string {
   const teamId = getUserTeamId();
-  return `ppm-assistant:hockey:team-${teamId}`;
+  return `${teamPrefix(sport)}${teamId}`;
 }
+
+// Key shapes live in cacheKeys.ts (no dependencies); re-exported for existing imports.
+export { isTeamCacheKey, teamPrefix } from "./cacheKeys";
 
 /**
  * Detects if a new season has started based on season day values

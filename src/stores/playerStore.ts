@@ -7,6 +7,10 @@ import {
 } from "@/storage/playerCache";
 import { collectPlayerData } from "@/services/dataCollector";
 import { getUserSettings } from "@/storage/userSettings";
+import { clearSkillHistory } from "@/storage/skillHistoryDb";
+import { clearLeagueTeams, clearScoutSnapshots } from "@/storage/scoutSnapshotDb";
+import { SPORTS } from "@/types/Sport";
+import { PlayerCacheStorage } from "@/types/StoredPlayer";
 
 interface PlayerState {
   players: HockeyPlayer[];
@@ -14,6 +18,12 @@ interface PlayerState {
   cachedPlayers: HockeyPlayer[];
   currentSeasonDay: number;
   teamId: string;
+  /**
+   * The last squad overview's roster for this team, or null before one is
+   * saved. Decides who is "my team" - more reliably than teamId, which a sold
+   * player keeps in the cache until their profile is seen again.
+   */
+  squad: PlayerCacheStorage["squad"] | null;
   lang: string;
   sport: string;
   playerPage: string;
@@ -26,6 +36,7 @@ export const usePlayerStore = defineStore("player", {
     cachedPlayers: [],
     currentSeasonDay: 1,
     teamId: "unknown",
+    squad: null,
     lang: "en",
     sport: "hockey",
     playerPage: "player.html",
@@ -64,10 +75,11 @@ export const usePlayerStore = defineStore("player", {
     async loadFromCache() {
       try {
         // Use getAllPlayersFromAllCaches which works in extension pages without DOM
-        const { players, currentSeasonDay, teamId } = await getAllPlayersFromAllCaches();
+        const { players, currentSeasonDay, teamId, squad } = await getAllPlayersFromAllCaches();
         this.cachedPlayers = players;
         this.currentSeasonDay = currentSeasonDay;
         this.teamId = teamId;
+        this.squad = squad;
 
         const settings = await getUserSettings();
         this.lang = settings.lang;
@@ -82,14 +94,44 @@ export const usePlayerStore = defineStore("player", {
         this.cachedPlayers = [];
       }
     },
-    async clearCachedPlayers() {
-      try {
-        await clearAllCaches();
-        this.cachedPlayers = [];
-        console.log("[PlayerStore] All caches cleared");
-      } catch (error) {
-        console.error("[PlayerStore] Failed to clear cache:", error);
+    /**
+     * Wipes every stored player: the chrome.storage.local snapshot caches and
+     * the skill-history time series behind the background worker. The two used
+     * to be cleared separately, which left history unreachable - nothing else
+     * deletes it - while the UI claimed everything was gone.
+     *
+     * Returns the number of history records removed, or null if the history
+     * clear failed - "0" and "it did not happen" mean opposite things here, and
+     * a caller that blanks its display on either will claim an empty store while
+     * the data is still on disk.
+     *
+     * Destructive and unrecoverable: confirm with the user first.
+     */
+    async clearAllStoredData(): Promise<number | null> {
+      // Every sport's history, matching clearAllCaches() and the backup the
+      // clear dialog offers first - both cover every sport.
+      const [, ...clearedBySport] = await Promise.all([
+        clearAllCaches(),
+        ...SPORTS.map((sport) => clearSkillHistory(sport)),
+      ]);
+      // The scouted rosters and league lists go too - the backup covers them.
+      await Promise.all(
+        SPORTS.flatMap((sport) => [clearScoutSnapshots(sport), clearLeagueTeams(sport)])
+      );
+      const clearedHistory = clearedBySport.some((count) => count === null)
+        ? null
+        : clearedBySport.reduce<number>((sum, count) => sum + (count ?? 0), 0);
+      this.cachedPlayers = [];
+
+      if (clearedHistory === null) {
+        console.error("[PlayerStore] Caches cleared, but the history clear failed");
+      } else {
+        console.log(
+          `[PlayerStore] All caches cleared, ${clearedHistory} history records removed`
+        );
       }
+
+      return clearedHistory;
     },
     async mergeAndSavePlayer(
       player: HockeyPlayer,

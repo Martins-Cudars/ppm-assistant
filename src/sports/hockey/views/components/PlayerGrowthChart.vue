@@ -1,5 +1,15 @@
 <template>
   <div class="player-growth-chart">
+    <div class="chart-header">
+      <div class="age-filter">
+        <label>
+          Age:
+          <input type="number" v-model.number="minAge" min="15" max="45" class="age-input" />
+          -
+          <input type="number" v-model.number="maxAge" min="15" max="45" class="age-input" />
+        </label>
+      </div>
+    </div>
     <canvas ref="chartCanvas"></canvas>
   </div>
 </template>
@@ -7,9 +17,19 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
+import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getCurrentSeasonDay } from "@/utils/dom";
+import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
+import { SkillHistoryEntry } from "@/types/SkillHistory";
+import {
+  downsampleHistory,
+  getExactAge,
+  historyEntryToAgePoint,
+  readEntryBaseRating,
+} from "@/sports/hockey/skillHistoryChart";
+import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -17,6 +37,14 @@ const props = defineProps<{
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
+const historyEntries = ref<SkillHistoryEntry[]>([]);
+
+// Default to a window around the player's current age rather than the full
+// 15-45 data range, so a young player's progress isn't squeezed into a
+// sliver of the chart. Computed once from the initial player prop; the user
+// can widen/narrow via the age-filter inputs afterwards.
+const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
+const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 
 const calculateData = () => {
   const projectedPureData = [];
@@ -46,25 +74,66 @@ const calculateData = () => {
 
   // Player position
   const seasonDay = getCurrentSeasonDay() || 1;
-  const seasonProgress = seasonDay / 112;
-  const exactAge = props.player.age + seasonProgress;
+  const exactAge = getExactAge(props.player, seasonDay);
 
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+
+  // Actual skill history, sourced from prior visits to treninu-progress.html
+  // and from profile visits. Entries captured from an unscouted player's
+  // profile carry an overall rating but no attributes, so they yield no base
+  // rating and drop out here.
+  //
+  // That filtering happens *before* downsampling on purpose: were one of those
+  // rating-only entries the latest in its window, thinning first would discard
+  // the whole window even though earlier entries in it had usable skills.
+  const usable = historyEntries.value.filter(
+    (entry) => readEntryBaseRating(entry) !== null
+  );
+  const actualHistoryData = downsampleHistory(usable)
+    .map((entry) => historyEntryToAgePoint(entry, exactAge))
+    .filter((point): point is { x: number; y: number } => point !== null);
+
+  // Where the player lands if their recent pace holds, assuming balanced
+  // training for their best position from here, starting from the red
+  // current-point marker. Empty - and so omitted - without a measurable pace.
+  // Runs to 35 regardless of the visible window; the x-axis clips it.
+  const growthPace = measureGrowthPace(historyEntries.value, exactAge, bestPos.name);
+  const pace = growthPace?.pace ?? null;
+  const ownPaceProjection = projectionPoints(props.player.skills, exactAge, growthPace, 45);
 
   return {
     projectedPureData,
     projectedTotalData,
     currentPureData,
     currentTotalData,
+    actualHistoryData,
+    ownPaceProjection,
+    pace,
+    provisional: growthPace?.provisional ?? false,
   };
 };
 
 const renderChartWithLogic = () => {
   if (!chartCanvas.value) return;
 
+  // v-model.number leaves the ref as a raw (empty) string while the user is
+  // mid-edit (e.g. backspacing before typing a new value), since Vue only
+  // converts via parseFloat when it succeeds. Fall back to sane defaults
+  // rather than feeding Chart.js a non-numeric axis bound, and skip
+  // rendering entirely on a momentarily-degenerate range (min >= max) - the
+  // next keystroke will produce a valid one.
+  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
+  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
+  if (safeMinAge >= safeMaxAge) return;
+
   if (chartInstance) {
-    chartInstance.destroy();
+    try {
+      chartInstance.destroy();
+    } catch (error) {
+      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
+    }
+    chartInstance = null;
   }
 
   const {
@@ -72,95 +141,148 @@ const renderChartWithLogic = () => {
     projectedTotalData,
     currentPureData,
     currentTotalData,
+    actualHistoryData,
+    ownPaceProjection,
+    pace,
+    provisional,
   } = calculateData();
 
-  chartInstance = new Chart(chartCanvas.value, {
-    type: "line",
-    data: {
-      datasets: [
-        {
-          label: "Top Player Skill (Total)",
-          data: projectedTotalData,
-          borderColor: "#ccc",
-          backgroundColor: "#ccc",
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#ccc",
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: "Top Player Skill (Base)",
-          data: projectedPureData,
-          borderColor: "#ccc",
-          backgroundColor: "#ccc",
-          borderWidth: 2,
-          pointRadius: 3,
-          pointBackgroundColor: "#fff",
-          pointBorderColor: "#ccc",
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: "Current Skill (Total)",
-          data: currentTotalData,
-          borderColor: "rgba(255, 99, 132, 1)",
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-          pointRadius: 10,
-          pointHoverRadius: 12,
-          showLine: false,
-        },
-        {
-          label: "Current Skill (Base)",
-          data: currentPureData,
-          borderColor: "rgba(255, 99, 132, 1)",
-          backgroundColor: "rgba(255, 99, 132, 1)",
-          pointRadius: 10,
-          pointHoverRadius: 12,
-          showLine: false,
-        },
-      ],
+  const datasets: ChartDataset<"line">[] = [
+    {
+      label: "Top Player Skill (Total)",
+      data: projectedTotalData,
+      borderColor: "#ccc",
+      backgroundColor: "#ccc",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "#fff",
+      pointBorderColor: "#ccc",
+      fill: false,
+      tension: 0.4,
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: "Skill",
+    {
+      label: "Top Player Skill (Base)",
+      data: projectedPureData,
+      borderColor: "#ccc",
+      backgroundColor: "#ccc",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "#fff",
+      pointBorderColor: "#ccc",
+      fill: false,
+      tension: 0.4,
+    },
+    {
+      label: "Current Skill (Total)",
+      data: currentTotalData,
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 0.5)",
+      pointRadius: 10,
+      pointHoverRadius: 12,
+      showLine: false,
+    },
+    {
+      label: "Current Skill (Base)",
+      data: currentPureData,
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 1)",
+      pointRadius: 10,
+      pointHoverRadius: 12,
+      showLine: false,
+    },
+  ];
+
+  // Only add the actual-history line once there's data to show - omit it
+  // entirely rather than showing an empty/misleading legend entry. History
+  // and profile pages are visited independently, so a player never viewed on
+  // treninu-progress.html simply won't have this line yet; that's expected.
+  if (actualHistoryData.length > 0) {
+    datasets.push({
+      label: "Actual Skill History (Base)",
+      data: actualHistoryData,
+      borderColor: "rgba(54, 162, 235, 1)",
+      backgroundColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: "rgba(54, 162, 235, 1)",
+      pointBorderColor: "rgba(54, 162, 235, 1)",
+      fill: false,
+      tension: 0,
+    });
+  }
+
+  if (ownPaceProjection.length > 0 && pace !== null) {
+    datasets.push({
+      label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(pace * 100)}%${provisional ? ", provisional" : ""})`,
+      data: ownPaceProjection,
+      borderColor: "rgba(54, 162, 235, 1)",
+      backgroundColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 2,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+    });
+  }
+
+  try {
+    chartInstance = new Chart(chartCanvas.value, {
+      type: "line",
+      data: {
+        datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "Skill",
+            },
+          },
+          x: {
+            type: "linear",
+            min: safeMinAge,
+            max: safeMaxAge,
+            title: {
+              display: true,
+              text: "Age",
+            },
+            ticks: {
+              stepSize: 1,
+            },
           },
         },
-        x: {
-          type: "linear",
-          min: 15,
-          max: 45,
-          title: {
+        plugins: {
+          legend: {
             display: true,
-            text: "Age",
+            position: "top",
           },
-          ticks: {
-            stepSize: 1,
+          tooltip: {
+            mode: "index",
+            intersect: false,
           },
         },
       },
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          mode: "index",
-          intersect: false,
-        },
-      },
-    },
+    });
+  } catch (error) {
+    console.error("[PlayerGrowthChart] Failed to render chart:", error);
+    chartInstance = null;
+  }
+};
+
+const loadHistory = () => {
+  getSkillHistoryForPlayer(props.player.id).then((entries) => {
+    historyEntries.value = entries;
+    renderChartWithLogic();
   });
 };
 
 onMounted(() => {
   renderChartWithLogic();
+  loadHistory();
 });
 
 watch(
@@ -170,6 +292,10 @@ watch(
   },
   { deep: true }
 );
+
+watch([minAge, maxAge], () => {
+  renderChartWithLogic();
+});
 </script>
 
 <style scoped>
@@ -182,5 +308,24 @@ watch(
   border: 1px solid #c9c9c9;
   border-radius: 5px;
   box-sizing: border-box;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.age-filter {
+  display: flex;
+  align-items: center;
+}
+
+.age-input {
+  width: 50px;
+  margin: 0 5px;
 }
 </style>
