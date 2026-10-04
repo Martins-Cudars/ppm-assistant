@@ -51,9 +51,9 @@
 
 <script setup lang="ts">
 /**
- * Every player's growth on one chart, by age - a sport-agnostic version of
- * hockey's PlayerGrowthComparisonChart. The caller builds the series (points
- * per metric) and an optional grey reference line; this only draws them.
+ * Every player's growth on one chart, by age, for every sport's Player
+ * Report. The caller builds the series (points per metric) and an optional
+ * grey reference line; this only draws them.
  *
  * A caller with more than one reference passes `referenceOptions` instead; a
  * toggle then chooses which one is drawn.
@@ -62,17 +62,13 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 
-/** `note` is extra tooltip text - e.g. whose value a reference point is. */
-type Point = { x: number; y: number; note?: string };
-export type GrowthSeries = { id: string; label: string; skill: Point[]; or: Point[] };
-export type GrowthReference = { label: string; skill: Point[]; or: Point[] };
-/** One choice of the reference toggle: button name, the line, and what it is built from. */
-export type GrowthReferenceOption = {
-  key: string;
-  name: string;
-  reference: GrowthReference;
-  caption?: string;
-};
+import type {
+  GrowthPoint as Point,
+  GrowthReference,
+  GrowthReferenceOption,
+  GrowthSeries,
+} from "./growthChartTypes";
+export type { GrowthReference, GrowthReferenceOption, GrowthSeries } from "./growthChartTypes";
 
 const props = withDefaults(
   defineProps<{

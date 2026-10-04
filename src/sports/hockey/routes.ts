@@ -11,6 +11,9 @@ const routes = {
   trainingCamp: ["/en/training-camp", "/lv/treninnometne"],
   contracts: ["/en/player-contracts", "/lv/speletaju-ligumi"],
   trainingProgress: ["/en/training-progress", "/lv/treninu-progress"],
+  // Any team's roster (players.html?data=<teamId>) and the league table.
+  teamPlayers: ["/en/players", "/lv/speletaji"],
+  league: ["/en/league", "/lv/liga"],
 };
 
 export default routes;

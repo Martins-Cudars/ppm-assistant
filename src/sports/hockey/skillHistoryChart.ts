@@ -1,8 +1,8 @@
 /**
  * Shared helpers for converting captured skill-history entries into
- * age/value chart points. Used by both the single-player growth chart
- * (PlayerGrowthChart.vue) and the multi-player comparison chart
- * (PlayerGrowthComparisonChart.vue).
+ * age/value chart points. Used by the single-player growth chart
+ * (PlayerGrowthChart.vue) and the Player Report's growth comparison, which
+ * draws on the shared src/components/GrowthComparisonChart.vue.
  */
 
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";

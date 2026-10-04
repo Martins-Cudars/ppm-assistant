@@ -1,38 +1,44 @@
 /**
- * Assertions for the scouted roster data behind the basketball report's ELITE
- * and LEAGUE lines - see test/README.md:
+ * Assertions for the scouted roster data behind the Player Reports' League
+ * and Elite lines, in every sport - see test/README.md:
  *
- * - sports/basketball/parsers/teamRoster.ts: a roster row, the league identity.
- * - sports/basketball/scoutCapture.ts: a row as today's snapshot.
+ * - base/scout/rosterParser.ts: a roster row (basketball's and hockey's
+ *   layouts), the profile link, the league identity.
+ * - base/scout/scoutCapture.ts: a row as today's snapshot.
  * - storage/scoutMerge.ts: same-day merge, and what a league page does to the
  *   stored league list.
- * - sports/basketball/scoutReference.ts: best OR per age, the league filter,
- *   and the report table's side: a group's best OR at an exact age, growth
- *   rates from players seen twice, the group's pace reference, a player's own
- *   OR rate.
+ * - base/scout/scoutReference.ts: best OR per age, the league filter, and the
+ *   report table's side: a group's best OR at an exact age, growth rates from
+ *   players seen twice, the group's pace reference, a player's own OR rate,
+ *   the squad's best OR at each age.
  */
 
 import { parseSeasonText } from "@/base/captureUtils";
 import {
+  BASKETBALL_ROSTER,
+  HOCKEY_ROSTER,
   parseLeagueIdentity,
-  parseRosterRow,
+  parseRosterRow as parseRow,
+  profileHrefOf,
   teamIdFromHref,
-} from "@/sports/basketball/parsers/teamRoster";
-import { buildScoutSnapshot } from "@/sports/basketball/scoutCapture";
-import { ReferenceCurve } from "@/sports/basketball/growthModel";
+} from "@/base/scout/rosterParser";
+import { buildScoutSnapshot } from "@/base/scout/scoutCapture";
 import {
   RATE_MIN_PAIRS,
   bestOrAt,
-  bestOrByAge,
-  buildScoutReferences,
+  bestOrByAge as bestOrByAgeIn,
+  buildScoutReferences as buildReferencesIn,
   groupRateByAge,
   isLeagueStale,
   leagueSnapshots,
   ownOrRate,
   scoutCoverage,
-  scoutRatePairs,
+  scoutRatePairs as ratePairsIn,
   scoutedPairCount,
-} from "@/sports/basketball/scoutReference";
+  snapshotExactAge,
+  squadBestOrByAge,
+  squadHistoryOnly,
+} from "@/base/scout/scoutReference";
 import { mergeScoutSnapshot, nextLeagueTeams } from "@/storage/scoutMerge";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 
@@ -54,6 +60,15 @@ const eq = (a: unknown, b: unknown, m = "") => {
 const near = (a: number, b: number, tol: number, m = "") => {
   if (Math.abs(a - b) > tol) throw new Error(`${m} expected ~${b}, got ${a}`);
 };
+
+// Most cases are basketball's, as first written: its 70-day season and layout.
+const BASKETBALL_DAYS = 70;
+const HOCKEY_DAYS = 112;
+const parseRosterRow = (cells: string[], href: string | undefined) => parseRow(cells, href, BASKETBALL_ROSTER);
+const bestOrByAge = (snapshots: ScoutSnapshot[]) => bestOrByAgeIn(snapshots, BASKETBALL_DAYS);
+const buildScoutReferences = (snapshots: ScoutSnapshot[], league: LeagueTeams | null) =>
+  buildReferencesIn(snapshots, league, BASKETBALL_DAYS);
+const scoutRatePairs = (snapshots: ScoutSnapshot[]) => ratePairsIn(snapshots, BASKETBALL_DAYS);
 
 // --- Parsing ----------------------------------------------------------------------
 
@@ -85,6 +100,29 @@ check("a roster row: rejected without a player, an age or an OR, or from another
   eq(parseRosterRow([...cells.slice(0, 10), "-"], href), null, "no OR");
   eq(parseRosterRow(cells.slice(0, 9), href), null, "a table with other columns");
   eq(parseRosterRow([...cells.slice(0, 7), "", ...cells.slice(8)], href)?.careerLongevity, undefined, "CL unread, row kept");
+});
+
+check("hockey's roster row: 10 columns, no height; the profile link among the name cell's links", () => {
+  // The live row (2026-10-04): # Name Fun ScP Age AvQ CL Con Pop OR
+  const hockey = ["0", "Trisztán Elekes", "", "", "35", "24", "0/6", "48", "1", "689"];
+  const link = profileHrefOf([
+    "/en/country-profile.html?data=hun",
+    null,
+    "/en/player.html?data=12345678-trisztan-elekes",
+  ]);
+  eq(link, "/en/player.html?data=12345678-trisztan-elekes");
+  eq(parseRow(hockey, link, HOCKEY_ROSTER), {
+    playerId: "12345678",
+    name: "Trisztán Elekes",
+    age: 35,
+    height: undefined,
+    averageQuality: 24,
+    careerLongevity: 0,
+    overallRating: 689,
+  });
+  eq(parseRow(hockey, link, BASKETBALL_ROSTER), null, "basketball's layout rejects a hockey row");
+  eq(parseRow(cells, href, HOCKEY_ROSTER), null, "and the other way round");
+  eq(profileHrefOf(["/en/country-profile.html?data=lva"]), undefined, "a flag alone is no player");
 });
 
 check("season text, team ids and the league identity", () => {
@@ -357,11 +395,8 @@ check("the ready rule counts other teams' players only - the own squad can't mak
   eq(scoutedPairCount(rates, undefined), 23, "own team unknown: nothing to leave out");
 });
 
-const shape: ReferenceCurve = Array.from({ length: 20 }, (_, i) => ({
-  age: 15 + i,
-  perDay: 15 + i < 25 ? 1 : 0.5,
-  source: "default" as const,
-}));
+// The sport's own age curve: 1.0 to 24, half from 25. Any unit - only its shape counts.
+const shape = (age: number) => (age < 25 ? 1 : 0.5);
 const rate = (playerId: string, age: number, perDay: number) => ({ playerId, age, perDay, days: 56 });
 
 check("a group's 100% is the mean of the top 3, never rising after the peak, gaps filled by shape", () => {
@@ -405,6 +440,87 @@ check("a player's own OR rate: calendar days over his last 56, null under 28", (
   eq(ownOrRate([]), null);
   // Like for like with a scouted pair: 0.7 a day read as 39 OR over 56 days.
   near(ownOrRate(days(57, 0.7))!.perDay, 39 / 56, 1e-9);
+});
+
+check("hockey: exact ages on a 112-day season, and its own curve filling the gaps", () => {
+  near(snapshotExactAge(snap("1", 20, 500, { seasonDay: 56 }), HOCKEY_DAYS)!, 20.5, 1e-9);
+  near(snapshotExactAge(snap("1", 20, 500, { seasonDay: 56 }), BASKETBALL_DAYS)!, 20.8, 1e-9);
+  const points = bestOrByAgeIn([snap("1", 20, 500, { seasonDay: 28 })], HOCKEY_DAYS);
+  near(points[0].x, 20.25, 1e-9);
+
+  // 85 days within one 112-day season, day 10 to day 95 at 22: the middle is 22.47.
+  // (On a 70-day season the same dates couldn't both be age 22.)
+  const rates = ratePairsIn(
+    [
+      seen("1", "2026-10-02", 22, 10, 900),
+      seen("1", "2026-12-26", 22, 95, 985),
+      // Across a birthday: day 100 at 22 to day 73 at 23 - the middle is 23.27.
+      seen("2", "2026-10-02", 22, 100, 900, { teamId: "5" }),
+      seen("2", "2026-12-26", 23, 73, 900 + 85 * 0.5, { teamId: "5" }),
+    ],
+    HOCKEY_DAYS
+  );
+  eq(rates.map((r) => r.age), [22, 23]);
+  near(rates[0].perDay, 1, 1e-9);
+
+  // Hockey's own curve as the shape: measured 22 and 23 scale the rest from the nearest.
+  const hockeyShape = (age: number) => (age <= 22 ? 60 : age <= 26 ? 40 : 10);
+  const curve = groupRateByAge(rates, hockeyShape);
+  near(curve.find((p) => p.age === 22)!.perDay, 1, 1e-9);
+  near(curve.find((p) => p.age === 23)!.perDay, 0.5, 1e-9);
+  near(curve.find((p) => p.age === 18)!.perDay, 1, 1e-9, "from 22, same shape value");
+  near(curve.find((p) => p.age === 25)!.perDay, 0.5, 1e-9, "from 23, same shape value");
+  near(curve.find((p) => p.age === 30)!.perDay, 0.5 * (10 / 40), 1e-9, "from 23, scaled by the shape");
+});
+
+check("the squad's best OR at each age: the nearest day to each birthday, the best player", () => {
+  const today = Date.parse("2026-10-04T00:00:00");
+  const day = (daysAgo: number) => new Date(today - daysAgo * 86_400_000).toISOString().slice(0, 10);
+  // Player A is 22.0 today on a 112-day season; B is 21.5.
+  const history = new Map([
+    ["A", [{ date: day(0), or: 900 }, { date: day(112), or: 800 }, { date: day(50), or: 870 }]],
+    ["B", [{ date: day(56), or: 850 }, { date: day(58), or: 840 }, { date: day(168), or: 700 }]],
+  ]);
+  const points = squadBestOrByAge(
+    history,
+    new Map([["A", 22], ["B", 21.5]]),
+    HOCKEY_DAYS,
+    (entry) => entry.or,
+    new Map([["A", "Alpha"], ["B", "Beta"]]),
+    today
+  );
+  // At 21: A had 800, B 850 (56 days ago, exactly on his birthday) -> B.
+  // At 22: A's 900. At 20: B's 700. A's day 50 ago is mid-age, not a birthday.
+  eq(points, [
+    { x: 20, y: 700, note: "Beta" },
+    { x: 21, y: 850, note: "Beta" },
+    { x: 22, y: 900, note: "Alpha" },
+  ]);
+  eq(squadBestOrByAge(new Map(), new Map(), HOCKEY_DAYS, () => 1), [], "no history");
+});
+
+check("the squad's line leaves out opponents only ever opened on their profile", () => {
+  const history = new Map([
+    ["own", [{ source: "PlayersList" }, { source: "PlayerProfile" }]],
+    ["trained", [{ source: "TrainingProgress" }]],
+    ["legacy", [{ source: undefined }]],
+    ["opponent", [{ source: "PlayerProfile" }, { source: "PlayerProfile" }]],
+  ]);
+  eq([...squadHistoryOnly(history).keys()], ["own", "trained", "legacy"]);
+
+  // An opponent with a high OR on his birthday doesn't set the line.
+  const today = Date.parse("2026-10-04T00:00:00");
+  const ownDay = { date: "2026-10-04", or: 700, source: "PlayersList" };
+  const rival = { date: "2026-10-04", or: 999, source: "PlayerProfile" };
+  const points = squadBestOrByAge(
+    squadHistoryOnly(new Map([["own", [ownDay]], ["rival", [rival]]])),
+    new Map([["own", 22], ["rival", 22]]),
+    HOCKEY_DAYS,
+    (entry) => entry.or,
+    new Map(),
+    today
+  );
+  eq(points.map((p) => p.y), [700]);
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

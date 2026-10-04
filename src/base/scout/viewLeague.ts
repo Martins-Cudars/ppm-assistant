@@ -1,4 +1,5 @@
-import { parseLeagueIdentity, teamIdFromHref } from "@/sports/basketball/parsers/teamRoster";
+import { parseLeagueIdentity, teamIdFromHref } from "@/base/scout/rosterParser";
+import { Sport } from "@/types/Sport";
 import { nextLeagueTeams } from "@/storage/scoutMerge";
 import { readLeagueTeams, saveLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { getCurrentSeason, getUserTeamId } from "@/utils/dom";
@@ -10,7 +11,7 @@ import { showScoutNote } from "./scoutNote";
  * page is the user's league, and how its teams combine with the stored list,
  * is decided in nextLeagueTeams().
  */
-const viewLeague = async () => {
+const captureLeague = async (sport: Sport) => {
   const userTeamId = getUserTeamId();
   if (userTeamId === "unknown") return;
 
@@ -44,7 +45,7 @@ const viewLeague = async () => {
     !new URLSearchParams(window.location.search).has("data") &&
     (!headerLeague || headerLeague.toUpperCase() === pageLabel);
 
-  const stored = await readLeagueTeams("basketball");
+  const stored = await readLeagueTeams(sport);
   const next = nextLeagueTeams(
     stored,
     { ...identity, teamIds, isDefaultPage },
@@ -53,7 +54,7 @@ const viewLeague = async () => {
   );
   if (!next) return;
 
-  await saveLeagueTeams(next, "basketball");
+  await saveLeagueTeams(next, sport);
   showScoutNote(
     table,
     `your league ${next.leagueName} saved - ${next.teamIds.length} teams` +
@@ -63,6 +64,9 @@ const viewLeague = async () => {
   );
 };
 
-export default () => {
-  viewLeague().catch((error) => console.error("[League] Capture failed:", error));
+/** The league table's view for a sport. */
+const viewLeague = (sport: Sport) => () => {
+  captureLeague(sport).catch((error) => console.error(`[League] ${sport} capture failed:`, error));
 };
+
+export default viewLeague;

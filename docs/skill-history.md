@@ -713,7 +713,48 @@ shared chart) and two table columns. The choice is remembered in `localStorage`.
   only its shape over ages would change anything; the scouted curve is OR-based and new.
   Skill/OR @25, @32, Potential and the "Pace reference" panel stay on the squad model.
 - Never run in a browser. With the store new on 2026-10-02, the group pace cannot show
-  before mid-November 2026 at the earliest.
+  before mid-November 2026 at the earliest. (Update: the user tested basketball's
+  toggle, chart and "OR vs best" on 2026-10-04 - "works great".)
+
+### Every sport: the shared scouting code (`src/base/scout/`, 2026-10-04)
+
+Basketball's scouting moved out of `src/sports/basketball/` so every sport shares it.
+Hockey was the first to follow; soccer is next.
+
+| File | What it is |
+|---|---|
+| `rosterParser.ts` | Roster rows by a per-sport `RosterLayout` (`BASKETBALL_ROSTER`, `HOCKEY_ROSTER`), `profileHrefOf` (the name cell's link with a numeric `data=` that isn't the country flag), `teamIdFromHref`, `parseLeagueIdentity` |
+| `scoutCapture.ts` | A row as today's snapshot; storing a page's rows for a sport |
+| `squadSnapshots.ts` | The own squad overview's players as snapshots (each sport's `viewPlayerList` calls it) |
+| `viewTeamRoster.ts`, `viewLeague.ts` | Factories: `viewTeamRoster(sport, layout)` and `viewLeague(sport)` give each sport's route its view |
+| `scoutReference.ts` | The lines, pairs and group rates. Every age reading takes the sport's `daysPerSeason`; the group curve's gaps take a `shape(age)` function - basketball passes its reference curve, hockey `expectedSeasonGain`. Also `squadBestOrByAge`, the squad's best OR on reaching each age |
+| `useCompareWith.ts` | The report toggle as a Vue composable: options, captions, "OR vs best", the shown Pace and the chart's reference options. Each report passes its own squad pace, squad reference and history readers |
+
+- `smoothFromPeak` moved to `src/base/smoothFromPeak.ts`. The shared chart's types moved
+  to `src/components/growthChartTypes.ts`, since `tsc` can't read types out of a `.vue`
+  file.
+- **Hockey specifics** (read from the live game on 2026-10-04):
+  - The roster has 10 columns, `# Name Fun ScP Age AvQ CL Con Pop OR`, with no height.
+  - Profile links go to `player.html` / `speletajs.html`.
+  - The league page is `league.html` / `liga.html`, and its default page lists all 20
+    teams. Seasons are 112 days.
+- **The hockey report** now:
+  - reads the whole hockey history once on load, the read the backup does (~33k rows);
+  - has the toggle and "OR vs best";
+  - uses the shared chart. `PlayerGrowthComparisonChart.vue` is gone.
+- **Under Squad in hockey:**
+  - Pace is unchanged, measured against the top-player table.
+  - The chart's Skill line is still the top-player curve.
+  - "OR vs best" and the chart's OR line use the squad's best OR at each age, which the
+    old chart never had.
+- **The squad's own line leaves out opponents** (`squadHistoryOnly`, both reports): a
+  profile visit stores another team's player in the history too, and one seen near a
+  birthday would have become "your squad's best". Only players with a squad-overview,
+  training-progress or legacy day count. On the 2026-10-01 backup it drops 31 of hockey's
+  73 history players; hockey's 16-age line came out the same either way.
+- Basketball's report runs on the same composable. Its chart option is now named "Squad"
+  (it was "Squad best").
+- Hockey's capture, toggle and chart: **never run in a browser.**
 
 ## Soccer
 
@@ -915,7 +956,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
-| Scouted rosters (basketball) | Parsing, merge, league list and the lines: **verified**, 18 checks in `test/scout-reference.check.ts`. The page markup was read from the live game on 2026-10-02 (EN and LV). The views, the on-page notes, the chart toggle and the v3 backup round trip: **never run in the browser.** |
+| Scouted rosters (basketball, hockey) | Parsing, merge, league list and the lines: **verified**, 22 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
 The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were

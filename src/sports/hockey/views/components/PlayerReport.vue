@@ -4,13 +4,25 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { calculateCompleteness } from "@/storage/serialization";
 import {
+  exportSkillHistory,
   getLatestSkillHistoryWindow,
   getSkillHistoryNearDates,
   getSkillHistoryStats,
   getSkillHistorySummaries,
 } from "@/storage/skillHistoryDb";
+import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
+import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { useCompareWith } from "@/base/scout/useCompareWith";
+import { squadBestOrByAge, squadHistoryOnly } from "@/base/scout/scoutReference";
+import { downsampleHistory } from "@/base/historyDownsample";
+import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
-import { getExactAge, readEntryOverallRating } from "@/sports/hockey/skillHistoryChart";
+import {
+  getExactAge,
+  historyEntryAge,
+  readEntryBaseRating,
+  readEntryOverallRating,
+} from "@/sports/hockey/skillHistoryChart";
 import {
   CAMP_LOOKBACK_DAYS,
   CAMP_UNTIL_AGE,
@@ -20,6 +32,7 @@ import {
   PACE_WINDOW_DAYS,
   bestPositionRating,
   dateAtAge,
+  expectedSeasonGain,
   entryNearestDate,
   measureGrowthPace,
   POTENTIAL_AGE,
@@ -38,13 +51,16 @@ import {
 } from "@/storage/backup";
 import { ImportMode, ParsedBackup } from "@/types/Backup";
 import PlayerDataFreshness from "./PlayerDataFreshness.vue";
-import PlayerGrowthComparisonChart from "./PlayerGrowthComparisonChart.vue";
+import GrowthComparisonChart, {
+  type GrowthReference,
+  type GrowthSeries,
+} from "@/components/GrowthComparisonChart.vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
-import { ratingSettings } from "@/sports/hockey/settings";
+import { playerGrowthPrediction, ratingSettings } from "@/sports/hockey/settings";
 
 const store = usePlayerStore();
 const activeTab = ref<"table" | "graph">("table");
@@ -135,6 +151,13 @@ const atAgeHistory = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
 // The same around POTENTIAL_AGE (32), for the @32 columns' recorded values.
 const atAge32History = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
 
+// Every stored hockey day, grouped by player: the chart's player lines and the
+// squad's best OR at each age need the whole past. Null when the read failed.
+const allHistory = ref<Map<string, SkillHistoryEntry[]> | null>(new Map());
+// Other teams' rosters and the user's league, for League / Elite.
+const scoutSnapshots = ref<ScoutSnapshot[]>([]);
+const league = ref<LeagueTeams | null>(null);
+
 // Storage footprint of the history store, shown in the header.
 const historyStats = ref<SkillHistoryStats | null>(null);
 
@@ -168,7 +191,7 @@ const loadHistoryMeta = async () => {
       }));
 
   // Independent of each other, so don't serialise them.
-  const [summaries, stats, recent, atAge, atAge32] = await Promise.all([
+  const [summaries, stats, recent, atAge, atAge32, everything, scouted, leagueTeams] = await Promise.all([
     getSkillHistorySummaries(),
     getSkillHistoryStats(),
     // A full season, not just the pace window: the camp allowance reads the
@@ -176,7 +199,25 @@ const loadHistoryMeta = async () => {
     getLatestSkillHistoryWindow(CAMP_LOOKBACK_DAYS),
     getSkillHistoryNearDates(targetsAt(PROJECTION_AGE), AT_AGE_TOLERANCE_DAYS),
     getSkillHistoryNearDates(targetsAt(POTENTIAL_AGE), AT_AGE_TOLERANCE_DAYS),
+    // The whole store - the read the backup does - for the chart and the squad's best OR.
+    exportSkillHistory("hockey"),
+    exportScoutSnapshots("hockey"),
+    readLeagueTeams("hockey"),
   ]);
+  // A failed read leaves the scouted lines empty; nothing else depends on them.
+  scoutSnapshots.value = scouted ?? [];
+  league.value = leagueTeams;
+  if (everything === null) {
+    allHistory.value = null;
+  } else {
+    const grouped = new Map<string, SkillHistoryEntry[]>();
+    everything.forEach((entry) => {
+      const list = grouped.get(entry.playerId);
+      if (list) list.push(entry);
+      else grouped.set(entry.playerId, [entry]);
+    });
+    allHistory.value = grouped;
+  }
   historySummaries.value = summaries;
   historyStats.value = stats;
   recentHistory.value = recent;
@@ -376,6 +417,99 @@ const atAgeMissingTitle = (player: HockeyPlayer, targetAge = PROJECTION_AGE) => 
   }
   return "No pace to project from";
 };
+
+// --- Compare with: Squad / League / Elite ------------------------------------------
+// Shared with the other sports' reports - see src/base/scout/useCompareWith.ts.
+// Under Squad (and until a group has enough revisits) Pace is hockey's own,
+// against the top-player table; projections never follow the toggle.
+
+const exactAgeByPlayer = computed(
+  () => new Map(store.cachedPlayers.map((player: HockeyPlayer) => [player.id, exactAgeOf(player)]))
+);
+
+// The Squad choice: the top-player curve on the Skill tab, as before, and the
+// squad's own best OR at each age on the OR tab.
+const squadReference = computed<GrowthReference>(() => ({
+  label: "Top player (Skill) / your squad's best (OR)",
+  skill: playerGrowthPrediction.map((point) => ({ x: point.age, y: point.skill })),
+  or: squadBestOrByAge(
+    // Opponents opened on their profile are in the history too - not "your squad".
+    squadHistoryOnly(allHistory.value ?? new Map()),
+    exactAgeByPlayer.value,
+    hockeyPlayerProfile.daysPerSeason,
+    readEntryOverallRating,
+    new Map(store.cachedPlayers.map((player: HockeyPlayer) => [player.id, player.name]))
+  ),
+}));
+
+const {
+  COMPARE_OPTIONS,
+  compareWith,
+  chartReferenceKey,
+  compareCaption,
+  referenceOptions,
+  scoutedCoverage,
+  orVsBestFor,
+  orVsBestTitle,
+  shownPaceFor,
+  shownPaceMissingTitle,
+  paceHeader,
+} = useCompareWith<HockeyPlayer>({
+  sport: "hockey",
+  daysPerSeason: hockeyPlayerProfile.daysPerSeason,
+  players: () => store.cachedPlayers,
+  snapshots: () => scoutSnapshots.value,
+  league: () => league.value,
+  ownTeamId: () => store.teamId,
+  squadReference: () => squadReference.value,
+  squadChartCaption:
+    "Skill: the top-player curve the Pace column measures against. OR: the best any of your own players had on reaching each age.",
+  squadCaption:
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-player table, as before.",
+  idOf: (player) => player.id,
+  exactAgeOf,
+  overallOf: (player) => player.overallRating,
+  squadPace: (player) => {
+    const pace = paceFor(player);
+    return pace?.pace != null
+      ? { pace: pace.pace, provisional: pace.provisional, title: paceTitle(player) }
+      : null;
+  },
+  squadPaceMissingTitle: (player) => paceTitle(player),
+  ownOrDays: (player) =>
+    (allHistory.value?.get(player.id) ?? []).flatMap((entry) => {
+      const or = readEntryOverallRating(entry);
+      return or !== null ? [{ date: entry.date, or }] : [];
+    }),
+  ageOnDate: (player, date) => historyEntryAge({ date } as SkillHistoryEntry, exactAgeOf(player)),
+  rateShape: (age) => expectedSeasonGain(age) ?? 0,
+});
+
+// Every filtered player's history on the shared chart. Entries are filtered to
+// the metric before thinning: an unscouted profile capture has an OR but no
+// skills, and must not swallow a window that had usable skills.
+const comparisonSeries = computed<GrowthSeries[]>(() =>
+  filteredPlayers.value.map((player: HockeyPlayer) => {
+    const entries = allHistory.value?.get(player.id) ?? [];
+    const exactAge = exactAgeOf(player);
+    const points = (read: (entry: SkillHistoryEntry) => number | null) =>
+      downsampleHistory(entries.filter((entry) => read(entry) !== null)).map((entry) => ({
+        x: historyEntryAge(entry, exactAge),
+        y: read(entry)!,
+      }));
+    const skill = points(readEntryBaseRating);
+    const or = points(readEntryOverallRating);
+    return {
+      id: player.id,
+      label: player.name,
+      skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
+      or:
+        or.length > 0 || !(player.overallRating > 0)
+          ? or
+          : [{ x: exactAge, y: player.overallRating }],
+    };
+  })
+);
 
 onMounted(async () => {
   await store.loadFromCache();
@@ -728,7 +862,8 @@ const columnMax = computed(() => {
     passing: skill("passing"),
     technical: skill("technical"),
     aggression: skill("aggression"),
-    pace: range((p) => paceFor(p)?.pace),
+    pace: range((p) => shownPaceFor(p)?.pace),
+    orVsBest: range((p) => orVsBestFor(p)?.share),
     skillAtAge: range((p) => atAgeFor(p)?.skill),
     orAtAge: range((p) => atAgeFor(p)?.or),
     skillAt32: range((p) => atAge32For(p)?.skill),
@@ -807,16 +942,27 @@ const tableColumns = computed<Column[]>(() => [
 
   // Growth
   {
-    header: "Pace",
+    header: "OR vs best",
+    key: "orVsBest",
+    slot: "orVsBest",
+    sortable: true,
+    group: "Growth",
+    align: "right",
+    sortValue: (p: HockeyPlayer) => orVsBestFor(p)?.share ?? null,
+    cellStyle: (p: HockeyPlayer) =>
+      heatStyle(orVsBestFor(p)?.share, columnMax.value.orVsBest.min, columnMax.value.orVsBest.max, GROWTH_RAMP),
+  },
+  {
+    header: paceHeader.value,
     key: "pace",
     slot: "pace",
     sortable: true,
     group: "Growth",
     align: "right",
     // Null sorts last, so players with no measurable pace stay out of the way.
-    sortValue: (p: HockeyPlayer) => paceFor(p)?.pace ?? null,
+    sortValue: (p: HockeyPlayer) => shownPaceFor(p)?.pace ?? null,
     cellStyle: (p: HockeyPlayer) =>
-      heatStyle(paceFor(p)?.pace, columnMax.value.pace.min, columnMax.value.pace.max, GROWTH_RAMP),
+      heatStyle(shownPaceFor(p)?.pace, columnMax.value.pace.min, columnMax.value.pace.max, GROWTH_RAMP),
   },
   // Recorded and projected values sort together on purpose - see AtAgeValue.
   {
@@ -972,6 +1118,13 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           {{ historyStats.players }} players ·
           {{ formatBytes(historyStats.jsonBytes) }}
         </span>
+        <span
+          class="history-stats"
+          title="Players seen on other teams' Players pages (and your own squad). They draw the League and Elite lines."
+        >
+          Scouted: {{ scoutedCoverage.players.toLocaleString() }} players ·
+          {{ scoutedCoverage.teams }} teams
+        </span>
         <button
           class="backup-btn"
           :disabled="backupBusy !== ''"
@@ -1013,6 +1166,21 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       >
         Growth Comparison
       </button>
+    </div>
+
+    <div class="filters white_box">
+      <div class="filter-group">
+        <label>Compare with:</label>
+        <button
+          v-for="option in COMPARE_OPTIONS"
+          :key="option.key"
+          :class="{ active: compareWith === option.key }"
+          @click="compareWith = option.key"
+        >
+          {{ option.name }}
+        </button>
+      </div>
+      <span class="compare__caption">{{ compareCaption }}</span>
     </div>
 
     <div class="filters white_box">
@@ -1211,18 +1379,22 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
           <span v-else class="history-none" :title="potentialTitle(item)">-</span>
         </template>
 
+        <template #orVsBest="{ item }">
+          <span v-if="orVsBestFor(item)" :title="orVsBestTitle(item)">
+            {{ Math.round(orVsBestFor(item)!.share * 100) }}%
+          </span>
+          <span v-else class="history-none" :title="orVsBestTitle(item)">-</span>
+        </template>
+
         <template #pace="{ item }">
           <span
-            v-if="paceFor(item)?.provisional && paceFor(item)?.pace != null"
-            class="projected"
-            :title="paceTitle(item)"
+            v-if="shownPaceFor(item)"
+            :class="{ projected: shownPaceFor(item)!.provisional }"
+            :title="shownPaceFor(item)!.title"
           >
-            ~{{ Math.round(paceFor(item)!.pace! * 100) }}%
+            {{ shownPaceFor(item)!.provisional ? "~" : "" }}{{ Math.round(shownPaceFor(item)!.pace * 100) }}%
           </span>
-          <span v-else-if="paceFor(item)?.pace != null" :title="paceTitle(item)">
-            {{ Math.round(paceFor(item)!.pace! * 100) }}%
-          </span>
-          <span v-else class="history-none" :title="paceTitle(item)">-</span>
+          <span v-else class="history-none" :title="shownPaceMissingTitle(item)">-</span>
         </template>
 
         <template #skillAtAge="{ item }">
@@ -1276,10 +1448,12 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
     </div>
     </template>
 
-    <PlayerGrowthComparisonChart
+    <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
-      :players="filteredPlayers"
-      :current-season-day="currentSeasonDay"
+      v-model:reference-key="chartReferenceKey"
+      :series="comparisonSeries"
+      :reference-options="referenceOptions"
+      :loading="allHistory === null"
     />
 
     <ConfirmDialog
@@ -1517,4 +1691,9 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
 }
 
 
+
+.compare__caption {
+  font-size: 12px;
+  color: #666;
+}
 </style>

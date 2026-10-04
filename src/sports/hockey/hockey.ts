@@ -12,6 +12,9 @@ import viewTrainingProgress from "./views/viewTrainingProgress";
 import { clearInvalidCaches } from "@/storage/playerCache";
 import { migrateLegacySkillHistoryIfNeeded } from "@/storage/skillHistoryMigration";
 import { dispatchRoute } from "@/sports/routeDispatch";
+import viewTeamRoster from "@/base/scout/viewTeamRoster";
+import viewLeague from "@/base/scout/viewLeague";
+import { HOCKEY_ROSTER } from "@/base/scout/rosterParser";
 
 /**
  * Run View Functions
@@ -39,6 +42,8 @@ const initHockey = () => {
     { routes: routes.trainingCamp, run: viewTrainingCamp },
     { routes: routes.contracts, run: viewPlayerContracts },
     { routes: routes.trainingProgress, run: viewTrainingProgress },
+    { routes: routes.teamPlayers, run: viewTeamRoster("hockey", HOCKEY_ROSTER) },
+    { routes: routes.league, run: viewLeague("hockey") },
   ]);
 
   // TODO: Create next game view

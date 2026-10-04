@@ -5,9 +5,10 @@
  */
 
 import { todayIsoDate } from "@/base/captureUtils";
-import { RosterRow } from "@/sports/basketball/parsers/teamRoster";
+import { RosterRow } from "@/base/scout/rosterParser";
 import { upsertScoutSnapshots } from "@/storage/scoutSnapshotDb";
 import { ScoutSnapshot, ScoutSnapshotSource } from "@/types/ScoutSnapshot";
+import { Sport } from "@/types/Sport";
 
 export interface SnapshotContext {
   teamId: string;
@@ -44,11 +45,15 @@ export function buildScoutSnapshot(
 }
 
 /** Stores a page's rows as today's snapshots; resolves how many were written. */
-export async function captureScoutSnapshots(rows: RosterRow[], context: SnapshotContext): Promise<number> {
+export async function captureScoutSnapshots(
+  rows: RosterRow[],
+  context: SnapshotContext,
+  sport: Sport
+): Promise<number> {
   const snapshots = rows.map((row) => buildScoutSnapshot(row, context));
-  const { written } = await upsertScoutSnapshots(snapshots, "basketball");
+  const { written } = await upsertScoutSnapshots(snapshots, sport);
   console.log(
-    `[ScoutCapture] ${context.source}: ${written} snapshot(s) for team ${context.teamId}` +
+    `[ScoutCapture] ${sport} ${context.source}: ${written} snapshot(s) for team ${context.teamId}` +
       (context.teamName ? ` (${context.teamName})` : "")
   );
   return written;

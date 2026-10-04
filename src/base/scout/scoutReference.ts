@@ -1,7 +1,8 @@
 /**
  * The ELITE and LEAGUE reference lines of the report's growth chart: the best
- * overall rating seen at each age among scouted players. Pure functions over
- * the stored snapshots (src/types/ScoutSnapshot.ts).
+ * overall rating seen at each age among scouted players, in any sport. Pure
+ * functions over the stored snapshots (src/types/ScoutSnapshot.ts). Ages
+ * depend on the sport's season length, so every age reading takes it.
  *
  * - ELITE: every snapshot - whoever was best at that age, anywhere.
  * - LEAGUE: only players of the teams in the user's current league.
@@ -9,22 +10,17 @@
  * OR only: a roster page shows no skills.
  */
 
-import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
-import {
-  REFERENCE_FIRST_AGE,
-  REFERENCE_LAST_AGE,
-  ReferenceCurve,
-  smoothFromPeak,
-} from "@/sports/basketball/growthModel";
+import { smoothFromPeak } from "@/base/smoothFromPeak";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
+
+/** Ages a group's pace reference covers, as the growth models' curves do. */
+export const RATE_FIRST_AGE = 15;
+export const RATE_LAST_AGE = 34;
 
 export type ScoutPoint = { x: number; y: number; note?: string };
 
 /** A snapshot's age in seasons: whole years plus how far into the season it was taken. */
-export function snapshotExactAge(
-  snapshot: ScoutSnapshot,
-  daysPerSeason: number = basketballPlayerProfile.daysPerSeason
-): number | null {
+export function snapshotExactAge(snapshot: ScoutSnapshot, daysPerSeason: number): number | null {
   if (typeof snapshot.age !== "number") return null;
   const day = typeof snapshot.seasonDay === "number" ? snapshot.seasonDay : 0;
   return snapshot.age + Math.min(Math.max(day, 0), daysPerSeason) / daysPerSeason;
@@ -35,10 +31,7 @@ export function snapshotExactAge(
  * placed at that snapshot's exact age and labelled with whose it was. A player
  * seen at 19 and again at 20 counts at both.
  */
-export function bestOrByAge(
-  snapshots: ScoutSnapshot[],
-  daysPerSeason: number = basketballPlayerProfile.daysPerSeason
-): ScoutPoint[] {
+export function bestOrByAge(snapshots: ScoutSnapshot[], daysPerSeason: number): ScoutPoint[] {
   const best = new Map<number, ScoutSnapshot>();
   snapshots.forEach((snapshot) => {
     if (typeof snapshot.age !== "number" || typeof snapshot.overallRating !== "number") return;
@@ -93,7 +86,8 @@ const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ?
 /** Both lines with the caption that says what each is built from. */
 export function buildScoutReferences(
   snapshots: ScoutSnapshot[],
-  league: LeagueTeams | null
+  league: LeagueTeams | null,
+  daysPerSeason: number
 ): ScoutReferences {
   const all = scoutCoverage(snapshots);
   const inLeague = leagueSnapshots(snapshots, league);
@@ -118,8 +112,8 @@ export function buildScoutReferences(
   }
 
   return {
-    elite: { points: bestOrByAge(snapshots), caption: eliteCaption },
-    league: { points: bestOrByAge(inLeague), caption: leagueCaption },
+    elite: { points: bestOrByAge(snapshots, daysPerSeason), caption: eliteCaption },
+    league: { points: bestOrByAge(inLeague, daysPerSeason), caption: leagueCaption },
   };
 }
 
@@ -185,10 +179,7 @@ export interface ScoutRate {
  * earliest one RATE_MIN_DAYS..RATE_MAX_DAYS before it on the same team (a
  * transfer changes the training, so a pair across one says nothing).
  */
-export function scoutRatePairs(
-  snapshots: ScoutSnapshot[],
-  daysPerSeason: number = basketballPlayerProfile.daysPerSeason
-): ScoutRate[] {
+export function scoutRatePairs(snapshots: ScoutSnapshot[], daysPerSeason: number): ScoutRate[] {
   const byPlayer = new Map<string, ScoutSnapshot[]>();
   snapshots.forEach((snapshot) => {
     if (typeof snapshot.age !== "number" || typeof snapshot.overallRating !== "number") return;
@@ -236,7 +227,7 @@ export interface GroupRatePoint {
   age: number;
   /** OR per calendar day that counts as 100% at this age. */
   perDay: number;
-  /** "measured" from pairs at this age; "filled" from the squad curve's shape. */
+  /** "measured" from pairs at this age; "filled" from the sport's own age curve. */
   source: "measured" | "filled";
   /** The players behind a measured age's 100%, fastest first. */
   top: ScoutRate[];
@@ -245,13 +236,13 @@ export interface GroupRatePoint {
 /**
  * A group's pace reference by age: the mean of the RATE_TOP fastest players at
  * each age, made non-increasing after the peak like the squad curve. Ages
- * nobody was measured at take the squad curve's shape, scaled to meet the
- * nearest measured age. Empty when there are no pairs.
+ * nobody was measured at take `shape` - the sport's own age curve, any unit -
+ * scaled to meet the nearest measured age. Empty when there are no pairs.
  */
-export function groupRateByAge(rates: ScoutRate[], shape: ReferenceCurve): GroupRatePoint[] {
+export function groupRateByAge(rates: ScoutRate[], shape: (age: number) => number): GroupRatePoint[] {
   const byAge = new Map<number, ScoutRate[]>();
   rates.forEach((rate) => {
-    if (rate.age < REFERENCE_FIRST_AGE || rate.age > REFERENCE_LAST_AGE) return;
+    if (rate.age < RATE_FIRST_AGE || rate.age > RATE_LAST_AGE) return;
     const list = byAge.get(rate.age);
     if (list) list.push(rate);
     else byAge.set(rate.age, [rate]);
@@ -267,10 +258,10 @@ export function groupRateByAge(rates: ScoutRate[], shape: ReferenceCurve): Group
   });
   const smoothed = smoothFromPeak(means);
   const measuredAges = [...smoothed.keys()];
-  const shapeAt = (age: number) => shape.find((point) => point.age === age)?.perDay ?? 0;
+  const shapeAt = (age: number) => Math.max(0, shape(age) || 0);
 
   const curve: GroupRatePoint[] = [];
-  for (let age = REFERENCE_FIRST_AGE; age <= REFERENCE_LAST_AGE; age++) {
+  for (let age = RATE_FIRST_AGE; age <= RATE_LAST_AGE; age++) {
     const measured = smoothed.get(age);
     if (measured !== undefined) {
       curve.push({ age, perDay: measured, source: "measured", top: top.get(age)! });
@@ -310,4 +301,69 @@ export function ownOrRate(days: { date: string; or: number }[]): OwnRate | null 
   const span = daysApart(first.date, last.date);
   if (span < OWN_RATE_MIN_DAYS) return null;
   return { perDay: (last.or - first.or) / span, days: span, fromDate: first.date, toDate: last.date };
+}
+
+// --- The squad's own line ----------------------------------------------------------
+
+/** How far from a whole-age birthday a stored day may be to count for it. */
+const SQUAD_AGE_TOLERANCE_DAYS = 7;
+
+/**
+ * "Your squad's best OR at each age": for every whole age, the highest OR any
+ * player had on the day they reached it, from the stored history. Sampled at
+ * the birthday rather than as a max over the year, so each point means "at
+ * age N". The level counterpart of the scouted lines, for the Squad choice.
+ */
+export function squadBestOrByAge<E extends { date: string }>(
+  historyByPlayer: Map<string, E[]>,
+  exactAgeByPlayer: Map<string, number>,
+  daysPerSeason: number,
+  readOr: (entry: E) => number | null,
+  nameByPlayer: Map<string, string> = new Map(),
+  today: number = Date.now()
+): ScoutPoint[] {
+  const best = new Map<number, { or: number; playerId: string }>();
+
+  historyByPlayer.forEach((entries, playerId) => {
+    const exactAge = exactAgeByPlayer.get(playerId);
+    if (exactAge === undefined) return;
+
+    const nearest = new Map<number, { or: number; distance: number }>();
+    entries.forEach((entry) => {
+      const or = readOr(entry);
+      if (or === null) return;
+      const daysAgo = (today - Date.parse(`${entry.date}T00:00:00`)) / DAY_MS;
+      const age = exactAge - daysAgo / daysPerSeason;
+      const whole = Math.round(age);
+      const distance = Math.abs(age - whole) * daysPerSeason;
+      if (distance > SQUAD_AGE_TOLERANCE_DAYS) return;
+      const held = nearest.get(whole);
+      if (!held || distance < held.distance) nearest.set(whole, { or, distance });
+    });
+
+    nearest.forEach(({ or }, age) => {
+      if (or > (best.get(age)?.or ?? -Infinity)) best.set(age, { or, playerId });
+    });
+  });
+
+  return [...best.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([age, { or, playerId }]) => ({ x: age, y: or, note: nameByPlayer.get(playerId) }));
+}
+
+/**
+ * Only the players who were ever on the user's team: those with a day from
+ * the squad overview or the training-progress page (or a legacy day without a
+ * source - those all came from the training page). A profile visit stores an
+ * opponent's day too, and without this an opponent seen near a birthday would
+ * become "your squad's best".
+ */
+export function squadHistoryOnly<E extends { source?: string }>(
+  historyByPlayer: Map<string, E[]>
+): Map<string, E[]> {
+  return new Map(
+    [...historyByPlayer].filter(([, entries]) =>
+      entries.some((entry) => entry.source === undefined || entry.source !== "PlayerProfile")
+    )
+  );
 }

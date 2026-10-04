@@ -49,7 +49,7 @@ function bucketIndexFor(isoDate: string, bucketDays: number): number {
  *   count, never drop a player to zero.
  *
  * Callers should filter to entries usable on the metric being plotted *before*
- * calling this - see the note at the PlayerGrowthComparisonChart call site.
+ * calling this - see the comparison series in the Player Reports.
  */
 export function downsampleHistory<T extends { date: string }>(
   entries: T[],

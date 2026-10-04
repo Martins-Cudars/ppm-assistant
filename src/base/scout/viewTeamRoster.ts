@@ -1,39 +1,46 @@
-import { ROSTER_COLUMNS, RosterRow, parseRosterRow, teamIdFromHref } from "@/sports/basketball/parsers/teamRoster";
-import { captureScoutSnapshots } from "@/sports/basketball/scoutCapture";
-import { bestOrByAge, scoutCoverage } from "@/sports/basketball/scoutReference";
+import {
+  RosterLayout,
+  RosterRow,
+  parseRosterRow,
+  profileHrefOf,
+  teamIdFromHref,
+} from "@/base/scout/rosterParser";
+import { captureScoutSnapshots } from "@/base/scout/scoutCapture";
+import { scoutCoverage } from "@/base/scout/scoutReference";
 import { exportScoutSnapshots } from "@/storage/scoutSnapshotDb";
 import { PUBLIC_ACCOUNT_TEAM_IDS } from "@/storage/publicAccount";
+import { Sport } from "@/types/Sport";
 import { getCurrentSeason, getUserTeamId } from "@/utils/dom";
 import { showScoutNote } from "./scoutNote";
 
 /**
  * A team's "Players" page (players.html?data=<teamId>, or the user's own
- * without `data`). It lists age, height, AvQ, CL and OR for the whole roster -
- * no skills - so one visit is one scout snapshot per player. Nothing on the
- * page is replaced; a note above the table says what was stored.
+ * without `data`), in any sport. It lists age, AvQ, CL and OR (and height in
+ * basketball) for the whole roster - no skills - so one visit is one scout
+ * snapshot per player. Nothing on the page is replaced; a note above the table
+ * says what was stored.
  */
-const viewTeamRoster = () => {
+const viewTeamRoster = (sport: Sport, layout: RosterLayout) => () => {
   const table = document.getElementById("table-1") as HTMLTableElement | null;
   if (!table) return;
   // Another layout under the same id isn't a roster - don't guess at its columns.
-  if (table.querySelector("thead tr")?.children.length !== ROSTER_COLUMNS) return;
+  if (table.querySelector("thead tr")?.children.length !== layout.columns) return;
 
   const userTeamId = getUserTeamId();
   const teamId =
     teamIdFromHref(window.location.search) ?? (userTeamId !== "unknown" ? userTeamId : null);
   if (!teamId) return;
   // The logged-out demo team's players aren't real.
-  if (teamId === PUBLIC_ACCOUNT_TEAM_IDS.basketball) return;
+  if (teamId === PUBLIC_ACCOUNT_TEAM_IDS[sport]) return;
 
   const rows: RosterRow[] = [];
   table.querySelectorAll("tbody tr").forEach((tr) => {
     const cells = Array.from(tr.querySelectorAll("td"));
-    const profileLink = cells[1]?.querySelector(
-      'a[href*="player-profile"], a[href*="speletaja-profils"]'
-    );
+    const links = Array.from(cells[layout.name]?.querySelectorAll("a") ?? []);
     const row = parseRosterRow(
       cells.map((cell) => cell.textContent ?? ""),
-      profileLink?.getAttribute("href") ?? undefined
+      profileHrefOf(links.map((link) => link.getAttribute("href"))),
+      layout
     );
     if (row) rows.push(row);
   });
@@ -43,26 +50,30 @@ const viewTeamRoster = () => {
     document.querySelector(".ppm_menu_top_profil_name a")?.textContent?.trim() || undefined;
   const season = getCurrentSeason();
 
-  captureScoutSnapshots(rows, {
-    teamId,
-    teamName,
-    season: season?.season,
-    seasonDay: season?.seasonDay,
-    source: "TeamRoster",
-  })
+  captureScoutSnapshots(
+    rows,
+    {
+      teamId,
+      teamName,
+      season: season?.season,
+      seasonDay: season?.seasonDay,
+      source: "TeamRoster",
+    },
+    sport
+  )
     .then(async (written) => {
       if (written === 0) {
         showScoutNote(table, "could not store this roster.");
         return;
       }
-      const all = await exportScoutSnapshots("basketball");
+      const all = await exportScoutSnapshots(sport);
       const coverage = all ? scoutCoverage(all) : null;
+      const ages = all ? new Set(all.map((snapshot) => snapshot.age)).size : 0;
       showScoutNote(
         table,
         `stored ${rows.length} players of ${teamName ?? "this team"}` +
           (coverage
-            ? `. Scouted so far: ${coverage.players} players, ${coverage.teams} teams, ` +
-              `${bestOrByAge(all!).length} ages covered.`
+            ? `. Scouted so far: ${coverage.players} players, ${coverage.teams} teams, ${ages} ages covered.`
             : ".")
       );
     })

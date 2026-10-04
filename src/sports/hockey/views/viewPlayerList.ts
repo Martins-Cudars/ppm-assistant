@@ -8,6 +8,7 @@ import { collectBatchPlayerData } from "@/services/dataCollector";
 import { saveSquadRoster } from "@/storage/playerCache";
 import { createPlayerReportButton } from "@/base/playerReportButton";
 import { captureTodaysHistoryEntries } from "@/storage/skillHistoryCapture";
+import { captureSquadSnapshots } from "@/base/scout/squadSnapshots";
 import { saveUserSettings } from "@/storage/userSettings";
 import { extractLangFromUrl } from "@/utils/parsers";
 import { getPlayerPageForLang } from "@/sports/hockey/routes";
@@ -145,6 +146,10 @@ const viewPlayerList = () => {
   // worker merges rather than overwrites, so this composes with a gather walk
   // that already covered today.
   captureTodaysHistoryEntries(players, "PlayersList");
+
+  // The same players as scout snapshots, so the report's League and Elite
+  // lines include the user's own squad.
+  captureSquadSnapshots(players, "hockey");
 
   // Add button to open Player Report in new tab
   const playerReportButton = createPlayerReportButton("hockey");

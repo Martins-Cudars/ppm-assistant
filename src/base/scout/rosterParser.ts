@@ -1,19 +1,47 @@
 /**
- * Parsers for the two pages the scouted data comes from: a team's "Players"
- * page (players.html / speletaji.html) and the league table (league.html /
- * liga.html). Pure - they take text the views read from the page, so the
- * checks can run them without a DOM.
+ * Parsers for the two pages the scouted data comes from, in every sport: a
+ * team's "Players" page (players.html / speletaji.html) and the league table
+ * (league.html / liga.html). Pure - they take text the views read from the
+ * page, so the checks can run them without a DOM.
  */
 
 import { normalizePlayerId, stripThousands } from "@/base/captureUtils";
 
 /**
- * The roster table's columns, as on the live page (2026-10-02):
- * `# Name Fun ScP Age Hgt AvQ CL Con Popularity OR`. Read by position, not by
- * header text - the headers are translated, the order isn't.
+ * Where a sport's roster table keeps each value, by column position - the
+ * headers are translated, the order isn't. Read from the live pages:
+ * - basketball (2026-10-02): `# Name Fun ScP Age Hgt AvQ CL Con Popularity OR`
+ * - hockey (2026-10-04): `# Name Fun ScP Age AvQ CL Con Pop OR` - no height
+ * The user's own Players page has the same layout (Ene in place of Con).
  */
-export const ROSTER_COLUMNS = 11;
-const COLUMN = { name: 1, age: 4, height: 5, averageQuality: 6, careerLongevity: 7, overallRating: 10 };
+export interface RosterLayout {
+  columns: number;
+  name: number;
+  age: number;
+  height?: number;
+  averageQuality: number;
+  careerLongevity: number;
+  overallRating: number;
+}
+
+export const BASKETBALL_ROSTER: RosterLayout = {
+  columns: 11,
+  name: 1,
+  age: 4,
+  height: 5,
+  averageQuality: 6,
+  careerLongevity: 7,
+  overallRating: 10,
+};
+
+export const HOCKEY_ROSTER: RosterLayout = {
+  columns: 10,
+  name: 1,
+  age: 4,
+  averageQuality: 5,
+  careerLongevity: 6,
+  overallRating: 9,
+};
 
 export interface RosterRow {
   playerId: string;
@@ -32,29 +60,46 @@ function cellNumber(text: string | undefined): number | undefined {
 }
 
 /**
+ * The player's profile link among a name cell's links: the one whose `data=`
+ * is a player id. The country flag links there too ("country-profile.html?data=lva").
+ */
+export function profileHrefOf(hrefs: (string | null | undefined)[]): string | undefined {
+  return (
+    hrefs.find(
+      (href): href is string =>
+        !!href && !/country/i.test(href) && /[?&]data=\d+/.test(href)
+    ) ?? undefined
+  );
+}
+
+/**
  * One roster row from its cells' text and the profile link in the name cell.
  * Null when the row isn't a player with an age and an OR - a row from some
  * other table layout must not become a snapshot.
  */
-export function parseRosterRow(cells: string[], profileHref: string | undefined): RosterRow | null {
-  if (cells.length !== ROSTER_COLUMNS) return null;
+export function parseRosterRow(
+  cells: string[],
+  profileHref: string | undefined,
+  layout: RosterLayout
+): RosterRow | null {
+  if (cells.length !== layout.columns) return null;
 
   const playerId = normalizePlayerId(profileHref);
-  const age = cellNumber(cells[COLUMN.age]);
-  const overallRating = cellNumber(cells[COLUMN.overallRating]);
+  const age = cellNumber(cells[layout.age]);
+  const overallRating = cellNumber(cells[layout.overallRating]);
   if (!playerId || age === undefined || overallRating === undefined || overallRating <= 0) {
     return null;
   }
 
   // "5/6" - seasons of career left out of six.
-  const longevity = cells[COLUMN.careerLongevity]?.match(/(\d)\s*\/\s*6/)?.[1];
+  const longevity = cells[layout.careerLongevity]?.match(/(\d)\s*\/\s*6/)?.[1];
 
   return {
     playerId,
-    name: cells[COLUMN.name].trim(),
+    name: cells[layout.name].trim(),
     age,
-    height: cellNumber(cells[COLUMN.height]),
-    averageQuality: cellNumber(cells[COLUMN.averageQuality]),
+    height: layout.height !== undefined ? cellNumber(cells[layout.height]) : undefined,
+    averageQuality: cellNumber(cells[layout.averageQuality]),
     careerLongevity: longevity !== undefined ? parseInt(longevity, 10) : undefined,
     overallRating,
   };

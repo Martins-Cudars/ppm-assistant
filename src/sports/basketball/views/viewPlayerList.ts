@@ -4,10 +4,7 @@ import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vu
 import type { BasketballPlayerListItem } from "./types";
 import { captureBasketballPlayers } from "@/sports/basketball/capture";
 import { createPlayerReportButton } from "@/base/playerReportButton";
-import { captureScoutSnapshots } from "@/sports/basketball/scoutCapture";
-import { RosterRow } from "@/sports/basketball/parsers/teamRoster";
-import { isUsableNumber, normalizePlayerId } from "@/base/captureUtils";
-import { getCurrentSeason, getTeamNameFromUserPlayerList, getUserTeamId } from "@/utils/dom";
+import { captureSquadSnapshots } from "@/base/scout/squadSnapshots";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -74,34 +71,10 @@ const viewPlayerList = () => {
 
   // The same players as scout snapshots, so the report's ELITE and LEAGUE
   // lines include the user's own squad.
-  const userTeamId = getUserTeamId();
-  if (userTeamId !== "unknown") {
-    const season = getCurrentSeason();
-    const rows = items.flatMap(({ player }): RosterRow[] => {
-      const playerId = normalizePlayerId(player.id);
-      if (!playerId || !isUsableNumber(player.age) || !(player.overallRating > 0)) return [];
-      // Only what the overview parser actually read - a NaN must not be stored.
-      const read = (value: unknown) => (isUsableNumber(value) ? value : undefined);
-      return [
-        {
-          playerId,
-          name: player.name,
-          age: player.age,
-          height: read(player.height),
-          averageQuality: read(player.averageTrainingRatio),
-          careerLongevity: read(player.careerLongitivity),
-          overallRating: player.overallRating,
-        },
-      ];
-    });
-    captureScoutSnapshots(rows, {
-      teamId: userTeamId,
-      teamName: getTeamNameFromUserPlayerList().replace(/^unknown$/, "") || undefined,
-      season: season?.season,
-      seasonDay: season?.seasonDay,
-      source: "PlayersList",
-    }).catch((error) => console.error("[PlayerList] Scout snapshot failed:", error));
-  }
+  captureSquadSnapshots(
+    items.map((item) => item.player),
+    "basketball"
+  );
 
   if (!table.parentNode) {
     console.error("Table has no parent node");
