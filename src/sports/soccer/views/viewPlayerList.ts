@@ -5,6 +5,7 @@ import { parseSoccerListRow } from "@/sports/soccer/parsers/players";
 import { captureSoccerPlayers } from "@/sports/soccer/capture";
 import { createPlayerReportButton } from "@/base/playerReportButton";
 import type { SoccerPlayerListItem } from "./types";
+import { captureSquadSnapshots } from "@/base/scout/squadSnapshots";
 
 const viewPlayerList = () => {
   const table = document.getElementById("table-1");
@@ -30,6 +31,13 @@ const viewPlayerList = () => {
     items.map((item) => item.player),
     "PlayersList",
     { ownSquad: true }
+  );
+
+  // The same players as scout snapshots, so the report's League and Elite
+  // lines include the user's own squad.
+  captureSquadSnapshots(
+    items.map((item) => item.player),
+    "soccer"
   );
 
   const appContainer = document.createElement("div");

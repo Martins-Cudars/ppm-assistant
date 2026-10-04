@@ -17,6 +17,7 @@ import { parseSeasonText } from "@/base/captureUtils";
 import {
   BASKETBALL_ROSTER,
   HOCKEY_ROSTER,
+  SOCCER_ROSTER,
   parseLeagueIdentity,
   parseRosterRow as parseRow,
   profileHrefOf,
@@ -123,6 +124,20 @@ check("hockey's roster row: 10 columns, no height; the profile link among the na
   eq(parseRow(hockey, link, BASKETBALL_ROSTER), null, "basketball's layout rejects a hockey row");
   eq(parseRow(cells, href, HOCKEY_ROSTER), null, "and the other way round");
   eq(profileHrefOf(["/en/country-profile.html?data=lva"]), undefined, "a flag alone is no player");
+});
+
+check("soccer's roster row: hockey's layout, 10 columns", () => {
+  // The live row (2026-10-04): # Name Fun ScP Age AvQ CL Con Popularity OR
+  const soccer = ["0", "Hermanni Leppänen", "", "", "39", "41", "0/6", "84", "", "9"];
+  eq(parseRow(soccer, "/en/player.html?data=30057496-hermanni-leppanen", SOCCER_ROSTER), {
+    playerId: "30057496",
+    name: "Hermanni Leppänen",
+    age: 39,
+    height: undefined,
+    averageQuality: 41,
+    careerLongevity: 0,
+    overallRating: 9,
+  });
 });
 
 check("season text, team ids and the league identity", () => {

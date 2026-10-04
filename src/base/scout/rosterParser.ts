@@ -12,6 +12,7 @@ import { normalizePlayerId, stripThousands } from "@/base/captureUtils";
  * headers are translated, the order isn't. Read from the live pages:
  * - basketball (2026-10-02): `# Name Fun ScP Age Hgt AvQ CL Con Popularity OR`
  * - hockey (2026-10-04): `# Name Fun ScP Age AvQ CL Con Pop OR` - no height
+ * - soccer (2026-10-04): `# Name Fun ScP Age AvQ CL Con Popularity OR` - as hockey
  * The user's own Players page has the same layout (Ene in place of Con).
  */
 export interface RosterLayout {
@@ -42,6 +43,9 @@ export const HOCKEY_ROSTER: RosterLayout = {
   careerLongevity: 6,
   overallRating: 9,
 };
+
+/** Soccer's roster has hockey's columns (read from the page text; scripts can't run there). */
+export const SOCCER_ROSTER: RosterLayout = HOCKEY_ROSTER;
 
 export interface RosterRow {
   playerId: string;

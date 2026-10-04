@@ -755,6 +755,18 @@ Hockey was the first to follow; soccer is next.
 - Basketball's report runs on the same composable. Its chart option is now named "Squad"
   (it was "Squad best").
 - Hockey's capture, toggle and chart: **never run in a browser.**
+- **Soccer** followed the same day, with hockey's choices: under Squad, Pace stays against
+  soccer's reference table, and the OR line and "OR vs best" use the squad's best OR.
+  - The roster (`/en/players.html?data=<id>`, `/lv/speletaji.html`) has hockey's 10
+    columns (`SOCCER_ROSTER`). The league page is `league.html` / `liga.html`. Seasons are
+    112 days. The report already read the whole history; it gains the toggle, "OR vs best"
+    and the shared chart's reference options.
+  - Read from page text and the accessibility tree only - scripts can't run on the soccer
+    site. **Not confirmed:** the league dropdowns' `name` attributes (`season`,
+    `country`, `league_level`, `league_number` in the other sports). If they differ, the
+    league page saves nothing and shows no note.
+  - Abandoned "noname" teams list players at OR 9; they can't be best at any age.
+  - Never run in a browser.
 
 ## Soccer
 
@@ -956,7 +968,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | **Restore / import** | **NEVER RUN.** Not once, in any mode. |
 | Clear All Data | **Never run.** |
 | Squad-overview capture | **Never run in the browser.** |
-| Scouted rosters (basketball, hockey) | Parsing, merge, league list and the lines: **verified**, 22 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey and the v3 backup round trip: **never run in the browser.** |
+| Scouted rosters (basketball, hockey, soccer) | Parsing, merge, league list and the lines: **verified**, 23 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey and soccer 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey, soccer and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 
 The 98 assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
