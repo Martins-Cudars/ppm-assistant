@@ -214,7 +214,7 @@ check("same-day merge: incoming wins where present, stored survives where it's s
 
 // --- The lines --------------------------------------------------------------------
 
-check("best OR per whole age, at the best snapshot's exact age, naming the player", () => {
+check("best OR per age, at the best snapshot's exact age, naming the player", () => {
   const points = bestOrByAge([
     snap("1", 19, 400, { name: "A", teamName: "Reds" }),
     snap("2", 19, 520, { name: "B", teamName: "Blues", seasonDay: 14 }),
@@ -238,6 +238,35 @@ check("a player seen at two ages counts at both; rows without age or OR are skip
   ]);
   eq(points.map((p) => [Math.floor(p.x), p.y]), [[19, 500], [20, 600]]);
   eq(bestOrByAge([]), [], "nothing scouted");
+});
+
+check("a new season's youngest have a point of their own, before last season's late one", () => {
+  // Scouted on day 68 of 70, then again on day 5 of the next season: last
+  // season's 15-year-old (now 16) is the best "at 15", but he was nearly 16.
+  const points = bestOrByAge([
+    snap("1", 15, 530, { name: "Old", seasonDay: 68 }),
+    snap("1", 16, 540, { id: "1:2026-10-09", date: "2026-10-09", name: "Old", seasonDay: 5, season: 65 }),
+    snap("2", 15, 372, { id: "2:2026-10-09", date: "2026-10-09", name: "New", seasonDay: 5, season: 65 }),
+  ]);
+  eq(points.map((p) => p.y), [372, 530, 540]);
+  near(points[0].x, 15 + 5 / 70, 1e-9);
+  near(points[1].x, 15 + 68 / 70, 1e-9);
+  eq(bestOrAt(points, 15 + 5 / 70)?.value, 372, "a 15-year-old on day 5 has someone to compare with");
+  eq(bestOrAt(points, 15 + 5 / 70)?.note, "New");
+});
+
+check("parts of a season: a later, lower part of the same age is dropped; the last day stays in its age", () => {
+  // Day 40 saw one team only - its best is no measure of the group.
+  const dip = bestOrByAge([
+    snap("1", 19, 500, { seasonDay: 5 }),
+    snap("2", 19, 420, { seasonDay: 40 }),
+    snap("3", 19, 560, { seasonDay: 60 }),
+  ]);
+  eq(dip.map((p) => p.y), [500, 560]);
+
+  const lastDay = bestOrByAge([snap("1", 19, 500, { seasonDay: 70 }), snap("2", 20, 450, { seasonDay: 0 })]);
+  eq(lastDay.map((p) => [p.x, p.y]), [[20, 500], [20, 450]], "19 on day 70 is still 19's point");
+  eq(bestOrByAge([{ ...snap("1", 19, 500), seasonDay: undefined }]).map((p) => p.x), [19], "no day read");
 });
 
 const league: LeagueTeams = {

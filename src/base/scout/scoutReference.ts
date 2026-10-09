@@ -1,8 +1,9 @@
 /**
  * The ELITE and LEAGUE reference lines of the report's growth chart: the best
- * overall rating seen at each age among scouted players, in any sport. Pure
- * functions over the stored snapshots (src/types/ScoutSnapshot.ts). Ages
- * depend on the sport's season length, so every age reading takes it.
+ * overall rating seen at each age (by part of a season) among scouted players,
+ * in any sport. Pure functions over the stored snapshots
+ * (src/types/ScoutSnapshot.ts). Ages depend on the sport's season length, so
+ * every age reading takes it.
  *
  * - ELITE: every snapshot - whoever was best at that age, anywhere.
  * - LEAGUE: only players of the teams in the user's current league.
@@ -27,20 +28,45 @@ export function snapshotExactAge(snapshot: ScoutSnapshot, daysPerSeason: number)
 }
 
 /**
- * For each whole age, the highest OR among all snapshots taken at that age,
- * placed at that snapshot's exact age and labelled with whose it was. A player
- * seen at 19 and again at 20 counts at both.
+ * A line has a point per this part of a season, not per whole age. With one
+ * point per age the best was always a late-season snapshot, drawn near the
+ * next birthday - so early in a season the line began almost a year after the
+ * youngest players' age and they had nothing to be compared with.
+ */
+export const LEVEL_PARTS_PER_SEASON = 4;
+
+/**
+ * For each whole age and part of the season, the highest OR among all
+ * snapshots taken then, placed at that snapshot's exact age and labelled with
+ * whose it was. A player seen at 19 and again at 20 counts at both.
+ *
+ * Within one age a later part is kept only if it isn't below an earlier one:
+ * the earlier best has trained since, so a lower value is a visit that saw
+ * fewer teams, not a weaker group.
  */
 export function bestOrByAge(snapshots: ScoutSnapshot[], daysPerSeason: number): ScoutPoint[] {
   const best = new Map<number, ScoutSnapshot>();
   snapshots.forEach((snapshot) => {
     if (typeof snapshot.age !== "number" || typeof snapshot.overallRating !== "number") return;
-    const held = best.get(snapshot.age);
-    if (!held || snapshot.overallRating > held.overallRating!) best.set(snapshot.age, snapshot);
+    const day = typeof snapshot.seasonDay === "number" ? Math.max(snapshot.seasonDay, 0) : 0;
+    const part = Math.min(
+      LEVEL_PARTS_PER_SEASON - 1,
+      Math.floor((day / daysPerSeason) * LEVEL_PARTS_PER_SEASON)
+    );
+    const key = snapshot.age * LEVEL_PARTS_PER_SEASON + part;
+    const held = best.get(key);
+    if (!held || snapshot.overallRating > held.overallRating!) best.set(key, snapshot);
   });
 
+  const bestOfAge = new Map<number, number>();
   return [...best.entries()]
     .sort((a, b) => a[0] - b[0])
+    .filter(([, snapshot]) => {
+      const earlier = bestOfAge.get(snapshot.age!);
+      if (earlier !== undefined && snapshot.overallRating! < earlier) return false;
+      bestOfAge.set(snapshot.age!, snapshot.overallRating!);
+      return true;
+    })
     .map(([, snapshot]) => ({
       x: snapshotExactAge(snapshot, daysPerSeason)!,
       y: snapshot.overallRating!,
