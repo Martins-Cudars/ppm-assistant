@@ -625,6 +625,15 @@ OR at each age. **OR only for now** - a roster page shows no skills - and the gr
 - **Two groups, both "the best OR at each age":**
   - **ELITE**: among every captured player, whoever the team.
   - **LEAGUE**: among players of the teams in the user's current league.
+- **A point per quarter of a season, not per whole age** (`bestOrByAge()`,
+  `LEVEL_PARTS_PER_SEASON`; changed 2026-10-09). Each point sits at its snapshot's exact
+  age.
+  - With one point per whole age the winner was always a late-season snapshot. Rosters
+    scouted on day 68 of 70 put the "age 15" point at 15.97. On day 5 of the next season
+    the new 15-year-olds (15.07) were more than half a season before the line's start:
+    the line began at 16 and their "OR vs best" was "-".
+  - Within one age, a later quarter below an earlier one is dropped: it is a visit that
+    saw fewer teams. So a veteran's decline inside one season is not drawn.
 - **Capture is on visit only** - no automated walk over other managers' pages (the user's
   choice). Three pages feed it:
 
