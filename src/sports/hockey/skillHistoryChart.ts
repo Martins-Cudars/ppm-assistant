@@ -8,6 +8,9 @@
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { calculatePositions } from "@/classes/playerCalculations";
+import { overallFromSkills } from "@/sports/hockey/growthPace";
+import type { GrowthMetric } from "@/components/growthMetric";
+import { downsampleHistory } from "@/base/historyDownsample";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
 /**
@@ -70,19 +73,32 @@ export function readEntryBaseRating(entry: SkillHistoryEntry): number | null {
 }
 
 /**
- * Converts a single history entry into a {x: age, y: base rating} chart point,
- * or null when the entry has no skills to derive a rating from.
+ * The entry's overall rating, or the sum of its floored skills when only
+ * skills were stored. Null when it has neither.
  */
-export function historyEntryToAgePoint(
-  entry: SkillHistoryEntry,
-  currentExactAge: number
-): { x: number; y: number } | null {
-  const bestRating = readEntryBaseRating(entry);
-  if (bestRating === null) return null;
-
-  return { x: historyEntryAge(entry, currentExactAge), y: bestRating };
+export function entryOverallRating(entry: SkillHistoryEntry): number | null {
+  return (
+    readEntryOverallRating(entry) ?? (entry.skills ? overallFromSkills(entry.skills) : null)
+  );
 }
 
+/**
+ * One player's history as age points for a metric, thinned to about one per
+ * two weeks. Entries without a value on the metric are dropped BEFORE
+ * thinning, so a rating-only day can't swallow a window that had usable
+ * skills (and the other way round).
+ */
+export function historyPoints(
+  entries: SkillHistoryEntry[],
+  currentExactAge: number,
+  metric: GrowthMetric
+): { x: number; y: number }[] {
+  const read = metric === "or" ? entryOverallRating : readEntryBaseRating;
+  return downsampleHistory(entries.filter((entry) => read(entry) !== null)).map((entry) => ({
+    x: historyEntryAge(entry, currentExactAge),
+    y: read(entry)!,
+  }));
+}
 
 // Chart thinning is shared with basketball; re-exported so hockey imports keep working.
 export { CHART_BUCKET_DAYS, downsampleHistory } from "@/base/historyDownsample";

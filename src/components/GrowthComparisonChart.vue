@@ -3,12 +3,7 @@
     <div class="chart-header">
       <h3>Growth Comparison ({{ activeMetric === "or" ? "OR" : "Skill, no XP" }})</h3>
       <div v-if="!loading && series.length > 0" class="chart-controls">
-        <div class="chart-tabs">
-          <button :class="{ active: activeMetric === 'skill' }" @click="activeMetric = 'skill'">
-            Skill
-          </button>
-          <button :class="{ active: activeMetric === 'or' }" @click="activeMetric = 'or'">OR</button>
-        </div>
+        <GrowthMetricToggle v-model="activeMetric" />
         <div class="age-filter">
           <label>
             Age:
@@ -62,6 +57,8 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 
+import GrowthMetricToggle from "./GrowthMetricToggle.vue";
+import { useGrowthMetric } from "./growthMetric";
 import type {
   GrowthPoint as Point,
   GrowthReference,
@@ -84,7 +81,7 @@ const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 const minAge = ref(15);
 const maxAge = ref(30);
-const activeMetric = ref<"skill" | "or">("skill");
+const activeMetric = useGrowthMetric();
 
 // Distinct colors for any number of players: golden-angle hue rotation, the
 // same scheme as hockey's comparison chart.

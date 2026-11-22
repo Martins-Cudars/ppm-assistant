@@ -1,6 +1,7 @@
 <template>
   <div class="player-growth-chart">
     <div class="chart-header">
+      <GrowthMetricToggle v-model="metric" />
       <div class="age-filter">
         <label>
           Age:
@@ -23,12 +24,14 @@ import { playerGrowthPrediction } from "@/sports/hockey/settings";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
-  downsampleHistory,
-  getExactAge,
-  historyEntryToAgePoint,
-  readEntryBaseRating,
-} from "@/sports/hockey/skillHistoryChart";
+  applyGrowthMetricScale,
+  growthMetricScale,
+  orDatasets,
+  useGrowthMetric,
+} from "@/components/growthMetric";
+import { getExactAge, historyPoints } from "@/sports/hockey/skillHistoryChart";
 import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
@@ -38,6 +41,7 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 const historyEntries = ref<SkillHistoryEntry[]>([]);
+const metric = useGrowthMetric();
 
 // Default to a window around the player's current age rather than the full
 // 15-45 data range, so a young player's progress isn't squeezed into a
@@ -46,6 +50,9 @@ const historyEntries = ref<SkillHistoryEntry[]>([]);
 const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
 const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 
+const currentExactAge = () => getExactAge(props.player, getCurrentSeasonDay() || 1);
+
+// Skill mode only: the OR view needs none of this (see buildDatasets).
 const calculateData = () => {
   const projectedPureData = [];
   const projectedTotalData = [];
@@ -73,8 +80,7 @@ const calculateData = () => {
   }
 
   // Player position
-  const seasonDay = getCurrentSeasonDay() || 1;
-  const exactAge = getExactAge(props.player, seasonDay);
+  const exactAge = currentExactAge();
 
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
@@ -82,17 +88,8 @@ const calculateData = () => {
   // Actual skill history, sourced from prior visits to treninu-progress.html
   // and from profile visits. Entries captured from an unscouted player's
   // profile carry an overall rating but no attributes, so they yield no base
-  // rating and drop out here.
-  //
-  // That filtering happens *before* downsampling on purpose: were one of those
-  // rating-only entries the latest in its window, thinning first would discard
-  // the whole window even though earlier entries in it had usable skills.
-  const usable = historyEntries.value.filter(
-    (entry) => readEntryBaseRating(entry) !== null
-  );
-  const actualHistoryData = downsampleHistory(usable)
-    .map((entry) => historyEntryToAgePoint(entry, exactAge))
-    .filter((point): point is { x: number; y: number } => point !== null);
+  // rating and drop out here (historyPoints filters before thinning).
+  const actualHistoryData = historyPoints(historyEntries.value, exactAge, "skill");
 
   // Where the player lands if their recent pace holds, assuming balanced
   // training for their best position from here, starting from the red
@@ -114,26 +111,18 @@ const calculateData = () => {
   };
 };
 
-const renderChartWithLogic = () => {
-  if (!chartCanvas.value) return;
-
-  // v-model.number leaves the ref as a raw (empty) string while the user is
-  // mid-edit (e.g. backspacing before typing a new value), since Vue only
-  // converts via parseFloat when it succeeds. Fall back to sane defaults
-  // rather than feeding Chart.js a non-numeric axis bound, and skip
-  // rendering entirely on a momentarily-degenerate range (min >= max) - the
-  // next keystroke will produce a valid one.
-  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (safeMinAge >= safeMaxAge) return;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
-    }
-    chartInstance = null;
+const buildDatasets = (): ChartDataset<"line">[] => {
+  if (metric.value === "or") {
+    // OR view: the top-player table, the with-XP / base split and the
+    // projection are all skill-based and have no OR equivalent in the data,
+    // so only the current OR and the stored OR history are drawn - and only
+    // those are computed.
+    const exactAge = currentExactAge();
+    return orDatasets({
+      exactAge,
+      current: props.player.overallRating,
+      history: historyPoints(historyEntries.value, exactAge, "or"),
+    });
   }
 
   const {
@@ -225,23 +214,42 @@ const renderChartWithLogic = () => {
     });
   }
 
+  return datasets;
+};
+
+const renderChartWithLogic = () => {
+  if (!chartCanvas.value) return;
+
+  // v-model.number leaves the ref as a raw (empty) string while the user is
+  // mid-edit (e.g. backspacing before typing a new value), since Vue only
+  // converts via parseFloat when it succeeds. Fall back to sane defaults
+  // rather than feeding Chart.js a non-numeric axis bound, and skip
+  // rendering entirely on a momentarily-degenerate range (min >= max) - the
+  // next keystroke will produce a valid one.
+  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
+  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
+  if (safeMinAge >= safeMaxAge) return;
+
+  if (chartInstance) {
+    try {
+      chartInstance.destroy();
+    } catch (error) {
+      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
+    }
+    chartInstance = null;
+  }
+
   try {
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
       data: {
-        datasets,
+        datasets: buildDatasets(),
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: "Skill",
-            },
-          },
+          y: growthMetricScale(metric.value),
           x: {
             type: "linear",
             min: safeMinAge,
@@ -295,6 +303,14 @@ watch(
 
 watch([minAge, maxAge], () => {
   renderChartWithLogic();
+});
+
+// Switching metric swaps the datasets and axis title in place - no new chart.
+watch(metric, (next) => {
+  if (!chartInstance) return;
+  chartInstance.data.datasets = buildDatasets();
+  applyGrowthMetricScale(chartInstance, next);
+  chartInstance.update();
 });
 </script>
 

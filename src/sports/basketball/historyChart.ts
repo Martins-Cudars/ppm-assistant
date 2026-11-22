@@ -8,6 +8,7 @@
  */
 
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
+import type { GrowthMetric } from "@/components/growthMetric";
 import { downsampleHistory } from "@/base/historyDownsample";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@/sports/basketball/growthModel";
 
 export type Point = { x: number; y: number };
-export type GrowthMetric = "skill" | "or";
+export type { GrowthMetric };
 
 type ChartEntry = {
   playerId: string;

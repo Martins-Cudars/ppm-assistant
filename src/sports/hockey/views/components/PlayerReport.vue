@@ -15,13 +15,12 @@ import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { useCompareWith } from "@/base/scout/useCompareWith";
 import { squadBestOrByAge, squadHistoryOnly } from "@/base/scout/scoutReference";
-import { downsampleHistory } from "@/base/historyDownsample";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
 import {
   getExactAge,
   historyEntryAge,
-  readEntryBaseRating,
+  historyPoints,
   readEntryOverallRating,
 } from "@/sports/hockey/skillHistoryChart";
 import {
@@ -495,13 +494,8 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
   filteredPlayers.value.map((player: HockeyPlayer) => {
     const entries = allHistory.value?.get(player.id) ?? [];
     const exactAge = exactAgeOf(player);
-    const points = (read: (entry: SkillHistoryEntry) => number | null) =>
-      downsampleHistory(entries.filter((entry) => read(entry) !== null)).map((entry) => ({
-        x: historyEntryAge(entry, exactAge),
-        y: read(entry)!,
-      }));
-    const skill = points(readEntryBaseRating);
-    const or = points(readEntryOverallRating);
+    const skill = historyPoints(entries, exactAge, "skill");
+    const or = historyPoints(entries, exactAge, "or");
     return {
       id: player.id,
       label: player.name,
