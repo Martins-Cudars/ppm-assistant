@@ -24,6 +24,7 @@ import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/rel
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import type { OrPace } from "@/base/orGrowth";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
   applyGrowthMetricScale,
@@ -48,6 +49,8 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 const historyEntries = ref<SkillHistoryEntry[]>([]);
+// The OR view's pace, measured once when the history loads (src/base/orGrowth.ts).
+const orPace = ref<OrPace | null>(null);
 // An unscouted player has no skills: his chart opens on OR.
 const metric = useGrowthMetric(props.player.hasKnownSkills() ? {} : { force: "or" });
 
@@ -129,10 +132,10 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     // his skills where the history has them, else on his OR numbers, so an
     // unscouted player gets one too. No with-XP split: OR has no XP.
     const exactAge = currentExactAge();
-    const orPace = measureOrPace(historyEntries.value, exactAge);
+    const pace = orPace.value;
     const projection = orProjectionDataset(
-      orProjectionPoints(props.player.overallRating, exactAge, orPace, 45),
-      orPace?.pace != null ? { value: orPace.pace, provisional: orPace.provisional } : null
+      orProjectionPoints(props.player.overallRating, exactAge, pace, 45),
+      pace?.pace != null ? { value: pace.pace, provisional: pace.provisional } : null
     );
     return [
       orReferenceDataset(relativeOrReference),
@@ -310,6 +313,7 @@ const renderChartWithLogic = () => {
 const loadHistory = () => {
   getSkillHistoryForPlayer(props.player.id).then((entries) => {
     historyEntries.value = entries;
+    orPace.value = measureOrPace(entries, currentExactAge());
     renderChartWithLogic();
   });
 };

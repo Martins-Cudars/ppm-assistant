@@ -59,7 +59,8 @@ const history = (
   sport === "hockey" ? backup.skillHistory : (backup.sportSkillHistory?.[sport] ?? [])
 ) as SkillHistoryEntry[];
 for (const entry of history) {
-  if (!entry.skills || entry.date < eraStart) continue;
+  // The OR pace reads OR-only days too (an unscouted player's profile visits).
+  if ((metric === "skill" && !entry.skills) || entry.date < eraStart) continue;
   const list = byPlayer.get(entry.playerId);
   if (list) list.push(entry);
   else byPlayer.set(entry.playerId, [entry]);
@@ -105,16 +106,21 @@ for (const [id, stored] of Object.entries(cache.players)) {
 
     const window = history.slice(start, end + 1);
     const last = window[window.length - 1];
-    if (last.skills && daysBetween(window[0].date, last.date) >= PACE_MIN_SPAN_DAYS) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const skillPace = measureGrowthPace(window as any, exactAgeNow, bestPositionRating(last.skills as any).name);
-      // basePace, not pace: the projection applies these factors to the base
-      // (main-skill) part only, so they have to be measured on it. The OR
-      // projection scales the whole OR pace.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const orPace = metric === "or" ? measureOrPace(window as any, exactAgeNow) : null;
-      const value = metric === "or" ? orPace?.pace : skillPace?.basePace;
-      const midAge = metric === "or" ? orPace?.midAge : skillPace?.midAge;
+    if (daysBetween(window[0].date, last.date) >= PACE_MIN_SPAN_DAYS) {
+      // basePace, not pace: the skill projection applies these factors to the
+      // base (main-skill) part only, so they have to be measured on it. The OR
+      // projection scales the whole OR pace, which needs no skills on the
+      // window's last day.
+      const measured =
+        metric === "or"
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            measureOrPace(window as any, exactAgeNow)
+          : last.skills
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              measureGrowthPace(window as any, exactAgeNow, bestPositionRating(last.skills as any).name)
+            : null;
+      const value = measured === null ? null : "basePace" in measured ? measured.basePace : measured.pace;
+      const midAge = measured?.midAge;
       if (value != null && midAge != null) {
         const band = bandOf(midAge).fromAge;
         const bucket = paces.get(band) ?? { values: [], players: new Set<string>() };

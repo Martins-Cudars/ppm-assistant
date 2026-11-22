@@ -33,7 +33,7 @@
  *   @25 column computes it.
  *
  * The OR view draws the same without XP: the squad's best OR, today's OR, the
- * OR history and the projection at the player's OR pace (measureBasketballOrPace).
+ * OR history and the projection at the player's OR pace (basketballOrModel).
  */
 import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
@@ -44,14 +44,13 @@ import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
   REFERENCE_LAST_AGE,
   buildReferenceCurve,
-  measureBasketballOrPace,
+  basketballOrModel,
   measureBasketballPace,
 } from "@/sports/basketball/growthModel";
 import {
   Point,
   buildSquadBestCurve,
   historyPoints,
-  orProjectionPoints,
   projectionPoints,
 } from "@/sports/basketball/historyChart";
 import { exportSkillHistory, getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
@@ -149,16 +148,16 @@ const load = async () => {
     curve,
     REFERENCE_LAST_AGE + 1
   );
-  // Equal to the skill pace for a player with skills; an unscouted player's
-  // is read from his OR numbers.
-  const measuredOr = measureBasketballOrPace(own, exactAge, curve);
+  // The same window as the skill pace for a player with skills, so the same
+  // pace; an unscouted player's is read from his OR numbers.
+  const orModel = basketballOrModel(curve);
+  const measuredOr = orModel.measureOrPace(own, exactAge);
   orPace.value =
     measuredOr?.pace != null ? { value: measuredOr.pace, provisional: measuredOr.provisional } : null;
-  orProjection.value = orProjectionPoints(
+  orProjection.value = orModel.orProjectionPoints(
     props.player.overallRating,
     exactAge,
     measuredOr,
-    curve,
     REFERENCE_LAST_AGE + 1
   );
   render();

@@ -6,8 +6,9 @@
  * - The reference is the top-5% line's smoothed growth rate
  *   (smoothedSeasonGains) up to 23, the squad's own decline from 24, scaled
  *   to the smoothed rate at 23 (the user's choice).
- * - Juniors' faster pace is divided out by the age factors, so it isn't
- *   carried to 25.
+ * - Juniors' faster pace is divided out by the junior correction of the
+ *   rate (JUNIOR_RATE_FACTORS), so an average 15-year-old doesn't read 100%
+ *   and his pace isn't carried to 25.
  * - One skill a day at the position's ratios measures the same base pace as
  *   a split, and camps are found per skill.
  */
@@ -60,11 +61,19 @@ check("reference: the top-5% line's smoothed rate up to 23, the squad's own from
   near(curveGainBetween(23, 25), slope23 + Math.round(0.92 * slope23), 1e-9, "23 + 24");
 });
 
-check("age factors: juniors' faster pace is divided out", () => {
-  eq(agePaceFactor(15.3), 1.78);
-  eq(agePaceFactor(16.9), 1.23);
-  eq(agePaceFactor(17), 1.0);
-  eq(agePaceFactor(28), 1.0);
+check("juniors: the rate at 15 and 16 carries the correction, the age factors are 1", () => {
+  near(expectedSeasonGain(15.3), smoothed[15] * 1.78, 1e-9, "15: 1.78 x the line's rate");
+  near(expectedSeasonGain(16.9), smoothed[16] * 1.23, 1e-9, "16: 1.23 x");
+  eq(expectedSeasonGain(17.2), smoothed[17], "17: the line's rate");
+  [15.3, 16.9, 17, 28].forEach((age) => eq(agePaceFactor(age), 1.0, `factor at ${age}`));
+});
+
+check("juniors: the same points read the same Pace at 15 as the squad median does at 17", () => {
+  // 0.53 x the rate at 17 is the 17+ median; a 15-year-old who gains what the
+  // measured 15-year-old median gains (0.95 of the line's raw rate at 15)
+  // reads about the same, not 95%.
+  const pace15 = (0.95 * smoothed[15]) / expectedSeasonGain(15.5)!;
+  near(pace15, 0.53, 0.02, "15-year-old median");
 });
 
 // --- A side midfielder trained one skill a day, at the SM ratios ---------------

@@ -279,7 +279,8 @@ adding it.
 >
 > **The factors against that rate:** hockey **1.00 / 0.96 / 0.96 / 0.88** (27 / 11 / 11 / 3
 > players, base pace 59% at ≤21); soccer, all history, **1.78 at 15, 1.23 at 16**, 1.00
-> from 17 (26 / 28 / 27 players). Against the old table they were 1.00 / 0.95 / 0.67 / 0.49
+> from 17 (26 / 28 / 27 players). Soccer's junior factors now scale its rate instead; see
+> "Soccer juniors' Pace, corrected" below. Against the old table they were 1.00 / 0.95 / 0.67 / 0.49
 > and 1.4 / 1.18; against the line's raw steps 1.00 / 0.93 / 1.03 / 1.00 and 1.74 / 0.80.
 > `scripts/measure-age-factors.ts` takes `SPORT=soccer`. The rest of this section is the
 > measurement against the old table.
@@ -298,6 +299,29 @@ adding it.
 > Hockey 16-year-olds still project higher than in 4.0.1 (Slaidins 843 vs 673): the
 > smoothed rate keeps the line's 90 a season at 15 (the fit keeps its ends), so a window at
 > 15.9–16.4 reads 80%, and the line rises 874 from 16 to 25 against the old table's 853.
+>
+> **Soccer juniors' Pace, corrected (2026-11-23, the user's report).** Reinis Rītiņš, a
+> 15-year-old with an average training ratio (71), read 100% Pace. Nothing clamped it and
+> camps don't touch Pace. His window was 2026-09-25 to 11-20 (56 days, none skipped):
+> 125.5 skill points a season, so 41.8 base a season (SD weights sum to 3), against the
+> line's smoothed rate of 42 at 15. That rate is the fitted line's first step, kept as
+> fitted: the rating/OR share is low and flat at 15–16 (0.219, 0.222, then 0.268 at 17),
+> where few players with skills were seen. So every 15-year-old read high: on the backup
+> the three 15-year-olds were the top three Paces (100–114%, ratios 71–78). The squad's
+> best ratios (81–85) read 49–64%. Pace against training ratio was r = 0.15.
+>
+> The age factors 1.78 / 1.23 already corrected this for the projections, but not for the
+> Pace column. They now scale the rate at 15 and 16 instead (`JUNIOR_RATE_FACTORS`, OR:
+> `OR_JUNIOR_RATE_FACTORS` 1.35 / 1.23), and soccer's age factors are all 1.00. The
+> projections are exactly as before, every player's @25 unchanged on the backup. Pace at
+> 15–16 now reads on the 17+ scale: Rītiņš 56%, Evijs Lācis 114% → 64%, Gints Kaklarots
+> 83% → 47%. Squad medians are 55% under 17 and 55% from 17, and Pace against training
+> ratio is r = 0.40. Re-measuring with `measure-age-factors.ts` now reads 1.00 at 15, 16
+> and 17+.
+>
+> Hockey shows no such junior effect: median Pace 84% under 17 and 83% from 17. Hockey
+> Pace doesn't track training ratio (r = −0.15, 44 players). See "Why training quality
+> is not in the model".
 
 A single pace carried to 25 was too optimistic. At this team, players slow down faster than
 the curve does, so projections multiply each future year by an age factor relative to ages
@@ -486,23 +510,31 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
     minimums. OR is a whole number and these days are occasional visits, so no day can be
     judged a camp. The rate is therefore the calendar rate, camps included, and the
     projection adds no camp allowance on top.
-  - **When both can be measured**, the one with the newer last day wins (skills on a tie).
+  - **Skills come first.** Whenever the skill pace would accept a skilled window, the OR
+    pace reads it, and OR-only days are ignored, as the skill pace ignores them. The OR
+    numbers are read only without such a window, so the pace never depends on which
+    capture came last. The window, cleaning and camp record are one function,
+    `measureSkilledWindow()` in `src/base/gainCleaning.ts`, shared by the hockey/soccer and
+    basketball skill paces and the OR pace.
   - **The projection** is today's OR + pace ÷ the age factor at the window's middle × the
     line's age-adjusted rise, with the camp allowance on the skills basis. It stops at 35,
     as the skill projection does.
 - **Own age factors.** `scripts/measure-age-factors.ts METRIC=or` measures the OR pace like
-  the base pace. Soccer's juniors differ: its rating line's smoothed gain at 15 is low
-  against 17+ compared with the OR line's, so the base pace's 1.78 would divide a
-  15-year-old's OR pace too far.
+  the base pace, over every window, including OR-only ones. Soccer's juniors differ: its
+  rating line's smoothed gain at 15 is low against 17+ compared with the OR line's, so the
+  base pace's 1.78 would divide a 15-year-old's OR pace too far. Soccer's junior values
+  scale the rate at 15 and 16, not the pace (see "Soccer juniors' Pace, corrected").
 
   | Sport | Bands | Skill (base pace) | OR pace |
   |---|---|---|---|
   | Hockey (since 2025-12-01) | ≤21 / 22 / 25 / 28 | 1.00 / 0.96 / 0.96 / 0.88 | **1.00 / 0.94 / 0.94 / 0.78** |
-  | Soccer (all history) | 15 / 16 / 17+ | 1.78 / 1.23 / 1.00 | **1.35 / 1.23 / 1.00** |
+  | Soccer (all history), junior rate | 15 / 16 / 17+ | 1.78 / 1.23 / 1.00 | **1.35 / 1.23 / 1.00** |
 
 - **Basketball** measures OR growth the same way against its squad reference
-  (`measureBasketballOrPace`). The reference is skill points per normal day and OR is their
-  sum, so a player with skills gets exactly his skill pace. The projection is today's OR +
+  (`basketballOrModel(curve)`, the same `createOrModel` as hockey and soccer, with the curve
+  and no age factors). The reference is skill points per normal day and OR is their sum. A
+  player with skills is read on the skill pace's own window over all seven skills, so he
+  gets exactly his skill pace. The projection is today's OR +
   pace × the reference's points to each age, the points `projectBasketball` spends.
 - **On the 2026-11-22 backup** (OR @25, or at +3 years for players over 22). The Skill
   columns are the Player Report's: pace, Skill @25 and the OR of the same projected skills.
@@ -515,7 +547,7 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
   | Mairis Grīns (hockey, @31) | 28.4 | 95% | 1117 | 2392 | 88% | 2394 |
   | Jānis Riekstiņš (soccer) | 17.7 | 57% | 456 | 1490 | 60% | 1595 |
   | Kristofers Vārna (soccer) | 22.7 | 64% | 462 | 1536 | 61% | 1537 |
-  | Reinis Rītiņš (soccer) | 15.7 | 100% | 436 | 1399 | 70% | 1395 |
+  | Reinis Rītiņš (soccer) | 15.7 | 56% | 436 | 1399 | 52% | 1395 |
 
   From 18 the OR projection lands within ~1% of the report's OR @25 in hockey. Hockey's
   15–16-year-olds read ~7% lower: their OR factor is the ≤21 band's 1.00, measured mostly

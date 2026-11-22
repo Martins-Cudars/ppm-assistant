@@ -26,7 +26,7 @@
 
 import { calculatePositions } from "@/classes/playerCalculations";
 import { calculateSkillWithExp } from "@/base/calculations";
-import { CleaningOptions, cleanedGains, daysBetween } from "@/base/gainCleaning";
+import { CleaningOptions, daysBetween, measureSkilledWindow } from "@/base/gainCleaning";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
 type Skills = Record<string, number>;
@@ -286,35 +286,14 @@ export function createGrowthModel<TSkills extends Skills>(config: GrowthConfig<T
     const weights = mainWeights(positionName);
     if (!weights || weights.length === 0) return null;
 
-    const usable = entries
-      .filter((entry): entry is SkilledEntry => !!entry.skills)
-      .sort((a, b) => a.date.localeCompare(b.date));
-    if (usable.length < 2) return null;
-
-    const last = usable[usable.length - 1];
-    const first = usable.find((entry) => daysBetween(entry.date, last.date) <= config.pace.windowDays);
-    if (!first || first === last) return null;
-
-    const spanDays = daysBetween(first.date, last.date);
-    const cleaned = cleanedGains(usable.slice(usable.indexOf(first)), SKILL_NAMES, spanDays, config.cleaning);
-    if (cleaned.measuredDays < config.pace.provisionalMinDays) return null;
-
-    // The camp record reads a full season, not just the pace window - camps
-    // come once or twice a season, so the window can easily miss one. Without
-    // a season of history, assume the full allowance until the player's own
-    // record exists.
-    const seasonStart = usable.find(
-      (entry) => daysBetween(entry.date, last.date) <= config.camps.lookbackDays
-    )!;
-    const seasonSpan = daysBetween(seasonStart.date, last.date);
-    const campDaysAssumed = daysBetween(usable[0].date, last.date) < config.camps.lookbackDays;
-    const campDaysPerSeason = campDaysAssumed
-      ? config.camps.maxDaysPerSeason
-      : Math.min(
-          config.camps.maxDaysPerSeason,
-          cleanedGains(usable.slice(usable.indexOf(seasonStart)), SKILL_NAMES, seasonSpan, config.cleaning)
-            .skippedCampDays
-        );
+    const measured = measureSkilledWindow(entries, SKILL_NAMES, {
+      windowDays: config.pace.windowDays,
+      provisionalMinDays: config.pace.provisionalMinDays,
+      camps: config.camps,
+      cleaning: config.cleaning,
+    });
+    if (!measured) return null;
+    const { first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed } = measured;
 
     const perSeason = (value: number) => (value / cleaned.measuredDays) * config.daysPerSeason;
 
