@@ -1,0 +1,5 @@
+overrides:
+  picomatch: 2.3.2
+
+allowBuilds:
+  esbuild: true
