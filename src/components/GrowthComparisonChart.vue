@@ -94,7 +94,7 @@
                   :title="row.empty ? `${row.label}: no ${activeMetric === 'or' ? 'OR' : 'Skill'} points` : row.label"
                   @mouseenter="hoveredId = row.id"
                   @mouseleave="hoveredId = null"
-                  @focusin="focusedId = row.id"
+                  @focusin="onRowFocus(row.id, $event)"
                   @focusout="focusedId = null"
                 >
                   <input type="checkbox" :checked="!row.hidden" @change="togglePlayer(row.id)" />
@@ -155,6 +155,9 @@ const props = withDefaults(
 const root = ref<HTMLElement | null>(null);
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
+// The series the chart was built from: dataset i + 1 is chartSeries[i]. Until
+// a rerender catches up, props.series can already be a different list.
+let chartSeries: GrowthSeries[] = [];
 const minAge = ref(15);
 const maxAge = ref(30);
 const activeMetric = useGrowthMetric();
@@ -202,11 +205,19 @@ const referenceHidden = ref(false);
 // The row under the mouse wins over the one with keyboard focus.
 const hoveredId = ref<string | null>(null);
 const focusedId = ref<string | null>(null);
+// A hidden line, or one with no points on this metric, has nothing to pick
+// out, so the others aren't dimmed for it.
 const highlightedId = computed(() => {
   const id = hoveredId.value ?? focusedId.value;
-  // A hidden line has nothing to pick out, so the others aren't dimmed for it.
-  return id !== null && !hiddenIds.value.has(id) ? id : null;
+  if (id === null || hiddenIds.value.has(id)) return null;
+  const series = props.series.find((candidate) => candidate.id === id);
+  return series && series[activeMetric.value].length > 0 ? id : null;
 });
+// Only keyboard focus highlights: a clicked checkbox keeps the focus, and
+// its line would stay picked out after the mouse has left the list.
+const onRowFocus = (id: string, event: FocusEvent) => {
+  focusedId.value = (event.target as Element).matches(":focus-visible") ? id : null;
+};
 
 const setHidden = (ids: string[], hidden: boolean) => {
   const next = new Set(hiddenIds.value);
@@ -369,6 +380,7 @@ const destroyChart = () => {
     console.error("[GrowthComparisonChart] Failed to destroy previous chart:", error);
   }
   chartInstance = null;
+  chartSeries = [];
 };
 
 const renderChart = () => {
@@ -378,6 +390,7 @@ const renderChart = () => {
   destroyChart();
 
   try {
+    chartSeries = props.series;
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
       data: { datasets: buildDatasets() },
@@ -419,7 +432,7 @@ const renderChart = () => {
 const applyVisibility = () => {
   if (!chartInstance) return;
   chartInstance.setDatasetVisibility(0, !referenceHidden.value);
-  props.series.forEach((series, index) => {
+  chartSeries.forEach((series, index) => {
     chartInstance!.setDatasetVisibility(index + REFERENCE_DATASETS, !hiddenIds.value.has(series.id));
   });
   chartInstance.update();
@@ -432,7 +445,7 @@ const applyHighlight = () => {
   if (!chartInstance) return;
   const [reference, ...players] = chartInstance.data.datasets as ChartDataset<"line">[];
   reference.borderColor = referenceLineColor();
-  props.series.forEach((series, index) => {
+  chartSeries.forEach((series, index) => {
     if (players[index]) Object.assign(players[index], playerLineStyle(index, series.id));
   });
   chartInstance.update("none");
@@ -455,7 +468,7 @@ watch(activeMetric, (metric) => {
   const [reference, ...players] = chartInstance.data.datasets as ChartDataset<"line">[];
   reference.data = currentReference.value?.[metric] ?? [];
   reference.label = currentReference.value?.label ?? "";
-  props.series.forEach((series, index) => {
+  chartSeries.forEach((series, index) => {
     if (players[index]) Object.assign(players[index], seriesStyle(series));
   });
   applyGrowthMetricScale(chartInstance, metric);
