@@ -201,12 +201,14 @@ check("hockey: the chart points start at today's OR, rise, stop at 35; none with
   eq(hockey.orProjectionPoints(715, 17.4, null, 45), [], "no pace");
 });
 
-check("soccer: the OR line's rate to 23, the squad's decline scaled to it from 24; own junior factors", () => {
+check("soccer: the OR line's rate to 23 (juniors corrected), the squad's decline scaled to it from 24", () => {
   const gains = smoothedOrSeasonGains(soccerOrLine);
   eq(soccer.orExpectedSeasonGain(20.5), gains[20], "20: the line's smoothed rate");
   eq(soccer.orExpectedSeasonGain(25.5), Math.round(soccer.SQUAD_SLOPE_SHARE_FROM_24[25] * gains[23]), "25");
   eq(soccer.orExpectedSeasonGain(34.5), null, "34: the squad stops gaining");
-  eq(soccer.OR_AGE_PACE_FACTORS.map((band) => band.factor), [1.35, 1.23, 1], "1.35 / 1.23 / 1");
+  near(soccer.orExpectedSeasonGain(15.5), gains[15] * 1.35, "15: the junior correction, 1.35");
+  near(soccer.orExpectedSeasonGain(16.5), gains[16] * 1.23, "16: 1.23");
+  eq(soccer.OR_AGE_PACE_FACTORS.map((band) => band.factor), [1, 1, 1], "the factors are 1: it's in the rate");
 });
 
 // --- Basketball ----------------------------------------------------------------

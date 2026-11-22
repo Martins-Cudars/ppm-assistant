@@ -78,19 +78,41 @@ export const REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Object.
 );
 
 /**
- * How fast players pace at each age against that reference, relative to 17+
- * (1.0). Re-measured 2026-11-23 against the smoothed rate on the 2026-11-22
- * backup with scripts/measure-age-factors.ts (SPORT=soccer, all history):
- * 17+ paces a median 53% (27 players), 15 95% (26), 16 66% (28). Juniors pace
- * faster, and the line's smoothed rate starts at only 42 a season at 15, so
- * the factors divide that out: a junior's pace isn't carried to 25. The
- * measured pace is divided by its age's factor and each future year applies
- * its own, as hockey's bands do. Against the old table these were 1.4 / 1.18,
- * against the line's raw steps 1.74 / 0.80.
+ * The junior correction of the 100% rate at 15 and 16 (2026-11-23). The
+ * line's smoothed rate starts at only 42 a season at 15 (58 at 16, 64 at 17):
+ * the fit's rating/OR share is low and flat at 15-16, where few players with
+ * skills were seen. Against it the squad's juniors paced a median 95% at 15
+ * and 66% at 16 against 53% from 17 (scripts/measure-age-factors.ts,
+ * SPORT=soccer, all history, 26 / 28 / 27 players on the 2026-11-22 backup),
+ * so an average 15-year-old read ~100%: Reinis Rītiņš, training ratio 71,
+ * read 100% while the squad's best ratios (81-85) read 49-64%.
+ *
+ * Those ratios, 1.78 and 1.23, were age factors until then, which fixed the
+ * projections but not the Pace column. They now scale the rate itself, so a
+ * 15-year-old's Pace reads on the same scale as a 17-year-old's (Rītiņš 56%)
+ * and the projections are exactly as before: pace / factor x Σ gain x factor
+ * is pace' x Σ (gain x factor) with pace' = pace / factor.
+ */
+export const JUNIOR_RATE_FACTORS: Readonly<Record<number, number>> = { 15: 1.78, 16: 1.23 };
+
+/** A reference rate's gains at the junior ages, scaled by their factors. */
+export const juniorRates = (
+  gains: Readonly<Record<number, number>>,
+  factors: Readonly<Record<number, number>>
+): Record<number, number> =>
+  Object.fromEntries(Object.entries(factors).map(([age, factor]) => [age, gains[Number(age)] * factor]));
+
+/**
+ * How fast players pace at each age against the reference, relative to 17+.
+ * All 1.00 since the junior correction moved into the rate
+ * (JUNIOR_RATE_FACTORS); the bands stay so scripts/measure-age-factors.ts
+ * keeps measuring 15, 16 and 17+ separately (it should now read ~1.00 at
+ * each). Against the old table the junior factors were 1.4 / 1.18, against
+ * the line's raw steps 1.74 / 0.80.
  */
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
-  { fromAge: 0, factor: 1.78 },
-  { fromAge: 16, factor: 1.23 },
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 16, factor: 1.0 },
   { fromAge: 17, factor: 1.0 },
 ];
 
@@ -126,7 +148,11 @@ export const soccerGrowthConfig: GrowthConfig<SoccerSkills> = {
   bonusCapRatio: soccerPlayerProfile.bonusCapRatio ?? 1,
   daysPerSeason: soccerPlayerProfile.daysPerSeason,
   growthTable: relativeSkillReference,
-  referenceSlopeOverrides: { ...SMOOTHED_SEASON_GAINS, ...REFERENCE_SLOPE_FROM_24 },
+  referenceSlopeOverrides: {
+    ...SMOOTHED_SEASON_GAINS,
+    ...juniorRates(SMOOTHED_SEASON_GAINS, JUNIOR_RATE_FACTORS),
+    ...REFERENCE_SLOPE_FROM_24,
+  },
   agePaceFactors: AGE_PACE_FACTORS,
   pace: {
     windowDays: PACE_WINDOW_DAYS,
@@ -181,24 +207,29 @@ export const OR_REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Obje
 );
 
 /**
- * The OR pace's age factors, the same bands as AGE_PACE_FACTORS. Measured
- * 2026-11-23 with scripts/measure-age-factors.ts SPORT=soccer METRIC=or
- * ERA_START=2000-01-01 on the 2026-11-22 backup, all history as for the skill
- * factors (OR pace 55% from 17): 1.35 at 15, 1.23 at 16 (26 / 28 players).
- * Against the rating line the base pace reads 1.78 at 15: that line's
- * smoothed gain at 15 is lower relative to 17+ than the OR line's, so the
- * skill factor would divide a 15-year-old's OR pace by too much and project
- * him low.
+ * The OR pace's junior correction, as JUNIOR_RATE_FACTORS for the skill
+ * pace. Measured 2026-11-23 with scripts/measure-age-factors.ts SPORT=soccer
+ * METRIC=or ERA_START=2000-01-01 on the 2026-11-22 backup, all history as
+ * for the skill factors (OR pace 55% from 17): 1.35 at 15, 1.23 at 16 (26 /
+ * 28 players). Against the rating line the base pace reads 1.78 at 15: that
+ * line's smoothed gain at 15 is lower relative to 17+ than the OR line's.
  */
+export const OR_JUNIOR_RATE_FACTORS: Readonly<Record<number, number>> = { 15: 1.35, 16: 1.23 };
+
+/** The OR pace's age factors: all 1.00, the junior correction is in the rate. */
 export const OR_AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
-  { fromAge: 0, factor: 1.35 },
-  { fromAge: 16, factor: 1.23 },
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 16, factor: 1.0 },
   { fromAge: 17, factor: 1.0 },
 ];
 
 export const { measureOrPace, projectOr, orProjectionPoints, orExpectedSeasonGain, orAgePaceFactor } =
   createOrGrowthModel(soccerGrowthConfig, {
     line: relativeOrReference,
-    slopes: { ...OR_SMOOTHED_SEASON_GAINS, ...OR_REFERENCE_SLOPE_FROM_24 },
+    slopes: {
+      ...OR_SMOOTHED_SEASON_GAINS,
+      ...juniorRates(OR_SMOOTHED_SEASON_GAINS, OR_JUNIOR_RATE_FACTORS),
+      ...OR_REFERENCE_SLOPE_FROM_24,
+    },
     agePaceFactors: OR_AGE_PACE_FACTORS,
   });
