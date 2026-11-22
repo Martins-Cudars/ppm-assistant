@@ -212,3 +212,82 @@ export function cleanedGains<K extends string>(
     skippedCampDays,
   };
 }
+
+export interface SkilledWindowOptions {
+  /** How far back from the latest entry with skills the window reaches. */
+  windowDays: number;
+  /** Fewer measured days than this: no window. */
+  provisionalMinDays: number;
+  camps: {
+    /** The camp allowance's cap per season. */
+    maxDaysPerSeason: number;
+    /** How far back the player's own camp record is read. */
+    lookbackDays: number;
+  };
+  cleaning?: CleaningOptions;
+}
+
+/** An entry that may carry skills, for any sport: windows keep only those that do. */
+type MaybeSkilled = { date: string; source?: string; skills?: object };
+type WithSkills<E extends MaybeSkilled> = E & { skills: NonNullable<E["skills"]> };
+
+export interface SkilledWindow<K extends string, E extends MaybeSkilled> {
+  first: WithSkills<E>;
+  /** The latest entry with skills: the window ends here, not today. */
+  last: WithSkills<E>;
+  /** Calendar days from first to last. */
+  spanDays: number;
+  cleaned: CleanedGains<K>;
+  /** Camp days a season a projection adds back: the player's own record, or the cap. */
+  campDaysPerSeason: number;
+  /** True with under a season of history, so the full allowance is assumed. */
+  campDaysAssumed: boolean;
+}
+
+/**
+ * The window every sport's pace is measured over, cleaned, with the camp
+ * record a projection adds back. Shared by the skill paces (growthModel's
+ * measureGrowthPace, basketball's measureBasketballPace) and the OR pace
+ * (src/base/orGrowth.ts), so a player's skill and OR paces read the same days.
+ *
+ * - Only entries with skills count (an unscouted profile's OR-only day is
+ *   ignored, not read as zero). The window ends at the latest of them and
+ *   reaches back `windowDays`.
+ * - Null with fewer than two such entries in it, or fewer than
+ *   `provisionalMinDays` measured days.
+ * - The camp record reads a season back (`lookbackDays`), not just the window:
+ *   camps come once or twice a season, so the window can miss one. Without a
+ *   season of history the full allowance is assumed until his own record
+ *   exists.
+ */
+export function measureSkilledWindow<K extends string, E extends MaybeSkilled>(
+  entries: readonly E[],
+  skillNames: readonly K[],
+  options: SkilledWindowOptions
+): SkilledWindow<K, E> | null {
+  const usable = entries
+    .filter((entry): entry is WithSkills<E> => !!entry.skills)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (usable.length < 2) return null;
+  const gainsOver = (rows: WithSkills<E>[], spanDays: number) =>
+    cleanedGains(rows as unknown as SkilledEntry<K>[], skillNames, spanDays, options.cleaning);
+
+  const last = usable[usable.length - 1];
+  const first = usable.find((entry) => daysBetween(entry.date, last.date) <= options.windowDays);
+  if (!first || first === last) return null;
+
+  const spanDays = daysBetween(first.date, last.date);
+  const cleaned = gainsOver(usable.slice(usable.indexOf(first)), spanDays);
+  if (cleaned.measuredDays < options.provisionalMinDays) return null;
+
+  const seasonStart = usable.find((entry) => daysBetween(entry.date, last.date) <= options.camps.lookbackDays)!;
+  const campDaysAssumed = daysBetween(usable[0].date, last.date) < options.camps.lookbackDays;
+  const campDaysPerSeason = campDaysAssumed
+    ? options.camps.maxDaysPerSeason
+    : Math.min(
+        options.camps.maxDaysPerSeason,
+        gainsOver(usable.slice(usable.indexOf(seasonStart)), daysBetween(seasonStart.date, last.date)).skippedCampDays
+      );
+
+  return { first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed };
+}

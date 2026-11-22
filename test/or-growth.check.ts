@@ -25,12 +25,10 @@ import {
 } from "@/sports/basketball/relativeSkillReference";
 import {
   ReferenceCurve,
-  measureBasketballOrPace,
+  basketballOrModel,
   measureBasketballPace,
-  projectBasketballOr,
   referencePointsBetween,
 } from "@/sports/basketball/growthModel";
-import { orProjectionPoints as basketballOrProjectionPoints } from "@/sports/basketball/historyChart";
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 
@@ -142,12 +140,18 @@ check("OR-only history: 14-27 days is provisional, under 14 no pace", () => {
   eq(measureOrGain(orVisits([[0, 600]]), OPTIONS), null, "one visit");
 });
 
-check("skills and OR-only days mixed: the basis with the newer last day wins", () => {
-  // Scouted until 30 days ago, then only seen on his profile.
+check("skills and OR-only days mixed: skills whenever the skill pace has a window", () => {
+  // Scouted until 30 days ago, then only seen on his profile: the skill
+  // window still stands, so the pace doesn't depend on which capture came last.
   const skilled = skilledHistory(60, 0.25).filter((_, i) => i <= 30);
   const later = orVisits([[20, 900], [0, 950]]);
-  eq(measureOrGain([...skilled, ...later], OPTIONS)!.basis, "or", "newer OR-only days");
-  eq(measureOrGain(skilledHistory(60, 0.25), OPTIONS)!.basis, "skills", "skills on a tie");
+  const mixed = measureOrGain([...skilled, ...later], OPTIONS)!;
+  eq(mixed.basis, "skills", "newer OR-only days don't switch the basis");
+  eq(mixed.toDate, iso(30), "the window ends at the last skilled day");
+  near(mixed.perSeason, measureOrGain(skilled, OPTIONS)!.perSeason, "same as without them");
+  // Too few skilled days for a window: the OR numbers.
+  const oneSkilled = [skilledHistory(60, 0.25)[0], ...later];
+  eq(measureOrGain(oneSkilled, OPTIONS)!.basis, "or", "no skilled window");
 });
 
 // --- Hockey and soccer: pace and projection -------------------------------------
@@ -213,34 +217,41 @@ const BASKETBALL_SKILLS: (keyof BasketballSkills)[] = [
 const flatCurve = (perDay: number): ReferenceCurve =>
   Array.from({ length: 20 }, (_, k) => ({ age: 15 + k, perDay, source: "squad" as const }));
 
-check("basketball: OR pace equals the skill pace for a player with skills", () => {
+check("basketball: OR pace equals the skill pace for a player with skills, OR-only days or not", () => {
   const skills = Object.fromEntries(BASKETBALL_SKILLS.map((s) => [s, 50.5])) as BasketballSkills;
   const entries = Array.from({ length: 41 }, (_, i) => {
     const skill = BASKETBALL_SKILLS[i % BASKETBALL_SKILLS.length];
     if (i > 0) skills[skill] += 0.9;
-    return { playerId: "1", date: iso(40 - i), skills: { ...skills }, height: 200 };
+    return { playerId: "1", date: iso(41 - i), skills: { ...skills }, height: 200 };
   });
   const curve = flatCurve(1.2);
+  const model = basketballOrModel(curve, TODAY);
   const skillPace = measureBasketballPace(entries, 20, curve, TODAY)!;
-  const orPace = measureBasketballOrPace(entries, 20, curve, TODAY)!;
+  const orPace = model.measureOrPace(entries, 20)!;
   near(orPace.pace, skillPace.pace!, "same pace", 1e-9);
   near(orPace.pace, 0.75, "0.9 / 1.2", 1e-9);
+  eq(orPace.campDaysPerSeason, skillPace.campDaysPerSeason, "same camp record");
+  // A profile visit today with an OR only: both still read the skilled window.
+  const withVisit = [...entries, { playerId: "1", date: iso(0), overallRating: 900 }];
+  near(model.measureOrPace(withVisit, 20)!.pace, measureBasketballPace(withVisit, 20, curve, TODAY)!.pace!, "with a newer OR-only day", 1e-9);
 });
 
 check("basketball: an unscouted player's OR-only visits get a pace and a projection", () => {
   const curve = flatCurve(1.0);
+  const model = basketballOrModel(curve, TODAY);
   // 35 OR in 35 days: 1.0 a day against a 1.0 reference.
-  const pace = measureBasketballOrPace(orVisits([[35, 800], [0, 835]]), 20, curve, TODAY)!;
+  const pace = model.measureOrPace(orVisits([[35, 800], [0, 835]]), 20)!;
   eq(pace.basis, "or");
   near(pace.pace, 1, "100%", 1e-9);
   near(
-    projectBasketballOr(835, 20, pace, curve, 22),
+    model.projectOr(835, 20, pace, 22),
     835 + referencePointsBetween(curve, 20, 22, 0),
     "OR + the reference's points, no camp allowance"
   );
-  const points = basketballOrProjectionPoints(835, 20, pace, curve, 35);
+  const points = model.orProjectionPoints(835, 20, pace, 35);
   eq(points[0], { x: 20, y: 835 }, "starts at now");
   eq(points[1], { x: 21, y: 835 + 70 }, "a 70-day season at 1.0 a day");
+  eq(points[points.length - 1].x, 35, "stops after the reference's last age");
 });
 
 // --- Chart datasets -------------------------------------------------------------

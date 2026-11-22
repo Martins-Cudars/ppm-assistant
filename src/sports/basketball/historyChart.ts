@@ -12,7 +12,6 @@ import type { GrowthMetric } from "@/components/growthMetric";
 import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
-  BasketballOrPace,
   BasketballPace,
   REFERENCE_FIRST_AGE,
   REFERENCE_LAST_AGE,
@@ -21,7 +20,6 @@ import {
   bestBasketballPosition,
   entryAge,
   projectBasketball,
-  projectBasketballOr,
 } from "@/sports/basketball/growthModel";
 
 export type Point = { x: number; y: number };
@@ -142,27 +140,6 @@ export function projectionPoints(
   for (let age = Math.floor(currentExactAge) + 1; age <= endAge; age++) {
     const projection = projectBasketball(skills, height, currentExactAge, pace, curve, age);
     if (projection) points.push({ x: age, y: projection.rating });
-  }
-  return points.length > 1 ? points : [];
-}
-
-/**
- * The OR view's projection line: today's OR, then one rounded point per whole
- * age at the player's OR pace (projectBasketballOr). Empty without a pace.
- */
-export function orProjectionPoints(
-  currentOr: number | undefined,
-  currentExactAge: number,
-  pace: BasketballOrPace | null,
-  curve: ReferenceCurve,
-  untilAge: number
-): Point[] {
-  if (!pace || pace.pace === null || typeof currentOr !== "number" || !(currentOr > 0)) return [];
-  const points: Point[] = [{ x: currentExactAge, y: currentOr }];
-  const endAge = Math.min(untilAge, REFERENCE_LAST_AGE + 1);
-  for (let age = Math.floor(currentExactAge) + 1; age <= endAge; age++) {
-    const y = projectBasketballOr(currentOr, currentExactAge, pace, curve, age);
-    if (y !== null) points.push({ x: age, y: Math.round(y) });
   }
   return points.length > 1 ? points : [];
 }
