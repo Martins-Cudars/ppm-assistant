@@ -15,7 +15,7 @@
  *
  *   BACKUP=path/to/ppm-assistant-backup.json ERA_START=2025-12-01 node check.mjs
  *
- * Optional: SPORT=hockey|soccer (default hockey); TEAM=<team id> picks the
+ * Optional: SPORT=hockey|soccer|basketball (default hockey); TEAM=<team id> picks the
  * cache (default: the sport's one with the most history); WINDOW_DAYS
  * overrides the window (default PACE_WINDOW_DAYS). Factors are relative to the
  * first band whose current factor is 1.0 (hockey <=21, soccer 17+).
@@ -27,23 +27,69 @@
 import fs from "fs";
 import * as hockey from "@/sports/hockey/growthPace";
 import * as soccer from "@/sports/soccer/growthPace";
+import * as basketball from "@/sports/basketball/growthModel";
 import { BackupFile } from "@/types/Backup";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
-const sport = process.env.SPORT === "soccer" ? "soccer" : "hockey";
-const {
-  AGE_PACE_FACTORS,
-  PACE_MIN_SPAN_DAYS,
-  PACE_WINDOW_DAYS,
-  bestPositionRating,
-  measureGrowthPace,
-  OR_AGE_PACE_FACTORS,
-  measureOrPace,
-} = sport === "soccer" ? soccer : hockey;
+type Factors = readonly { fromAge: number; factor: number }[];
+type Measured = { value: number | null; midAge: number } | null;
+type SportBinding = {
+  AGE_PACE_FACTORS: Factors;
+  OR_AGE_PACE_FACTORS: Factors;
+  PACE_MIN_SPAN_DAYS: number;
+  PACE_WINDOW_DAYS: number;
+  daysPerSeason: number;
+  /** The pace the skill projection divides by the factor: hockey/soccer basePace, basketball's pace. */
+  skillPace: (window: SkillHistoryEntry[], exactAgeNow: number) => Measured;
+  orPace: (window: SkillHistoryEntry[], exactAgeNow: number) => Measured;
+};
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const growthBinding = (m: typeof hockey | typeof soccer, daysPerSeason: number): SportBinding => ({
+  AGE_PACE_FACTORS: m.AGE_PACE_FACTORS,
+  OR_AGE_PACE_FACTORS: m.OR_AGE_PACE_FACTORS,
+  PACE_MIN_SPAN_DAYS: m.PACE_MIN_SPAN_DAYS,
+  PACE_WINDOW_DAYS: m.PACE_WINDOW_DAYS,
+  daysPerSeason,
+  skillPace: (window, age) => {
+    const last = window[window.length - 1];
+    if (!last.skills) return null;
+    const pace = m.measureGrowthPace(window as any, age, m.bestPositionRating(last.skills as any).name);
+    return pace ? { value: pace.basePace, midAge: pace.midAge } : null;
+  },
+  orPace: (window, age) => {
+    const pace = m.measureOrPace(window as any, age);
+    return pace ? { value: pace.pace, midAge: pace.midAge } : null;
+  },
+});
+const SPORTS: Record<string, () => SportBinding> = {
+  hockey: () => growthBinding(hockey, hockey.hockeyGrowthConfig.daysPerSeason),
+  soccer: () => growthBinding(soccer, soccer.soccerGrowthConfig.daysPerSeason),
+  basketball: () => ({
+    AGE_PACE_FACTORS: basketball.AGE_PACE_FACTORS,
+    OR_AGE_PACE_FACTORS: basketball.OR_AGE_PACE_FACTORS,
+    PACE_MIN_SPAN_DAYS: basketball.PACE_MIN_SPAN_DAYS,
+    PACE_WINDOW_DAYS: basketball.PACE_WINDOW_DAYS,
+    daysPerSeason: 70,
+    skillPace: (window, age) => {
+      if (!window[window.length - 1].skills) return null;
+      const pace = basketball.measureBasketballPace(window as any, age);
+      return pace ? { value: pace.pace, midAge: pace.midAge } : null;
+    },
+    orPace: (window, age) => {
+      const pace = basketball.basketballOrModel().measureOrPace(window as any, age);
+      return pace ? { value: pace.pace, midAge: pace.midAge } : null;
+    },
+  }),
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const sport = process.env.SPORT && SPORTS[process.env.SPORT] ? process.env.SPORT : "hockey";
+const { AGE_PACE_FACTORS, OR_AGE_PACE_FACTORS, PACE_MIN_SPAN_DAYS, PACE_WINDOW_DAYS, daysPerSeason, skillPace, orPace } =
+  SPORTS[sport]();
 const metric = process.env.METRIC === "or" ? "or" : "skill";
 // The bands are the same; "(current)" shows the factors of the metric measured.
 const currentFactors = metric === "or" ? OR_AGE_PACE_FACTORS : AGE_PACE_FACTORS;
-const daysPerSeason = (sport === "soccer" ? soccer.soccerGrowthConfig : hockey.hockeyGrowthConfig).daysPerSeason;
 
 const backup = JSON.parse(fs.readFileSync(process.env.BACKUP!, "utf8")) as BackupFile;
 const eraStart = process.env.ERA_START ?? "2025-12-01";
@@ -56,7 +102,7 @@ Date.now = () => exportedAt;
 
 const byPlayer = new Map<string, SkillHistoryEntry[]>();
 const history = (
-  sport === "hockey" ? backup.skillHistory : (backup.sportSkillHistory?.[sport] ?? [])
+  sport === "hockey" ? backup.skillHistory : (backup.sportSkillHistory?.[sport as "soccer" | "basketball"] ?? [])
 ) as SkillHistoryEntry[];
 for (const entry of history) {
   // The OR pace reads OR-only days too (an unscouted player's profile visits).
@@ -107,19 +153,11 @@ for (const [id, stored] of Object.entries(cache.players)) {
     const window = history.slice(start, end + 1);
     const last = window[window.length - 1];
     if (daysBetween(window[0].date, last.date) >= PACE_MIN_SPAN_DAYS) {
-      // basePace, not pace: the skill projection applies these factors to the
-      // base (main-skill) part only, so they have to be measured on it. The OR
-      // projection scales the whole OR pace, which needs no skills on the
-      // window's last day.
-      const measured =
-        metric === "or"
-          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            measureOrPace(window as any, exactAgeNow)
-          : last.skills
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              measureGrowthPace(window as any, exactAgeNow, bestPositionRating(last.skills as any).name)
-            : null;
-      const value = measured === null ? null : "basePace" in measured ? measured.basePace : measured.pace;
+      // The skill projection divides the base pace (hockey/soccer basePace,
+      // basketball's rated-point pace) by these factors; the OR projection the
+      // whole OR pace, which needs no skills on the window's last day.
+      const measured = metric === "or" ? orPace(window, exactAgeNow) : skillPace(window, exactAgeNow);
+      const value = measured?.value ?? null;
       const midAge = measured?.midAge;
       if (value != null && midAge != null) {
         const band = bandOf(midAge).fromAge;

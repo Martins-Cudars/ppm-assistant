@@ -22,39 +22,34 @@
 
 <script setup lang="ts">
 /**
- * The basketball profile's growth chart - hockey's PlayerGrowthChart, with
- * basketball's adaptive references:
+ * The basketball profile's growth chart, on hockey's PlayerGrowthChart
+ * pattern and against the same kind of reference:
  *
- * - grey: your squad's best rating on reaching each age (hockey draws a
- *   top-player table here; basketball has none);
+ * - grey: the top-5% line (relative skill's 100%), with and without XP;
  * - red: today's rating, without and with XP;
  * - blue: the stored history, each day rated with that day's height;
- * - dashed blue: the projection at the player's own pace, as the report's
- *   @25 column computes it.
+ * - dashed blue: the projection at the player's own pace against that line,
+ *   as the report's @25 column computes it.
  *
- * The OR view draws the same without XP: the squad's best OR, today's OR, the
+ * The OR view draws the same without XP: the top-5% OR line, today's OR, the
  * OR history and the projection at the player's OR pace (basketballOrModel).
  */
 import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { BasketballPlayer, BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
-import { StoredBasketballPlayer, normalizePlayerId } from "@/sports/basketball/capture";
+import { normalizePlayerId } from "@/sports/basketball/capture";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
+  BASKETBALL_REFERENCE_CURVE,
   REFERENCE_LAST_AGE,
-  buildReferenceCurve,
   basketballOrModel,
   measureBasketballPace,
 } from "@/sports/basketball/growthModel";
-import {
-  Point,
-  buildSquadBestCurve,
-  historyPoints,
-  projectionPoints,
-} from "@/sports/basketball/historyChart";
-import { exportSkillHistory, getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
-import { readSportTeamCache } from "@/storage/playerCache";
+import { relativeOrReference, relativeSkillReference } from "@/sports/basketball/relativeSkillReference";
+import { Point, historyPoints, projectionPoints } from "@/sports/basketball/historyChart";
+import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
+import { calculateSkillWithExp } from "@/base/calculations";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
@@ -63,6 +58,7 @@ import {
   growthMetricScale,
   orDatasets,
   orProjectionDataset,
+  orReferenceDataset,
   useGrowthMetric,
 } from "@/components/growthMetric";
 
@@ -92,52 +88,15 @@ const history = computed<Point[]>(() =>
 );
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
-// The OR view's projection, at the player's OR pace against the same squad reference.
+// The OR view's projection, at the player's OR pace against the top-5% OR line.
 const orProjection = ref<Point[]>([]);
 const orPace = ref<{ value: number; provisional: boolean } | null>(null);
-const squadBest = ref<{ skill: Point[]; or: Point[] }>({ skill: [], or: [] });
-
-const group = (entries: Entry[]) => {
-  const byPlayer = new Map<string, Entry[]>();
-  entries.forEach((entry) => {
-    const list = byPlayer.get(entry.playerId);
-    if (list) list.push(entry);
-    else byPlayer.set(entry.playerId, [entry]);
-  });
-  return byPlayer;
-};
 
 const load = async () => {
-  const [own, all, cache] = await Promise.all([
-    getSkillHistoryForPlayer(playerId, "basketball") as unknown as Promise<Entry[]>,
-    exportSkillHistory("basketball") as unknown as Promise<Entry[] | null>,
-    readSportTeamCache<StoredBasketballPlayer>("basketball"),
-  ]);
-
+  const own = (await getSkillHistoryForPlayer(playerId, "basketball")) as unknown as Entry[];
   ownEntries.value = own;
 
-  // The references need the squad: every stored day, and each cached player's
-  // age and height today.
-  const ages = new Map<string, number>();
-  const heights = new Map<string, number>();
-  if (cache) {
-    const seasonDay = cache.currentSeasonDay || 1;
-    Object.values(cache.players).forEach((stored) => {
-      const id = normalizePlayerId(stored.baseInfo.id) ?? stored.baseInfo.id;
-      ages.set(id, stored.baseInfo.age + seasonDay / basketballPlayerProfile.daysPerSeason);
-      heights.set(id, stored.baseInfo.height);
-    });
-  }
-  // The viewed player counts too, even from another team.
-  ages.set(playerId, exactAge);
-  heights.set(playerId, props.player.height);
-
-  const squadHistory = group(all ?? []);
-  if (!squadHistory.has(playerId)) squadHistory.set(playerId, own);
-  const curve = buildReferenceCurve(squadHistory, ages);
-  squadBest.value = buildSquadBestCurve(squadHistory, ages, heights);
-
-  const measured = measureBasketballPace(own, exactAge, curve);
+  const measured = measureBasketballPace(own, exactAge);
   pace.value =
     measured?.pace != null ? { value: measured.pace, provisional: measured.provisional } : null;
   projection.value = projectionPoints(
@@ -145,12 +104,12 @@ const load = async () => {
     props.player.height,
     exactAge,
     measured,
-    curve,
+    BASKETBALL_REFERENCE_CURVE,
     REFERENCE_LAST_AGE + 1
   );
-  // The same window as the skill pace for a player with skills, so the same
-  // pace; an unscouted player's is read from his OR numbers.
-  const orModel = basketballOrModel(curve);
+  // Measured on skills where the history has them, else on the OR numbers,
+  // so an unscouted player gets one too.
+  const orModel = basketballOrModel();
   const measuredOr = orModel.measureOrPace(own, exactAge);
   orPace.value =
     measuredOr?.pace != null ? { value: measuredOr.pace, provisional: measuredOr.provisional } : null;
@@ -163,26 +122,25 @@ const load = async () => {
   render();
 };
 
-const squadDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
+/** A grey top-5% line, as hockey's and soccer's charts draw it. */
+const topDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
   label,
   data,
-  borderColor: "#bbb",
-  backgroundColor: "#bbb",
+  borderColor: "#ccc",
+  backgroundColor: "#ccc",
   borderWidth: 2,
-  borderDash: [4, 4],
   pointRadius: 2,
-  tension: 0.3,
+  pointBackgroundColor: "#fff",
+  tension: 0.4,
+  // Monotone: a plain spline overshoots between ages.
+  cubicInterpolationMode: "monotone",
 });
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   if (metric.value === "or") {
-    // OR view: the squad's best OR, today's OR, the OR history and the
+    // OR view: the top-5% OR line, today's OR, the OR history and the
     // projection at the player's OR pace. No XP variant: OR has no XP.
-    const datasets: ChartDataset<"line">[] = [];
-    const line = squadBest.value.or;
-    if (line.length > 0) {
-      datasets.push(squadDataset(line, "Your squad's best at each age (OR)"));
-    }
+    const datasets: ChartDataset<"line">[] = [orReferenceDataset(relativeOrReference)];
     const projected = orProjectionDataset(orProjection.value, orPace.value);
     return datasets.concat(
       orDatasets({ exactAge, current: props.player.overallRating, history: history.value }),
@@ -191,10 +149,16 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   }
 
   const best = props.player.getBestPosition();
-  const datasets: ChartDataset<"line">[] = [];
-  if (squadBest.value.skill.length > 0) {
-    datasets.push(squadDataset(squadBest.value.skill, "Your squad's best at each age"));
-  }
+  const datasets: ChartDataset<"line">[] = [
+    topDataset(
+      relativeSkillReference.map((p) => ({ x: p.age, y: calculateSkillWithExp(p.skill, p.exp) })),
+      "Top 5% (with XP)"
+    ),
+    topDataset(
+      relativeSkillReference.map((p) => ({ x: p.age, y: p.skill })),
+      "Top 5% (no XP)"
+    ),
+  ];
   // An unscouted player's rating is a guess from OR: no "now" points for it.
   if (props.player.hasKnownSkills()) datasets.push(
     {

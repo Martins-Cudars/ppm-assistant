@@ -129,8 +129,8 @@ export function orDatasets(options: {
 
 /**
  * The OR view's grey "Top 5% (OR)" line: the top-5% OR line by age
- * (relativeOrReference), drawn like the Skill view's top-5% lines. Hockey and
- * soccer; basketball draws its squad's best instead, as in its Skill view.
+ * (relativeOrReference), drawn like the Skill view's top-5% lines. All three
+ * sports' profile charts.
  */
 export function orReferenceDataset(line: readonly { age: number; or: number }[]): ChartDataset<"line"> {
   return {

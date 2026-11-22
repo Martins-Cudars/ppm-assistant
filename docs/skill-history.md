@@ -486,10 +486,10 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
 > **Added 2026-11-23 (the user's request).** OR mode drew only history and "Now (OR)": a
 > 17-year-old's chart was empty from 17.4 on. It now draws a prediction too.
 
-- **Hockey and soccer** draw a grey **Top 5% (OR)** line, and a dashed **Projected at own
-  pace (OR, NN%)** line from today's OR to the end of the range.
-- **Basketball** draws the dashed projection against its squad's best, as its Skill view
-  does. It gets no top-5% line, because its Skill view has none.
+- **All three sports** draw a grey **Top 5% (OR)** line, and a dashed **Projected at own
+  pace (OR, NN%)** line from today's OR to the end of the range. Basketball measured
+  against its squad's best until it moved to the top-5% line too (see "Basketball Pace on
+  the top-5% line").
 - **The line** is `relativeOrReference` in `src/sports/<sport>/relativeSkillReference.ts`.
   It is the fit's OR percentile (the `or` column) before the rating/OR share turns it into a
   rating. `scripts/fit-relative-skill.ts` writes it next to the rating table, so the script
@@ -530,12 +530,10 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
   | Hockey (since 2025-12-01) | ≤21 / 22 / 25 / 28 | 1.00 / 0.96 / 0.96 / 0.88 | **1.00 / 0.94 / 0.94 / 0.78** |
   | Soccer (all history), junior rate | 15 / 16 / 17+ | 1.78 / 1.23 / 1.00 | **1.35 / 1.23 / 1.00** |
 
-- **Basketball** measures OR growth the same way against its squad reference
-  (`basketballOrModel(curve)`, the same `createOrModel` as hockey and soccer, with the curve
-  and no age factors). The reference is skill points per normal day and OR is their sum. A
-  player with skills is read on the skill pace's own window over all seven skills, so he
-  gets exactly his skill pace. The projection is today's OR +
-  pace × the reference's points to each age, the points `projectBasketball` spends.
+- **Basketball** measures OR growth the same way (`basketballOrModel()`, the same
+  `createOrModel`): against its top-5% OR line's smoothed rate, with its own OR age factors.
+  A player with skills is read on the skill pace's own window and camp record, over all
+  seven skills.
 - **On the 2026-11-22 backup** (OR @25, or at +3 years for players over 22). The Skill
   columns are the Player Report's: pace, Skill @25 and the OR of the same projected skills.
 
@@ -735,7 +733,71 @@ turn each answer into a constant documented like hockey's:
   - Players are rebuilt from the cache by `deserializeBasketballPlayer()`, which recalculates
     their positions.
 
-### Growth model: adaptive reference (`src/sports/basketball/growthModel.ts`)
+### Basketball Pace on the top-5% line (2026-11-23, the user's decision)
+
+> **Replaces the adaptive reference below.** Measured against the squad's best at each age,
+> two 28-year-olds read 182% (Jozis Pupuķis) and 224% (Alvijs Lasis). After 27 that curve
+> rested on one former player plus the default tail (0.23 points a day at 28). The median
+> Pace was 101%, so 100% didn't mean top growth. Basketball now measures against its
+> global top-5% line, as hockey and soccer do.
+
+- **The rate** is the top-5% line's rating gain a season, no XP
+  (`smoothedSeasonGains(relativeSkillReference)`), as rated-skill points a day:
+  gain × 3 ÷ 70. Every position's five rated-skill weights sum to 3, so a balanced rating
+  point costs 3 of them. On the 2026-11-22 line: 34 a season at 15, 38 at 16, 31 at 18,
+  27.5 at 21–24, 25 at 26, 20.5 at 27, 13.4 at 28, 7.3 at 29, 0.8 at 34.
+  `BASKETBALL_REFERENCE_CURVE` replaces `buildReferenceCurve` and `DEFAULT_REFERENCE`,
+  which are removed.
+- **Pace** counts the points in the five rated skills only. Shooting and blocking feed the
+  game engine's bonuses, not the rating. It uses the same 56-day window, cleaning and camp
+  record as before (`measureSkilledWindow`).
+- **Projections** divide the pace by the age factor it was measured at, then spend the
+  line's age-adjusted rated points with the camp allowance. They are spent balanced per
+  position, as before. Shooting and blocking keep their own observed rate along the same
+  curve, as hockey's non-main skills do.
+- **Age factors** (`scripts/measure-age-factors.ts SPORT=basketball ERA_START=2000-01-01`,
+  all history, because no facility change is known):
+
+  | Bands | ≤21 | 22–24 | 25–27 | 28+ |
+  |---|---|---|---|---|
+  | Players | 23 | 11 | 7 | 3 |
+  | Skill (rated) pace | 1.00 (50%) | 1.00 | 0.84 | **0.84**, measured 0.68 |
+  | OR pace | 1.00 (65%) | 0.81 | 0.47 | **0.47**, measured 0.41 |
+
+  28+ rests on 3 players, too few, so it carries the 25–27 factor. After 27 only the line's
+  smoothed rate slows further (the user's rule: where data is thin, the smoothed rate).
+  Since 2025-12-01 the bands hold 19 / 9 / 5 / 1 players and read 1.00 / 0.94 / 0.79 / 0.37.
+  The OR line's rate peaks at 25–26 (145 a season, against 95 at 15–21), so the OR factors
+  fall further.
+- **Charts.** The profile chart draws "Top 5% (with XP)" and "Top 5% (no XP)" in Skill mode
+  and "Top 5% (OR)" in OR mode, as hockey and soccer do. It no longer reads the squad's
+  history. The report's Squad choice draws the top-5% line on the Skill tab and the squad's
+  best OR on the OR tab, as hockey's and soccer's do. Its "Pace reference" panel shows the
+  line's rate.
+- **On the 2026-11-22 backup**, squad best → top-5% line. Pace, @25 (or +3 years) Skill and
+  OR, then OR pace and the OR view's projection:
+
+  | Player | Age | Ratio | Pace | Skill @T | OR @T | OR pace | OR view @T |
+  |---|---|---|---|---|---|---|---|
+  | Jozis Pupuķis (@31) | 28.7 | 80 | 182% → 55% | 252 → 249 | 1003 → 992 | 182% → 44% | 1008 → 991 |
+  | Alvijs Lasis (@31) | 28.7 | 76 | 224% → 70% | 241 → 237 | 957 → 941 | 224% → 54% | 961 → 940 |
+  | Edmunds Grāmatiņš (@28) | 25.7 | 82 | 120% → 66% | 293 → 296 | 1140 → 1148 | 120% → 47% | 1143 → 1160 |
+  | Marks Rafaļskis | 17.7 | 75 | 106% → 61% | 295 → 276 | 1125 → 1052 | 106% → 90% | 1130 → 1174 |
+  | Ģirts Zemļinskis | 15.7 | 81 | 100% → 61% | 292 → 299 | 1197 → 1223 | 100% → 91% | 1200 → 1301 |
+
+  The projections barely move: both references fall with age at about the same rate, and
+  the projection spends rate × reference. Pace now reads on a top-5% scale: squad median
+  61% (was 101%), at most 86%, with nobody at 150% or more. The 28-year-olds read 55–70%,
+  their current 56-day windows, above the 28+ median of 34% over all history.
+- **Pace against training ratio** (24 own players with a pace): r = 0.17 (was 0.15). The
+  medians by ratio are 69% at ≤74, 56% at 75–79 and 66% at 80+. Top five: Ivo Īlentiņš
+  (15.7, ratio 83) 86%, Matīss Snepsts (19.7, 74) 78%, Boriss Šoriņš (17.7, 72) 75%, Inārs
+  Skrastiņš (22.7, 79) 73%, Juris Meiers (21.7, 85) 72%. As in hockey, Pace doesn't track
+  the ratio. There is no junior inflation like soccer's: the 15-year-olds read 28–86%.
+- **Not run in the extension.** The profile chart was seen in the static harness. The report
+  was only built.
+
+### Growth model: adaptive reference (`src/sports/basketball/growthModel.ts`, until 2026-11-23)
 
 The user's idea: **the best squad player at each age counts as 100%.** Basketball has no
 top-player table, and the squad's own best trained under the same facilities and coaches.
@@ -786,9 +848,8 @@ This also sidesteps the unsettled age-curve question (research item 7).
 - **Profile chart** (`BasketballGrowthChart.vue`), mounted right below the profile box. The
   basketball layout has no `.column_center_inner`: the table sits in a `.white_box` in
   `.column_center_half`. It shows:
-  - grey dashed: your squad's best rating on reaching each whole age (no XP), from
-    `buildSquadBestCurve`. It is the level counterpart of the pace reference; hockey draws a
-    top-player table here;
+  - grey: the top-5% line, with and without XP, as hockey and soccer draw it (until
+    2026-11-23: your squad's best rating on reaching each whole age, `buildSquadBestCurve`);
   - red: today's best-position rating, with and without XP;
   - blue: stored history, each day rated with that day's height;
   - dashed blue: the projection at the player's own pace, the same model as the @25 column.
@@ -1191,9 +1252,9 @@ player list's Rel column and the market's Rel column.
   and soccer profile charts, both list charts and the Players reports' Skill tab. So the
   chart's top line and relative skill's 100% agree. Since 2026-11-23 Pace, the projections
   and their XP read it too: the growth rate is the line's yearly gains smoothed, with
-  `AGE_PACE_FACTORS` and the XP shares re-measured against it (see "Pace slows with age"). Basketball's growth model has no table: its reference is
-  built from the squad's own history (`buildReferenceCurve`), so it is unchanged, and it
-  still has no top-player line.
+  `AGE_PACE_FACTORS` and the XP shares re-measured against it (see "Pace slows with age").
+  Basketball moved to its own top-5% line the same day (see "Basketball Pace on the top-5%
+  line"); its XP is still the squad's typical rate.
   The grey lines use Chart.js's monotone interpolation: the plain spline bulged above the
   data at the axis edge (near 32.8 with ages 25-33 shown), even with the data smooth.
 - **The method:**

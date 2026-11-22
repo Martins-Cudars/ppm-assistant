@@ -73,10 +73,9 @@ export interface SquadBestCurve {
 
 /**
  * "Your squad's best at each age": for every whole age, the highest rating
- * (and OR) any player had on the day they reached it. The level counterpart of
- * the pace reference - hockey draws a top-player table here, basketball has
- * none, so the user's own best players set the bar and it moves up as better
- * players come through.
+ * (and OR) any player had on the day they reached it. The Player Report's
+ * OR tab draws its OR as hockey's and soccer's do; the Skill tab and the
+ * profile chart draw the top-5% line instead (since 2026-11-23).
  *
  * Sampled at the birthday rather than as a max over the year, so each point
  * means exactly "at age N" and players are compared at the same moment.
