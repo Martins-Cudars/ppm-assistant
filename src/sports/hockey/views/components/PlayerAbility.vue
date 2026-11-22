@@ -16,8 +16,8 @@
         </div>
         <RelativeSkill
           :skill="bestPosition.ratingWithXp"
-          :maxSkillForAge="player.getMaxSkillForAge()"
-          :leagueMaxSkillForAge="player.getMaxSkillForAge('league')"
+          :maxSkillForAge="maxima.global"
+          :leagueMaxSkillForAge="maxima.league"
         />
       </div>
     </div>
@@ -42,6 +42,7 @@ const props = defineProps<{
 
 const positions = computed(() => props.player.getPositions());
 const bestPosition = computed(() => props.player.getBestPosition());
+const maxima = computed(() => props.player.getRelativeSkillMaxima());
 </script>
 
 <style scoped>

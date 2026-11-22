@@ -956,20 +956,38 @@ The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Ga
 
 Relative skill is the best position's rating with XP as a percentage of a top player's at
 the same exact age. Before 4.1.0, hockey and soccer divided by `playerGrowthPrediction`,
-a hand-written guess. Basketball showed nothing. Now every sport shows two values:
-"87% / 95%" means 87% against every scouted team and 95% against the user's league. A
+a hand-written guess, and basketball showed nothing. Now every sport shows two values:
+"87% / 95%" means 87% against every scouted team and 95% against the viewer's league. A
 tooltip says which value is which. Both values appear on the profile's ability box, the
-player list's Rel column and the market's Rel column. In each case `RelativeSkill.vue` or
-`renderRelativeSkill` reads `player.getMaxSkillForAge()` and `getMaxSkillForAge("league")`.
+player list's Rel column and the market's Rel column.
 
-- **The tables.** Each sport has `src/sports/<sport>/relativeSkillReference.ts` with
-  `{ global, league }` rows of `{ age, skill, exp }`. The profile's
-  `relativeSkillReference` points at them, and `getMaxSkillForAge` interpolates by season
-  day as before. `playerGrowthPrediction` is unchanged and still drives Pace, the
-  projections and the growth charts. Only relative skill moved.
-- **The tables are generated.** `scripts/fit-relative-skill.ts <backup.json> --write`
-  regenerates them, so you can refresh them after more scouting (`--compare` prints the
-  own squad before and after). The method:
+- **Global line: static, generated.** `src/sports/<sport>/relativeSkillReference.ts` holds
+  `relativeSkillFit`: per age, the 95th percentile of scouted OR (`or`), the best
+  position's rating as a share of OR (`share`) and XP (`exp`). `relativeSkillReference` is
+  the same line as a `{ age, skill, exp }` table, with skill = share × or. To refresh it
+  after more scouting, run `scripts/fit-relative-skill.ts <backup.json> --write`
+  (`--compare` prints the user's players before and after). The script refuses to write
+  NaN, Infinity or non-positive rows.
+- **League line: fitted at runtime** (`src/base/scout/leagueRelativeSkill.ts`). On first use
+  in a page, it reads the stored league list and the sport's scout snapshots from the
+  worker (`SCOUT_EXPORT`). It fits the league against the static global line and caches
+  the result for the page. The cache is reactive: Vue components re-render when it arrives,
+  and the market's DOM cells are redrawn. With no league list, fewer than 50 league
+  player-seasons or fewer than 3 measured ages, there is no league line, and only the
+  global value shows.
+- **One implementation.** `src/base/relativeSkillFit.ts` holds the fitting, and both the
+  script and the runtime use it.
+- **Reading it.** `player.getRelativeSkillMaxima()` returns `{ global, league }`, with null
+  where there is none; `getMaxSkillForAge()` still returns the global value. Outside the
+  table's ages (hockey 15-45, soccer and basketball 15-40), the cell shows "–" with no
+  rank colour, and the lists sort those players last in either direction. The lists read
+  the maxima once per player and sort by global, then league.
+- **The growth charts use the same global line** as their grey "Top 5%" line: the hockey
+  and soccer profile charts, both list charts and the Players reports' Skill tab. So the
+  chart's top line and relative skill's 100% agree. Pace, the projections and
+  `AGE_PACE_FACTORS` still use `playerGrowthPrediction` internally, uncalibrated. Basketball
+  never had a top-player line and still has none.
+- **The method:**
   1. **OR reference (global).** Each player counts once per season, using his latest
      snapshot. For each whole age, the line is the 95th percentile of OR in a one-season
      window centred on that age. Before the percentile is taken, each point moves along a
@@ -978,23 +996,24 @@ player list's Rel column and the market's Rel column. In each case `RelativeSkil
      slope, because at 15 nobody is younger. A window with fewer than 25 points widens by
      quarter seasons, up to ±2 seasons. The curve is then fitted to rise to a peak and
      fall after it, weighted by each age's count.
-  2. **League.** For each age, the league's 95th percentile is taken as a ratio to the
-     global curve. That ratio is shrunk toward a weighted linear trend of all the ratios:
-     an age with n points weighs n against the trend's 25. So an age with three veterans
+  2. **League.** For each age, the league's 95th percentile (windows of at least 3 points,
+     up to ±1 season) is taken as a ratio to the global curve. That ratio is shrunk toward
+     a weighted linear trend of all the ratios, held within the measured ratios' range: an
+     age with n points weighs n against the trend's 25. So an age with three veterans
      leans on its neighbours.
-  3. **From OR to rating.** A roster shows OR only. Players with full skills and XP (the
-     cache, plus history days with XP) give, per age, the best position's rating as a
-     share of OR and the median XP. The share rises from about 0.30 at 15 to 0.452 for
-     adults in hockey (soccer 0.29, basketball 0.25), and never falls. XP is smoothed over
-     5 ages and keeps its last yearly gain after the last measured age.
-  4. Each table row: skill = share × OR reference, exp = XP.
+  3. **From OR to rating.** A roster shows OR only. Players with full skills and XP give,
+     per age, the best position's rating as a share of OR and the median XP. They come
+     from every cache of the sport, one record per player, plus history days with XP. The
+     share rises from about 0.30 at 15 to 0.452 for adults in hockey (soccer 0.29,
+     basketball 0.25), and never falls. XP is smoothed over 5 ages and keeps its last
+     yearly gain after the last measured age.
 - **Numbers on the 2026-11-22 backup.** Hockey had 2,177 scouted player-seasons (1,203 in
   the league), soccer 1,025 (569), and basketball 710 (502). The new global line is
   mostly 0.75-0.95× the old table; only the oldest ages (44+ in hockey, 39+ in soccer) sit
   above it. On the user's 84 hockey and soccer players, the global value rose by 2 to 17
-  points (median 6). Basketball's league
-  (III.3) is weak past 27: two to five players per age, at 0.4-0.6 of the global line. Its
-  league line rests on the trend there.
+  points (median 6). Basketball's league (III.3) is weak past 27, with two to five
+  players per age at 0.4-0.6 of the global line, so its league line rests on the trend
+  there.
 - **The user's sanity check: Grīns (28, OR 2270) reads 87% globally.** The I.1 players
   the user named are in the sample: Deputat (28.38, OR 2712) and Sējējs (27.94, 2739).
   The top 12 at 28 run from 2871 to 2493, so the sample has no lower-division bias at the
@@ -1006,8 +1025,10 @@ player list's Rel column and the market's Rel column. In each case `RelativeSkil
   colour.
 - Basketball's list and profile parsers now pass the real season day instead of 1. Before,
   every basketball player's age reading started at day 1.
-- Seen only in a static harness, rendered from the backup (profile, list, market for all
-  three sports). It has not run on the live game.
+- Checks: `test/relative-skill.check.ts`. Seen only in a static harness rendered from the
+  backup, with the league fitted by the runtime code from the backup's league snapshots.
+  It has not run on the live game, so the worker read and the redraw after it are
+  unverified.
 
 ## Backup format
 

@@ -1,12 +1,11 @@
 import { potentialGrade } from "@/base/utilities";
-import { calculateRelativeSkill } from "@/base/calculations";
 import {
   relativePercent,
   relativeSkillClass,
   relativeSkillTitle,
 } from "@/base/relativeSkill";
 import { RatingSettings } from "@/types/Position";
-import { GrowthPrediction } from "@/types/GrowthData";
+import type { BasePlayer } from "@/classes/BasePlayer";
 import { positionSettings as hockeyPositionSettings } from "@/sports/hockey/settings";
 
 const renderTableCell = (content: string | number, cssClass: string) => {
@@ -108,46 +107,60 @@ const renderPotentialBadge = (
 
 /**
  * Relative skill as "82% / 94%": against every scouted team, then against the
- * user's league when `leagueMaxSkill` is given (see src/base/relativeSkill.ts).
+ * viewer's league when its 100% is known; "–" when the age has no reference.
+ * The same markup as src/components/RelativeSkill.vue.
  */
 const renderRelativeSkill = (
-  playerAge: number,
   playerSkillWithExp: number,
-  playerGrowthPredictionOrMaxSkill: GrowthPrediction | number,
-  leagueMaxSkill?: number
+  maxSkill: number | null,
+  leagueMaxSkill?: number | null
 ): HTMLElement => {
-  const global =
-    typeof playerGrowthPredictionOrMaxSkill === "number"
-      ? relativePercent(playerSkillWithExp, playerGrowthPredictionOrMaxSkill)
-      : calculateRelativeSkill(
-          playerAge,
-          playerSkillWithExp,
-          playerGrowthPredictionOrMaxSkill
-        );
+  const global = relativePercent(playerSkillWithExp, maxSkill);
+  const league = relativePercent(playerSkillWithExp, leagueMaxSkill);
 
-  const part = (percent: number) => {
-    const span = document.createElement("span");
-    span.classList.add(relativeSkillClass(percent));
-    span.textContent = `${percent}%`;
-    return span;
+  const span = (className: string, text: string) => {
+    const element = document.createElement("span");
+    element.className = className;
+    element.textContent = text;
+    return element;
   };
 
   const relativeSkillEl = document.createElement("div");
   relativeSkillEl.classList.add("relative-skill");
-  relativeSkillEl.style.whiteSpace = "nowrap";
-  relativeSkillEl.appendChild(part(global));
 
-  if (leagueMaxSkill !== undefined) {
-    const league = relativePercent(playerSkillWithExp, leagueMaxSkill);
-    const separator = document.createElement("span");
-    separator.textContent = " / ";
-    separator.style.fontWeight = "normal";
-    separator.style.color = "#999";
-    relativeSkillEl.append(separator, part(league));
-    relativeSkillEl.title = relativeSkillTitle({ global, league });
+  if (global === null) {
+    relativeSkillEl.appendChild(span("relative-skill__none", "–"));
+    return relativeSkillEl;
+  }
+
+  relativeSkillEl.appendChild(span(relativeSkillClass(global), `${global}%`));
+  if (league !== null) {
+    relativeSkillEl.append(
+      span("relative-skill__separator", " / "),
+      span(relativeSkillClass(league), `${league}%`)
+    );
+    relativeSkillEl.title = relativeSkillTitle(global, league);
   }
 
   return relativeSkillEl;
+};
+
+/**
+ * A player's relative skill for a DOM table: drawn at once with what is known,
+ * redrawn with the league value once the league line is fitted.
+ */
+const renderPlayerRelativeSkill = (player: BasePlayer, playerSkillWithExp: number): HTMLElement => {
+  const maxima = player.getRelativeSkillMaxima();
+  const element = renderRelativeSkill(playerSkillWithExp, maxima.global, maxima.league);
+  if (maxima.league === null) {
+    void player.whenRelativeSkillReady().then(() => {
+      const next = player.getRelativeSkillMaxima();
+      if (next.league !== null) {
+        element.replaceWith(renderRelativeSkill(playerSkillWithExp, next.global, next.league));
+      }
+    });
+  }
+  return element;
 };
 
 const renderButton = (text: string): HTMLButtonElement => {
@@ -161,5 +174,6 @@ export {
   renderComparison,
   renderPotentialBadge,
   renderRelativeSkill,
+  renderPlayerRelativeSkill,
   renderButton,
 };

@@ -22,7 +22,7 @@
 /**
  * The soccer profile's growth chart, on hockey's PlayerGrowthChart pattern:
  *
- * - grey: the top-player table, base and with XP;
+ * - grey: the top-5% line (relative skill's 100%), base and with XP;
  * - red: today's rating for the best position, base and with XP;
  * - blue: the stored history, each day rated at that day's best position
  *   (no XP - daily history has none);
@@ -33,7 +33,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
-import { playerGrowthPrediction } from "@/sports/soccer/settings";
+import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { measureGrowthPace, projectionPoints } from "@/sports/soccer/growthPace";
 import { Point, soccerHistoryPoints } from "@/sports/soccer/historyChart";
@@ -92,7 +92,7 @@ const range = () => {
 };
 
 const buildDatasets = (): ChartDataset<"line">[] => {
-  // OR view: the skill-only lines (top-player table, rating with XP,
+  // OR view: the skill-only lines (top-5% line, rating with XP,
   // projection) have no OR equivalent in the data, so they are left out.
   if (metric.value === "or") {
     return orDatasets({
@@ -105,8 +105,8 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   const best = props.player.getBestPosition();
   const datasets: ChartDataset<"line">[] = [
     {
-      label: "Top player (with XP)",
-      data: playerGrowthPrediction.map((p) => ({ x: p.age, y: Math.round(p.skill * (1 + p.exp / 500)) })),
+      label: "Top 5% (with XP)",
+      data: relativeSkillReference.map((p) => ({ x: p.age, y: Math.round(p.skill * (1 + p.exp / 500)) })),
       borderColor: "#ccc",
       backgroundColor: "#ccc",
       borderWidth: 2,
@@ -115,8 +115,8 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       tension: 0.4,
     },
     {
-      label: "Top player (no XP)",
-      data: playerGrowthPrediction.map((p) => ({ x: p.age, y: p.skill })),
+      label: "Top 5% (no XP)",
+      data: relativeSkillReference.map((p) => ({ x: p.age, y: p.skill })),
       borderColor: "#ccc",
       backgroundColor: "#ccc",
       borderWidth: 2,

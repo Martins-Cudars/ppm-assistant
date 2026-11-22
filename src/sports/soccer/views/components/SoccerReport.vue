@@ -575,10 +575,10 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
 // Under Squad (and until a group has enough revisits) Pace is soccer's own,
 // against the reference table; projections never follow the toggle.
 
-// The Squad choice: the top-player table's rating on the Skill tab, as before,
+// The Squad choice: the top-5% line's rating (relative skill's 100%) on the Skill tab,
 // and the squad's own best OR at each age on the OR tab.
 const squadReference = computed<GrowthReference>(() => ({
-  label: "Top player (Skill) / your squad's best (OR)",
+  label: "Top 5% (Skill) / your squad's best (OR)",
   skill: topPlayerSkillCurve,
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
@@ -611,7 +611,7 @@ const {
   ownTeamId: () => teamId.value,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-player table the Pace column measures against. OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line, the 100% of relative skill (Pace still measures against the reference table). OR: the best any of your own players had on reaching each age.",
   squadCaption:
     "Squad: OR against the best any of your own players had at the same age. Pace: against the reference table, as before.",
   idOf,

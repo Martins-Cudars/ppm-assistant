@@ -1,35 +1,34 @@
 /**
- * Fits the relative-skill references (the 100% lines behind "Relative skill")
- * from a backup file, for every sport: one over every scouted player
- * ("global") and one over the teams of the user's current league ("league").
- * Run it after more teams have been scouted. With --write it overwrites
- * src/sports/<sport>/relativeSkillReference.ts.
+ * Fits the global relative-skill line (the 100% behind "Relative skill") of
+ * every sport from a backup file, and with --write overwrites
+ * src/sports/<sport>/relativeSkillReference.ts. Run it after more teams have
+ * been scouted. The league line is not written: the extension fits it at
+ * runtime from the viewer's own league (src/base/scout/leagueRelativeSkill.ts);
+ * --compare shows it for the backup's league too.
  *
- * Build and run it like the checks in test/README.md (an SSR bundle via a
- * throwaway vite config, input this file):
+ * The fitting itself is src/base/relativeSkillFit.ts, shared with the
+ * extension. Build and run this like the checks in test/README.md (an SSR
+ * bundle via a throwaway vite config, input this file):
  *
  *   node fit.mjs path/to/ppm-assistant-backup.json [--sport hockey|soccer|basketball]
  *     [--percentile 0.95] [--compare] [--write]
- *
- * The method (docs/skill-history.md, "Relative skill"):
- * 1. OR reference. Scouted rosters, one point per player and season (his
- *    latest snapshot). Per whole age, the percentile of OR in a one-season
- *    window centred on it, each point first moved along a rough curve to that
- *    age (season-day drift). A window with too few points widens; the curve
- *    is fitted unimodal (rises to a peak, then falls), weighted by count.
- * 2. League. The league's points against the global curve: per age a ratio,
- *    shrunk toward a weighted linear trend of the ratios by its sample count,
- *    so a sparse age leans on its neighbours instead of on two players.
- * 3. OR to rating. A roster shows OR only; relative skill compares the best
- *    position's rating with XP. Players with full skills and XP (the player
- *    cache, plus history days with XP) give, per age, the best position's
- *    rating as a share of OR, and the median XP.
- * 4. The tables: skill = share x OR reference, exp = median XP.
  */
 
 import fs from "fs";
 import path from "path";
 import { calculateSkillWithExp } from "@/base/calculations";
+import {
+  RELATIVE_SKILL_PERCENTILE,
+  RelativeSkillFit,
+  SkillPair,
+  agesBetween,
+  fitGlobalOr,
+  fitLeagueOr,
+  fitShareAndExp,
+  referenceTable,
+  scoutPoints,
+} from "@/base/relativeSkillFit";
+import { calculateProjectedMaxSkillForAge } from "@/classes/playerCalculations";
 import {
   bestPositionRating as hockeyBest,
   overallFromSkills as hockeyOverall,
@@ -40,21 +39,20 @@ import {
 } from "@/sports/soccer/growthPace";
 import { basketballOverall, bestBasketballPosition } from "@/sports/basketball/growthModel";
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
-import { relativeSkillReference as hockeyCurrent } from "@/sports/hockey/relativeSkillReference";
-import { relativeSkillReference as soccerCurrent } from "@/sports/soccer/relativeSkillReference";
-import { relativeSkillReference as basketballCurrent } from "@/sports/basketball/relativeSkillReference";
-import { RelativeSkillReference } from "@/types/GrowthData";
+import { relativeSkillFit as hockeyCurrent } from "@/sports/hockey/relativeSkillReference";
+import { relativeSkillFit as soccerCurrent } from "@/sports/soccer/relativeSkillReference";
+import { relativeSkillFit as basketballCurrent } from "@/sports/basketball/relativeSkillReference";
 import { BackupFile } from "@/types/Backup";
 import { GrowthPrediction } from "@/types/GrowthData";
-import { ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { StoredPlayerData } from "@/types/StoredPlayer";
+import { Sport } from "@/types/Sport";
 
-type Sport = "hockey" | "soccer" | "basketball";
 type AnySkills = Record<string, number>;
 
 type SportConfig = {
   /** Best position's rating without XP, and OR, from one day's skills. */
   rate: (skills: AnySkills, height: number | undefined) => { rating: number; overall: number };
-  current: RelativeSkillReference;
+  current: RelativeSkillFit;
   daysPerSeason: number;
   minAge: number;
   maxAge: number;
@@ -93,15 +91,6 @@ const SPORTS: Record<Sport, SportConfig> = {
   },
 };
 
-/** Fewest points an age's OR window may hold before it widens. */
-const MIN_OR_SAMPLES = 25;
-/** Fewest skill+XP players an age's window may hold before it widens. */
-const MIN_PAIR_SAMPLES = 6;
-/** Widest half-window, in seasons, before an age counts as unmeasured. */
-const MAX_HALF_WINDOW = 2;
-/** League ratios: an age with this many points weighs as much as the trend. */
-const LEAGUE_SHRINK = 25;
-
 const args = process.argv.slice(2);
 const option = (name: string, fallback: string) => {
   const index = args.indexOf(`--${name}`);
@@ -115,204 +104,47 @@ if (!backupPath) {
     "Usage: fit-relative-skill <backup.json> [--sport s] [--percentile p] [--compare] [--write]"
   );
 }
-const percentile = Number(option("percentile", "0.95"));
+const percentile = Number(option("percentile", String(RELATIVE_SKILL_PERCENTILE)));
 const onlySport = option("sport", "");
 const compare = args.includes("--compare");
 const write = args.includes("--write");
 
 const backup = JSON.parse(fs.readFileSync(backupPath, "utf8")) as BackupFile;
 
-function quantile(values: number[], p: number): number {
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = (sorted.length - 1) * p;
-  const low = Math.floor(index);
-  const high = Math.min(low + 1, sorted.length - 1);
-  return sorted[low] + (sorted[high] - sorted[low]) * (index - low);
-}
+type CachedPlayer = { player: StoredPlayerData; ownTeam: boolean; seasonDay: number };
 
-/** Weighted pool-adjacent-violators, non-decreasing. */
-function isotonic(values: number[], weights: number[]): number[] {
-  const blocks: { value: number; weight: number; count: number }[] = [];
-  values.forEach((value, i) => {
-    blocks.push({ value, weight: weights[i], count: 1 });
-    while (blocks.length > 1 && blocks[blocks.length - 2].value > blocks[blocks.length - 1].value) {
-      const last = blocks.pop()!;
-      const previous = blocks.pop()!;
-      const weight = previous.weight + last.weight;
-      blocks.push({
-        value: (previous.value * previous.weight + last.value * last.weight) / weight,
-        weight,
-        count: previous.count + last.count,
+/** Every cache of a sport merged, one record per player: the most recently updated. */
+function playersOf(sport: Sport): Map<string, CachedPlayer> {
+  const players = new Map<string, CachedPlayer>();
+  for (const [key, cache] of Object.entries(backup.playerCaches)) {
+    if (!key.includes(`:${sport}:`)) continue;
+    for (const [id, player] of Object.entries(cache.players)) {
+      const seen = players.get(id);
+      const updated = player.metadata?.updatedAt ?? "";
+      if (seen && (seen.player.metadata?.updatedAt ?? "") >= updated) continue;
+      players.set(id, {
+        player,
+        ownTeam: player.baseInfo.teamId === cache.teamId,
+        seasonDay: cache.currentSeasonDay ?? 0,
       });
     }
-  });
-  return blocks.flatMap((block) => Array(block.count).fill(block.value));
-}
-
-/** Weighted unimodal fit: non-decreasing to a peak, non-increasing after; the peak that fits best. */
-function unimodal(values: number[], weights: number[]): number[] {
-  let best: number[] = values;
-  let bestError = Infinity;
-  for (let peak = 0; peak < values.length; peak++) {
-    const left = isotonic(values.slice(0, peak + 1), weights.slice(0, peak + 1));
-    const right = isotonic(values.slice(peak).reverse(), weights.slice(peak).reverse()).reverse();
-    const fit = [...left.slice(0, peak), Math.max(left[peak], right[0]), ...right.slice(1)];
-    const error = fit.reduce((sum, v, i) => sum + weights[i] * (v - values[i]) ** 2, 0);
-    if (error < bestError) {
-      bestError = error;
-      best = fit;
-    }
   }
-  return best;
-}
-
-/** Each value averaged with up to `reach` neighbours either side (fewer at the ends). */
-function movingAverage(values: number[], reach: number): number[] {
-  return values.map((_, i) => {
-    const near = values.slice(Math.max(0, i - reach), i + reach + 1);
-    return near.reduce((sum, v) => sum + v, 0) / near.length;
-  });
-}
-
-type AgedPoint = { x: number; value: number };
-type Measured = { value: number; n: number; half: number } | null;
-
-/**
- * Per whole age, `stat` over the points within a half-window that widens by
- * quarter seasons until it holds `min` points. Null when even the widest has
- * too few. `adjust` may move a point's value to the window's age first.
- */
-function windowed(
-  points: AgedPoint[],
-  ages: number[],
-  min: number,
-  stat: (values: number[]) => number,
-  maxHalf = MAX_HALF_WINDOW,
-  adjust: (age: number, point: AgedPoint) => number = (_, point) => point.value
-): Measured[] {
-  return ages.map((age) => {
-    for (let half = 0.5; half <= maxHalf; half += 0.25) {
-      const inside = points.filter((p) => p.x >= age - half && p.x < age + half);
-      if (inside.length >= min) {
-        return { value: stat(inside.map((p) => adjust(age, p))), n: inside.length, half };
-      }
-    }
-    return null;
-  });
-}
-
-/**
- * Fills unmeasured ages: linear between measured ages, held flat after the
- * last; before the first either held flat or (`extendStart`) continued along
- * the first two measured ages' slope.
- */
-function fillGaps(values: (number | null)[], extendStart = false): number[] {
-  const known = values.map((v, i) => (v == null ? -1 : i)).filter((i) => i >= 0);
-  if (known.length === 0) throw new Error("No measured ages");
-  return values.map((v, i) => {
-    if (v != null) return v;
-    const before = known.filter((k) => k < i).pop();
-    const after = known.find((k) => k > i);
-    if (before == null) {
-      const [first, second] = known;
-      if (!extendStart || second == null) return values[first]!;
-      const slope = (values[second]! - values[first]!) / (second - first);
-      return Math.max(0, values[first]! - slope * (first - i));
-    }
-    if (after == null) return values[before]!;
-    const t = (i - before) / (after - before);
-    return values[before]! + (values[after]! - values[before]!) * t;
-  });
-}
-
-function interpolate(ages: number[], values: number[], x: number): number {
-  if (x <= ages[0]) return values[0];
-  if (x >= ages[ages.length - 1]) return values[values.length - 1];
-  const i = Math.floor(x - ages[0]);
-  return values[i] + (values[i + 1] - values[i]) * (x - ages[i]);
-}
-
-/** The 100% value at an exact age, as BasePlayer.getMaxSkillForAge() reads a table. */
-function tableValueAt(table: GrowthPrediction, age: number, seasonProgress: number): number {
-  const row = table.find((r) => r.age === age);
-  if (!row) return 0;
-  const next = table.find((r) => r.age === age + 1);
-  let skill = row.skill;
-  let exp = row.exp;
-  if (next) {
-    skill += (next.skill - row.skill) * seasonProgress;
-    exp += (next.exp - row.exp) * seasonProgress;
-  }
-  return calculateSkillWithExp(Math.round(skill), Math.round(exp));
+  return players;
 }
 
 function fitSport(sport: Sport) {
   const config = SPORTS[sport];
-  const ages: number[] = [];
-  for (let age = config.minAge; age <= config.maxAge; age++) ages.push(age);
-  const p = (values: number[]) => quantile(values, percentile);
+  const ages = agesBetween(config.minAge, config.maxAge);
+  const snapshots = backup.scoutSnapshots?.[sport] ?? [];
+  const leagueTeams = new Set(backup.leagues?.[sport]?.teamIds ?? []);
 
   // 1. Global OR reference.
-  const leagueTeams = new Set(backup.leagues?.[sport]?.teamIds ?? []);
-  const latest = new Map<string, ScoutSnapshot>();
-  for (const row of backup.scoutSnapshots?.[sport] ?? []) {
-    if (row.age == null || row.overallRating == null || row.season == null) continue;
-    const key = `${row.playerId}:${row.season}`;
-    const seen = latest.get(key);
-    if (!seen || row.date > seen.date) latest.set(key, row);
-  }
-  const points = [...latest.values()].map((row) => ({
-    x: row.age + (row.seasonDay ?? 0) / config.daysPerSeason,
-    value: row.overallRating,
-    inLeague: leagueTeams.has(row.teamId),
-  }));
-  const leaguePoints = points.filter((point) => point.inLeague);
+  const points = scoutPoints(snapshots, config.daysPerSeason);
+  const global = fitGlobalOr(points, ages, percentile);
 
-  // Pass 1: a rough curve from full one-season windows only (a widened window
-  // is lopsided: at 15 nobody is younger, so it holds 15-16-year-olds); its
-  // first ages continue the slope of the next two.
-  const roughMeasured = windowed(points, ages, MIN_OR_SAMPLES, p, 0.5);
-  const rough = unimodal(
-    fillGaps(roughMeasured.map((m) => m?.value ?? null), true),
-    roughMeasured.map((m) => (m ? m.n : 0.5))
-  );
-  // Pass 2: each point moved along the rough curve to the age it is counted
-  // at, so a window's late-season players don't lift it.
-  const toAge = (age: number, point: AgedPoint) =>
-    point.value * (interpolate(ages, rough, age) / interpolate(ages, rough, point.x));
-  const globalMeasured = windowed(points, ages, MIN_OR_SAMPLES, p, MAX_HALF_WINDOW, toAge);
-  const globalOr = unimodal(
-    fillGaps(globalMeasured.map((m) => m?.value ?? null)),
-    globalMeasured.map((m) => (m ? m.n : 0.5))
-  );
-
-  // 2. League: ratios to the global curve, shrunk toward their weighted trend.
-  const leagueMeasured = windowed(leaguePoints, ages, 3, p, 1, toAge);
-  const ratios = leagueMeasured.map((m, i) => (m ? m.value / globalOr[i] : null));
-  const trend = (() => {
-    let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
-    ratios.forEach((r, i) => {
-      if (r == null) return;
-      const w = leagueMeasured[i]!.n;
-      sw += w; sx += w * ages[i]; sy += w * r; sxx += w * ages[i] ** 2; sxy += w * ages[i] * r;
-    });
-    if (sw === 0) return () => 1;
-    const slope = (sw * sxy - sx * sy) / (sw * sxx - sx * sx || 1);
-    const intercept = (sy - slope * sx) / sw;
-    return (age: number) => intercept + slope * age;
-  })();
-  const shrunk = ratios.map((r, i) => {
-    const n = leagueMeasured[i]?.n ?? 0;
-    return r == null ? trend(ages[i]) : (n * r + LEAGUE_SHRINK * trend(ages[i])) / (n + LEAGUE_SHRINK);
-  });
-  const leagueOr = unimodal(
-    shrunk.map((r, i) => r * globalOr[i]),
-    leagueMeasured.map((m) => (m?.n ?? 0) + LEAGUE_SHRINK)
-  );
-
-  // 3. OR to rating: players with full skills and XP.
-  const cache = Object.entries(backup.playerCaches).find(([key]) => key.includes(`:${sport}:`))?.[1];
-  const pairs: { x: number; share: number; exp: number; id: string }[] = [];
+  // 2. OR to rating: players with full skills and XP, from every cache of the sport.
+  const players = playersOf(sport);
+  const pairs: (SkillPair & { id: string })[] = [];
   const seenPair = new Set<string>();
   const addPair = (id: string, x: number, skills: AnySkills, height: number | undefined, exp: number) => {
     const key = `${id}:${Math.round(x)}`;
@@ -322,23 +154,23 @@ function fitSport(sport: Sport) {
     seenPair.add(key);
     pairs.push({ x, share: rating / overall, exp, id });
   };
-  // The age a cached player had on a date: his stored age is from his last update.
-  const ageOn = (playerId: string, date: string): number | null => {
-    const player = cache?.players[playerId];
-    if (!player) return null;
-    const seasonDay = player.metadata?.seasonDay ?? cache?.currentSeasonDay ?? 0;
-    const updated = Date.parse(player.metadata?.updatedAt ?? backup.exportedAt);
-    const daysBefore = (updated - Date.parse(`${date}T12:00:00Z`)) / 86_400_000;
-    return player.baseInfo.age + (seasonDay - daysBefore) / config.daysPerSeason;
-  };
-  for (const player of Object.values(cache?.players ?? {})) {
+  for (const [id, { player }] of players) {
     if (!player.skills || player.experience == null) continue;
-    const seasonDay = player.metadata?.seasonDay ?? cache?.currentSeasonDay ?? 0;
+    const seasonDay = player.metadata?.seasonDay ?? 0;
     const height = (player.baseInfo as { height?: number }).height;
-    addPair(player.baseInfo.id, player.baseInfo.age + seasonDay / config.daysPerSeason, player.skills as AnySkills, height, player.experience);
+    addPair(id, player.baseInfo.age + seasonDay / config.daysPerSeason, player.skills as AnySkills, height, player.experience);
   }
   // History days with XP add the same players at earlier ages (newest first,
-  // so the cache's own point keeps its age).
+  // so the cache's own point keeps its age). A player's stored age is from
+  // his last update, so ages count back from that.
+  const ageOn = (id: string, date: string): number | null => {
+    const cached = players.get(id);
+    if (!cached) return null;
+    const { player } = cached;
+    const updated = Date.parse(player.metadata?.updatedAt ?? backup.exportedAt);
+    const daysBefore = (updated - Date.parse(`${date}T12:00:00Z`)) / 86_400_000;
+    return player.baseInfo.age + ((player.metadata?.seasonDay ?? 0) - daysBefore) / config.daysPerSeason;
+  };
   const history = (sport === "hockey" ? backup.skillHistory : backup.sportSkillHistory?.[sport]) ?? [];
   [...history]
     .filter((entry) => entry.skills && entry.experience != null)
@@ -348,118 +180,121 @@ function fitSport(sport: Sport) {
       const height = (entry as { height?: number }).height;
       if (age != null) addPair(entry.playerId, age, entry.skills as AnySkills, height, entry.experience!);
     });
+  const shareExp = fitShareAndExp(pairs, ages);
 
-  const median = (values: number[]) => quantile(values, 0.5);
-  const shareMeasured = windowed(pairs.map((q) => ({ x: q.x, value: q.share })), ages, MIN_PAIR_SAMPLES, median);
-  const share = isotonic(
-    fillGaps(shareMeasured.map((m) => m?.value ?? null)),
-    shareMeasured.map((m) => (m ? m.n : 0.5))
-  );
-  // Medians of ~6 players step up and down: non-decreasing, then a 5-age
-  // moving average so the 100% line has no jumps between ages. After the last
-  // measured age XP keeps its last five ages' average yearly gain.
-  const expMeasured = windowed(pairs.map((q) => ({ x: q.x, value: q.exp })), ages, MIN_PAIR_SAMPLES, median);
-  const lastExp = expMeasured.map((m, i) => (m ? i : -1)).filter((i) => i >= 0).pop()!;
-  const expSmooth = movingAverage(
-    isotonic(
-      fillGaps(expMeasured.map((m) => m?.value ?? null)).slice(0, lastExp + 1),
-      expMeasured.slice(0, lastExp + 1).map((m) => (m ? m.n : 0.5))
-    ),
-    2
-  );
-  const gain = Math.max(0, (expSmooth[lastExp] - expSmooth[Math.max(0, lastExp - 5)]) / Math.min(5, lastExp || 1));
-  const exp = ages.map((_, i) => (i <= lastExp ? expSmooth[i] : expSmooth[lastExp] + gain * (i - lastExp)));
-
-  // 4. The tables.
-  const table = (or: number[]): GrowthPrediction =>
-    ages.map((age, i) => ({ age, skill: Math.round(share[i] * or[i]), exp: Math.round(exp[i]) }));
-  const reference: RelativeSkillReference = { global: table(globalOr), league: table(leagueOr) };
-
-  return {
-    config, ages, points, leaguePoints, globalMeasured, globalOr, leagueMeasured, ratios, leagueOr,
-    shareMeasured, share, expMeasured, exp, reference, pairs, cache,
+  const fit: RelativeSkillFit = {
+    percentile,
+    rows: ages.map((age, i) => ({
+      age,
+      or: Math.round(global.curve[i]),
+      share: Number(shareExp.share[i].toFixed(4)),
+      exp: Math.round(shareExp.exp[i]),
+    })),
   };
+
+  // 3. The backup's own league, as the extension would fit it.
+  const leaguePoints = scoutPoints(snapshots, config.daysPerSeason, (row) => row.teamId !== undefined && leagueTeams.has(row.teamId));
+  const league = fitLeagueOr(leaguePoints, ages, percentile, fit.rows.map((row) => row.or));
+
+  return { config, ages, points, leaguePoints, global, league, pairs, shareExp, fit, players };
 }
 
-function tableSource(sport: Sport, reference: RelativeSkillReference): string {
-  const rows = (table: GrowthPrediction) =>
-    table.map((row) => `    { age: ${row.age}, skill: ${row.skill}, exp: ${row.exp} },`).join("\n");
-  return `import { RelativeSkillReference } from "@/types/GrowthData";
+function checkFinite(sport: Sport, fit: RelativeSkillFit) {
+  const bad = fit.rows.filter(
+    (row) =>
+      ![row.or, row.share, row.exp].every(Number.isFinite) || row.or <= 0 || row.share <= 0 || row.exp < 0
+  );
+  if (bad.length > 0) {
+    throw new Error(`${sport}: refusing to write, bad rows at ages ${bad.map((row) => row.age).join(", ")}`);
+  }
+}
+
+function fitSource(sport: Sport, fit: RelativeSkillFit): string {
+  const rows = fit.rows
+    .map((row) => `    { age: ${row.age}, or: ${row.or}, share: ${row.share}, exp: ${row.exp} },`)
+    .join("\n");
+  return `import { RelativeSkillFit, referenceTable } from "@/base/relativeSkillFit";
 
 /**
- * The 100% lines behind ${sport}'s relative skill: per age, the best
- * position's rating (\`skill\`) and XP (\`exp\`) of a player at the
- * ${Math.round(percentile * 100)}th percentile of scouted OR - over every scouted team (\`global\`)
- * and over the user's league (\`league\`).
+ * ${sport[0].toUpperCase()}${sport.slice(1)}'s global relative-skill line: per age, the ${Math.round(fit.percentile * 100)}th
+ * percentile of scouted OR (\`or\`), the best position's rating as a share of
+ * OR (\`share\`) and XP (\`exp\`). 100% = share x or with that XP.
  *
  * Generated by scripts/fit-relative-skill.ts from the ${backup.exportedAt.slice(0, 10)} backup.
  * Do not edit by hand: rerun the script with --write on a newer backup.
  */
-export const relativeSkillReference: RelativeSkillReference = {
-  global: [
-${rows(reference.global)}
-  ],
-  league: [
-${rows(reference.league)}
+export const relativeSkillFit: RelativeSkillFit = {
+  percentile: ${fit.percentile},
+  rows: [
+${rows}
   ],
 };
+
+/** The global 100% line as a table: rating without XP (\`skill\`) and XP per age. */
+export const relativeSkillReference = referenceTable(relativeSkillFit);
 `;
 }
 
 const fmt = (value: number | null | undefined, width: number) =>
   String(value == null || Number.isNaN(value) ? "-" : Math.round(value)).padStart(width);
 
+/** The 100% value at an exact age, as BasePlayer reads a table. */
+const maxAt = (table: GrowthPrediction, age: number, seasonDay: number, daysPerSeason: number) =>
+  calculateProjectedMaxSkillForAge(age, seasonDay, daysPerSeason, table);
+
 for (const sport of (onlySport ? [onlySport] : Object.keys(SPORTS)) as Sport[]) {
-  const fit = fitSport(sport);
-  const { config, ages, reference } = fit;
-  const pct = `p${Math.round(percentile * 100)}`;
+  const result = fitSport(sport);
+  const { config, ages, fit, global, league, shareExp } = result;
+  const table = referenceTable(fit);
+  const leagueTable = league ? referenceTable(fit, league.curve) : null;
   console.log(
-    `\n=== ${sport}: OR ${pct}, ${fit.points.length} scouted player-seasons ` +
-      `(${fit.leaguePoints.length} in the league); ${fit.pairs.length} skill+XP points ` +
-      `from ${new Set(fit.pairs.map((q) => q.id)).size} players`
+    `\n=== ${sport}: OR p${Math.round(percentile * 100)}, ${result.points.length} scouted player-seasons ` +
+      `(${result.leaguePoints.length} in the backup's league); ${result.pairs.length} skill+XP points ` +
+      `from ${new Set(result.pairs.map((q) => q.id)).size} players`
   );
-  console.log(
-    "age |  n  win  raw    OR | lgN lgRaw ratio lgOR | prs share exp | global ratingXp  league ratingXp | current global"
-  );
+  console.log("age |  n  win  raw    OR | lgN lgRaw ratio lgOR | prs share exp | global ratingXp  league ratingXp | current");
   ages.forEach((age, i) => {
-    const g = fit.globalMeasured[i];
-    const l = fit.leagueMeasured[i];
-    const current = config.current.global.find((row) => row.age === age);
+    const g = global.measured[i];
+    const l = league?.measured[i];
+    const current = referenceTable(config.current).find((row) => row.age === age);
     console.log(
-      `${age} | ${fmt(g?.n, 4)} ${g ? `±${g.half}`.padEnd(5) : "  -  "}${fmt(g?.value, 5)} ${fmt(fit.globalOr[i], 5)} | ` +
-        `${fmt(l?.n, 3)} ${fmt(l?.value, 5)} ${(fit.ratios[i] ?? NaN).toFixed(2).padStart(5)} ${fmt(fit.leagueOr[i], 5)} | ` +
-        `${fmt(fit.shareMeasured[i]?.n, 3)} ${fit.share[i].toFixed(3)} ${fmt(fit.exp[i], 3)} | ` +
-        `${fmt(calculateSkillWithExp(reference.global[i].skill, reference.global[i].exp), 15)} ` +
-        `${fmt(calculateSkillWithExp(reference.league[i].skill, reference.league[i].exp), 16)} | ` +
-        `${fmt(current ? calculateSkillWithExp(current.skill, current.exp) : null, 14)}`
+      `${age} | ${fmt(g?.n, 4)} ${g ? `±${g.half}`.padEnd(5) : "  -  "}${fmt(g?.value, 5)} ${fmt(global.curve[i], 5)} | ` +
+        `${fmt(l?.n, 3)} ${fmt(l?.value, 5)} ${(league?.ratios[i] ?? NaN).toFixed(2).padStart(5)} ${fmt(league?.curve[i], 5)} | ` +
+        `${fmt(shareExp.shareMeasured[i]?.n, 3)} ${shareExp.share[i].toFixed(3)} ${fmt(shareExp.exp[i], 3)} | ` +
+        `${fmt(calculateSkillWithExp(table[i].skill, table[i].exp), 15)} ` +
+        `${fmt(leagueTable ? calculateSkillWithExp(leagueTable[i].skill, leagueTable[i].exp) : null, 16)} | ` +
+        `${fmt(current ? calculateSkillWithExp(current.skill, current.exp) : null, 7)}`
     );
   });
+  if (!league) console.log("No league line: the backup's league has too few scouted players.");
 
   if (write) {
+    checkFinite(sport, fit);
     const file = path.resolve("src/sports", sport, "relativeSkillReference.ts");
-    fs.writeFileSync(file, tableSource(sport, reference));
+    fs.writeFileSync(file, fitSource(sport, fit));
     console.log(`\nWrote ${file}`);
   }
 
-  if (compare && fit.cache) {
-    const cache = fit.cache;
-    console.log(`\nOwn players on season day ${cache.currentSeasonDay}: current global / league -> new global / league`);
-    const progress = (cache.currentSeasonDay ?? 0) / config.daysPerSeason;
-    const percent = (value: number, max: number) => (max ? `${Math.round((value / max) * 100)}%` : "-").padStart(4);
-    Object.values(cache.players)
-      .filter((player) => player.baseInfo.teamId === cache.teamId && player.skills && player.experience != null)
-      .sort((a, b) => a.baseInfo.age - b.baseInfo.age)
-      .forEach((player) => {
+  if (compare) {
+    const currentTable = referenceTable(config.current);
+    const currentLeague = fitLeagueOr(result.leaguePoints, ages, config.current.percentile, config.current.rows.map((r) => r.or));
+    const currentLeagueTable = currentLeague ? referenceTable(config.current, currentLeague.curve) : null;
+    const percent = (value: number, max: number | null) =>
+      (max ? `${Math.round((value / max) * 100)}%` : "-").padStart(4);
+    console.log("\nOwn players: current global / league -> new global / league");
+    [...result.players.values()]
+      .filter(({ player, ownTeam }) => ownTeam && player.skills && player.experience != null)
+      .sort((a, b) => a.player.baseInfo.age - b.player.baseInfo.age)
+      .forEach(({ player, seasonDay }) => {
         const height = (player.baseInfo as { height?: number }).height;
         const ratingXp = calculateSkillWithExp(config.rate(player.skills as AnySkills, height).rating, player.experience!);
         const age = player.baseInfo.age;
+        const at = (t: GrowthPrediction | null) => (t ? maxAt(t, age, seasonDay, config.daysPerSeason) : null);
         console.log(
           `${player.baseInfo.name.padEnd(24)} ${String(age).padStart(2)} OR ${fmt(player.baseInfo.overallRating, 4)} ` +
             `ratingXp ${fmt(ratingXp, 4)}  ` +
-            `${percent(ratingXp, tableValueAt(config.current.global, age, progress))} / ` +
-            `${percent(ratingXp, tableValueAt(config.current.league, age, progress))} -> ` +
-            `${percent(ratingXp, tableValueAt(reference.global, age, progress))} / ` +
-            `${percent(ratingXp, tableValueAt(reference.league, age, progress))}`
+            `${percent(ratingXp, at(currentTable))} / ${percent(ratingXp, at(currentLeagueTable))} -> ` +
+            `${percent(ratingXp, at(table))} / ${percent(ratingXp, at(leagueTable))}`
         );
       });
   }

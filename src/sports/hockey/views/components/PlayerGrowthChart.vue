@@ -20,7 +20,7 @@ import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { playerGrowthPrediction } from "@/sports/hockey/settings";
+import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
@@ -65,7 +65,7 @@ const calculateData = () => {
 
   // We loop from 15 to 45
   for (let age = 15; age <= 45; age++) {
-    const targetGrowthData = playerGrowthPrediction.find((p) => p.age === age);
+    const targetGrowthData = relativeSkillReference.find((p) => p.age === age);
 
     if (targetGrowthData) {
       // Base / Pure skill line
@@ -113,7 +113,7 @@ const calculateData = () => {
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   if (metric.value === "or") {
-    // OR view: the top-player table, the with-XP / base split and the
+    // OR view: the top-5% line, the with-XP / base split and the
     // projection are all skill-based and have no OR equivalent in the data,
     // so only the current OR and the stored OR history are drawn - and only
     // those are computed.
@@ -138,7 +138,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
 
   const datasets: ChartDataset<"line">[] = [
     {
-      label: "Top Player Skill (Total)",
+      label: "Top 5% Skill (Total)",
       data: projectedTotalData,
       borderColor: "#ccc",
       backgroundColor: "#ccc",
@@ -150,7 +150,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       tension: 0.4,
     },
     {
-      label: "Top Player Skill (Base)",
+      label: "Top 5% Skill (Base)",
       data: projectedPureData,
       borderColor: "#ccc",
       backgroundColor: "#ccc",

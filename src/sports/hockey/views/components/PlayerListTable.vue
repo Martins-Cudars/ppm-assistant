@@ -6,6 +6,7 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import { relativeSortValue } from "@/base/relativeSkill";
 import PlayerListStats from "./PlayerListStats.vue";
 import PlayerListChart from "./PlayerListChart.vue";
 
@@ -48,6 +49,13 @@ const setPosition = (pos: string) => {
 const getBestPosition = (player: HockeyPlayer) => {
   return player.getBestPosition();
 };
+
+// Both relative-skill 100% values once per player, not per cell and sort.
+const relativeMaxima = computed(
+  () => new Map(store.players.map((p: HockeyPlayer) => [p.id, p.getRelativeSkillMaxima()]))
+);
+const maximaOf = (player: HockeyPlayer) =>
+  relativeMaxima.value.get(player.id) ?? player.getRelativeSkillMaxima();
 
 const getAdjustedSkill = (player: HockeyPlayer) => {
   const bestPos = player.getBestPosition();
@@ -121,11 +129,7 @@ const tableColumns = computed<Column[]>(() => {
       key: "relative",
       slot: "relative",
       sortable: true,
-      sortValue: (p: HockeyPlayer) => {
-        const skill = getAdjustedSkill(p);
-        const max = p.getMaxSkillForAge();
-        return max ? skill / max : 0;
-      },
+      sortValue: (p: HockeyPlayer) => relativeSortValue(getAdjustedSkill(p), maximaOf(p)),
       headerClass: "th2",
     }
   );
@@ -260,8 +264,8 @@ const tableColumns = computed<Column[]>(() => {
       <template #relative="{ item }">
         <RelativeSkill
           :skill="getAdjustedSkill(item)"
-          :maxSkillForAge="item.getMaxSkillForAge()"
-          :leagueMaxSkillForAge="item.getMaxSkillForAge('league')"
+          :maxSkillForAge="maximaOf(item).global"
+          :leagueMaxSkillForAge="maximaOf(item).league"
         />
       </template>
     </SortableTable>

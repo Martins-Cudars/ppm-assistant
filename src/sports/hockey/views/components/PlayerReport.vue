@@ -62,7 +62,8 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
-import { playerGrowthPrediction, ratingSettings } from "@/sports/hockey/settings";
+import { ratingSettings } from "@/sports/hockey/settings";
+import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 
 const store = usePlayerStore();
 const activeTab = ref<"table" | "graph">("table");
@@ -429,11 +430,11 @@ const exactAgeByPlayer = computed(
   () => new Map(store.cachedPlayers.map((player: HockeyPlayer) => [player.id, exactAgeOf(player)]))
 );
 
-// The Squad choice: the top-player curve on the Skill tab, as before, and the
+// The Squad choice: the top-5% line (relative skill's 100%) on the Skill tab, and the
 // squad's own best OR at each age on the OR tab.
 const squadReference = computed<GrowthReference>(() => ({
-  label: "Top player (Skill) / your squad's best (OR)",
-  skill: playerGrowthPrediction.map((point) => ({ x: point.age, y: point.skill })),
+  label: "Top 5% (Skill) / your squad's best (OR)",
+  skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
     squadHistoryOnly(allHistory.value ?? new Map()),
@@ -465,7 +466,7 @@ const {
   ownTeamId: () => store.teamId,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-player curve the Pace column measures against. OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line, the 100% of relative skill (Pace still measures against the older top-player table). OR: the best any of your own players had on reaching each age.",
   squadCaption:
     "Squad: OR against the best any of your own players had at the same age. Pace: against the top-player table, as before.",
   idOf: (player) => player.id,

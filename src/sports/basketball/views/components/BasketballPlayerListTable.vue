@@ -3,6 +3,8 @@ import { computed, ref } from "vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import { relativeSortValue } from "@/base/relativeSkill";
+import type { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
 import BasketballPlayerListChart from "./BasketballPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/basketball/settings";
 import type { BasketballPlayerListItem } from "../types";
@@ -15,6 +17,13 @@ const props = defineProps<{
 const selectedPosition = ref("All");
 const minAge = ref(15);
 const maxAge = ref(50);
+
+// Both relative-skill 100% values once per player, not per cell and sort.
+const relativeMaxima = computed(
+  () => new Map(props.items.map((item) => [item.player.id, item.player.getRelativeSkillMaxima()]))
+);
+const maximaOf = (player: BasketballPlayer) =>
+  relativeMaxima.value.get(player.id) ?? player.getRelativeSkillMaxima();
 
 const filteredItems = computed(() =>
   props.items.filter(({ player }) => {
@@ -171,10 +180,8 @@ const tableColumns = computed<Column[]>(() => {
       key: "relative",
       slot: "relative",
       sortable: true,
-      sortValue: (item: BasketballPlayerListItem) => {
-        const max = item.player.getMaxSkillForAge();
-        return max ? item.player.getBestPosition().ratingWithXp / max : 0;
-      },
+      sortValue: (item: BasketballPlayerListItem) =>
+        relativeSortValue(item.player.getBestPosition().ratingWithXp, maximaOf(item.player)),
       headerClass: "th2",
     },
   ];
@@ -271,8 +278,8 @@ const tableColumns = computed<Column[]>(() => {
       <template #relative="{ item }">
         <RelativeSkill
           :skill="item.player.getBestPosition().ratingWithXp"
-          :maxSkillForAge="item.player.getMaxSkillForAge()"
-          :leagueMaxSkillForAge="item.player.getMaxSkillForAge('league')"
+          :maxSkillForAge="maximaOf(item.player).global"
+          :leagueMaxSkillForAge="maximaOf(item.player).league"
         />
       </template>
     </SortableTable>

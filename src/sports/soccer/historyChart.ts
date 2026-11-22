@@ -9,7 +9,7 @@
 
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
-import { playerGrowthPrediction } from "@/sports/soccer/settings";
+import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { calculatePositions } from "@/classes/playerCalculations";
 import type { GrowthMetric } from "@/components/growthMetric";
 import { downsampleHistory } from "@/base/historyDownsample";
@@ -68,8 +68,11 @@ export function soccerHistoryPoints(
   }));
 }
 
-/** The top-player table's rating (no XP) by age - the grey reference line. */
-export const topPlayerSkillCurve: Point[] = playerGrowthPrediction.map((row) => ({
+/**
+ * The top-5% line's rating (no XP) by age - the grey reference line, the same
+ * line relative skill's global 100% is read from.
+ */
+export const topPlayerSkillCurve: Point[] = relativeSkillReference.map((row) => ({
   x: row.age,
   y: row.skill,
 }));

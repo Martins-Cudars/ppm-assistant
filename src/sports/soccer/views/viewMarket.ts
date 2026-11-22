@@ -5,7 +5,7 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
-  renderRelativeSkill,
+  renderPlayerRelativeSkill,
 } from "@/base/render";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
@@ -118,12 +118,7 @@ const viewMarket = () => {
 
     const relativeCell = document.createElement("td");
 
-    const relativeSkill = renderRelativeSkill(
-      player.age,
-      bestSkillWithExp,
-      player.getMaxSkillForAge(),
-      player.getMaxSkillForAge("league")
-    );
+    const relativeSkill = renderPlayerRelativeSkill(player, bestSkillWithExp);
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);
 

@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import { relativeSortValue } from "@/base/relativeSkill";
 import RatingStars from "@/components/RatingStars.vue";
 import SoccerPlayerListChart from "./SoccerPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/soccer/settings";
@@ -17,6 +18,13 @@ const props = defineProps<{
 const selectedPosition = ref("All");
 const minAge = ref(15);
 const maxAge = ref(50);
+
+// Both relative-skill 100% values once per player, not per cell and sort.
+const relativeMaxima = computed(
+  () => new Map(props.items.map((item) => [item.player.id, item.player.getRelativeSkillMaxima()]))
+);
+const maximaOf = (player: SoccerPlayer) =>
+  relativeMaxima.value.get(player.id) ?? player.getRelativeSkillMaxima();
 
 const filteredItems = computed(() =>
   props.items.filter(({ player }) => {
@@ -188,11 +196,8 @@ const tableColumns = computed<Column[]>(() => {
       key: "relative",
       slot: "relative",
       sortable: true,
-      sortValue: (item: SoccerPlayerListItem) => {
-        const skill = getSoccerRelativeSkill(item.player);
-        const maxSkill = item.player.getMaxSkillForAge();
-        return maxSkill ? skill / maxSkill : 0;
-      },
+      sortValue: (item: SoccerPlayerListItem) =>
+        relativeSortValue(getSoccerRelativeSkill(item.player), maximaOf(item.player)),
       headerClass: "th1",
     }
   );
@@ -293,8 +298,8 @@ const tableColumns = computed<Column[]>(() => {
       <template #relative="{ item }">
         <RelativeSkill
           :skill="getSoccerRelativeSkill(item.player)"
-          :maxSkillForAge="item.player.getMaxSkillForAge()"
-          :leagueMaxSkillForAge="item.player.getMaxSkillForAge('league')"
+          :maxSkillForAge="maximaOf(item.player).global"
+          :leagueMaxSkillForAge="maximaOf(item.player).league"
         />
       </template>
     </SortableTable>

@@ -1,5 +1,6 @@
 import { PlayerCalculationProfile } from "@/classes/playerProfile";
-import { RelativeSkillScope } from "@/types/GrowthData";
+import { RelativeSkillMaxima } from "@/base/relativeSkill";
+import { leagueReference, whenLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import {
   calculatePositionTrainingQualities,
   calculatePositions,
@@ -193,18 +194,39 @@ export abstract class BasePlayer {
   }
 
   /**
-   * The 100% of relative skill at the player's exact age: the rating with XP
-   * of a top-5% player among every scouted team (`global`, the default) or
-   * among the user's league (`league`).
+   * The global 100% of relative skill at the player's exact age: the rating
+   * with XP of a top-5% player among every scouted team. 0 outside the
+   * table's ages.
    */
-  getMaxSkillForAge(scope: RelativeSkillScope = "global"): number {
+  getMaxSkillForAge(): number {
     const profile = this.getCalculationProfile();
 
     return calculateProjectedMaxSkillForAge(
       this.age,
       this.seasonDay,
       profile.daysPerSeason,
-      profile.relativeSkillReference[scope]
+      profile.relativeSkillReference
     );
+  }
+
+  /**
+   * Both 100% values: global, and the viewer's league once its line is fitted
+   * (src/base/scout/leagueRelativeSkill.ts; reactive, so a component reading
+   * this re-renders when it arrives). Null where there is none.
+   */
+  getRelativeSkillMaxima(): RelativeSkillMaxima {
+    const profile = this.getCalculationProfile();
+    const league = leagueReference(profile.sport, profile.relativeSkillFit, profile.daysPerSeason);
+    const leagueMax = league
+      ? calculateProjectedMaxSkillForAge(this.age, this.seasonDay, profile.daysPerSeason, league)
+      : 0;
+
+    return { global: this.getMaxSkillForAge() || null, league: leagueMax || null };
+  }
+
+  /** Settles once the league line is fitted or known to be missing. */
+  async whenRelativeSkillReady(): Promise<void> {
+    const profile = this.getCalculationProfile();
+    await whenLeagueReference(profile.sport, profile.relativeSkillFit, profile.daysPerSeason);
   }
 }

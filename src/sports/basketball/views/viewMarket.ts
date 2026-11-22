@@ -4,7 +4,7 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
-  renderRelativeSkill,
+  renderPlayerRelativeSkill,
 } from "@/base/render";
 
 const viewMarket = () => {
@@ -76,12 +76,7 @@ const viewMarket = () => {
     const relativeCell = document.createElement("td");
     relativeCell.classList.add(`${rowClass}td1`);
     relativeCell.appendChild(
-      renderRelativeSkill(
-        player.age,
-        bestPosition.ratingWithXp,
-        player.getMaxSkillForAge(),
-        player.getMaxSkillForAge("league")
-      )
+      renderPlayerRelativeSkill(player, bestPosition.ratingWithXp)
     );
     playerRow.appendChild(relativeCell);
   });
