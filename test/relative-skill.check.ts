@@ -14,6 +14,7 @@ import {
   referenceTable,
   scoutPoints,
   smoothSteps,
+  smoothedSeasonGains,
   unimodal,
   withDerivedSeasons,
   xpCurve,
@@ -298,6 +299,19 @@ const fitOf = (or: number[]): RelativeSkillFit => ({
       { x: 1, y: 1 },
       { x: 3, y: 3 },
     ]);
+  });
+
+  await check("smoothed growth rate: one peak, a steady decline, the line's steps gone", () => {
+    // Gains 90, 121, 114, 97, 59, 33, 36, 35, 20, 13: a 33-point step at 26 between 59 and 36.
+    const skills = [100, 190, 311, 425, 522, 581, 614, 650, 685, 705, 718];
+    const gains = smoothedSeasonGains(skills.map((skill, i) => ({ age: 21 + i, skill })));
+    const values = agesBetween(21, 30).map((age) => gains[age]);
+    const peak = values.indexOf(Math.max(...values));
+    ok(values.slice(0, peak + 1).every((v, i, a) => i === 0 || v >= a[i - 1]), `rises then: ${values}`);
+    ok(values.slice(peak).every((v, i, a) => i === 0 || v <= a[i - 1]), `falls after the peak: ${values}`);
+    ok(gains[26] > 33 && gains[26] < 59, `the step at 26 is evened out: ${gains[26]}`);
+    eq(gains[21], 90, "the first age stays as fitted");
+    eq(Object.keys(gains).length, skills.length - 1, "a gain per age but the last");
   });
 
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

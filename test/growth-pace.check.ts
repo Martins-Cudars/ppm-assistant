@@ -24,6 +24,7 @@ import {
 } from "@/sports/hockey/growthPace";
 import { createGrowthModel } from "@/base/growthModel";
 import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
@@ -86,6 +87,8 @@ const {
 } = createGrowthModel({
   ...hockeyGrowthConfig,
   growthTable: FIXTURE_TABLE,
+  // The fixture's own slope, as before smoothing.
+  referenceSlopeOverrides: undefined,
   agePaceFactors: [
     { fromAge: 0, factor: 1.0 },
     { fromAge: 22, factor: 0.95 },
@@ -641,14 +644,17 @@ check("no potential without a pace", () => {
   eq(projectPotential(skills({ defence: 450 }), 10, 18, null, { rating: 1, ratingWithXp: 1 }), null);
 });
 
-check("hockey runs on the top-5% line: its slope, its XP, the re-measured factors", () => {
+check("hockey runs on the top-5% line: its smoothed rate, its XP, the re-measured factors", () => {
   const row = (age: number) => relativeSkillReference.find((r) => r.age === age)!;
-  eq(hockeyExpectedSeasonGain(18.5), row(19).skill - row(18).skill, "slope at 18");
+  const smoothed = smoothedSeasonGains(relativeSkillReference);
+  eq(hockeyExpectedSeasonGain(18.5), smoothed[18], "smoothed rate at 18");
+  eq(hockeyExpectedSeasonGain(26.4), smoothed[26], "26: smoothed, not the line's 33-point step");
+  if (!(smoothed[26] > row(27).skill - row(26).skill)) throw new Error("26 not smoothed");
   near(hockeyTopExpAt(28), row(28).exp, "XP at 28");
   eq(hockeyAgePaceFactor(21.9), 1.0, "21");
-  eq(hockeyAgePaceFactor(22), 0.93, "22");
-  eq(hockeyAgePaceFactor(26), 1.03, "25-27");
-  eq(hockeyAgePaceFactor(30), 1.0, "28+");
+  eq(hockeyAgePaceFactor(22), 0.96, "22");
+  eq(hockeyAgePaceFactor(26), 0.96, "25-27");
+  eq(hockeyAgePaceFactor(30), 0.88, "28+");
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

@@ -53,8 +53,11 @@ export interface GrowthConfig<TSkills extends Skills> {
   growthTable: readonly { age: number; skill: number; exp: number }[];
   /**
    * Replaces the table's slope (skill[age+1] - skill[age]) at these whole ages
-   * - for a table whose growth shape the user's own players don't follow
-   * (soccer's after 23).
+   * as the 100% growth rate. Hockey and soccer pass the top-5% line's gains
+   * smoothed (smoothedSeasonGains in src/base/relativeSkillFit.ts), so Pace
+   * isn't read against the line's raw year-to-year steps; soccer also its
+   * squad's own decline from 24. A 100% pace then follows the smoothed rate,
+   * not the drawn line exactly.
    */
   referenceSlopeOverrides?: Readonly<Record<number, number>>;
   /** How fast players train at each age relative to the reference ages, at the user's team. */

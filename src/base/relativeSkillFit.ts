@@ -457,3 +457,25 @@ export function fitLeagueReference(
 export function isLeagueSnapshot(row: ScoutSnapshot, league: LeagueList, teams = new Set(league.teamIds)): boolean {
   return row.teamId !== undefined && teams.has(row.teamId) && row.season === league.season;
 }
+
+/**
+ * The growth rate Pace and the projections measure against: the top-5%
+ * line's yearly gains (skill[age + 1] - skill[age]), smoothed. The line is a
+ * cross-section of many teams' players, so its year-to-year steps follow
+ * where scouting is thin (hockey 90 a season at 15 and 33 at 26, between 121
+ * and 59); a pace read against a 33-point step reads 140%. So the gains are
+ * fitted unimodal - rising to a single peak, then never rising again, which
+ * pools the steps - and then 1-2-1 averaged `passes` times, which keeps the
+ * single peak (see smoothSteps) and turns the pooled blocks into a steady
+ * decline. The ends stay as fitted. Keyed by the whole age the gain starts
+ * at; the drawn line is unchanged.
+ */
+export function smoothedSeasonGains(
+  table: readonly { age: number; skill: number }[],
+  passes = 3
+): Record<number, number> {
+  const gains = table.slice(1).map((row, i) => row.skill - table[i].skill);
+  let smooth = unimodal(gains, gains.map(() => 1));
+  for (let pass = 0; pass < passes; pass++) smooth = smoothSteps(smooth);
+  return Object.fromEntries(table.slice(0, -1).map((row, i) => [row.age, Math.round(smooth[i] * 10) / 10]));
+}

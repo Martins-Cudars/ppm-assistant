@@ -204,7 +204,9 @@ The youth median went from 55% to 66%.
     - Fewer than 14: `-`, and the tooltip gives the stored day count.
   - The tooltip gives the dates, the measured days and what was skipped.
 - **Expected gain** at an age is the curve's slope for that year of age:
-  `skill[floor+1] − skill[floor]`. There is no pace from 35 on, where the curve declines.
+  `skill[floor+1] − skill[floor]`. Since 2026-11-23 it is the top-5% line's smoothed rate
+  for that year (`smoothedSeasonGains()`, see "Pace slows with age"). There is no pace from
+  35 on, where the curve declines.
 - **@25 columns: one value per player, from one of two sources.**
   - **Players 25 and over** show the value recorded when they turned 25, in normal text.
   - **Younger players** show a projection, in italic grey with a leading `~`.
@@ -262,29 +264,39 @@ adding it.
 
 ### Pace slows with age: `AGE_PACE_FACTORS`
 
-> **Re-measured on the top-5% line (2026-11-23, 2026-11-22 backup).** Against the old table
-> the same windows read 1.00 / 0.96 / 0.66 / 0.46 in hockey. Against the top-5% line they
-> read **1.00 / 0.93 / 1.03 / 1.00** (27 / 11 / 11 / 3 players, base pace 58% at ≤21): the
-> scouted line already slows down as this team's players do. Soccer, all history: **1.74 at
-> 15, 0.80 at 16**, 1.00 from 17 (26 / 28 / 27 players; it was 1.4 / 1.18). The line rises
-> only 42 from 15 to 16 and 88 from 16 to 17, so a 15-year-old reads high and a 16-year-old
-> low. `scripts/measure-age-factors.ts` now takes `SPORT=soccer`. The rest of this section is
-> the measurement against the old table.
+> **Measured against the smoothed rate of the top-5% line (2026-11-23, 2026-11-22
+> backup; the user's decision).** The line is a cross-section of many teams, and its yearly
+> gains step where scouting is thin: hockey 90 a season at 15 and 33 at 26, between 121 and
+> 59. Read against the raw steps, hockey 26-year-olds' Pace was 100–142%. So Pace and the
+> projections measure against `smoothedSeasonGains()` (`src/base/relativeSkillFit.ts`): the
+> gains fitted unimodal (rising to one peak, never rising again after it), then 1-2-1
+> averaged three times. Hockey's rate: 15:90 16:103 17:107 18:103 20:97 22:90 24:71 26:45
+> 28:30 30:21 32:17 34:4, negative from 35. Soccer uses it up to 23 (15:42 17:64 20:58
+> 23:52) and the squad's own decline from 24, scaled to the smoothed 52 at 23. The line
+> drawn on the charts is unchanged, so a 100% pace follows the smoothed rate, not the drawn
+> line exactly.
 >
-> **Pace before and after, same backup:**
+> **The factors against that rate:** hockey **1.00 / 0.96 / 0.96 / 0.88** (27 / 11 / 11 / 3
+> players, base pace 59% at ≤21); soccer, all history, **1.78 at 15, 1.23 at 16**, 1.00
+> from 17 (26 / 28 / 27 players). Against the old table they were 1.00 / 0.95 / 0.67 / 0.49
+> and 1.4 / 1.18; against the line's raw steps 1.00 / 0.93 / 1.03 / 1.00 and 1.74 / 0.80.
+> `scripts/measure-age-factors.ts` takes `SPORT=soccer`. The rest of this section is the
+> measurement against the old table.
 >
-> | Player | Age | Pace (old table → top-5% line) | @25 |
+> **Pace on the same backup: 4.0.1 (old table) → the line's raw steps → the smoothed rate:**
+>
+> | Player | Age | Pace | @25 |
 > |---|---|---|---|
-> | Gatis Spuļģis (W) | 22.4 | 81% → 83% | 789 → 793 |
-> | Matīss Slaidins (W) | 16.4 | 60% → 80% | 673 → 857 |
-> | Octave Bezeau (W) | 26.4 | 53% → 124% | – |
-> | Mairis Grīns (W) | 28.4 | 48% → 81% | – |
-> | Kristofers Vārna (soccer SD) | 22.7 | 60% → 81% | 455 → 481 |
-> | Reinis Rītiņš (soccer SD) | 15.7 | 67% → 100% | 417 → 436 |
+> | Gatis Spuļģis (W) | 22.4 | 81% → 83% → 88% | 789 → 793 → 797 |
+> | Matīss Slaidins (W) | 16.4 | 60% → 80% → 80% | 673 → 857 → 843 |
+> | Octave Bezeau (W) | 26.4 | 53% → 124% → 91% | – |
+> | Mairis Grīns (W) | 28.4 | 48% → 81% → 95% | – |
+> | Kristofers Vārna (soccer SD) | 22.7 | 60% → 81% → 64% | 455 → 481 → 462 |
+> | Reinis Rītiņš (soccer SD) | 15.7 | 67% → 100% → 100% | 417 → 436 → 436 |
 >
-> The line's slope steps where scouting is thin: hockey 90 a season at 15 (old 120) and 33
-> at 26 (old 77), so 16-year-olds' Pace and @25 rise and 26-year-olds read 100–142%.
-> Smoothing the line's slope for Pace is not done; it is the user's call.
+> Hockey 16-year-olds still project higher than in 4.0.1 (Slaidins 843 vs 673): the
+> smoothed rate keeps the line's 90 a season at 15 (the fit keeps its ends), so a window at
+> 15.9–16.4 reads 80%, and the line rises 874 from 16 to 25 against the old table's 853.
 
 A single pace carried to 25 was too optimistic. At this team, players slow down faster than
 the curve does, so projections multiply each future year by an age factor relative to ages
@@ -1052,8 +1064,8 @@ player list's Rel column and the market's Rel column.
 - **The growth charts use the same global line** as their grey "Top 5%" line: the hockey
   and soccer profile charts, both list charts and the Players reports' Skill tab. So the
   chart's top line and relative skill's 100% agree. Since 2026-11-23 Pace, the projections
-  and their XP read it too, with `AGE_PACE_FACTORS` and the XP shares re-measured against it
-  (see "Pace slows with age"). Basketball's growth model has no table: its reference is
+  and their XP read it too: the growth rate is the line's yearly gains smoothed, with
+  `AGE_PACE_FACTORS` and the XP shares re-measured against it (see "Pace slows with age"). Basketball's growth model has no table: its reference is
   built from the squad's own history (`buildReferenceCurve`), so it is unchanged, and it
   still has no top-player line.
   The grey lines use Chart.js's monotone interpolation: the plain spline bulged above the

@@ -466,7 +466,7 @@ const {
   ownTeamId: () => store.teamId,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against. OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against, as a smoothed growth rate. OR: the best any of your own players had on reaching each age.",
   squadCaption:
     "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line, as before.",
   idOf: (player) => player.id,

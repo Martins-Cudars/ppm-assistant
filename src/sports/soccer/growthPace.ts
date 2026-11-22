@@ -13,6 +13,7 @@
 
 import { positionSettings } from "@/sports/soccer/settings";
 import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
+import { smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import {
@@ -59,33 +60,36 @@ export const SQUAD_SLOPE_SHARE_FROM_24: Readonly<Record<number, number>> = {
 };
 
 /**
- * The 100% reference from 24 on: the squad's own decline, scaled to meet the
- * top-5% line's slope at 23 (54 a season). The user's choice, kept from the
- * old table, whose slope collapsed after 23 while the squad kept gaining. The
- * top-5% line is a cross-section of many teams: after 23 its slope steps
- * (65, 30, 4, 22, 43 a season at 24-28), and a pace measured against a
- * 4-point step would mean nothing. So the table up to 23, this from 24.
+ * The 100% growth rate up to 23: the top-5% line's gains smoothed
+ * (smoothedSeasonGains), not its raw yearly steps (42, 88, 62 a season at
+ * 15-17; 65, 30, 4, 22 at 24-27).
  */
-const slopeAt23 =
-  relativeSkillReference.find((row) => row.age === 24)!.skill -
-  relativeSkillReference.find((row) => row.age === 23)!.skill;
+export const SMOOTHED_SEASON_GAINS = smoothedSeasonGains(relativeSkillReference);
+
+/**
+ * The 100% rate from 24 on: the squad's own decline, scaled to meet the
+ * smoothed rate at 23. The user's choice, kept from the old table, whose
+ * slope collapsed after 23 while the squad kept gaining.
+ */
+const slopeAt23 = SMOOTHED_SEASON_GAINS[23];
 export const REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Object.fromEntries(
   Object.entries(SQUAD_SLOPE_SHARE_FROM_24).map(([age, share]) => [age, Math.round(share * slopeAt23)])
 );
 
 /**
  * How fast players pace at each age against that reference, relative to 17+
- * (1.0). Re-measured 2026-11-23 against the top-5% line on the 2026-11-22
+ * (1.0). Re-measured 2026-11-23 against the smoothed rate on the 2026-11-22
  * backup with scripts/measure-age-factors.ts (SPORT=soccer, all history):
- * 17+ paces a median 55% (27 players), 15 95% (26), 16 44% (28). The line
- * rises only 42 from 15 to 16 and 88 from 16 to 17, so a 15-year-old reads
- * high and a 16-year-old low; the factors take that out. The measured pace is
- * divided by its age's factor and each future year applies its own, as
- * hockey's bands do. Against the old table these were 1.4 / 1.18.
+ * 17+ paces a median 53% (27 players), 15 95% (26), 16 66% (28). Juniors pace
+ * faster, and the line's smoothed rate starts at only 42 a season at 15, so
+ * the factors divide that out: a junior's pace isn't carried to 25. The
+ * measured pace is divided by its age's factor and each future year applies
+ * its own, as hockey's bands do. Against the old table these were 1.4 / 1.18,
+ * against the line's raw steps 1.74 / 0.80.
  */
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
-  { fromAge: 0, factor: 1.74 },
-  { fromAge: 16, factor: 0.8 },
+  { fromAge: 0, factor: 1.78 },
+  { fromAge: 16, factor: 1.23 },
   { fromAge: 17, factor: 1.0 },
 ];
 
@@ -121,7 +125,7 @@ export const soccerGrowthConfig: GrowthConfig<SoccerSkills> = {
   bonusCapRatio: soccerPlayerProfile.bonusCapRatio ?? 1,
   daysPerSeason: soccerPlayerProfile.daysPerSeason,
   growthTable: relativeSkillReference,
-  referenceSlopeOverrides: REFERENCE_SLOPE_FROM_24,
+  referenceSlopeOverrides: { ...SMOOTHED_SEASON_GAINS, ...REFERENCE_SLOPE_FROM_24 },
   agePaceFactors: AGE_PACE_FACTORS,
   pace: {
     windowDays: PACE_WINDOW_DAYS,

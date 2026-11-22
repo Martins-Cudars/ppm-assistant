@@ -17,6 +17,7 @@
 
 import { positionSettings } from "@/sports/hockey/settings";
 import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import {
@@ -77,17 +78,19 @@ export const CAMP_LOOKBACK_DAYS = 112;
  * own team. Projections slow down by these factors on top of the top-5%
  * line's own slowdown.
  *
- * Re-measured 2026-11-23 against the top-5% line (the global relative-skill
- * reference), on the 2026-11-22 backup, 56-day windows since 2025-12-01, with
- * scripts/measure-age-factors.ts (base pace 58% at <=21):
+ * Re-measured 2026-11-23 against the smoothed growth rate of the top-5% line
+ * (smoothedSeasonGains of the global relative-skill reference), on the
+ * 2026-11-22 backup, 56-day windows since 2025-12-01, with
+ * scripts/measure-age-factors.ts (base pace 59% at <=21):
  *
  *   <=21   1.00   27 players, the reference
- *   22-24  0.93   11 players
- *   25-27  1.03   11 players
- *   28+    1.00    3 players
+ *   22-24  0.96   11 players
+ *   25-27  0.96   11 players
+ *   28+    0.88    3 players
  *
- * The scouted line already slows down as this team's players do, so the
- * factors are about 1: against the old hand-written table the same windows
+ * The scouted line already slows down much as this team's players do, so the
+ * factors are near 1 (against its raw yearly steps they read 1.00 / 0.93 /
+ * 1.03 / 1.00). Against the old hand-written table the same windows
  * read 1.00 / 0.96 / 0.66 / 0.46. The earlier measurement, against that table:
  *
  * Measured 2026-09-26 from the Aug 28 backup, 56-day windows since 2025-12-01,
@@ -118,9 +121,9 @@ export const CAMP_LOOKBACK_DAYS = 112;
  */
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
   { fromAge: 0, factor: 1.0 },
-  { fromAge: 22, factor: 0.93 },
-  { fromAge: 25, factor: 1.03 },
-  { fromAge: 28, factor: 1.0 },
+  { fromAge: 22, factor: 0.96 },
+  { fromAge: 25, factor: 0.96 },
+  { fromAge: 28, factor: 0.88 },
 ];
 
 /**
@@ -157,6 +160,9 @@ export const hockeyGrowthConfig: GrowthConfig<HockeySkills> = {
   bonusCapRatio: hockeyPlayerProfile.bonusCapRatio ?? 1,
   daysPerSeason: hockeyPlayerProfile.daysPerSeason,
   growthTable: relativeSkillReference,
+  // The 100% growth rate: the line's gains smoothed, not its raw yearly steps
+  // (90 a season at 15, 33 at 26 - see smoothedSeasonGains).
+  referenceSlopeOverrides: smoothedSeasonGains(relativeSkillReference),
   agePaceFactors: AGE_PACE_FACTORS,
   pace: {
     windowDays: PACE_WINDOW_DAYS,

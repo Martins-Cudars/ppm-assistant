@@ -3,9 +3,9 @@
  * src/base/growthModel.ts with soccer's constants) - see test/README.md.
  *
  * What matters:
- * - The reference is the top-5% line (relativeSkillReference) up to 23, the
- *   squad's own decline from 24, scaled to the line's slope at 23 (the
- *   user's choice - after 23 the line's slope steps).
+ * - The reference is the top-5% line's smoothed growth rate
+ *   (smoothedSeasonGains) up to 23, the squad's own decline from 24, scaled
+ *   to the smoothed rate at 23 (the user's choice).
  * - Juniors' faster pace is divided out by the age factors, so it isn't
  *   carried to 25.
  * - One skill a day at the position's ratios measures the same base pace as
@@ -24,6 +24,7 @@ import {
   projectionPoints,
 } from "@/sports/soccer/growthPace";
 import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
+import { smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
@@ -44,14 +45,14 @@ const eq = (a: unknown, b: unknown, m = "") => {
   if (a !== b) throw new Error(`${m} expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
 };
 
-const skillAt = (age: number) => relativeSkillReference.find((row) => row.age === age)!.skill;
 const expAt = (age: number) => relativeSkillReference.find((row) => row.age === age)!.exp;
-const slope20 = skillAt(21) - skillAt(20);
-const slope23 = skillAt(24) - skillAt(23);
+const smoothed = smoothedSeasonGains(relativeSkillReference);
+const slope20 = smoothed[20];
+const slope23 = smoothed[23];
 
-check("reference: the top-5% line's slope up to 23, the squad's own from 24", () => {
+check("reference: the top-5% line's smoothed rate up to 23, the squad's own from 24", () => {
   eq(expectedSeasonGain(20.5), slope20, "20 -> 21");
-  eq(slope23, 54, "23 -> 24 on the 2026-11-22 line");
+  eq(Math.round(slope23), 52, "23 -> 24, smoothed, on the 2026-11-22 line");
   eq(expectedSeasonGain(23.2), slope23, "23 -> 24");
   eq(expectedSeasonGain(24.0), Math.round(0.92 * slope23), "24: the squad's 0.92 of the slope at 23");
   eq(expectedSeasonGain(25.9), Math.round(0.88 * slope23), "25: 0.88");
@@ -59,9 +60,9 @@ check("reference: the top-5% line's slope up to 23, the squad's own from 24", ()
   near(curveGainBetween(23, 25), slope23 + Math.round(0.92 * slope23), 1e-9, "23 + 24");
 });
 
-check("age factors: a 15-year-old's high and a 16-year-old's low pace are divided out", () => {
-  eq(agePaceFactor(15.3), 1.74);
-  eq(agePaceFactor(16.9), 0.8);
+check("age factors: juniors' faster pace is divided out", () => {
+  eq(agePaceFactor(15.3), 1.78);
+  eq(agePaceFactor(16.9), 1.23);
   eq(agePaceFactor(17), 1.0);
   eq(agePaceFactor(28), 1.0);
 });
