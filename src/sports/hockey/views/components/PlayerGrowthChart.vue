@@ -25,15 +25,13 @@ import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
-import { growthMetricAxisTitle, useGrowthMetric } from "@/components/growthMetric";
 import {
-  downsampleHistory,
-  getExactAge,
-  historyEntryToAgePoint,
-  historyEntryToOverallPoint,
-  readEntryBaseRating,
-  readEntryOverallRating,
-} from "@/sports/hockey/skillHistoryChart";
+  applyGrowthMetricScale,
+  growthMetricScale,
+  orDatasets,
+  useGrowthMetric,
+} from "@/components/growthMetric";
+import { getExactAge, historyPoints } from "@/sports/hockey/skillHistoryChart";
 import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
@@ -52,6 +50,9 @@ const metric = useGrowthMetric();
 const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
 const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 
+const currentExactAge = () => getExactAge(props.player, getCurrentSeasonDay() || 1);
+
+// Skill mode only: the OR view needs none of this (see buildDatasets).
 const calculateData = () => {
   const projectedPureData = [];
   const projectedTotalData = [];
@@ -79,8 +80,7 @@ const calculateData = () => {
   }
 
   // Player position
-  const seasonDay = getCurrentSeasonDay() || 1;
-  const exactAge = getExactAge(props.player, seasonDay);
+  const exactAge = currentExactAge();
 
   currentPureData.push({ x: exactAge, y: currentPureSkill });
   currentTotalData.push({ x: exactAge, y: currentTotalSkill });
@@ -88,23 +88,8 @@ const calculateData = () => {
   // Actual skill history, sourced from prior visits to treninu-progress.html
   // and from profile visits. Entries captured from an unscouted player's
   // profile carry an overall rating but no attributes, so they yield no base
-  // rating and drop out here.
-  //
-  // That filtering happens *before* downsampling on purpose: were one of those
-  // rating-only entries the latest in its window, thinning first would discard
-  // the whole window even though earlier entries in it had usable skills.
-  //
-  // In OR mode the rating-only entries are exactly the ones worth keeping:
-  // every entry with an overall rating counts, skills or not.
-  const isOr = metric.value === "or";
-  const usable = historyEntries.value.filter((entry) =>
-    isOr ? readEntryOverallRating(entry) !== null : readEntryBaseRating(entry) !== null
-  );
-  const actualHistoryData = downsampleHistory(usable)
-    .map((entry) =>
-      isOr ? historyEntryToOverallPoint(entry, exactAge) : historyEntryToAgePoint(entry, exactAge)
-    )
-    .filter((point): point is { x: number; y: number } => point !== null);
+  // rating and drop out here (historyPoints filters before thinning).
+  const actualHistoryData = historyPoints(historyEntries.value, exactAge, "skill");
 
   // Where the player lands if their recent pace holds, assuming balanced
   // training for their best position from here, starting from the red
@@ -127,6 +112,19 @@ const calculateData = () => {
 };
 
 const buildDatasets = (): ChartDataset<"line">[] => {
+  if (metric.value === "or") {
+    // OR view: the top-player table, the with-XP / base split and the
+    // projection are all skill-based and have no OR equivalent in the data,
+    // so only the current OR and the stored OR history are drawn - and only
+    // those are computed.
+    const exactAge = currentExactAge();
+    return orDatasets({
+      exactAge,
+      current: props.player.overallRating,
+      history: historyPoints(historyEntries.value, exactAge, "or"),
+    });
+  }
+
   const {
     projectedPureData,
     projectedTotalData,
@@ -137,36 +135,6 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     pace,
     provisional,
   } = calculateData();
-
-  if (metric.value === "or") {
-    // OR view: the top-player table, the with-XP / base split and the
-    // projection are all skill-based and have no OR equivalent in the data,
-    // so only the current OR and the stored OR history are drawn.
-    const orDatasets: ChartDataset<"line">[] = [
-      {
-        label: "Current OR",
-        data: [{ x: currentPureData[0].x, y: props.player.overallRating }],
-        borderColor: "rgba(255, 99, 132, 1)",
-        backgroundColor: "rgba(255, 99, 132, 1)",
-        pointRadius: 10,
-        pointHoverRadius: 12,
-        showLine: false,
-      },
-    ];
-    if (actualHistoryData.length > 0) {
-      orDatasets.push({
-        label: "Actual OR History",
-        data: actualHistoryData,
-        borderColor: "rgba(54, 162, 235, 1)",
-        backgroundColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 2,
-        pointRadius: 3,
-        fill: false,
-        tension: 0,
-      });
-    }
-    return orDatasets;
-  }
 
   const datasets: ChartDataset<"line">[] = [
     {
@@ -281,13 +249,7 @@ const renderChartWithLogic = () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: growthMetricAxisTitle(metric.value),
-            },
-          },
+          y: growthMetricScale(metric.value),
           x: {
             type: "linear",
             min: safeMinAge,
@@ -347,7 +309,7 @@ watch([minAge, maxAge], () => {
 watch(metric, (next) => {
   if (!chartInstance) return;
   chartInstance.data.datasets = buildDatasets();
-  chartInstance.options.scales!.y!.title!.text = growthMetricAxisTitle(next);
+  applyGrowthMetricScale(chartInstance, next);
   chartInstance.update();
 });
 </script>

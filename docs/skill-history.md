@@ -386,13 +386,17 @@ state and session memory in `src/components/growthMetric.ts`, kept in `sessionSt
 swaps `chart.data.datasets` and the y-axis title in place, then `chart.update()`; it does not
 recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
 
-- **OR history** uses every row with an `overallRating`, so an unscouted opponent's rating-only
-  rows draw. Rows are filtered per metric *before* thinning (see the Skill path above).
+- **OR history** uses every row with an `overallRating`, or the sum of its floored skills when
+  it has none, so an unscouted opponent's rating-only rows draw. Hockey's `historyPoints()`
+  (`skillHistoryChart.ts`) is the one reader; the Player Report uses it too. The OR y axis
+  auto-scales with 5% padding instead of starting at zero. `orDatasets()` in `growthMetric.ts`
+  builds the OR view for all three charts and omits "Now (OR)" when the OR is missing or 0.
+  The comparison chart's Skill / OR tabs use the same `GrowthMetricToggle`. Rows are filtered per metric *before* thinning (see the Skill path above).
 - **Hidden in OR mode:** the hockey/soccer top-player tables, the "with XP" marker, and the
   projected-at-own-pace line. The data has no OR equivalent of them.
 - **Basketball's squad-best line** switches to its OR curve (`buildSquadBestCurve().or`).
-- **Verified:** hockey, in a static harness against the 2026-11-22 backup (both modes). Soccer and
-  basketball are compiled and linted only, not seen in a browser.
+- **Verified:** hockey and soccer, in a static harness against the 2026-11-22 backup. Basketball is
+  compiled and linted only, not seen in a browser.
 
 ## Basketball
 

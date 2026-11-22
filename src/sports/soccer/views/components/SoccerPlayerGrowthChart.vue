@@ -2,7 +2,7 @@
   <div class="player-growth-chart">
     <div class="chart-header">
       <span class="chart-title">{{ metric === "or" ? "Growth (OR)" : "Growth (best position)" }}</span>
-      <GrowthMetricToggle v-model="metric" class="chart-metric" />
+      <GrowthMetricToggle v-model="metric" />
       <div class="age-filter">
         <label>
           Age:
@@ -29,7 +29,7 @@
  * - dashed blue: the projection at the player's own pace, as the report's
  *   @25 column computes it (the shared growth model with soccer's constants).
  */
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
@@ -42,7 +42,12 @@ import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
-import { growthMetricAxisTitle, useGrowthMetric } from "@/components/growthMetric";
+import {
+  applyGrowthMetricScale,
+  growthMetricScale,
+  orDatasets,
+  useGrowthMetric,
+} from "@/components/growthMetric";
 
 const props = defineProps<{ player: SoccerPlayer }>();
 
@@ -62,14 +67,16 @@ const exactAge =
 // no skills, so they appear in OR mode only.
 const entries = ref<SkillHistoryEntry<SoccerSkills>[]>([]);
 const metric = useGrowthMetric();
-const history = ref<Point[]>([]);
+// Derived, so a new metric or freshly loaded rows can never leave it stale.
+const history = computed<Point[]>(() =>
+  soccerHistoryPoints(entries.value, exactAge, metric.value)
+);
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
 
 const load = async () => {
   const id = normalizePlayerId(props.player.id) ?? props.player.id;
   entries.value = (await getSkillHistoryForPlayer(id, "soccer")) as unknown as SkillHistoryEntry<SoccerSkills>[];
-  history.value = soccerHistoryPoints(entries.value, exactAge, metric.value);
 
   const measured = measureGrowthPace(entries.value, exactAge, props.player.getBestPosition().name);
   pace.value =
@@ -85,32 +92,14 @@ const range = () => {
 };
 
 const buildDatasets = (): ChartDataset<"line">[] => {
+  // OR view: the skill-only lines (top-player table, rating with XP,
+  // projection) have no OR equivalent in the data, so they are left out.
   if (metric.value === "or") {
-    // OR view: the skill-only lines (top-player table, rating with XP,
-    // projection) have no OR equivalent in the data, so they are left out.
-    const datasets: ChartDataset<"line">[] = [
-      {
-        label: "Now (OR)",
-        data: [{ x: exactAge, y: props.player.overallRating }],
-        borderColor: "rgba(255, 99, 132, 1)",
-        backgroundColor: "rgba(255, 99, 132, 1)",
-        pointRadius: 10,
-        pointHoverRadius: 12,
-        showLine: false,
-      },
-    ];
-    if (history.value.length > 0) {
-      datasets.push({
-        label: "History (OR)",
-        data: history.value,
-        borderColor: "rgba(54, 162, 235, 1)",
-        backgroundColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 2,
-        pointRadius: 2,
-        tension: 0,
-      });
-    }
-    return datasets;
+    return orDatasets({
+      exactAge,
+      current: props.player.overallRating,
+      history: history.value,
+    });
   }
 
   const best = props.player.getBestPosition();
@@ -205,7 +194,7 @@ const render = () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true, title: { display: true, text: growthMetricAxisTitle(metric.value) } },
+          y: growthMetricScale(metric.value),
           x: {
             type: "linear",
             min: bounds.min,
@@ -240,10 +229,9 @@ onMounted(() => {
 
 // Switching metric swaps the datasets and axis title in place - no new chart.
 watch(metric, (next) => {
-  history.value = soccerHistoryPoints(entries.value, exactAge, next);
   if (!chartInstance) return;
   chartInstance.data.datasets = buildDatasets();
-  chartInstance.options.scales!.y!.title!.text = growthMetricAxisTitle(next);
+  applyGrowthMetricScale(chartInstance, next);
   chartInstance.update();
 });
 

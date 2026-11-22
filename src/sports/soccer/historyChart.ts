@@ -11,10 +11,11 @@ import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { playerGrowthPrediction } from "@/sports/soccer/settings";
 import { calculatePositions } from "@/classes/playerCalculations";
+import type { GrowthMetric } from "@/components/growthMetric";
 import { downsampleHistory } from "@/base/historyDownsample";
 
 export type Point = { x: number; y: number };
-export type GrowthMetric = "skill" | "or";
+export type { GrowthMetric };
 
 type ChartEntry = { date: string; skills?: SoccerSkills; overallRating?: number };
 

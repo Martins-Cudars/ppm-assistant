@@ -4,7 +4,7 @@
       <span class="chart-title">{{
         metric === "or" ? "Growth (OR)" : "Growth (best position, no XP unless marked)"
       }}</span>
-      <GrowthMetricToggle v-model="metric" class="chart-metric" />
+      <GrowthMetricToggle v-model="metric" />
       <div class="age-filter">
         <label>
           Age:
@@ -32,7 +32,7 @@
  * - dashed blue: the projection at the player's own pace, as the report's
  *   @25 column computes it.
  */
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { BasketballPlayer, BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
@@ -54,7 +54,12 @@ import { readSportTeamCache } from "@/storage/playerCache";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
-import { growthMetricAxisTitle, useGrowthMetric } from "@/components/growthMetric";
+import {
+  applyGrowthMetricScale,
+  growthMetricScale,
+  orDatasets,
+  useGrowthMetric,
+} from "@/components/growthMetric";
 
 const props = defineProps<{ player: BasketballPlayer }>();
 
@@ -75,7 +80,10 @@ const exactAge = props.player.age + (getCurrentSeasonDay() || 1) / basketballPla
 // OR-only rows (unscouted players) have no skills, so they show in OR mode only.
 const ownEntries = ref<Entry[]>([]);
 const metric = useGrowthMetric();
-const history = ref<Point[]>([]);
+// Derived, so a new metric or freshly loaded rows can never leave it stale.
+const history = computed<Point[]>(() =>
+  historyPoints(ownEntries.value, exactAge, metric.value, props.player.height)
+);
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
 const squadBest = ref<{ skill: Point[]; or: Point[] }>({ skill: [], or: [] });
@@ -98,7 +106,6 @@ const load = async () => {
   ]);
 
   ownEntries.value = own;
-  history.value = historyPoints(own, exactAge, metric.value, props.player.height);
 
   // The references need the squad: every stored day, and each cached player's
   // age and height today.
@@ -135,37 +142,36 @@ const load = async () => {
   render();
 };
 
+const squadDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
+  label,
+  data,
+  borderColor: "#bbb",
+  backgroundColor: "#bbb",
+  borderWidth: 2,
+  borderDash: [4, 4],
+  pointRadius: 2,
+  tension: 0.3,
+});
+
 const buildDatasets = (): ChartDataset<"line">[] => {
+  if (metric.value === "or") {
+    // OR view: no XP variant and no projection - the growth model is skill-based.
+    const datasets: ChartDataset<"line">[] = [];
+    const line = squadBest.value.or;
+    if (line.length > 0) {
+      datasets.push(squadDataset(line, "Your squad's best at each age (OR)"));
+    }
+    return datasets.concat(
+      orDatasets({ exactAge, current: props.player.overallRating, history: history.value })
+    );
+  }
+
   const best = props.player.getBestPosition();
   const datasets: ChartDataset<"line">[] = [];
-
-  const isOr = metric.value === "or";
-  const squadLine = isOr ? squadBest.value.or : squadBest.value.skill;
-  if (squadLine.length > 0) {
-    datasets.push({
-      label: `Your squad's best at each age${isOr ? " (OR)" : ""}`,
-      data: squadLine,
-      borderColor: "#bbb",
-      backgroundColor: "#bbb",
-      borderWidth: 2,
-      borderDash: [4, 4],
-      pointRadius: 2,
-      tension: 0.3,
-    });
+  if (squadBest.value.skill.length > 0) {
+    datasets.push(squadDataset(squadBest.value.skill, "Your squad's best at each age"));
   }
-  if (isOr) {
-    // OR view: no XP variant and no projection - the growth model is skill-based.
-    datasets.push({
-      label: "Now (OR)",
-      data: [{ x: exactAge, y: props.player.overallRating }],
-      borderColor: "rgba(255, 99, 132, 1)",
-      backgroundColor: "rgba(255, 99, 132, 1)",
-      pointRadius: 10,
-      pointHoverRadius: 12,
-      showLine: false,
-    });
-  } else {
-    datasets.push(
+  datasets.push(
     {
       label: `Now with XP (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithXp }],
@@ -184,13 +190,12 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointHoverRadius: 12,
       showLine: false,
     }
-    );
-  }
+  );
   // Omitted rather than drawn empty: a player never seen on the squad
   // overview or training-progress page simply has no history yet.
   if (history.value.length > 0) {
     datasets.push({
-      label: isOr ? "History (OR)" : "History",
+      label: "History",
       data: history.value,
       borderColor: "rgba(54, 162, 235, 1)",
       backgroundColor: "rgba(54, 162, 235, 1)",
@@ -199,7 +204,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       tension: 0,
     });
   }
-  if (!isOr && projection.value.length > 0 && pace.value) {
+  if (projection.value.length > 0 && pace.value) {
     const { value, provisional } = pace.value;
     datasets.push({
       label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(value * 100)}%${provisional ? ", provisional" : ""})`,
@@ -212,7 +217,6 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       tension: 0,
     });
   }
-
   return datasets;
 };
 
@@ -239,7 +243,7 @@ const render = () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true, title: { display: true, text: growthMetricAxisTitle(metric.value) } },
+          y: growthMetricScale(metric.value),
           x: {
             type: "linear",
             min,
@@ -274,10 +278,9 @@ onMounted(() => {
 
 // Switching metric swaps the datasets and axis title in place - no new chart.
 watch(metric, (next) => {
-  history.value = historyPoints(ownEntries.value, exactAge, next, props.player.height);
   if (!chartInstance) return;
   chartInstance.data.datasets = buildDatasets();
-  chartInstance.options.scales!.y!.title!.text = growthMetricAxisTitle(next);
+  applyGrowthMetricScale(chartInstance, next);
   chartInstance.update();
 });
 
