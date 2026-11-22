@@ -317,7 +317,14 @@ adding it.
 > 15–16 now reads on the 17+ scale: Rītiņš 56%, Evijs Lācis 114% → 64%, Gints Kaklarots
 > 83% → 47%. Squad medians are 55% under 17 and 55% from 17, and Pace against training
 > ratio is r = 0.40. Re-measuring with `measure-age-factors.ts` now reads 1.00 at 15, 16
-> and 17+.
+> and 17+ (the script names 17+ as soccer's reference band).
+>
+> The correction is the own squad's: it sits in the model's reference slopes, which only
+> its Pace and projections read. The report's League / Elite group curves take their shape
+> for ages without pairs from `uncorrectedSeasonGain()`, the line's rate without it.
+> `juniorRates()` leaves out an age the line lacks rather than turning it into NaN, which
+> would silently disable Pace there, and the soccer-growth check fails if the current line
+> lacks 15 or 16.
 >
 > Hockey shows no such junior effect: median Pace 84% under 17 and 83% from 17. Hockey
 > Pace doesn't track training ratio (r = −0.15, 44 players). See "Why training quality
@@ -477,7 +484,8 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
   builds the OR view for all three charts and omits "Now (OR)" when the OR is missing or 0.
   The comparison chart's Skill / OR tabs use the same `GrowthMetricToggle`. Rows are filtered per metric *before* thinning (see the Skill path above).
 - **Hidden in OR mode:** the "with XP" lines and marker. OR has no XP.
-- **Basketball's squad-best line** switches to its OR curve (`buildSquadBestCurve().or`).
+- **Basketball** draws the top-5% lines in both modes since 2026-11-23, as hockey and soccer do
+  (see "Basketball Pace on the top-5% line").
 - **Verified:** hockey and soccer, in a static harness against the 2026-11-22 backup. Basketball is
   compiled and linted only, not seen in a browser.
 
@@ -510,10 +518,13 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
     minimums. OR is a whole number and these days are occasional visits, so no day can be
     judged a camp. The rate is therefore the calendar rate, camps included, and the
     projection adds no camp allowance on top.
-  - **Skills come first.** Whenever the skill pace would accept a skilled window, the OR
-    pace reads it, and OR-only days are ignored, as the skill pace ignores them. The OR
-    numbers are read only without such a window, so the pace never depends on which
-    capture came last. The window, cleaning and camp record are one function,
+  - **Skills come first while they are fresh.** When the skill pace would accept a skilled
+    window, the OR pace reads it, and OR-only days are ignored, as the skill pace ignores
+    them, so a profile visit or two doesn't decide the basis. The OR numbers are read when
+    there is no such window, or when it is stale: its last day is more than
+    `OR_BASIS_AFTER_DAYS` (30) older than the newest OR-only day. That covers a sold player
+    now seen only on his profile. A stale window still counts if the OR numbers can't be
+    measured. The window, cleaning and camp record are one function,
     `measureSkilledWindow()` in `src/base/gainCleaning.ts`, shared by the hockey/soccer and
     basketball skill paces and the OR pace.
   - **The projection** is today's OR + pace ÷ the age factor at the window's middle × the
@@ -533,7 +544,7 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
 - **Basketball** measures OR growth the same way (`basketballOrModel()`, the same
   `createOrModel`): against its top-5% OR line's smoothed rate, with its own OR age factors.
   A player with skills is read on the skill pace's own window and camp record, over all
-  seven skills.
+  seven skills, while that window is fresh (see "Skills come first").
 - **On the 2026-11-22 backup** (OR @25, or at +3 years for players over 22). The Skill
   columns are the Player Report's: pace, Skill @25 and the OR of the same projected skills.
 
@@ -849,7 +860,7 @@ This also sidesteps the unsettled age-curve question (research item 7).
   basketball layout has no `.column_center_inner`: the table sits in a `.white_box` in
   `.column_center_half`. It shows:
   - grey: the top-5% line, with and without XP, as hockey and soccer draw it (until
-    2026-11-23: your squad's best rating on reaching each whole age, `buildSquadBestCurve`);
+    2026-11-23: your squad's best rating on reaching each whole age);
   - red: today's best-position rating, with and without XP;
   - blue: stored history, each day rated with that day's height;
   - dashed blue: the projection at the player's own pace, the same model as the @25 column.
@@ -961,8 +972,9 @@ shared chart) and two table columns. The choice is remembered in `localStorage`.
   needs the same player seen twice, weeks apart. So the toggle does two different things:
 - **"OR vs best" (works from single visits):** the player's OR as a percentage of the
   group's best OR at his exact age. `bestOrAt()` reads the group's line: linear between
-  points, the end value up to half a season past either end, "-" beyond. Squad uses
-  `buildSquadBestCurve().or`.
+  points, the end value up to half a season past either end, "-" beyond. Squad uses the
+  squad's best OR (`squadBestOrByAge`, as hockey and soccer; basketball's own
+  `buildSquadBestCurve` is removed).
 - **Pace against League / Elite (needs revisits):**
   - `scoutRatePairs()`: per player, the latest snapshot against the earliest one 42-105
     days before it **on the same team**; OR change ÷ days, at the middle age. 42 days,

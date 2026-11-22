@@ -17,8 +17,9 @@
  *
  * Optional: SPORT=hockey|soccer|basketball (default hockey); TEAM=<team id> picks the
  * cache (default: the sport's one with the most history); WINDOW_DAYS
- * overrides the window (default PACE_WINDOW_DAYS). Factors are relative to the
- * first band whose current factor is 1.0 (hockey <=21, soccer 17+).
+ * overrides the window (default PACE_WINDOW_DAYS). Factors are relative to
+ * each sport's reference band, named in SPORTS (hockey and basketball <=21,
+ * soccer 17+).
  * METRIC=or measures the OR pace (measureOrPace, against the top-5% OR line's
  * smoothed rate) instead of the skill model's base pace, to check whether the
  * OR projection can share the skill model's factors.
@@ -39,18 +40,25 @@ type SportBinding = {
   PACE_MIN_SPAN_DAYS: number;
   PACE_WINDOW_DAYS: number;
   daysPerSeason: number;
+  /** The band the factors are relative to (its fromAge): it reads 1.00 by definition. */
+  referenceFromAge: number;
   /** The pace the skill projection divides by the factor: hockey/soccer basePace, basketball's pace. */
   skillPace: (window: SkillHistoryEntry[], exactAgeNow: number) => Measured;
   orPace: (window: SkillHistoryEntry[], exactAgeNow: number) => Measured;
 };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const growthBinding = (m: typeof hockey | typeof soccer, daysPerSeason: number): SportBinding => ({
+const growthBinding = (
+  m: typeof hockey | typeof soccer,
+  daysPerSeason: number,
+  referenceFromAge: number
+): SportBinding => ({
   AGE_PACE_FACTORS: m.AGE_PACE_FACTORS,
   OR_AGE_PACE_FACTORS: m.OR_AGE_PACE_FACTORS,
   PACE_MIN_SPAN_DAYS: m.PACE_MIN_SPAN_DAYS,
   PACE_WINDOW_DAYS: m.PACE_WINDOW_DAYS,
   daysPerSeason,
+  referenceFromAge,
   skillPace: (window, age) => {
     const last = window[window.length - 1];
     if (!last.skills) return null;
@@ -63,14 +71,16 @@ const growthBinding = (m: typeof hockey | typeof soccer, daysPerSeason: number):
   },
 });
 const SPORTS: Record<string, () => SportBinding> = {
-  hockey: () => growthBinding(hockey, hockey.hockeyGrowthConfig.daysPerSeason),
-  soccer: () => growthBinding(soccer, soccer.soccerGrowthConfig.daysPerSeason),
+  hockey: () => growthBinding(hockey, hockey.hockeyGrowthConfig.daysPerSeason, 0),
+  // 17+: the junior correction is measured against it (JUNIOR_RATE_FACTORS).
+  soccer: () => growthBinding(soccer, soccer.soccerGrowthConfig.daysPerSeason, 17),
   basketball: () => ({
     AGE_PACE_FACTORS: basketball.AGE_PACE_FACTORS,
     OR_AGE_PACE_FACTORS: basketball.OR_AGE_PACE_FACTORS,
     PACE_MIN_SPAN_DAYS: basketball.PACE_MIN_SPAN_DAYS,
     PACE_WINDOW_DAYS: basketball.PACE_WINDOW_DAYS,
     daysPerSeason: 70,
+    referenceFromAge: 0,
     skillPace: (window, age) => {
       if (!window[window.length - 1].skills) return null;
       const pace = basketball.measureBasketballPace(window as any, age);
@@ -85,7 +95,7 @@ const SPORTS: Record<string, () => SportBinding> = {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 const sport = process.env.SPORT && SPORTS[process.env.SPORT] ? process.env.SPORT : "hockey";
-const { AGE_PACE_FACTORS, OR_AGE_PACE_FACTORS, PACE_MIN_SPAN_DAYS, PACE_WINDOW_DAYS, daysPerSeason, skillPace, orPace } =
+const { AGE_PACE_FACTORS, OR_AGE_PACE_FACTORS, PACE_MIN_SPAN_DAYS, PACE_WINDOW_DAYS, daysPerSeason, referenceFromAge, skillPace, orPace } =
   SPORTS[sport]();
 const metric = process.env.METRIC === "or" ? "or" : "skill";
 // The bands are the same; "(current)" shows the factors of the metric measured.
@@ -176,8 +186,7 @@ const median = (values: number[]) => {
   return sorted[Math.floor(sorted.length / 2)];
 };
 
-const referenceBand = currentFactors.find((band) => band.factor === 1) ?? currentFactors[0];
-const reference = paces.get(referenceBand.fromAge);
+const reference = paces.get(referenceFromAge);
 if (!reference) throw new Error("No windows in the reference band - try an earlier ERA_START.");
 const referencePace = median(reference.values);
 

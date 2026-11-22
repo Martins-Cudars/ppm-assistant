@@ -25,7 +25,7 @@ import { calculateBasketballPositions } from "@/sports/basketball/calculations/p
 import { positionSettings } from "@/sports/basketball/settings";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import { calculateSkillWithExp } from "@/base/calculations";
-import { SkilledEntry, daysBetween, measureSkilledWindow } from "@/base/gainCleaning";
+import { daysBetween, measureSkilledWindow } from "@/base/gainCleaning";
 import { createOrModel } from "@/base/orGrowth";
 import { smoothedOrSeasonGains, smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { relativeOrReference, relativeSkillReference } from "@/sports/basketball/relativeSkillReference";
@@ -174,9 +174,7 @@ type HistoryEntry = {
   height?: number;
 };
 
-type Skilled = SkilledEntry<Skill> & HistoryEntry & { skills: BasketballSkills };
-
-const hasSkills = (entry: HistoryEntry): entry is Skilled => !!entry.skills;
+type Skilled = HistoryEntry & { skills: BasketballSkills };
 
 /** Age on an entry's date, counting a season as daysPerSeason (70) calendar days. */
 export function entryAge(date: string, currentExactAge: number, today: number = Date.now()): number {
@@ -226,10 +224,9 @@ export function measureBasketballPace(
   curve: ReferenceCurve = BASKETBALL_REFERENCE_CURVE,
   today: number = Date.now()
 ): BasketballPace | null {
-  const usable = entries.filter(hasSkills).sort((a, b) => a.date.localeCompare(b.date));
-  const measured = measureSkilledWindow(usable, BASKETBALL_SKILLS, SKILLED_WINDOW);
+  const measured = measureSkilledWindow(entries, BASKETBALL_SKILLS, SKILLED_WINDOW);
   if (!measured) return null;
-  const { first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed } = measured;
+  const { usable, first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed } = measured;
 
   const total = BASKETBALL_SKILLS.reduce((sum, skill) => sum + cleaned.gains[skill], 0);
   const pointsPerDay = total / cleaned.measuredDays;
@@ -356,8 +353,9 @@ const orRateAt = (age: number): number | null => {
  * soccer's: OR points per season against the top-5% OR line's smoothed gain
  * at the window's middle age, its own age factors, the camp allowance, and
  * projections to REFERENCE_LAST_AGE + 1. For a player with skills it is
- * measured on the skill pace's window over all seven skills; an unscouted
- * player's is read from his OR numbers end to end.
+ * measured on the skill pace's window over all seven skills, while that
+ * window is fresh (OR_BASIS_AFTER_DAYS); an unscouted player's, or one seen
+ * only on his profile since, is read from his OR numbers end to end.
  */
 export function basketballOrModel(today: number = Date.now()) {
   const orFactor = (age: number) => factorIn(OR_AGE_PACE_FACTORS, age);

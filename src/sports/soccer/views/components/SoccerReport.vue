@@ -38,12 +38,12 @@ import {
   bestPositionRating,
   dateAtAge,
   entryNearestDate,
-  expectedSeasonGain,
   measureGrowthPace,
   overallFromSkills,
   projectOverallRating,
   projectPositionRating,
   projectPotential,
+  uncorrectedSeasonGain,
 } from "@/sports/soccer/growthPace";
 import { readSportTeamCache } from "@/storage/playerCache";
 import { exportSkillHistory } from "@/storage/skillHistoryDb";
@@ -615,7 +615,7 @@ const {
   squadChartCaption:
     "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against (as a smoothed growth rate; soccer: up to 23, the squad's own decline from 24). OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the reference table, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate (from 24, your squad's own decline).",
   idOf,
   exactAgeOf,
   overallOf: (player) => player.overallRating,
@@ -632,7 +632,8 @@ const {
       return or !== null ? [{ date: entry.date, or }] : [];
     }),
   ageOnDate: (player, date) => soccerEntryAge(date, exactAgeOf(player)),
-  rateShape: (age) => expectedSeasonGain(age) ?? 0,
+  // The group curves' shape: the line's rate without the own squad's junior correction.
+  rateShape: (age) => uncorrectedSeasonGain(age) ?? 0,
 });
 </script>
 

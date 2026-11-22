@@ -56,10 +56,10 @@ import GrowthComparisonChart, {
 } from "@/components/GrowthComparisonChart.vue";
 import { useCompareWith } from "@/base/scout/useCompareWith";
 import { relativeSkillReference } from "@/sports/basketball/relativeSkillReference";
-import { squadHistoryOnly } from "@/base/scout/scoutReference";
+import { squadBestOrByAge, squadHistoryOnly } from "@/base/scout/scoutReference";
 import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
-import { buildSquadBestCurve, entryOverall, historyPoints } from "@/sports/basketball/historyChart";
+import { entryOverall, historyPoints } from "@/sports/basketball/historyChart";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
@@ -124,7 +124,6 @@ const PROJECTION_AGE = 25;
 /** How far from the computed "turned 25" date a recorded day may be. */
 const AT_AGE_TOLERANCE_DAYS = 14;
 
-
 // The 100% Pace and the projections measure against: the top-5% line's
 // smoothed rating gain, as rated points a day (src/sports/basketball/growthModel.ts).
 const curve = BASKETBALL_REFERENCE_CURVE;
@@ -154,19 +153,18 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
 
 // The Squad choice: the top-5% line (relative skill's 100%) on the Skill tab, and the
 // squad's own best OR at each age on the OR tab - as hockey's and soccer's reports.
-const squadReference = computed<GrowthReference>(() => {
-  const best = buildSquadBestCurve(
+const squadReference = computed<GrowthReference>(() => ({
+  label: "Top 5% (Skill) / your squad's best (OR)",
+  skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
+  or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
     squadHistoryOnly(history.value ?? new Map()),
     new Map(players.value.map((p) => [idOf(p), exactAgeOf(p)])),
-    new Map(players.value.map((p) => [idOf(p), p.height]))
-  );
-  return {
-    label: "Top 5% (Skill) / your squad's best (OR)",
-    skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
-    or: best.or,
-  };
-});
+    basketballPlayerProfile.daysPerSeason,
+    entryOverall,
+    new Map(players.value.map((p) => [idOf(p), p.name]))
+  ),
+}));
 
 // --- Compare with: Squad / League / Elite ------------------------------------------
 // Shared with the other sports' reports - see src/base/scout/useCompareWith.ts.
@@ -197,7 +195,7 @@ const {
   squadChartCaption:
     "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against, as a smoothed growth rate. OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate.",
   idOf,
   exactAgeOf,
   overallOf: (player) => player.overallRating,

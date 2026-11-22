@@ -34,8 +34,9 @@ import {
 } from "@/sports/basketball/growthModel";
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import { cleanedGains } from "@/base/gainCleaning";
+import { squadBestOrByAge } from "@/base/scout/scoutReference";
 import {
-  buildSquadBestCurve,
+  entryOverall,
   historyPoints,
   projectionPoints,
 } from "@/sports/basketball/historyChart";
@@ -281,18 +282,20 @@ check("chart: OR-only days don't swallow a window's skill days", () => {
   if (skill.some((p) => !Number.isFinite(p.y))) throw new Error("non-numeric point");
 });
 
-check("chart: squad best is the highest value on reaching each whole age", () => {
+check("chart: squad best OR is the highest value on reaching each whole age (70-day seasons)", () => {
   // Same schedule, A trains twice as fast; both are 20 today with a season of history.
   const a = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 2, { playerId: "A" });
   const b = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 1, { playerId: "B" });
-  const best = buildSquadBestCurve(
+  const best = squadBestOrByAge(
     new Map([["A", a], ["B", b]]),
     new Map([["A", 20], ["B", 20]]),
-    new Map([["A", 190], ["B", 190]]),
+    70,
+    entryOverall,
+    new Map(),
     TODAY
   );
-  eq(best.or.map((p) => p.x).join(","), "19,20");
-  near(best.or[1].y, Math.max(...a.slice(-1).map((e) => basketballOverall(e.skills))), 0, "A sets 20");
+  eq(best.map((p) => p.x).join(","), "19,20");
+  near(best[1].y, Math.max(...a.slice(-1).map((e) => basketballOverall(e.skills))), 0, "A sets 20");
 });
 
 check("chart: projection starts at today's rating and never falls with a positive pace", () => {

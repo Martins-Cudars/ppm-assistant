@@ -232,6 +232,8 @@ type MaybeSkilled = { date: string; source?: string; skills?: object };
 type WithSkills<E extends MaybeSkilled> = E & { skills: NonNullable<E["skills"]> };
 
 export interface SkilledWindow<K extends string, E extends MaybeSkilled> {
+  /** Every entry with skills, oldest first: callers reuse it rather than filter and sort again. */
+  usable: WithSkills<E>[];
   first: WithSkills<E>;
   /** The latest entry with skills: the window ends here, not today. */
   last: WithSkills<E>;
@@ -289,5 +291,5 @@ export function measureSkilledWindow<K extends string, E extends MaybeSkilled>(
         gainsOver(usable.slice(usable.indexOf(seasonStart)), daysBetween(seasonStart.date, last.date)).skippedCampDays
       );
 
-  return { first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed };
+  return { usable, first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed };
 }

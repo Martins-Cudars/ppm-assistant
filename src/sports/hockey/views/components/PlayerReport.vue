@@ -468,7 +468,7 @@ const {
   squadChartCaption:
     "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against, as a smoothed growth rate. OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate.",
   idOf: (player) => player.id,
   exactAgeOf,
   overallOf: (player) => player.overallRating,

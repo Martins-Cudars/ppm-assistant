@@ -10,10 +10,8 @@
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import type { GrowthMetric } from "@/components/growthMetric";
 import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
-import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
   BasketballPace,
-  REFERENCE_FIRST_AGE,
   REFERENCE_LAST_AGE,
   BASKETBALL_SKILLS,
   ReferenceCurve,
@@ -60,62 +58,6 @@ export function historyPoints(
     (entry) => readMetric(entry, metric, fallbackHeight),
     (entry) => entryAge(entry.date, currentExactAge, today)
   );
-}
-
-/** How far from a whole-age birthday a stored day may be to count for it. */
-const AGE_SAMPLE_TOLERANCE_DAYS = 7;
-
-export interface SquadBestCurve {
-  /** Per whole age, the highest value any squad player had on reaching it. */
-  skill: Point[];
-  or: Point[];
-}
-
-/**
- * "Your squad's best at each age": for every whole age, the highest rating
- * (and OR) any player had on the day they reached it. The Player Report's
- * OR tab draws its OR as hockey's and soccer's do; the Skill tab and the
- * profile chart draw the top-5% line instead (since 2026-11-23).
- *
- * Sampled at the birthday rather than as a max over the year, so each point
- * means exactly "at age N" and players are compared at the same moment.
- */
-export function buildSquadBestCurve(
-  historyByPlayer: Map<string, ChartEntry[]>,
-  exactAgeByPlayer: Map<string, number>,
-  heightByPlayer: Map<string, number>,
-  today: number = Date.now()
-): SquadBestCurve {
-  const best = { skill: new Map<number, number>(), or: new Map<number, number>() };
-
-  historyByPlayer.forEach((entries, playerId) => {
-    const exactAge = exactAgeByPlayer.get(playerId);
-    if (exactAge === undefined) return;
-    const fallbackHeight = heightByPlayer.get(playerId) ?? 0;
-
-    // Nearest stored day to each whole birthday, within the tolerance.
-    const nearest = new Map<number, { entry: ChartEntry; distance: number }>();
-    entries.forEach((entry) => {
-      const age = entryAge(entry.date, exactAge, today);
-      const whole = Math.round(age);
-      const distance = Math.abs(age - whole) * basketballPlayerProfile.daysPerSeason;
-      if (distance > AGE_SAMPLE_TOLERANCE_DAYS) return;
-      const held = nearest.get(whole);
-      if (!held || distance < held.distance) nearest.set(whole, { entry, distance });
-    });
-
-    nearest.forEach(({ entry }, age) => {
-      if (age < REFERENCE_FIRST_AGE || age > REFERENCE_LAST_AGE) return;
-      const skill = entryBestRating(entry, fallbackHeight);
-      const or = entryOverall(entry);
-      if (skill !== null && skill > (best.skill.get(age) ?? -Infinity)) best.skill.set(age, skill);
-      if (or !== null && or > (best.or.get(age) ?? -Infinity)) best.or.set(age, or);
-    });
-  });
-
-  const toPoints = (values: Map<number, number>) =>
-    [...values.entries()].sort((a, b) => a[0] - b[0]).map(([x, y]) => ({ x, y }));
-  return { skill: toPoints(best.skill), or: toPoints(best.or) };
 }
 
 /**

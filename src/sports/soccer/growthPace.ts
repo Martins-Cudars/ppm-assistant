@@ -95,12 +95,22 @@ export const REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Object.
  */
 export const JUNIOR_RATE_FACTORS: Readonly<Record<number, number>> = { 15: 1.78, 16: 1.23 };
 
-/** A reference rate's gains at the junior ages, scaled by their factors. */
+/**
+ * A reference rate's gains at the junior ages, scaled by their factors. An
+ * age the rate lacks (a refit line starting later) is left out rather than
+ * turned into NaN, which would silently disable Pace there; the soccer-growth
+ * check fails if the current line lacks one.
+ */
 export const juniorRates = (
   gains: Readonly<Record<number, number>>,
   factors: Readonly<Record<number, number>>
 ): Record<number, number> =>
-  Object.fromEntries(Object.entries(factors).map(([age, factor]) => [age, gains[Number(age)] * factor]));
+  Object.fromEntries(
+    Object.entries(factors).flatMap(([age, factor]) => {
+      const gain = gains[Number(age)];
+      return Number.isFinite(gain) ? [[age, gain * factor]] : [];
+    })
+  );
 
 /**
  * How fast players pace at each age against the reference, relative to 17+.
@@ -110,6 +120,19 @@ export const juniorRates = (
  * each). Against the old table the junior factors were 1.4 / 1.18, against
  * the line's raw steps 1.74 / 0.80.
  */
+/**
+ * The 100% rate's shape without the junior correction: the line's smoothed
+ * rate to 23 and the squad's decline from 24, per whole age, null where it
+ * isn't positive or from the projection age limit on. The correction belongs
+ * to the own squad's Pace and projections only; the report's League / Elite
+ * group curves take their gaps' shape from this (useCompareWith rateShape).
+ */
+export function uncorrectedSeasonGain(age: number): number | null {
+  if (!Number.isFinite(age) || age >= PROJECTION_MAX_AGE) return null;
+  const gain = { ...SMOOTHED_SEASON_GAINS, ...REFERENCE_SLOPE_FROM_24 }[Math.floor(age)];
+  return gain !== undefined && gain > 0 ? gain : null;
+}
+
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
   { fromAge: 0, factor: 1.0 },
   { fromAge: 16, factor: 1.0 },

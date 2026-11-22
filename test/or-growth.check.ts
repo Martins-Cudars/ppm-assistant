@@ -9,7 +9,7 @@
  * smoothed rate projects along it.
  */
 
-import { measureOrGain } from "@/base/orGrowth";
+import { OR_BASIS_AFTER_DAYS, measureOrGain } from "@/base/orGrowth";
 import { orReferenceTable, smoothedOrSeasonGains } from "@/base/relativeSkillFit";
 import { orProjectionDataset, orReferenceDataset } from "@/components/growthMetric";
 import * as hockey from "@/sports/hockey/growthPace";
@@ -140,9 +140,10 @@ check("OR-only history: 14-27 days is provisional, under 14 no pace", () => {
   eq(measureOrGain(orVisits([[0, 600]]), OPTIONS), null, "one visit");
 });
 
-check("skills and OR-only days mixed: skills whenever the skill pace has a window", () => {
+check("skills and OR-only days mixed: skills while the skilled window is fresh", () => {
+  eq(OR_BASIS_AFTER_DAYS, 30, "a month");
   // Scouted until 30 days ago, then only seen on his profile: the skill
-  // window still stands, so the pace doesn't depend on which capture came last.
+  // window still stands, so a profile visit doesn't decide the basis.
   const skilled = skilledHistory(60, 0.25).filter((_, i) => i <= 30);
   const later = orVisits([[20, 900], [0, 950]]);
   const mixed = measureOrGain([...skilled, ...later], OPTIONS)!;
@@ -152,6 +153,24 @@ check("skills and OR-only days mixed: skills whenever the skill pace has a windo
   // Too few skilled days for a window: the OR numbers.
   const oneSkilled = [skilledHistory(60, 0.25)[0], ...later];
   eq(measureOrGain(oneSkilled, OPTIONS)!.basis, "or", "no skilled window");
+});
+
+check("skills and OR-only days mixed: a stale skilled window gives way to recent OR numbers", () => {
+  // A sold player: trained here until 45 days ago, seen on his profile since.
+  const skilled = skilledHistory(90, 0.25).filter((_, i) => i <= 45);
+  const later = orVisits([[28, 900], [0, 935]]);
+  const sold = measureOrGain([...skilled, ...later], OPTIONS)!;
+  eq(sold.basis, "or", "45 days older than the newest OR-only day");
+  eq([sold.fromDate, sold.toDate], [iso(56), iso(0)], "the OR window: 56 days back from today, skilled days' OR included");
+  // 31 days is past the limit, 30 is not.
+  const at = (gap: number) =>
+    measureOrGain([...skilledHistory(60 + gap, 0.25).filter((_, i) => i <= 60), ...orVisits([[0, 950]])], OPTIONS)!.basis;
+  eq(at(30), "skills", "30 days");
+  eq(at(31), "or", "31 days");
+  // Stale, but nothing else within the OR window (last skilled day 60 days ago,
+  // one visit today): the skilled window still counts.
+  const lone = [...skilledHistory(120, 0.25).filter((_, i) => i <= 60), ...orVisits([[0, 950]])];
+  eq(measureOrGain(lone, OPTIONS)!.basis, "skills", "no measurable OR window");
 });
 
 // --- Hockey and soccer: pace and projection -------------------------------------
@@ -230,7 +249,8 @@ check("basketball: OR pace on the skill pace's window, against the top-5% OR lin
   eq([orPace.fromDate, orPace.toDate], [skillPace.fromDate, skillPace.toDate], "same window");
   eq(orPace.campDaysPerSeason, skillPace.campDaysPerSeason, "same camp record");
   near(orPace.pace, (0.9 * 70) / OR_SMOOTHED_SEASON_GAINS[Math.floor(orPace.midAge)], "OR a season / the OR line's", 1e-9);
-  // A profile visit today with an OR only: both still read the skilled window.
+  // A profile visit a day after the last skilled day: the window is fresh, so
+  // both still read it (OR_BASIS_AFTER_DAYS).
   const withVisit = [...entries, { playerId: "1", date: iso(0), overallRating: 900 }];
   near(model.measureOrPace(withVisit, 20)!.pace, orPace.pace!, "with a newer OR-only day", 1e-9);
 });

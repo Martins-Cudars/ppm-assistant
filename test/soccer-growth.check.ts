@@ -15,8 +15,13 @@
 
 import {
   CAMP_MAX_DAYS_PER_SEASON,
+  JUNIOR_RATE_FACTORS,
+  OR_JUNIOR_RATE_FACTORS,
+  OR_SMOOTHED_SEASON_GAINS,
   agePaceFactor,
   curveGainBetween,
+  juniorRates,
+  uncorrectedSeasonGain,
   expectedSeasonGain,
   measureGrowthPace,
   projectPositionRating,
@@ -66,6 +71,24 @@ check("juniors: the rate at 15 and 16 carries the correction, the age factors ar
   near(expectedSeasonGain(16.9), smoothed[16] * 1.23, 1e-9, "16: 1.23 x");
   eq(expectedSeasonGain(17.2), smoothed[17], "17: the line's rate");
   [15.3, 16.9, 17, 28].forEach((age) => eq(agePaceFactor(age), 1.0, `factor at ${age}`));
+});
+
+check("juniors: every corrected age is on the line, and a missing one is left out, not NaN", () => {
+  Object.keys(JUNIOR_RATE_FACTORS).forEach((age) => {
+    if (!Number.isFinite(smoothed[Number(age)])) throw new Error(`the line has no rate at ${age}`);
+  });
+  Object.keys(OR_JUNIOR_RATE_FACTORS).forEach((age) => {
+    if (!Number.isFinite(OR_SMOOTHED_SEASON_GAINS[Number(age)])) throw new Error(`the OR line has no rate at ${age}`);
+  });
+  const partial = juniorRates({ 16: 50 }, { 15: 1.78, 16: 1.23 });
+  eq(JSON.stringify(partial), JSON.stringify({ 16: 61.5 }), "15 left out");
+});
+
+check("juniors: League / Elite take the shape without the correction", () => {
+  eq(uncorrectedSeasonGain(15.5), smoothed[15], "15: the line's own rate");
+  eq(uncorrectedSeasonGain(17.5), expectedSeasonGain(17.5), "17: the same as Pace's");
+  eq(uncorrectedSeasonGain(25.5), expectedSeasonGain(25.5), "25: the squad's decline");
+  eq(uncorrectedSeasonGain(35), null, "past the projection age");
 });
 
 check("juniors: the same points read the same Pace at 15 as the squad median does at 17", () => {

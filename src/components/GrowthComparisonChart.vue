@@ -206,11 +206,13 @@ const referenceHidden = ref(false);
 const hoveredId = ref<string | null>(null);
 const focusedId = ref<string | null>(null);
 // A hidden line, or one with no points on this metric, has nothing to pick
-// out, so the others aren't dimmed for it.
+// out, so the others aren't dimmed for it. Read from chartSeries, the list the
+// chart's datasets were built from, as applyVisibility and applyHighlight do:
+// props.series can already be a newer list before the rerender.
 const highlightedId = computed(() => {
   const id = hoveredId.value ?? focusedId.value;
   if (id === null || hiddenIds.value.has(id)) return null;
-  const series = props.series.find((candidate) => candidate.id === id);
+  const series = chartSeries.find((candidate) => candidate.id === id);
   return series && series[activeMetric.value].length > 0 ? id : null;
 });
 // Only keyboard focus highlights: a clicked checkbox keeps the focus, and

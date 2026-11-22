@@ -5,14 +5,16 @@
  * How fast a player's OR grows is measured from his history in one of two
  * ways (measureOrGain):
  *
- * - **On skills**, whenever his history has a skilled window the skill pace
+ * - **On skills**, when his history has a skilled window the skill pace
  *   would accept: the same window, cleaning and camp record
  *   (measureSkilledWindow in src/base/gainCleaning.ts), counting every
  *   skill's points. OR is the sum of the floored skills, so its growth is the
  *   skill points per season. OR-only days are ignored here, as the skill pace
- *   ignores them, so the pace never depends on which capture came last.
- * - **On the OR numbers**, only when there is no such window (an unscouted
- *   player, whose profile shows only his OR): end to end over the same window
+ *   ignores them, so an occasional profile visit doesn't decide the basis.
+ * - **On the OR numbers** when there is no such window (an unscouted player,
+ *   whose profile shows only his OR), or when it has gone stale: its last day
+ *   is more than OR_BASIS_AFTER_DAYS older than his newest OR-only day (a sold
+ *   player now seen only on his profile). Measured end to end over the same window
  *   length. OR is a whole number and these days come from occasional profile
  *   visits, so no day can be judged as a camp or a no-training day; the rate
  *   is the calendar rate with whatever camps fell in the window, and the
@@ -130,12 +132,38 @@ function measureOnOr(entries: readonly OrHistoryEntry[], options: OrGainOptions)
 }
 
 /**
+ * How much older than the newest OR-only day the last skilled day may be
+ * before the OR pace stops reading the skilled window: a month. A profile
+ * visit or two after the last training-page day keeps the skills basis (and
+ * so the skill pace's window); a player seen only on his profile for longer,
+ * such as one sold to another team, is read from his recent OR numbers.
+ */
+export const OR_BASIS_AFTER_DAYS = 30;
+
+/** The newest day with an OR but no skills, or null. */
+function newestOrOnlyDate(entries: readonly OrHistoryEntry[]): string | null {
+  let newest: string | null = null;
+  for (const entry of entries) {
+    if (entry.skills) continue;
+    const or = entry.overallRating ?? entry.kr;
+    if (typeof or === "number" && or > 0 && (newest === null || entry.date > newest)) newest = entry.date;
+  }
+  return newest;
+}
+
+/**
  * How fast the player's OR grows, or null without enough history: on skills
- * whenever there is a skilled window the skill pace accepts, else on the OR
- * numbers (an unscouted player).
+ * when there is a skilled window the skill pace accepts and it isn't stale
+ * (OR_BASIS_AFTER_DAYS), else on the OR numbers - an unscouted player, or one
+ * seen only on his profile since. A stale skilled window still counts when
+ * the OR numbers can't be measured.
  */
 export function measureOrGain(entries: readonly OrHistoryEntry[], options: OrGainOptions): OrGain | null {
-  return measureOnSkills(entries, options) ?? measureOnOr(entries, options);
+  const onSkills = measureOnSkills(entries, options);
+  if (!onSkills) return measureOnOr(entries, options);
+  const orOnly = newestOrOnlyDate(entries);
+  if (orOnly === null || daysBetween(onSkills.toDate, orOnly) <= OR_BASIS_AFTER_DAYS) return onSkills;
+  return measureOnOr(entries, options) ?? onSkills;
 }
 
 export interface OrPace extends OrGain {
