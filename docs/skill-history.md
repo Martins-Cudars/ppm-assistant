@@ -1012,16 +1012,20 @@ player list's Rel column and the market's Rel column.
      never falls.
   4. **XP is set, not fitted** (`xpCurve`, the user's choice, 2026-11-22). The median XP of
      the players with XP, about 6 per age and mostly the user's own, was about 100 at 28.
-     Elite players have about 200. The curve has the same shape in every sport:
+     Elite players have about 200 at 28 in hockey and soccer, and about 150 in
+     basketball (the user's figures; basketball changed 2026-11-22, round 4). The anchor
+     is set per sport (`expAt28` in the script); the shape is the same in every sport:
      - exactly 0 at 15, when a player arrives from the youth facilities or the draft;
      - a per-season gain rising linearly from 0 at 15 to the full rate at 20 (juniors play
-       less), then constant to 28, where XP is 200. The full rate is 200 / 10.5 ≈ 19 a
-       season;
+       less), then constant to 28, where XP reaches the anchor. The full rate is the
+       anchor / 10.5: ≈ 19 a season at 200, ≈ 14 at 150;
      - after 28, 0.85 × that rate (≈16 a season). Scouted hockey veterans sit on it: 299 XP
        at 34, 362-368 at 39-40, 394 at 42.
-     - The values: 15:0 16:2 17:8 18:17 19:30 20:48 22:86 25:143 28:200 30:232 35:313
-       40:394 45:475.
-     - The script's `--exp-at-28`, `--exp-ramp-until` and `--exp-late-rate` retune it. The
+     - The values, hockey and soccer: 15:0 16:2 17:8 18:17 19:30 20:48 22:86 25:143
+       28:200 30:232 35:313 40:394 45:475. Basketball: 15:0 16:1 17:6 18:13 19:23 20:36
+       22:64 25:107 28:150 30:174 35:235 40:296.
+     - The script's `--exp-at-28` (overrides the per-sport anchor for every sport run, so
+       pair it with `--sport`), `--exp-ramp-until` and `--exp-late-rate` retune it. The
        median is printed as `medXP` for comparison only.
 - **Numbers on the 2026-11-22 backup.** Hockey had 2,177 scouted player-seasons (1,203 in
   the league), soccer 1,025 (569), and basketball 710 (502). With the 200-XP curve, the

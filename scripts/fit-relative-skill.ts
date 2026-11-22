@@ -15,12 +15,16 @@
  *     [--compare] [--write]
  *
  * XP is not fitted: the `exp` column is xpCurve() in src/base/relativeSkillFit.ts,
- * set by these parameters (every sport alike). Fixed, not a parameter: XP is
- * exactly 0 at 15, when a player arrives from the youth facilities or the draft.
- *   --exp-at-28      XP of a top player at 28 (the user's figure: about 200)
+ * set by these parameters. Fixed, not a parameter: XP is exactly 0 at 15, when
+ * a player arrives from the youth facilities or the draft.
+ *   --exp-at-28      XP of a top player at 28. Per sport by default (the
+ *                    user's figures, `expAt28` below): hockey 200, soccer 200,
+ *                    basketball 150. The flag overrides it for every sport
+ *                    run, so pair it with --sport.
  *   --exp-ramp-until the per-season gain rises from 0 at 15 to its full rate at
- *                    this age, then stays at it to 28
+ *                    this age, then stays at it to 28 (every sport: 20)
  *   --exp-late-rate  the per-season gain after 28, as a share of the full rate
+ *                    (every sport: 0.85)
  * The median XP of the players with full skills is printed (medXP) as a
  * diagnostic only.
  */
@@ -66,6 +70,8 @@ type SportConfig = {
   /** Best position's rating without XP, and OR, from one day's skills. */
   rate: (skills: AnySkills, height: number | undefined) => { rating: number; overall: number };
   current: RelativeSkillFit;
+  /** XP of a top player at 28, the XP curve's anchor (--exp-at-28 overrides). */
+  expAt28: number;
   daysPerSeason: number;
   minAge: number;
   maxAge: number;
@@ -78,6 +84,7 @@ const SPORTS: Record<Sport, SportConfig> = {
       overall: hockeyOverall(skills as never),
     }),
     current: hockeyCurrent,
+    expAt28: 200,
     daysPerSeason: 112,
     minAge: 15,
     maxAge: 45,
@@ -88,6 +95,7 @@ const SPORTS: Record<Sport, SportConfig> = {
       overall: soccerOverall(skills as never),
     }),
     current: soccerCurrent,
+    expAt28: 200,
     daysPerSeason: 112,
     minAge: 15,
     maxAge: 40,
@@ -98,6 +106,7 @@ const SPORTS: Record<Sport, SportConfig> = {
       overall: basketballOverall(skills as BasketballSkills),
     }),
     current: basketballCurrent,
+    expAt28: 150,
     daysPerSeason: 70,
     minAge: 15,
     maxAge: 40,
@@ -119,9 +128,9 @@ if (!backupPath) {
 }
 const percentile = Number(option("percentile", String(RELATIVE_SKILL_PERCENTILE)));
 const onlySport = option("sport", "");
+const expAt28Flag = option("exp-at-28", "");
 const xpOptions = {
   ...DEFAULT_XP_CURVE,
-  expAtAnchor: Number(option("exp-at-28", String(DEFAULT_XP_CURVE.expAtAnchor))),
   rampUntil: Number(option("exp-ramp-until", String(DEFAULT_XP_CURVE.rampUntil))),
   lateRate: Number(option("exp-late-rate", String(DEFAULT_XP_CURVE.lateRate))),
 };
@@ -200,7 +209,10 @@ function fitSport(sport: Sport) {
       if (age != null) addPair(entry.playerId, age, entry.skills as AnySkills, height, entry.experience!);
     });
   const shareExp = fitShareAndExp(pairs, ages);
-  const exp = xpCurve(ages, xpOptions);
+  const exp = xpCurve(ages, {
+    ...xpOptions,
+    expAtAnchor: expAt28Flag ? Number(expAt28Flag) : config.expAt28,
+  });
 
   const fit: RelativeSkillFit = {
     percentile,
