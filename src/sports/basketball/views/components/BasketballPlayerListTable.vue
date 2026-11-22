@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import RelativeSkill from "@/components/RelativeSkill.vue";
 import BasketballPlayerListChart from "./BasketballPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/basketball/settings";
 import type { BasketballPlayerListItem } from "../types";
@@ -165,6 +166,17 @@ const tableColumns = computed<Column[]>(() => {
         item.player.getBestPosition().ratingWithXp,
       headerClass: "th1",
     },
+    {
+      header: "Rel",
+      key: "relative",
+      slot: "relative",
+      sortable: true,
+      sortValue: (item: BasketballPlayerListItem) => {
+        const max = item.player.getMaxSkillForAge();
+        return max ? item.player.getBestPosition().ratingWithXp / max : 0;
+      },
+      headerClass: "th2",
+    },
   ];
 
   return cols;
@@ -253,6 +265,14 @@ const tableColumns = computed<Column[]>(() => {
         <RatingStars
           :skill="item.player.getBestPosition().ratingWithXp"
           :settings="ratingSettings"
+        />
+      </template>
+
+      <template #relative="{ item }">
+        <RelativeSkill
+          :skill="item.player.getBestPosition().ratingWithXp"
+          :maxSkillForAge="item.player.getMaxSkillForAge()"
+          :leagueMaxSkillForAge="item.player.getMaxSkillForAge('league')"
         />
       </template>
     </SortableTable>

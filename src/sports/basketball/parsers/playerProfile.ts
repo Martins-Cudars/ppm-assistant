@@ -1,3 +1,4 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
 import {
   BasketballPlayer,
   BasketballPlayerInfo,
@@ -73,7 +74,7 @@ export function parseBasketballPlayerFromProfilePage(
     },
     new Date(),
     true,
-    1,
+    getCurrentSeasonDay(),
     skills,
     experience,
     qualities

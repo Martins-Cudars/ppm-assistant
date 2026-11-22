@@ -1,4 +1,5 @@
 import { PlayerCalculationProfile } from "@/classes/playerProfile";
+import { RelativeSkillScope } from "@/types/GrowthData";
 import {
   calculatePositionTrainingQualities,
   calculatePositions,
@@ -191,14 +192,19 @@ export abstract class BasePlayer {
     return (this.overallRating - 100) / 2;
   }
 
-  getMaxSkillForAge(): number {
+  /**
+   * The 100% of relative skill at the player's exact age: the rating with XP
+   * of a top-5% player among every scouted team (`global`, the default) or
+   * among the user's league (`league`).
+   */
+  getMaxSkillForAge(scope: RelativeSkillScope = "global"): number {
     const profile = this.getCalculationProfile();
 
     return calculateProjectedMaxSkillForAge(
       this.age,
       this.seasonDay,
       profile.daysPerSeason,
-      profile.growthPrediction
+      profile.relativeSkillReference[scope]
     );
   }
 }

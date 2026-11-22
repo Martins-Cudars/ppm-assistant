@@ -17,6 +17,7 @@
         <RelativeSkill
           :skill="bestPosition.ratingWithXp"
           :maxSkillForAge="player.getMaxSkillForAge()"
+          :leagueMaxSkillForAge="player.getMaxSkillForAge('league')"
         />
       </div>
     </div>

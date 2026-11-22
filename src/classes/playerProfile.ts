@@ -1,4 +1,4 @@
-import { GrowthPrediction } from "@/types/GrowthData";
+import { RelativeSkillReference } from "@/types/GrowthData";
 
 export type PlayerPositionRule = {
   name: string;
@@ -14,6 +14,7 @@ export type PlayerCalculationProfile = {
   requiresVisibility: boolean;
   bonusCapRatio?: number;
   daysPerSeason: number;
-  growthPrediction: GrowthPrediction;
+  /** The 100% lines behind relative skill (scripts/fit-relative-skill.ts). */
+  relativeSkillReference: RelativeSkillReference;
   positionSettings: PlayerPositionRule[];
 };

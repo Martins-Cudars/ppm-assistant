@@ -1,3 +1,4 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
 import {
   BasketballPlayer,
   BasketballPlayerInfo,
@@ -50,7 +51,7 @@ function createPlayer(
     },
     new Date(),
     true,
-    1,
+    getCurrentSeasonDay(),
     skills,
     experience ?? (baseInfo.age > 0 ? undefined : 0),
     qualities

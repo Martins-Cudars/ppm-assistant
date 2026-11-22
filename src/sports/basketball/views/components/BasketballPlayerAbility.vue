@@ -11,6 +11,11 @@
       <div class="ability__value">
         <div>{{ bestPosition.ratingWithXp }}</div>
         <div>({{ bestPosition.ratingWithBonus }})</div>
+        <RelativeSkill
+          :skill="bestPosition.ratingWithXp"
+          :maxSkillForAge="player.getMaxSkillForAge()"
+          :leagueMaxSkillForAge="player.getMaxSkillForAge('league')"
+        />
       </div>
     </div>
     <div class="ability__positions">
@@ -24,6 +29,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import RatingStars from "@/components/RatingStars.vue";
+import RelativeSkill from "@/components/RelativeSkill.vue";
 import { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
 import { ratingSettings } from "@/sports/basketball/settings";
 

@@ -135,7 +135,8 @@ const viewMarket = () => {
     const relativeSkill = renderRelativeSkill(
       player.age,
       bestPosition.ratingWithXp,
-      player.getMaxSkillForAge()
+      player.getMaxSkillForAge(),
+      player.getMaxSkillForAge("league")
     );
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);

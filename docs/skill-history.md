@@ -933,6 +933,63 @@ The data is the user's FC Skanste: 31 players, 21,223 days, gathered with the Ga
   - It now mounts below the profile box at full width; `.profile_player_center` alone was
     too narrow. The old `renderPotentialChart` in `src/charts.ts` has no users left.
 
+## Relative skill: fitted from scouted rosters (4.1.0, 2026-11-22)
+
+Relative skill is the best position's rating with XP as a percentage of a top player's at
+the same exact age. Before 4.1.0, hockey and soccer divided by `playerGrowthPrediction`,
+a hand-written guess. Basketball showed nothing. Now every sport shows two values:
+"87% / 95%" means 87% against every scouted team and 95% against the user's league. A
+tooltip says which value is which. Both values appear on the profile's ability box, the
+player list's Rel column and the market's Rel column. In each case `RelativeSkill.vue` or
+`renderRelativeSkill` reads `player.getMaxSkillForAge()` and `getMaxSkillForAge("league")`.
+
+- **The tables.** Each sport has `src/sports/<sport>/relativeSkillReference.ts` with
+  `{ global, league }` rows of `{ age, skill, exp }`. The profile's
+  `relativeSkillReference` points at them, and `getMaxSkillForAge` interpolates by season
+  day as before. `playerGrowthPrediction` is unchanged and still drives Pace, the
+  projections and the growth charts. Only relative skill moved.
+- **The tables are generated.** `scripts/fit-relative-skill.ts <backup.json> --write`
+  regenerates them, so you can refresh them after more scouting (`--compare` prints the
+  own squad before and after). The method:
+  1. **OR reference (global).** Each player counts once per season, using his latest
+     snapshot. For each whole age, the line is the 95th percentile of OR in a one-season
+     window centred on that age. Before the percentile is taken, each point moves along a
+     rough first-pass curve to that age, so a window's late-season players don't lift it.
+     The first pass uses full windows only; its first ages continue the next two ages'
+     slope, because at 15 nobody is younger. A window with fewer than 25 points widens by
+     quarter seasons, up to ±2 seasons. The curve is then fitted to rise to a peak and
+     fall after it, weighted by each age's count.
+  2. **League.** For each age, the league's 95th percentile is taken as a ratio to the
+     global curve. That ratio is shrunk toward a weighted linear trend of all the ratios:
+     an age with n points weighs n against the trend's 25. So an age with three veterans
+     leans on its neighbours.
+  3. **From OR to rating.** A roster shows OR only. Players with full skills and XP (the
+     cache, plus history days with XP) give, per age, the best position's rating as a
+     share of OR and the median XP. The share rises from about 0.30 at 15 to 0.452 for
+     adults in hockey (soccer 0.29, basketball 0.25), and never falls. XP is smoothed over
+     5 ages and keeps its last yearly gain after the last measured age.
+  4. Each table row: skill = share × OR reference, exp = XP.
+- **Numbers on the 2026-11-22 backup.** Hockey had 2,177 scouted player-seasons (1,203 in
+  the league), soccer 1,025 (569), and basketball 710 (502). The new global line is
+  mostly 0.75-0.95× the old table; only the oldest ages (44+ in hockey, 39+ in soccer) sit
+  above it. On the user's 84 hockey and soccer players, the global value rose by 2 to 17
+  points (median 6). Basketball's league
+  (III.3) is weak past 27: two to five players per age, at 0.4-0.6 of the global line. Its
+  league line rests on the trend there.
+- **The user's sanity check: Grīns (28, OR 2270) reads 87% globally.** The I.1 players
+  the user named are in the sample: Deputat (28.38, OR 2712) and Sējējs (27.94, 2739).
+  The top 12 at 28 run from 2871 to 2493, so the sample has no lower-division bias at the
+  top. Grīns's OR alone is about 84% of the 95th percentile (about 2717 at 28.4). He reads
+  3 points higher because his rating/OR share (0.466) and XP (105) beat the age's typical
+  ones (0.452, about 100). The XP of the top I.1 players is unknown, since roster pages
+  show no XP. If it is higher, 100% would sit higher.
+- Colour classes stop at 100: above 100% keeps the 100% colour, where before it lost its
+  colour.
+- Basketball's list and profile parsers now pass the real season day instead of 1. Before,
+  every basketball player's age reading started at day 1.
+- Seen only in a static harness, rendered from the backup (profile, list, market for all
+  three sports). It has not run on the live game.
+
 ## Backup format
 
 Both stores in one JSON file (`src/types/Backup.ts`, `src/storage/backup.ts`):

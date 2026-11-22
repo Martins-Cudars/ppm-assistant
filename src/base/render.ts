@@ -1,5 +1,10 @@
 import { potentialGrade } from "@/base/utilities";
 import { calculateRelativeSkill } from "@/base/calculations";
+import {
+  relativePercent,
+  relativeSkillClass,
+  relativeSkillTitle,
+} from "@/base/relativeSkill";
 import { RatingSettings } from "@/types/Position";
 import { GrowthPrediction } from "@/types/GrowthData";
 import { positionSettings as hockeyPositionSettings } from "@/sports/hockey/settings";
@@ -101,31 +106,47 @@ const renderPotentialBadge = (
   return badge;
 };
 
+/**
+ * Relative skill as "82% / 94%": against every scouted team, then against the
+ * user's league when `leagueMaxSkill` is given (see src/base/relativeSkill.ts).
+ */
 const renderRelativeSkill = (
   playerAge: number,
   playerSkillWithExp: number,
-  playerGrowthPredictionOrMaxSkill: GrowthPrediction | number
+  playerGrowthPredictionOrMaxSkill: GrowthPrediction | number,
+  leagueMaxSkill?: number
 ): HTMLElement => {
-  const relativeSkill =
+  const global =
     typeof playerGrowthPredictionOrMaxSkill === "number"
-      ? playerGrowthPredictionOrMaxSkill === 0
-        ? 0
-        : Math.round(
-            (playerSkillWithExp / playerGrowthPredictionOrMaxSkill) * 100
-          )
+      ? relativePercent(playerSkillWithExp, playerGrowthPredictionOrMaxSkill)
       : calculateRelativeSkill(
           playerAge,
           playerSkillWithExp,
           playerGrowthPredictionOrMaxSkill
         );
 
-  // floor relative skill to 5s
-  const relativeSkillRounded = Math.floor(relativeSkill / 5) * 5;
+  const part = (percent: number) => {
+    const span = document.createElement("span");
+    span.classList.add(relativeSkillClass(percent));
+    span.textContent = `${percent}%`;
+    return span;
+  };
 
   const relativeSkillEl = document.createElement("div");
   relativeSkillEl.classList.add("relative-skill");
-  relativeSkillEl.classList.add(`relative-skill--${relativeSkillRounded}`);
-  relativeSkillEl.innerText = relativeSkill.toString() + "%";
+  relativeSkillEl.style.whiteSpace = "nowrap";
+  relativeSkillEl.appendChild(part(global));
+
+  if (leagueMaxSkill !== undefined) {
+    const league = relativePercent(playerSkillWithExp, leagueMaxSkill);
+    const separator = document.createElement("span");
+    separator.textContent = " / ";
+    separator.style.fontWeight = "normal";
+    separator.style.color = "#999";
+    relativeSkillEl.append(separator, part(league));
+    relativeSkillEl.title = relativeSkillTitle({ global, league });
+  }
+
   return relativeSkillEl;
 };
 

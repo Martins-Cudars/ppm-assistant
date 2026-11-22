@@ -4,6 +4,7 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
+  renderRelativeSkill,
 } from "@/base/render";
 
 const viewMarket = () => {
@@ -25,6 +26,7 @@ const viewMarket = () => {
       row.appendChild(renderTableCell("SK", "th2"));
       row.appendChild(renderTableCell("RATING", "th1"));
       row.appendChild(renderTableCell("TRN", "th2"));
+      row.appendChild(renderTableCell("REL", "th1"));
     }
   });
 
@@ -36,6 +38,7 @@ const viewMarket = () => {
       row.appendChild(renderTableCell("SK", "th2"));
       row.appendChild(renderTableCell("RATING", "th1"));
       row.appendChild(renderTableCell("TRN", "th2"));
+      row.appendChild(renderTableCell("REL", "th1"));
     }
   });
 
@@ -69,6 +72,18 @@ const viewMarket = () => {
     potentialTd.appendChild(potentialBadge);
 
     playerRow.appendChild(potentialTd);
+
+    const relativeCell = document.createElement("td");
+    relativeCell.classList.add(`${rowClass}td1`);
+    relativeCell.appendChild(
+      renderRelativeSkill(
+        player.age,
+        bestPosition.ratingWithXp,
+        player.getMaxSkillForAge(),
+        player.getMaxSkillForAge("league")
+      )
+    );
+    playerRow.appendChild(relativeCell);
   });
 };
 

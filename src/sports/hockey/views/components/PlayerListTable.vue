@@ -261,6 +261,7 @@ const tableColumns = computed<Column[]>(() => {
         <RelativeSkill
           :skill="getAdjustedSkill(item)"
           :maxSkillForAge="item.getMaxSkillForAge()"
+          :leagueMaxSkillForAge="item.getMaxSkillForAge('league')"
         />
       </template>
     </SortableTable>
