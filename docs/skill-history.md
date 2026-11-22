@@ -768,8 +768,10 @@ This also sidesteps the unsettled age-curve question (research item 7).
     grouped by best position (`groupOrder`: hockey G/D/W/C, soccer and basketball their
     position lists, "?" in Other), with a name search (accent-insensitive), a tri-state
     checkbox per group, and swatch, name, age and checkbox per row. The reference line has
-    its own row above the groups. Hovering or focusing a row thickens that line and dims
-    the others, in place with `chart.update("none")`; the points' colours are scriptable
+    its own row above the groups. Hovering a row, or reaching it by keyboard, thickens that
+    line and dims the others (not for a hidden row or one with no points on the metric),
+    in place with `chart.update("none")`; a clicked checkbox keeps the focus but doesn't
+    keep the highlight; the points' colours are scriptable
     and follow the line, because Chart.js keeps shared point options on a `"none"` update.
     Hidden lines are kept by series id in the component, so they survive a metric,
     reference or filter change.
