@@ -414,6 +414,25 @@ export function referenceTable(fit: RelativeSkillFit, or: number[] = fit.rows.ma
   }));
 }
 
+/**
+ * The top-5% OR line by whole age: the fit's OR percentile itself, before the
+ * rating/OR share turns it into a rating. What the profile charts' OR view
+ * draws and its OR pace measures against.
+ */
+export type OrReference = readonly { age: number; or: number }[];
+
+export function orReferenceTable(fit: RelativeSkillFit): OrReference {
+  return fit.rows.map((row) => ({ age: row.age, or: row.or }));
+}
+
+/** smoothedSeasonGains() of the OR line: the 100% OR growth rate per whole age. */
+export function smoothedOrSeasonGains(line: OrReference, passes = 3): Record<number, number> {
+  return smoothedSeasonGains(
+    line.map((row) => ({ age: row.age, skill: row.or })),
+    passes
+  );
+}
+
 /** The league list fields the league fit needs (src/types/ScoutSnapshot.ts LeagueTeams). */
 export type LeagueList = { season: number; teamIds: readonly string[] };
 

@@ -12,8 +12,9 @@
  */
 
 import { positionSettings } from "@/sports/soccer/settings";
-import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
-import { smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { relativeOrReference, relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
+import { smoothedOrSeasonGains, smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { createOrGrowthModel } from "@/base/orGrowth";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import {
@@ -166,3 +167,38 @@ export const {
   projectExperience,
   projectPotential,
 } = createGrowthModel(soccerGrowthConfig);
+
+/**
+ * The OR view's pace and projection (src/base/orGrowth.ts), on the skill
+ * model's pattern: the top-5% OR line's smoothed rate up to 23, and from 24
+ * the squad's same decline (SQUAD_SLOPE_SHARE_FROM_24) scaled to meet it at
+ * 23. Same age factors, camp allowance and age limit as the skill model.
+ */
+export const OR_SMOOTHED_SEASON_GAINS = smoothedOrSeasonGains(relativeOrReference);
+const orSlopeAt23 = OR_SMOOTHED_SEASON_GAINS[23];
+export const OR_REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Object.fromEntries(
+  Object.entries(SQUAD_SLOPE_SHARE_FROM_24).map(([age, share]) => [age, Math.round(share * orSlopeAt23)])
+);
+
+/**
+ * The OR pace's age factors, the same bands as AGE_PACE_FACTORS. Measured
+ * 2026-11-23 with scripts/measure-age-factors.ts SPORT=soccer METRIC=or
+ * ERA_START=2000-01-01 on the 2026-11-22 backup, all history as for the skill
+ * factors (OR pace 55% from 17): 1.35 at 15, 1.23 at 16 (26 / 28 players).
+ * Against the rating line the base pace reads 1.78 at 15: that line's
+ * smoothed gain at 15 is lower relative to 17+ than the OR line's, so the
+ * skill factor would divide a 15-year-old's OR pace by too much and project
+ * him low.
+ */
+export const OR_AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.35 },
+  { fromAge: 16, factor: 1.23 },
+  { fromAge: 17, factor: 1.0 },
+];
+
+export const { measureOrPace, projectOr, orProjectionPoints, orExpectedSeasonGain, orAgePaceFactor } =
+  createOrGrowthModel(soccerGrowthConfig, {
+    line: relativeOrReference,
+    slopes: { ...OR_SMOOTHED_SEASON_GAINS, ...OR_REFERENCE_SLOPE_FROM_24 },
+    agePaceFactors: OR_AGE_PACE_FACTORS,
+  });

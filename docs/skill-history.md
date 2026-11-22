@@ -149,7 +149,8 @@ table. The line, like the old table, has ages 15–45 (soccer 15–40):
   "803 (502 + 64 + 237)" on the position card.
 - **"Total"** is `skill × (1 + exp ÷ 500)`, the rating with XP. The card's % compares
   against Total.
-- **There is no top-player OR.**
+- **The top-player OR** is the line's own `or` column (`relativeOrReference`), drawn and
+  measured against in the charts' OR mode only. See "OR mode" under the Skill / OR toggle.
 - Pace originally counted base growth only, and read every winger and centre 15–20 points
   low, since shooting feeds their bonus at 0.45.
 - **Evidence** (Aug 28 backup, own players 21 and under): with bonus growth included, a
@@ -451,11 +452,86 @@ it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
   auto-scales with 5% padding instead of starting at zero. `orDatasets()` in `growthMetric.ts`
   builds the OR view for all three charts and omits "Now (OR)" when the OR is missing or 0.
   The comparison chart's Skill / OR tabs use the same `GrowthMetricToggle`. Rows are filtered per metric *before* thinning (see the Skill path above).
-- **Hidden in OR mode:** the hockey/soccer top-player tables, the "with XP" marker, and the
-  projected-at-own-pace line. The data has no OR equivalent of them.
+- **Hidden in OR mode:** the "with XP" lines and marker. OR has no XP.
 - **Basketball's squad-best line** switches to its OR curve (`buildSquadBestCurve().or`).
 - **Verified:** hockey and soccer, in a static harness against the 2026-11-22 backup. Basketball is
   compiled and linted only, not seen in a browser.
+
+### OR mode: the top-5% OR line and the OR projection
+
+> **Added 2026-11-23 (the user's request).** OR mode drew only history and "Now (OR)": a
+> 17-year-old's chart was empty from 17.4 on. It now draws a prediction too.
+
+- **Hockey and soccer** draw a grey **Top 5% (OR)** line, and a dashed **Projected at own
+  pace (OR, NN%)** line from today's OR to the end of the range.
+- **Basketball** draws the dashed projection against its squad's best, as its Skill view
+  does. It gets no top-5% line, because its Skill view has none.
+- **The line** is `relativeOrReference` in `src/sports/<sport>/relativeSkillReference.ts`.
+  It is the fit's OR percentile (the `or` column) before the rating/OR share turns it into a
+  rating. `scripts/fit-relative-skill.ts` writes it next to the rating table, so the script
+  stays the single source. Re-running the script on the 2026-11-22 backup reproduced every
+  row unchanged.
+- **The model** is `src/base/orGrowth.ts`, bound per sport in `growthPace.ts` (hockey,
+  soccer) and `growthModel.ts` (basketball).
+  - **OR pace** is OR points per season ÷ the OR line's smoothed season gain
+    (`smoothedOrSeasonGains`) at the window's middle age. This is the skill pace against
+    the rating line, applied to OR. Soccer reads the line's rate up to 23. From 24 it
+    reads the squad's same decline (`SQUAD_SLOPE_SHARE_FROM_24`), scaled to meet the OR
+    rate at 23.
+  - **Measured on skills** where the history has them: the skill pace's 56-day window
+    and cleaning (no-training and camp days skipped), with every skill's points counted.
+    OR is Σ floor(skill), so this is its growth.
+  - **Measured on the OR numbers** where it has none: an unscouted player, seen only on
+    his profile. The rate runs end to end over the same window, with the same 28 / 14-day
+    minimums. OR is a whole number and these days are occasional visits, so no day can be
+    judged a camp. The rate is therefore the calendar rate, camps included, and the
+    projection adds no camp allowance on top.
+  - **When both can be measured**, the one with the newer last day wins (skills on a tie).
+  - **The projection** is today's OR + pace ÷ the age factor at the window's middle × the
+    line's age-adjusted rise, with the camp allowance on the skills basis. It stops at 35,
+    as the skill projection does.
+- **Own age factors.** `scripts/measure-age-factors.ts METRIC=or` measures the OR pace like
+  the base pace. Soccer's juniors differ: its rating line's smoothed gain at 15 is low
+  against 17+ compared with the OR line's, so the base pace's 1.78 would divide a
+  15-year-old's OR pace too far.
+
+  | Sport | Bands | Skill (base pace) | OR pace |
+  |---|---|---|---|
+  | Hockey (since 2025-12-01) | ≤21 / 22 / 25 / 28 | 1.00 / 0.96 / 0.96 / 0.88 | **1.00 / 0.94 / 0.94 / 0.78** |
+  | Soccer (all history) | 15 / 16 / 17+ | 1.78 / 1.23 / 1.00 | **1.35 / 1.23 / 1.00** |
+
+- **Basketball** measures OR growth the same way against its squad reference
+  (`measureBasketballOrPace`). The reference is skill points per normal day and OR is their
+  sum, so a player with skills gets exactly his skill pace. The projection is today's OR +
+  pace × the reference's points to each age, the points `projectBasketball` spends.
+- **On the 2026-11-22 backup** (OR @25, or at +3 years for players over 22). The Skill
+  columns are the Player Report's: pace, Skill @25 and the OR of the same projected skills.
+
+  | Player | Age | Skill pace | Skill @25 | Report OR @25 | OR pace | OR @25 |
+  |---|---|---|---|---|---|---|
+  | Gidons Verpakovskis (hockey) | 17.4 | 94% | 952 | 2050 | 95% | 2077 |
+  | Matīss Slaidins (hockey) | 16.4 | 80% | 843 | 1802 | 72% | 1680 |
+  | Octave Bezeau (hockey, @29) | 26.4 | 91% | 981 | 2115 | 85% | 2111 |
+  | Mairis Grīns (hockey, @31) | 28.4 | 95% | 1117 | 2392 | 88% | 2394 |
+  | Jānis Riekstiņš (soccer) | 17.7 | 57% | 456 | 1490 | 60% | 1595 |
+  | Kristofers Vārna (soccer) | 22.7 | 64% | 462 | 1536 | 61% | 1537 |
+  | Reinis Rītiņš (soccer) | 15.7 | 100% | 436 | 1399 | 70% | 1395 |
+
+  From 18 the OR projection lands within ~1% of the report's OR @25 in hockey. Hockey's
+  15–16-year-olds read ~7% lower: their OR factor is the ≤21 band's 1.00, measured mostly
+  on older juniors. Soccer's 17–18-year-olds read 5–7% higher.
+- **Unscouted players.** The backup holds no opponent with OR-only days at least 14 days
+  apart (one hockey player has 2 visits a day apart), so the OR-only path was checked on
+  real players with their skills stripped. Daily and weekly OR-only visits gave the same
+  pace as the skills basis: Verpakovskis 95% and 2077 both ways, Indulis Propoliss 80% and
+  1824. Slaidins gave 73–75% → 1599–1629 against 72% → 1680 on skills. His window holds a
+  camp: the OR numbers keep it in the rate, but get no allowance on top.
+- **Verified** in a static harness from the 2026-11-22 backup, on the real components with
+  the history store mocked. Screenshots: hockey OR for a 17- and a 28-year-old, soccer OR,
+  basketball OR, a synthetic unscouted hockey player (weekly OR-only visits, no skills),
+  and the Skill → OR switch in place (hockey, soccer). The Skill view's screenshots
+  (hockey 17 and 28, soccer) are byte-identical to the same harness built from 4.1.0
+  before the change. **Not run in the extension.**
 
 ## Basketball
 
@@ -1195,6 +1271,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | Scouted rosters (basketball, hockey, soccer) | Parsing, merge, league list and the lines: **verified**, 23 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey and soccer 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey, soccer and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
 | 4.1.0 review fixes (worker league fit, ??? display, comparison chart in place, unscouted basketball profile, shared session metric) | Checks in `test/relative-skill.check.ts` and `test/basketball-capture.check.ts`; the comparison chart's OR switch seen in a static harness. **Never run in the extension**: the worker message, `chrome.storage.session` access and the redraws are unverified. |
+| OR mode: top-5% OR line and OR projection (all three profile charts) | 15 checks in `test/or-growth.check.ts`; hockey, soccer and basketball OR mode, an OR-only (synthetic unscouted) player and the in-place switch seen in a static harness from the 2026-11-22 backup; Skill view screenshots identical to before. **Never run in the extension.** |
 
 The assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. `pnpm check` (`scripts/run-checks.mjs`) bundles and runs

@@ -16,8 +16,9 @@
  */
 
 import { positionSettings } from "@/sports/hockey/settings";
-import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
-import { smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { smoothedOrSeasonGains, smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { createOrGrowthModel } from "@/base/orGrowth";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import {
@@ -201,3 +202,31 @@ export const {
   projectExperience,
   projectPotential,
 } = model;
+
+/**
+ * The OR view's pace and projection (src/base/orGrowth.ts): OR growth against
+ * the top-5% OR line's smoothed rate, with the skill model's camp allowance
+ * and age limit.
+ */
+export const OR_SMOOTHED_SEASON_GAINS = smoothedOrSeasonGains(relativeOrReference);
+
+/**
+ * The OR pace's age factors, the same bands as AGE_PACE_FACTORS. Measured
+ * 2026-11-23 with scripts/measure-age-factors.ts METRIC=or on the 2026-11-22
+ * backup, the same 56-day windows since 2025-12-01 (OR pace 70% at <=21):
+ * 1.00 / 0.94 / 0.94 / 0.78 (27 / 11 / 11 / 3 players). Close to the skill
+ * factors up to 27; 28+ rests on 3 players.
+ */
+export const OR_AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 22, factor: 0.94 },
+  { fromAge: 25, factor: 0.94 },
+  { fromAge: 28, factor: 0.78 },
+];
+
+export const { measureOrPace, projectOr, orProjectionPoints, orExpectedSeasonGain, orAgePaceFactor } =
+  createOrGrowthModel(hockeyGrowthConfig, {
+    line: relativeOrReference,
+    slopes: OR_SMOOTHED_SEASON_GAINS,
+    agePaceFactors: OR_AGE_PACE_FACTORS,
+  });

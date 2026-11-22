@@ -20,7 +20,7 @@ import { ref, onMounted, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
@@ -29,10 +29,17 @@ import {
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
+  orProjectionDataset,
+  orReferenceDataset,
   useGrowthMetric,
 } from "@/components/growthMetric";
 import { getExactAge, historyPoints } from "@/sports/hockey/skillHistoryChart";
-import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
+import {
+  measureGrowthPace,
+  measureOrPace,
+  orProjectionPoints,
+  projectionPoints,
+} from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -117,16 +124,25 @@ const calculateData = () => {
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   if (metric.value === "or") {
-    // OR view: the top-5% line, the with-XP / base split and the
-    // projection are all skill-based and have no OR equivalent in the data,
-    // so only the current OR and the stored OR history are drawn - and only
-    // those are computed.
+    // OR view: the top-5% OR line, today's OR, the OR history and the
+    // projection at the player's OR pace (src/base/orGrowth.ts) - measured on
+    // his skills where the history has them, else on his OR numbers, so an
+    // unscouted player gets one too. No with-XP split: OR has no XP.
     const exactAge = currentExactAge();
-    return orDatasets({
-      exactAge,
-      current: props.player.overallRating,
-      history: historyPoints(historyEntries.value, exactAge, "or"),
-    });
+    const orPace = measureOrPace(historyEntries.value, exactAge);
+    const projection = orProjectionDataset(
+      orProjectionPoints(props.player.overallRating, exactAge, orPace, 45),
+      orPace?.pace != null ? { value: orPace.pace, provisional: orPace.provisional } : null
+    );
+    return [
+      orReferenceDataset(relativeOrReference),
+      ...orDatasets({
+        exactAge,
+        current: props.player.overallRating,
+        history: historyPoints(historyEntries.value, exactAge, "or"),
+      }),
+      ...(projection ? [projection] : []),
+    ];
   }
 
   const {
