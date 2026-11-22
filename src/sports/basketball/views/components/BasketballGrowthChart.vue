@@ -31,6 +31,9 @@
  * - blue: the stored history, each day rated with that day's height;
  * - dashed blue: the projection at the player's own pace, as the report's
  *   @25 column computes it.
+ *
+ * The OR view draws the same without XP: the squad's best OR, today's OR, the
+ * OR history and the projection at the player's OR pace (measureBasketballOrPace).
  */
 import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
@@ -41,12 +44,14 @@ import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
   REFERENCE_LAST_AGE,
   buildReferenceCurve,
+  measureBasketballOrPace,
   measureBasketballPace,
 } from "@/sports/basketball/growthModel";
 import {
   Point,
   buildSquadBestCurve,
   historyPoints,
+  orProjectionPoints,
   projectionPoints,
 } from "@/sports/basketball/historyChart";
 import { exportSkillHistory, getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
@@ -58,6 +63,7 @@ import {
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
+  orProjectionDataset,
   useGrowthMetric,
 } from "@/components/growthMetric";
 
@@ -87,6 +93,9 @@ const history = computed<Point[]>(() =>
 );
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
+// The OR view's projection, at the player's OR pace against the same squad reference.
+const orProjection = ref<Point[]>([]);
+const orPace = ref<{ value: number; provisional: boolean } | null>(null);
 const squadBest = ref<{ skill: Point[]; or: Point[] }>({ skill: [], or: [] });
 
 const group = (entries: Entry[]) => {
@@ -140,6 +149,18 @@ const load = async () => {
     curve,
     REFERENCE_LAST_AGE + 1
   );
+  // Equal to the skill pace for a player with skills; an unscouted player's
+  // is read from his OR numbers.
+  const measuredOr = measureBasketballOrPace(own, exactAge, curve);
+  orPace.value =
+    measuredOr?.pace != null ? { value: measuredOr.pace, provisional: measuredOr.provisional } : null;
+  orProjection.value = orProjectionPoints(
+    props.player.overallRating,
+    exactAge,
+    measuredOr,
+    curve,
+    REFERENCE_LAST_AGE + 1
+  );
   render();
 };
 
@@ -156,14 +177,17 @@ const squadDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   if (metric.value === "or") {
-    // OR view: no XP variant and no projection - the growth model is skill-based.
+    // OR view: the squad's best OR, today's OR, the OR history and the
+    // projection at the player's OR pace. No XP variant: OR has no XP.
     const datasets: ChartDataset<"line">[] = [];
     const line = squadBest.value.or;
     if (line.length > 0) {
       datasets.push(squadDataset(line, "Your squad's best at each age (OR)"));
     }
+    const projected = orProjectionDataset(orProjection.value, orPace.value);
     return datasets.concat(
-      orDatasets({ exactAge, current: props.player.overallRating, history: history.value })
+      orDatasets({ exactAge, current: props.player.overallRating, history: history.value }),
+      projected ? [projected] : []
     );
   }
 

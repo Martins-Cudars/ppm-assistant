@@ -1,4 +1,4 @@
-import { RelativeSkillFit, referenceTable } from "@/base/relativeSkillFit";
+import { RelativeSkillFit, orReferenceTable, referenceTable } from "@/base/relativeSkillFit";
 
 /**
  * Hockey's global relative-skill line: per age, the 95th
@@ -47,3 +47,6 @@ export const relativeSkillFit: RelativeSkillFit = {
 
 /** The global 100% line as a table: rating without XP (`skill`) and XP per age. */
 export const relativeSkillReference = referenceTable(relativeSkillFit);
+
+/** The top-5% OR line (the `or` column): what the profile charts' OR view draws and its pace reads. */
+export const relativeOrReference = orReferenceTable(relativeSkillFit);

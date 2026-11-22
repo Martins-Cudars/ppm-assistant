@@ -28,14 +28,22 @@
  *   (no XP - daily history has none);
  * - dashed blue: the projection at the player's own pace, as the report's
  *   @25 column computes it (the shared growth model with soccer's constants).
+ *
+ * The OR view draws the same without XP: the top-5% OR line, today's OR, the
+ * OR history and the projection at the player's OR pace (src/base/orGrowth.ts).
  */
 import { computed, onMounted, ref, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
-import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
+import { relativeOrReference, relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
-import { measureGrowthPace, projectionPoints } from "@/sports/soccer/growthPace";
+import {
+  measureGrowthPace,
+  measureOrPace,
+  orProjectionPoints,
+  projectionPoints,
+} from "@/sports/soccer/growthPace";
 import { Point, soccerHistoryPoints } from "@/sports/soccer/historyChart";
 import { normalizePlayerId } from "@/base/captureUtils";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
@@ -46,6 +54,8 @@ import {
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
+  orProjectionDataset,
+  orReferenceDataset,
   useGrowthMetric,
 } from "@/components/growthMetric";
 
@@ -74,6 +84,9 @@ const history = computed<Point[]>(() =>
 );
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
+// The OR view's projection, at the player's OR pace (src/base/orGrowth.ts).
+const orProjection = ref<Point[]>([]);
+const orPace = ref<{ value: number; provisional: boolean } | null>(null);
 
 const load = async () => {
   const id = normalizePlayerId(props.player.id) ?? props.player.id;
@@ -83,6 +96,12 @@ const load = async () => {
   pace.value =
     measured?.pace != null ? { value: measured.pace, provisional: measured.provisional } : null;
   projection.value = projectionPoints(props.player.skills, exactAge, measured, 45);
+  // Measured on skills where the history has them, else on the OR numbers,
+  // so an unscouted player gets one too.
+  const measuredOr = measureOrPace(entries.value, exactAge);
+  orPace.value =
+    measuredOr?.pace != null ? { value: measuredOr.pace, provisional: measuredOr.provisional } : null;
+  orProjection.value = orProjectionPoints(props.player.overallRating, exactAge, measuredOr, 45);
   render();
 };
 
@@ -93,14 +112,19 @@ const range = () => {
 };
 
 const buildDatasets = (): ChartDataset<"line">[] => {
-  // OR view: the skill-only lines (top-5% line, rating with XP,
-  // projection) have no OR equivalent in the data, so they are left out.
+  // OR view: the top-5% OR line, today's OR, the OR history and the
+  // projection at the player's OR pace. No with-XP line: OR has no XP.
   if (metric.value === "or") {
-    return orDatasets({
-      exactAge,
-      current: props.player.overallRating,
-      history: history.value,
-    });
+    const projected = orProjectionDataset(orProjection.value, orPace.value);
+    return [
+      orReferenceDataset(relativeOrReference),
+      ...orDatasets({
+        exactAge,
+        current: props.player.overallRating,
+        history: history.value,
+      }),
+      ...(projected ? [projected] : []),
+    ];
   }
 
   const best = props.player.getBestPosition();

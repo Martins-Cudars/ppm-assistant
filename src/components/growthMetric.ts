@@ -126,3 +126,49 @@ export function orDatasets(options: {
   }
   return datasets;
 }
+
+/**
+ * The OR view's grey "Top 5% (OR)" line: the top-5% OR line by age
+ * (relativeOrReference), drawn like the Skill view's top-5% lines. Hockey and
+ * soccer; basketball draws its squad's best instead, as in its Skill view.
+ */
+export function orReferenceDataset(line: readonly { age: number; or: number }[]): ChartDataset<"line"> {
+  return {
+    label: "Top 5% (OR)",
+    data: line.map((row) => ({ x: row.age, y: row.or })),
+    borderColor: "#ccc",
+    backgroundColor: "#ccc",
+    borderWidth: 2,
+    pointRadius: 2,
+    pointBackgroundColor: "#fff",
+    pointBorderColor: "#ccc",
+    fill: false,
+    tension: 0.4,
+    // Monotone, as the Skill view's line: a plain spline overshoots between ages.
+    cubicInterpolationMode: "monotone",
+  };
+}
+
+/**
+ * The OR view's dashed projection at the player's own OR pace, styled as the
+ * Skill view's; the legend gives the pace, e.g. "Projected at own pace (OR,
+ * 64%)", or "~64%, provisional" on a short window. Null without points.
+ */
+export function orProjectionDataset(
+  points: { x: number; y: number }[],
+  pace: { value: number; provisional: boolean } | null
+): ChartDataset<"line"> | null {
+  if (points.length === 0 || !pace) return null;
+  const { value, provisional } = pace;
+  return {
+    label: `Projected at own pace (OR, ${provisional ? "~" : ""}${Math.round(value * 100)}%${provisional ? ", provisional" : ""})`,
+    data: points,
+    borderColor: "rgba(54, 162, 235, 1)",
+    backgroundColor: "rgba(54, 162, 235, 1)",
+    borderWidth: 2,
+    borderDash: [6, 4],
+    pointRadius: 0,
+    fill: false,
+    tension: 0,
+  };
+}

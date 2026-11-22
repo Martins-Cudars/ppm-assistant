@@ -25,6 +25,7 @@ import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import { calculateSkillWithExp } from "@/base/calculations";
 import { SkilledEntry, cleanedGains, daysBetween } from "@/base/gainCleaning";
 import { smoothFromPeak } from "@/base/smoothFromPeak";
+import { OrGain, OrHistoryEntry, measureOrGain } from "@/base/orGrowth";
 
 type Skill = keyof BasketballSkills;
 
@@ -390,6 +391,70 @@ export function referencePointsBetween(
     age = segmentEnd;
   }
   return total;
+}
+
+export interface BasketballOrPace extends OrGain {
+  midAge: number;
+  /** The reference's points per normal day at midAge, or null past the curve. */
+  referencePerDay: number | null;
+  /** OR points per day / referencePerDay. */
+  pace: number | null;
+}
+
+/**
+ * The OR view's pace (src/base/orGrowth.ts), against the same squad reference
+ * as the skill pace. The reference is skill points per normal day and OR is
+ * the sum of the skills, so for a player with skills this equals his skill
+ * pace; an unscouted player's is read from his OR numbers end to end.
+ */
+export function measureBasketballOrPace(
+  entries: OrHistoryEntry[],
+  currentExactAge: number,
+  curve: ReferenceCurve,
+  today: number = Date.now()
+): BasketballOrPace | null {
+  const gain = measureOrGain(entries, {
+    skillNames: BASKETBALL_SKILLS,
+    daysPerSeason: DAYS_PER_SEASON,
+    pace: {
+      windowDays: PACE_WINDOW_DAYS,
+      minSpanDays: PACE_MIN_SPAN_DAYS,
+      provisionalMinDays: PACE_PROVISIONAL_MIN_DAYS,
+    },
+    camps: { maxDaysPerSeason: CAMP_MAX_DAYS_PER_SEASON, lookbackDays: CAMP_LOOKBACK_DAYS },
+    cleaning: CLEANING,
+  });
+  if (!gain) return null;
+  const midAge =
+    (entryAge(gain.fromDate, currentExactAge, today) + entryAge(gain.toDate, currentExactAge, today)) / 2;
+  const reference = referencePerDay(curve, midAge);
+  return {
+    ...gain,
+    midAge,
+    referencePerDay: reference,
+    pace: reference && reference > 0 ? gain.perSeason / DAYS_PER_SEASON / reference : null,
+  };
+}
+
+/**
+ * OR at `targetAge` at that pace: today's OR plus pace x the reference's
+ * points from now to the target, camps included - the points projectBasketball
+ * spends, all of which count toward OR. Null without a pace or OR, or at or
+ * past the target.
+ */
+export function projectBasketballOr(
+  currentOr: number | undefined,
+  currentExactAge: number,
+  pace: BasketballOrPace | null,
+  curve: ReferenceCurve,
+  targetAge: number
+): number | null {
+  if (!pace || pace.pace === null || typeof currentOr !== "number" || !(currentOr > 0)) return null;
+  if (currentExactAge >= targetAge) return null;
+  return (
+    currentOr +
+    Math.max(0, pace.pace) * referencePointsBetween(curve, currentExactAge, targetAge, pace.campDaysPerSeason)
+  );
 }
 
 /**

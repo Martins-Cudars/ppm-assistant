@@ -250,7 +250,7 @@ function fitSource(sport: Sport, fit: RelativeSkillFit): string {
   const rows = fit.rows
     .map((row) => `    { age: ${row.age}, or: ${row.or}, share: ${row.share}, exp: ${row.exp} },`)
     .join("\n");
-  return `import { RelativeSkillFit, referenceTable } from "@/base/relativeSkillFit";
+  return `import { RelativeSkillFit, orReferenceTable, referenceTable } from "@/base/relativeSkillFit";
 
 /**
  * ${sport[0].toUpperCase()}${sport.slice(1)}'s global relative-skill line: per age, the ${Math.round(fit.percentile * 100)}th
@@ -269,6 +269,9 @@ ${rows}
 
 /** The global 100% line as a table: rating without XP (\`skill\`) and XP per age. */
 export const relativeSkillReference = referenceTable(relativeSkillFit);
+
+/** The top-5% OR line (the \`or\` column): what the profile charts' OR view draws and its pace reads. */
+export const relativeOrReference = orReferenceTable(relativeSkillFit);
 `;
 }
 
