@@ -1,99 +1,65 @@
 /**
- * The league half of relative skill ("87% / 95%"): the 100% line of the
- * viewer's own league, fitted at runtime from his scouted snapshots of the
- * teams in his stored league list, against the sport's static global line
- * (src/sports/<sport>/relativeSkillReference.ts) with the same code the
- * script uses (src/base/relativeSkillFit.ts).
+ * The league half of relative skill ("87% / 95%") on a page: the 100% line of
+ * the viewer's own league. The background worker fits it from the stored
+ * league list and scout snapshots (src/storage/leagueReferenceFit.ts) and
+ * sends back only the table.
  *
- * - Fitted once per page and sport, on first use; the result is reactive, so
- *   Vue components re-render when it arrives. DOM renderers wait for
- *   `whenLeagueReference`.
- * - Sparse ages lean on the league's ratio trend (fitLeagueOr). With no
- *   league list, under MIN_LEAGUE_POINTS player-seasons or under
- *   MIN_LEAGUE_AGES measured ages there is no league line: null, and only the
- *   global value is shown.
+ * - A view's entry point calls `loadLeagueReference` once; nothing else starts
+ *   I/O. The player model stays pure: callers pass the table to
+ *   `player.getRelativeSkillMaxima(table)`.
+ * - `leagueLine` reads the loaded table and status, reactively: a component
+ *   that read "loading" re-renders once it arrives. DOM renderers wait on the
+ *   promise `loadLeagueReference` returns.
+ * - No league list, a list from an earlier season, or too few league
+ *   player-seasons or measured ages: no table, and the league value shows
+ *   "???" with the status's reason in the tooltip.
  */
 
 import { shallowReactive } from "vue";
-import {
-  RelativeSkillFit,
-  agesBetween,
-  fitLeagueOr,
-  referenceTable,
-  scoutPoints,
-} from "@/base/relativeSkillFit";
-import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
+import type { LeagueLineStatus } from "@/base/relativeSkill";
 import { GrowthPrediction } from "@/types/GrowthData";
-import { ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { SkillHistoryMessage, SkillHistoryResponse } from "@/types/SkillHistoryMessages";
 import { Sport } from "@/types/Sport";
+import { getCurrentSeason } from "@/utils/dom";
 
-/** The league table from a sport's snapshots and league teams, or null when too sparse. */
-export function fitLeagueReference(
-  fit: RelativeSkillFit,
-  snapshots: readonly ScoutSnapshot[],
-  leagueTeamIds: readonly string[],
-  daysPerSeason: number
-): GrowthPrediction | null {
-  if (fit.rows.length === 0 || leagueTeamIds.length === 0) return null;
-  const teams = new Set(leagueTeamIds);
-  const ages = agesBetween(fit.rows[0].age, fit.rows[fit.rows.length - 1].age);
-  const points = scoutPoints(snapshots, daysPerSeason, (row) => row.teamId !== undefined && teams.has(row.teamId));
-  const league = fitLeagueOr(points, ages, fit.percentile, fit.rows.map((row) => row.or));
-  return league ? referenceTable(fit, league.curve) : null;
-}
+/** A sport's league table, or null with the reason (src/base/relativeSkill.ts). */
+export type LeagueLine = { table: GrowthPrediction | null; status: LeagueLineStatus };
 
-const tables = shallowReactive(new Map<Sport, GrowthPrediction | null>());
-const pending = new Map<Sport, Promise<GrowthPrediction | null>>();
+const LOADING: LeagueLine = { table: null, status: { kind: "loading" } };
 
-async function load(sport: Sport, fit: RelativeSkillFit, daysPerSeason: number) {
-  let table: GrowthPrediction | null = null;
+const lines = shallowReactive(new Map<Sport, LeagueLine>());
+const pending = new Map<Sport, Promise<LeagueLine>>();
+
+async function request(sport: Sport, currentSeason: number | null): Promise<LeagueLine> {
+  let line: LeagueLine = { table: null, status: { kind: "error" } };
   try {
-    const [league, snapshots] = await Promise.all([readLeagueTeams(sport), exportScoutSnapshots(sport)]);
-    if (league && snapshots) table = fitLeagueReference(fit, snapshots, league.teamIds, daysPerSeason);
+    const message: SkillHistoryMessage = { type: "RELATIVE_SKILL_LEAGUE", sport, currentSeason };
+    const response: SkillHistoryResponse = await chrome.runtime.sendMessage(message);
+    if (response?.type === "RELATIVE_SKILL_LEAGUE") line = { table: response.table, status: response.status };
   } catch (error) {
-    console.error("[LeagueRelativeSkill] Failed to fit the league line:", error);
+    console.error("[LeagueRelativeSkill] Failed to load the league line:", error);
   }
-  tables.set(sport, table);
-  return table;
+  lines.set(sport, line);
+  return line;
 }
 
-/** Starts the sport's fit once (outside the extension, e.g. in checks, it settles at null). */
-function ensure(sport: Sport, fit: RelativeSkillFit, daysPerSeason: number) {
+/**
+ * Asks the worker for the sport's league table, once per page; later calls
+ * return the same promise. The current season comes from the game's top bar.
+ */
+export function loadLeagueReference(
+  sport: Sport,
+  currentSeason: number | null = getCurrentSeason()?.season ?? null
+): Promise<LeagueLine> {
   let promise = pending.get(sport);
   if (!promise) {
-    promise =
-      typeof chrome !== "undefined" && chrome.runtime?.id !== undefined
-        ? load(sport, fit, daysPerSeason)
-        : Promise.resolve(null);
+    promise = request(sport, currentSeason);
     pending.set(sport, promise);
   }
   return promise;
 }
 
-/**
- * The league table if fitted, else null - also while it is still loading.
- * Reactive: a component that read null re-renders once it arrives.
- */
-export function leagueReference(
-  sport: Sport,
-  fit: RelativeSkillFit,
-  daysPerSeason: number
-): GrowthPrediction | null {
-  void ensure(sport, fit, daysPerSeason);
-  return tables.get(sport) ?? null;
-}
-
-/** Settles once the sport's league line is fitted (or known to be missing). */
-export function whenLeagueReference(
-  sport: Sport,
-  fit: RelativeSkillFit,
-  daysPerSeason: number
-): Promise<GrowthPrediction | null> {
-  return ensure(sport, fit, daysPerSeason);
-}
-
-/** For a static harness or a check: sets a sport's league table without the extension. */
-export function setLeagueReference(sport: Sport, table: GrowthPrediction | null): void {
-  pending.set(sport, Promise.resolve(table));
-  tables.set(sport, table);
+/** The loaded league line; "loading" until it arrives (or when never loaded). Reactive. */
+export function leagueLine(sport: Sport): LeagueLine {
+  return lines.get(sport) ?? LOADING;
 }

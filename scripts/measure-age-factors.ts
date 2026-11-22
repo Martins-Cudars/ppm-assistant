@@ -1,7 +1,8 @@
 /**
- * Re-measures AGE_PACE_FACTORS (src/sports/hockey/growthPace.ts) from a backup
- * file. Run it when more history has accumulated, or after the team's training
- * facilities change, and copy the factors it prints into AGE_PACE_FACTORS.
+ * Re-measures AGE_PACE_FACTORS (src/sports/<sport>/growthPace.ts, hockey or
+ * soccer) from a backup file. Run it when more history has accumulated, after
+ * the team's training facilities change, or after the reference table
+ * changes, and copy the factors it prints into AGE_PACE_FACTORS.
  *
  * It compares different players over the same months - never one player
  * across their own history, which mixes facility levels when facilities
@@ -14,21 +15,27 @@
  *
  *   BACKUP=path/to/ppm-assistant-backup.json ERA_START=2025-12-01 node check.mjs
  *
- * Optional: TEAM=<team id> picks the cache (default: the one with the most
- * history); WINDOW_DAYS overrides the window (default PACE_WINDOW_DAYS).
+ * Optional: SPORT=hockey|soccer (default hockey); TEAM=<team id> picks the
+ * cache (default: the sport's one with the most history); WINDOW_DAYS
+ * overrides the window (default PACE_WINDOW_DAYS). Factors are relative to the
+ * first band whose current factor is 1.0 (hockey <=21, soccer 17+).
  */
 
 import fs from "fs";
-import {
+import * as hockey from "@/sports/hockey/growthPace";
+import * as soccer from "@/sports/soccer/growthPace";
+import { BackupFile } from "@/types/Backup";
+import { SkillHistoryEntry } from "@/types/SkillHistory";
+
+const sport = process.env.SPORT === "soccer" ? "soccer" : "hockey";
+const {
   AGE_PACE_FACTORS,
   PACE_MIN_SPAN_DAYS,
   PACE_WINDOW_DAYS,
   bestPositionRating,
   measureGrowthPace,
-} from "@/sports/hockey/growthPace";
-import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
-import { BackupFile } from "@/types/Backup";
-import { SkillHistoryEntry } from "@/types/SkillHistory";
+} = sport === "soccer" ? soccer : hockey;
+const daysPerSeason = (sport === "soccer" ? soccer.soccerGrowthConfig : hockey.hockeyGrowthConfig).daysPerSeason;
 
 const backup = JSON.parse(fs.readFileSync(process.env.BACKUP!, "utf8")) as BackupFile;
 const eraStart = process.env.ERA_START ?? "2025-12-01";
@@ -40,14 +47,19 @@ const exportedAt = Date.parse(backup.exportedAt);
 Date.now = () => exportedAt;
 
 const byPlayer = new Map<string, SkillHistoryEntry[]>();
-for (const entry of backup.skillHistory) {
+const history = (
+  sport === "hockey" ? backup.skillHistory : (backup.sportSkillHistory?.[sport] ?? [])
+) as SkillHistoryEntry[];
+for (const entry of history) {
   if (!entry.skills || entry.date < eraStart) continue;
   const list = byPlayer.get(entry.playerId);
   if (list) list.push(entry);
   else byPlayer.set(entry.playerId, [entry]);
 }
 
-const caches = Object.values(backup.playerCaches);
+const caches = Object.entries(backup.playerCaches)
+  .filter(([key]) => key.startsWith(`ppm-assistant:${sport}:`))
+  .map(([, c]) => c);
 const cache =
   caches.find((c) => c.teamId === process.env.TEAM) ??
   caches
@@ -70,7 +82,7 @@ for (const [id, stored] of Object.entries(cache.players)) {
   if (stored.baseInfo.teamId !== cache.teamId) continue;
   const history = (byPlayer.get(id) ?? []).sort((a, b) => a.date.localeCompare(b.date));
   const exactAgeNow =
-    stored.baseInfo.age + (cache.currentSeasonDay || 1) / hockeyPlayerProfile.daysPerSeason;
+    stored.baseInfo.age + (cache.currentSeasonDay || 1) / daysPerSeason;
 
   // Back-to-back windows, so no day counts twice.
   let start = 0;
@@ -86,7 +98,8 @@ for (const [id, stored] of Object.entries(cache.players)) {
     const window = history.slice(start, end + 1);
     const last = window[window.length - 1];
     if (last.skills && daysBetween(window[0].date, last.date) >= PACE_MIN_SPAN_DAYS) {
-      const pace = measureGrowthPace(window, exactAgeNow, bestPositionRating(last.skills).name);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pace = measureGrowthPace(window as any, exactAgeNow, bestPositionRating(last.skills as any).name);
       // basePace, not pace: the projection applies these factors to the base
       // (main-skill) part only, so they have to be measured on it.
       if (pace?.basePace != null) {
@@ -106,12 +119,13 @@ const median = (values: number[]) => {
   return sorted[Math.floor(sorted.length / 2)];
 };
 
-const reference = paces.get(AGE_PACE_FACTORS[0].fromAge);
+const referenceBand = AGE_PACE_FACTORS.find((band) => band.factor === 1) ?? AGE_PACE_FACTORS[0];
+const reference = paces.get(referenceBand.fromAge);
 if (!reference) throw new Error("No windows in the reference band - try an earlier ERA_START.");
 const referencePace = median(reference.values);
 
 console.log(
-  `Team ${cache.teamId}, since ${eraStart}, ${windowDays}-day windows. ` +
+  `${sport}: team ${cache.teamId}, since ${eraStart}, ${windowDays}-day windows. ` +
     `Reference pace ${Math.round(referencePace * 100)}%.\n`
 );
 console.log("from age  players  windows  median   factor  (current)");

@@ -16,8 +16,9 @@
         </div>
         <RelativeSkill
           :skill="bestPosition.ratingWithXp"
-          :maxSkillForAge="maxima.global"
-          :leagueMaxSkillForAge="maxima.league"
+          :maxima="maxima"
+          :age="player.age"
+          :leagueStatus="league.status"
         />
       </div>
     </div>
@@ -35,6 +36,7 @@ import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { ratingSettings } from "@/sports/hockey/settings";
 import RatingStars from "@/components/RatingStars.vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import { leagueLine } from "@/base/scout/leagueRelativeSkill";
 
 const props = defineProps<{
   player: HockeyPlayer;
@@ -42,7 +44,9 @@ const props = defineProps<{
 
 const positions = computed(() => props.player.getPositions());
 const bestPosition = computed(() => props.player.getBestPosition());
-const maxima = computed(() => props.player.getRelativeSkillMaxima());
+// The view loaded the league line (loadLeagueReference); "loading" until it arrives.
+const league = computed(() => leagueLine("hockey"));
+const maxima = computed(() => props.player.getRelativeSkillMaxima(league.value.table));
 </script>
 
 <style scoped>

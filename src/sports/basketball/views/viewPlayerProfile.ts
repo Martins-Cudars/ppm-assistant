@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import { parseBasketballPlayerFromProfilePage } from "@/sports/basketball/parsers/playerProfile";
 import BasketballPlayerSidebar from "./components/BasketballPlayerSidebar.vue";
@@ -32,6 +33,8 @@ const viewPlayerProfile = () => {
   sidebarContainer.id = "ppm-assistant-basketball-sidebar";
   contentColumn.appendChild(sidebarContainer);
 
+  // Relative skill's league value: fetched once here, read by the components.
+  void loadLeagueReference("basketball");
   const sidebarApp = createApp(BasketballPlayerSidebar, { player });
   sidebarApp.mount(sidebarContainer);
 

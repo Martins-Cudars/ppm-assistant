@@ -79,7 +79,8 @@ const exactAge = props.player.age + (getCurrentSeasonDay() || 1) / basketballPla
 // Own rows kept so the toggle can re-derive the history without re-querying.
 // OR-only rows (unscouted players) have no skills, so they show in OR mode only.
 const ownEntries = ref<Entry[]>([]);
-const metric = useGrowthMetric();
+// An unscouted player has no skills: his chart opens on OR.
+const metric = useGrowthMetric(props.player.hasKnownSkills() ? {} : { force: "or" });
 // Derived, so a new metric or freshly loaded rows can never leave it stale.
 const history = computed<Point[]>(() =>
   historyPoints(ownEntries.value, exactAge, metric.value, props.player.height)
@@ -171,7 +172,8 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   if (squadBest.value.skill.length > 0) {
     datasets.push(squadDataset(squadBest.value.skill, "Your squad's best at each age"));
   }
-  datasets.push(
+  // An unscouted player's rating is a guess from OR: no "now" points for it.
+  if (props.player.hasKnownSkills()) datasets.push(
     {
       label: `Now with XP (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithXp }],

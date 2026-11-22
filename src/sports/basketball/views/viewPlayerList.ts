@@ -1,3 +1,5 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import { parseBasketballPlayerFromListRow } from "@/sports/basketball/parsers/playerRows";
 import BasketballPlayerListTable from "./components/BasketballPlayerListTable.vue";
@@ -24,6 +26,10 @@ const viewPlayerList = () => {
   );
   const items: BasketballPlayerListItem[] = [];
 
+  // Read once for the page, not per row.
+
+  const seasonDay = getCurrentSeasonDay();
+
   playerRows?.forEach((playerRow) => {
     const playerColumns = playerRow.querySelectorAll("td");
     const playerLink = playerColumns[0]?.querySelector(
@@ -35,7 +41,7 @@ const viewPlayerList = () => {
       (img) => img !== countryFlagImg
     ) as HTMLImageElement | undefined;
 
-    const player = parseBasketballPlayerFromListRow(playerRow);
+    const player = parseBasketballPlayerFromListRow(playerRow, seasonDay);
     player.calculatePositions();
 
     items.push({
@@ -91,6 +97,8 @@ const viewPlayerList = () => {
   table.parentNode.insertBefore(buttonRow, table);
   table.parentNode.replaceChild(appContainer, table);
 
+  // Relative skill's league value: fetched once here, read by the components.
+  void loadLeagueReference("basketball");
   const app = createApp(BasketballPlayerListTable, {
     items,
     headers,

@@ -162,7 +162,7 @@ const paceTitle = (player: SoccerPlayer) => {
     pace.expectedPerSeason === null
       ? "No reference pace to compare against at this age"
       : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` +
-        (age <= 23 ? "the top-player table" : "your squad's own slowdown after 23"),
+        (age <= 23 ? "the top-5% line" : "your squad's own slowdown after 23"),
   ];
   const skipped = [
     pace.skippedNoTrainingDays > 0 ? `${pace.skippedNoTrainingDays} no-training days` : "",
@@ -235,7 +235,7 @@ const atAgeValues = (targetAge: number) => {
       title:
         `Projected: ${pace.position} rating (no XP) at ${targetAge}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the reference pace from ` +
-        "here on (the top-player table to 23, your squad's own slowdown after). Any lagging main " +
+        "here on (the top-5% line to 23, your squad's own slowdown after). Any lagging main " +
         "skill is caught up first; other skills keep their current rate. " +
         campAllowanceText(pace, exactAge) +
         (pace.provisional ? `Provisional: the pace rests on only ${pace.measuredDays} days of data.` : ""),
@@ -611,7 +611,7 @@ const {
   ownTeamId: () => teamId.value,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-5% line, the 100% of relative skill (Pace still measures against the reference table). OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against (soccer: its slope up to 23, the squad's own decline from 24). OR: the best any of your own players had on reaching each age.",
   squadCaption:
     "Squad: OR against the best any of your own players had at the same age. Pace: against the reference table, as before.",
   idOf,

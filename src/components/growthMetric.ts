@@ -1,33 +1,73 @@
 /**
- * The Skill / OR choice of the profile growth charts, shared by every sport.
- * Remembered for the browser session (sessionStorage), so the choice survives
- * navigating between player profiles but not a new session.
+ * The Skill / OR choice of the growth charts, shared by every sport.
+ * Remembered for the browser session in chrome.storage.session, which the
+ * sport subdomains, the extension's report page and every tab share; the
+ * background worker opens it to content scripts (setAccessLevel). Where
+ * that isn't available (a static harness, or before the worker ran), the
+ * page's own sessionStorage keeps it per origin and tab.
  */
 import { ref, type Ref } from "vue";
 import type { Chart, ChartDataset } from "chart.js";
 
 export type GrowthMetric = "skill" | "or";
 
-const STORAGE_KEY = "ppm-assistant:growth-metric";
+export const GROWTH_METRIC_KEY = "ppm-assistant:growth-metric";
 
-const readStored = (): GrowthMetric => {
+const asMetric = (value: unknown): GrowthMetric | null =>
+  value === "or" || value === "skill" ? value : null;
+
+const sessionArea = (): chrome.storage.StorageArea | null => {
   try {
-    return sessionStorage.getItem(STORAGE_KEY) === "or" ? "or" : "skill";
+    return typeof chrome !== "undefined" && chrome.storage?.session ? chrome.storage.session : null;
   } catch {
-    return "skill";
+    return null;
   }
 };
 
-export function useGrowthMetric(): Ref<GrowthMetric> {
-  return ref<GrowthMetric>(readStored());
+const readLocal = (): GrowthMetric | null => {
+  try {
+    return asMetric(sessionStorage.getItem(GROWTH_METRIC_KEY));
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The remembered metric as a ref: the page's sessionStorage copy at once,
+ * then the shared session's once it is read. `fallback` applies when neither
+ * holds one; `force` ignores both (an unscouted player has no skills, so his
+ * chart opens on OR).
+ */
+export function useGrowthMetric(options: { fallback?: GrowthMetric; force?: GrowthMetric } = {}): Ref<GrowthMetric> {
+  const metric = ref<GrowthMetric>(options.force ?? readLocal() ?? options.fallback ?? "skill");
+  const area = sessionArea();
+  if (!options.force && area) {
+    const initial = metric.value;
+    area
+      .get(GROWTH_METRIC_KEY)
+      .then((data) => {
+        const stored = asMetric(data?.[GROWTH_METRIC_KEY]);
+        // Only if the user hasn't switched while it was read.
+        if (stored && metric.value === initial) metric.value = stored;
+      })
+      .catch(() => {
+        // Not opened to this context: the sessionStorage copy stands.
+      });
+  }
+  return metric;
 }
 
 export function rememberGrowthMetric(metric: GrowthMetric): void {
   try {
-    sessionStorage.setItem(STORAGE_KEY, metric);
+    sessionStorage.setItem(GROWTH_METRIC_KEY, metric);
   } catch {
-    // Storage blocked: the choice just lasts until the page closes.
+    // Storage blocked: the shared copy below, or just this page.
   }
+  sessionArea()
+    ?.set({ [GROWTH_METRIC_KEY]: metric })
+    .catch(() => {
+      // Not opened to this context: the sessionStorage copy stands.
+    });
 }
 
 /** The y-axis title, which is also the word the legend and tooltip use. */

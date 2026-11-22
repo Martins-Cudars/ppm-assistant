@@ -1,7 +1,8 @@
 /**
  * Assertions for relative skill: the shared fit (src/base/relativeSkillFit.ts),
- * the runtime league line (src/base/scout/leagueRelativeSkill.ts) and the
- * display helpers (src/base/relativeSkill.ts) - see test/README.md.
+ * the worker's league fit (src/storage/leagueReferenceFit.ts), the pure
+ * player model, the display states (src/base/relativeSkill.ts) and the
+ * history chart helpers (src/base/historyDownsample.ts) - see test/README.md.
  */
 
 import {
@@ -9,21 +10,19 @@ import {
   agesBetween,
   fitGlobalOr,
   fitLeagueOr,
+  fitLeagueReference,
   referenceTable,
   scoutPoints,
   smoothSteps,
   unimodal,
+  withDerivedSeasons,
   xpCurve,
 } from "@/base/relativeSkillFit";
-import { relativePercent, relativeSortValue } from "@/base/relativeSkill";
-import {
-  fitLeagueReference,
-  leagueReference,
-  setLeagueReference,
-  whenLeagueReference,
-} from "@/base/scout/leagueRelativeSkill";
+import { relativePercent, relativeSkillView, relativeSortValue } from "@/base/relativeSkill";
+import { LEAGUE_FIT_SETTINGS, createLeagueReferenceFitter } from "@/storage/leagueReferenceFit";
+import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 
 let failures = 0;
 
@@ -111,8 +110,16 @@ const fitOf = (or: number[]): RelativeSkillFit => ({
 
   await check("league: no team ids or no snapshots of them -> null", () => {
     const fit = fitOf(agesBetween(15, 30).map(() => 1000));
-    eq(fitLeagueReference(fit, population("t1"), [], 112), null);
-    eq(fitLeagueReference(fit, population("t1"), ["elsewhere"], 112), null);
+    eq(fitLeagueReference(fit, population("t1"), { season: 58, teamIds: [] }, 112).table, null);
+    eq(fitLeagueReference(fit, population("t1"), { season: 58, teamIds: ["elsewhere"] }, 112), { table: null, points: 0, ages: 0 });
+  });
+
+  await check("league: only the list's season counts - last season's snapshots of the same teams don't", () => {
+    const fit = fitOf(agesBetween(15, 30).map(() => 1500));
+    const lastSeason = population("t1").map((row) => ({ ...row, season: 57 }));
+    const result = fitLeagueReference(fit, lastSeason, { season: 58, teamIds: ["t1"] }, 112);
+    eq([result.table, result.points], [null, 0]);
+    ok(fitLeagueReference(fit, population("t1"), { season: 58, teamIds: ["t1"] }, 112).table !== null, "this season fits");
   });
 
   await check("XP curve: 0 at 15, 200 at 28, slower before 20, no kink at 20, slower after 28", () => {
@@ -147,19 +154,150 @@ const fitOf = (or: number[]): RelativeSkillFit => ({
     ok(relativeSortValue(500, { global: 900, league: 900 })! > relativeSortValue(500, { global: 1000, league: 500 })!, "global first");
   });
 
-  await check("player: outside the extension there is no league; set, it is read", async () => {
+  const league = (season: number, teamIds = ["t1"]): LeagueTeams => ({
+    season, leagueId: "lva-ii-4", leagueName: "II.4", teamIds, updatedAt: "",
+  });
+  /** Sources that count their reads. */
+  const sources = (list: LeagueTeams | null, rows: ScoutSnapshot[], version = "1") => {
+    const reads = { league: 0, version: 0, snapshots: 0 };
+    return {
+      reads,
+      readLeague: async () => (reads.league++, list),
+      snapshotVersion: async () => (reads.version++, version),
+      readSnapshots: async () => (reads.snapshots++, rows),
+    };
+  };
+  const settings = {
+    ...LEAGUE_FIT_SETTINGS,
+    hockey: { fit: fitOf(agesBetween(15, 30).map(() => 1500)), daysPerSeason: 112 },
+  };
+
+  await check("worker fit: no league list -> no-league, and the snapshots are never read", async () => {
+    const fitter = createLeagueReferenceFitter(settings);
+    const none = sources(null, population("t1"));
+    eq(await fitter("hockey", 58, none), { table: null, status: { kind: "no-league" } });
+    eq(none.reads, { league: 1, version: 0, snapshots: 0 });
+    const empty = sources(league(58, []), population("t1"));
+    eq((await fitter("hockey", 58, empty)).status, { kind: "no-league" });
+    eq(empty.reads.snapshots, 0, "empty list");
+  });
+
+  await check("worker fit: a list from an earlier season is stale, and the snapshots are never read", async () => {
+    const fitter = createLeagueReferenceFitter(settings);
+    const stale = sources(league(57), population("t1"));
+    eq(await fitter("hockey", 58, stale), {
+      table: null,
+      status: { kind: "stale", listSeason: 57, currentSeason: 58 },
+    });
+    eq(stale.reads.snapshots, 0);
+    // With the page's season unknown, the list is taken as current (and its
+    // season's snapshots - none here, they are all season 58 - are used).
+    eq((await fitter("hockey", null, sources(league(57), population("t1")))).status.kind, "sparse");
+  });
+
+  await check("worker fit: fitted once, cached per list and store version", async () => {
+    const fitter = createLeagueReferenceFitter(settings);
+    const first = sources(league(58), population("t1"));
+    const fitted = await fitter("hockey", 58, first);
+    eq(fitted.status, { kind: "fitted" });
+    ok(fitted.table !== null && fitted.table.length === 16, "a table per age");
+    const again = sources(league(58), population("t1"));
+    eq((await fitter("hockey", 58, again)).table, fitted.table);
+    eq(again.reads.snapshots, 0, "cached");
+    const changed = sources(league(58), population("t1"), "2");
+    await fitter("hockey", 58, changed);
+    eq(changed.reads.snapshots, 1, "a new store version refits");
+  });
+
+  await check("worker fit: too few league points -> sparse, with the counts the tooltip names", async () => {
+    const fitter = createLeagueReferenceFitter(settings);
+    const status = (await fitter("hockey", 58, sources(league(58), population("t1").slice(0, 40)))).status;
+    // 30 players at 15, 10 at 16: windows of up to ±1 season measure 15-17.
+    eq(status, { kind: "sparse", points: 40, pointsNeeded: 50, ages: 3, agesNeeded: 3 });
+  });
+
+  await check("seasons: a snapshot without one gets it from its date; at a boundary it stays out", () => {
+    // Season 58 started 2026-10-12 (day 1), seasons of 112 days.
+    const anchor = { ...snap(20, 1000), date: "2026-11-01", season: 58, seasonDay: 21 };
+    const noSeason = (date: string) => ({ ...snap(20, 1000), date, season: undefined, seasonDay: undefined });
+    const { rows, derived, missing } = withDerivedSeasons(
+      [anchor, noSeason("2026-10-20"), noSeason("2026-08-01"), noSeason("2026-10-12")],
+      112
+    );
+    eq([rows[1].season, rows[1].seasonDay], [58, 9], "Oct 20");
+    eq([rows[2].season, rows[2].seasonDay], [57, 41], "Aug 1");
+    eq(rows[3].season, undefined, "day 1: within a day of the boundary");
+    eq([derived, missing], [2, 1]);
+  });
+
+  await check("pure model: the league table is a parameter; no chrome is touched", () => {
+    const touched: string[] = [];
+    (globalThis as Record<string, unknown>).chrome = new Proxy({}, {
+      get: (_, key) => {
+        touched.push(String(key));
+        return undefined;
+      },
+    });
     const player = new HockeyPlayer(
       { id: "1", name: "P", age: 28, careerLongitivity: 1, averageTrainingRatio: 80, overallRating: 2000 } as never,
-      new Date(), "SCOUTED", true, 56
+      new Date(), "SCOUTED", true, 56,
+      { goalie: 0, defence: 500, offence: 900, shooting: 700, passing: 450, technical: 450, aggression: 200 } as never
     );
-    eq(leagueReference("hockey", fitOf([]), 112), null);
-    eq(await whenLeagueReference("hockey", fitOf([]), 112), null);
-    ok(player.getRelativeSkillMaxima().global! > 0, "global 100% at 28");
-    eq(player.getRelativeSkillMaxima().league, null);
-    setLeagueReference("hockey", agesBetween(15, 45).map((age) => ({ age, skill: 1000, exp: 0 })));
-    eq(player.getRelativeSkillMaxima().league, 1000);
-    const old = new HockeyPlayer({ ...player, id: "2", age: 47 } as never, new Date(), "SCOUTED", true, 56);
-    eq(old.getRelativeSkillMaxima(), { global: null, league: null });
+    player.calculatePositions();
+    const none = player.getRelativeSkillMaxima(null);
+    ok(none.global! > 0, "global 100% at 28");
+    eq(none.league, null);
+    eq(player.getRelativeSkillMaxima(agesBetween(15, 45).map((age) => ({ age, skill: 1000, exp: 0 }))).league, 1000);
+    const old = new HockeyPlayer({ ...player, id: "2", age: 47 } as never, new Date(), "SCOUTED", true, 56, player.skills as never);
+    eq(old.getRelativeSkillMaxima(null), { global: null, league: null });
+    const unscouted = new HockeyPlayer({ ...player, id: "3" } as never, new Date(), "UNSCOUTED", false, 56);
+    eq(unscouted.getRelativeSkillMaxima(null), { global: null, league: null, skillsUnknown: true });
+    eq(touched, [], "chrome accessed");
+    delete (globalThis as Record<string, unknown>).chrome;
+  });
+
+  await check("display: 87% / 94%, 87% / ??? with the league's reason, ??? / ??? with the age's", () => {
+    const fitted = relativeSkillView(870, { global: 1000, league: 925 }, 28, { kind: "fitted" });
+    eq([fitted.global, fitted.league], [87, 94]);
+    ok(fitted.title.includes("94% of a top-5% player in your league"), fitted.title);
+
+    const sparse = relativeSkillView(870, { global: 1000, league: null }, 28, {
+      kind: "sparse", points: 12, pointsNeeded: 50, ages: 2, agesNeeded: 3,
+    });
+    eq([sparse.global, sparse.league], [87, null]);
+    ok(
+      sparse.title.includes("League: not enough scouted players from your league this season (12 found, 50 needed)"),
+      sparse.title
+    );
+    const stale = relativeSkillView(870, { global: 1000, league: null }, 28, { kind: "stale", listSeason: 57, currentSeason: 58 });
+    ok(stale.title.includes("League: league list is from season 57; open your league page to refresh it"), stale.title);
+    ok(relativeSkillView(870, { global: 1000, league: null }, 28, { kind: "no-league" }).title.includes("open your league page"), "no list");
+
+    const noAge = relativeSkillView(870, { global: null, league: 900 }, 46, { kind: "fitted" });
+    eq([noAge.global, noAge.league, noAge.title], [null, null, "No reference for age 46"]);
+    const unscouted = relativeSkillView(0, { global: null, league: null, skillsUnknown: true }, 28, { kind: "fitted" });
+    eq([unscouted.global, unscouted.league, unscouted.title], [null, null, "Unscouted player: skills unknown"]);
+
+    // ??? sorts last in either direction: SortableTable puts a null last.
+    eq(relativeSortValue(870, { global: null, league: null }), null);
+    eq(relativeSortValue(870, { global: null, league: null, skillsUnknown: true }), null);
+  });
+
+  await check("history: OR, else the sum of a FULL set of skills; points read once, thinned after the filter", () => {
+    const names = ["a", "b", "c"];
+    eq(overallOrSkillSum(1500, { a: 1 }, names), 1500, "stored OR wins");
+    eq(overallOrSkillSum(undefined, { a: 1.9, b: 2.9, c: 3.9 }, names), 6, "floored sum");
+    eq(overallOrSkillSum(undefined, { a: 1, b: 2 }, names), null, "partial capture");
+    eq(overallOrSkillSum(Number.NaN, undefined, names), null);
+    const entries = [
+      { date: "2026-01-01", v: 1 },
+      { date: "2026-01-02", v: null },
+      { date: "2026-03-01", v: 3 },
+    ];
+    eq(historyChartPoints(entries, (e) => e.v, (e) => Number(e.date.slice(5, 7))), [
+      { x: 1, y: 1 },
+      { x: 3, y: 3 },
+    ]);
   });
 
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

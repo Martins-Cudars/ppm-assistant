@@ -3,8 +3,9 @@
  * src/base/growthModel.ts with soccer's constants) - see test/README.md.
  *
  * What matters:
- * - The reference is the top-player table up to 23, the squad's own decline
- *   from 24 (the user's choice - the table's slope collapses after 23).
+ * - The reference is the top-5% line (relativeSkillReference) up to 23, the
+ *   squad's own decline from 24, scaled to the line's slope at 23 (the
+ *   user's choice - after 23 the line's slope steps).
  * - Juniors' faster pace is divided out by the age factors, so it isn't
  *   carried to 25.
  * - One skill a day at the position's ratios measures the same base pace as
@@ -22,6 +23,7 @@ import {
   projectPotential,
   projectionPoints,
 } from "@/sports/soccer/growthPace";
+import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
@@ -42,18 +44,24 @@ const eq = (a: unknown, b: unknown, m = "") => {
   if (a !== b) throw new Error(`${m} expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
 };
 
-check("reference: the table's slope up to 23, the squad's own from 24", () => {
-  eq(expectedSeasonGain(20.5), 70, "20: 455 -> 525");
-  eq(expectedSeasonGain(23.2), 50, "23: 650 -> 700");
-  eq(expectedSeasonGain(24.0), 46, "24: override (the table says 20)");
-  eq(expectedSeasonGain(25.9), 44, "25: override (the table says 15)");
+const skillAt = (age: number) => relativeSkillReference.find((row) => row.age === age)!.skill;
+const expAt = (age: number) => relativeSkillReference.find((row) => row.age === age)!.exp;
+const slope20 = skillAt(21) - skillAt(20);
+const slope23 = skillAt(24) - skillAt(23);
+
+check("reference: the top-5% line's slope up to 23, the squad's own from 24", () => {
+  eq(expectedSeasonGain(20.5), slope20, "20 -> 21");
+  eq(slope23, 54, "23 -> 24 on the 2026-11-22 line");
+  eq(expectedSeasonGain(23.2), slope23, "23 -> 24");
+  eq(expectedSeasonGain(24.0), Math.round(0.92 * slope23), "24: the squad's 0.92 of the slope at 23");
+  eq(expectedSeasonGain(25.9), Math.round(0.88 * slope23), "25: 0.88");
   eq(expectedSeasonGain(34.5), null, "34: 0 - no reference");
-  near(curveGainBetween(23, 25), 96, 1e-9, "50 + 46");
+  near(curveGainBetween(23, 25), slope23 + Math.round(0.92 * slope23), 1e-9, "23 + 24");
 });
 
-check("age factors: juniors' faster pace is divided out", () => {
-  eq(agePaceFactor(15.3), 1.4);
-  eq(agePaceFactor(16.9), 1.18);
+check("age factors: a 15-year-old's high and a 16-year-old's low pace are divided out", () => {
+  eq(agePaceFactor(15.3), 1.74);
+  eq(agePaceFactor(16.9), 0.8);
   eq(agePaceFactor(17), 1.0);
   eq(agePaceFactor(28), 1.0);
 });
@@ -86,7 +94,7 @@ check("one skill a day at the ratios: 1 point/day = 112/season = 37.3 base", () 
   const pace = measureGrowthPace(history(56), 20.5, "SM")!;
   near(pace.pointsPerSeason, 112, 0.5, "points");
   near(pace.basePerSeason, 112 / 3, 0.2, "base");
-  near(pace.basePace, 112 / 3 / 70, 0.01, "vs the 20-21 slope of 70");
+  near(pace.basePace, 112 / 3 / slope20, 0.01, "vs the line's 20-21 slope");
 });
 
 check("camps are found per skill: a heading camp day is 2x a heading day", () => {
@@ -121,7 +129,7 @@ check("a 15-year-old's catch-up pace isn't carried to 25", () => {
   const entries = history(56);
   const skills = entries[entries.length - 1].skills!;
   // The same history read at 15 vs at 17: the 15-year-old's pace is divided
-  // by 1.4, so both project the same future growth from the same skills.
+  // by its factor, so it never projects more growth than at 17.
   const at15 = measureGrowthPace(entries, 15.5, "SM")!;
   const at17 = measureGrowthPace(entries, 17.5, "SM")!;
   const gain15 = projectPositionRating(skills, 17.5, at15, 25)!;
@@ -133,9 +141,9 @@ check("a 15-year-old's catch-up pace isn't carried to 25", () => {
 // table, the squad sits at 0.34-0.71). His own share once projected 401 XP at
 // 32 and a 1,235 potential - 5 diamond stars - for a ~685 rating.
 check("an elite-team junior's XP isn't extrapolated: 42 + typical", () => {
-  // Table exp: 19 -> 22, 20 -> 35, 22 -> 62, 32 -> 238; shares 0.45 then 0.52.
-  const exp19_2 = 22 + (35 - 22) * 0.2;
-  const expected = 42 + (62 - exp19_2) * 0.45 + (238 - 62) * 0.52;
+  // The line's XP at 19.2, 22 and 32; shares 0.43 then 0.40.
+  const exp19_2 = expAt(19) + (expAt(20) - expAt(19)) * 0.2;
+  const expected = 42 + (expAt(22) - exp19_2) * 0.43 + (expAt(32) - expAt(22)) * 0.4;
   near(projectExperience(42, 19.2, 32), expected, 1e-6);
   const rating = 685;
   const withXp = Math.round(rating * (1 + expected / 500));

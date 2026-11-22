@@ -85,8 +85,9 @@ When nobody is logged in, PPM shows a shared demo team, "Public account": basket
 ## Growth pace and projection
 
 > **Potential: future XP (all sports, 2026-10-01).** Projected XP is today's XP plus the
-> squad's **typical** share of the table's XP gain for each future year (hockey 0.45 / 0.63,
-> soccer 0.45 / 0.52, basketball `TYPICAL_XP_PER_SEASON`).
+> squad's **typical** share of the table's XP gain for each future year (since 2026-11-23,
+> against the top-5% line's XP: hockey 0.58 / 0.52, soccer 0.43 / 0.40; against the old
+> table they were 0.45 / 0.63 and 0.45 / 0.52; basketball `TYPICAL_XP_PER_SEASON`).
 > - A player's own past share is no longer carried forward. It reflects playing time
 >   wherever he was, not at this team.
 > - **What found it:** Herberts Dzelzs, a soccer CF bought at 18 from an elite team, had 42 XP
@@ -136,8 +137,13 @@ binds it to hockey's constants. All pure functions. The same code drives:
 - **Training a skill that isn't the bottleneck.** The rating doesn't move at all, so a
   player being trained hard reads near 0%.
 
-**What the top-player curve measures.** `playerGrowthPrediction` (`settings.ts`) is a
-hand-built table, ages 15–45:
+**What the top-player curve measures.** Since 2026-11-23 (4.1.0) it is the top-5% line,
+`relativeSkillReference` in `src/sports/<sport>/relativeSkillReference.ts`: the same line
+the charts draw in grey and relative skill's global 100% reads. Pace, the projections,
+`topExpAt` and the soccer reference after 23 all read it, so every "top player" number uses
+one table. Before, they read `playerGrowthPrediction` in `settings.ts`, a hand-built table
+that has been removed. The numbers in this section up to the age factors come from that
+table. The line, like the old table, has ages 15–45 (soccer 15–40):
 
 - **`skill` is the position rating *with* bonus, no XP.** That's the first two parts of
   "803 (502 + 64 + 237)" on the position card.
@@ -255,6 +261,30 @@ Weighting points by quality would have made the numbers worse. Re-run this check
 adding it.
 
 ### Pace slows with age: `AGE_PACE_FACTORS`
+
+> **Re-measured on the top-5% line (2026-11-23, 2026-11-22 backup).** Against the old table
+> the same windows read 1.00 / 0.96 / 0.66 / 0.46 in hockey. Against the top-5% line they
+> read **1.00 / 0.93 / 1.03 / 1.00** (27 / 11 / 11 / 3 players, base pace 58% at ≤21): the
+> scouted line already slows down as this team's players do. Soccer, all history: **1.74 at
+> 15, 0.80 at 16**, 1.00 from 17 (26 / 28 / 27 players; it was 1.4 / 1.18). The line rises
+> only 42 from 15 to 16 and 88 from 16 to 17, so a 15-year-old reads high and a 16-year-old
+> low. `scripts/measure-age-factors.ts` now takes `SPORT=soccer`. The rest of this section is
+> the measurement against the old table.
+>
+> **Pace before and after, same backup:**
+>
+> | Player | Age | Pace (old table → top-5% line) | @25 |
+> |---|---|---|---|
+> | Gatis Spuļģis (W) | 22.4 | 81% → 83% | 789 → 793 |
+> | Matīss Slaidins (W) | 16.4 | 60% → 80% | 673 → 857 |
+> | Octave Bezeau (W) | 26.4 | 53% → 124% | – |
+> | Mairis Grīns (W) | 28.4 | 48% → 81% | – |
+> | Kristofers Vārna (soccer SD) | 22.7 | 60% → 81% | 455 → 481 |
+> | Reinis Rītiņš (soccer SD) | 15.7 | 67% → 100% | 417 → 436 |
+>
+> The line's slope steps where scouting is thin: hockey 90 a season at 15 (old 120) and 33
+> at 26 (old 77), so 16-year-olds' Pace and @25 rise and 26-year-olds read 100–142%.
+> Smoothing the line's slope for Pace is not done; it is the user's call.
 
 A single pace carried to 25 was too optimistic. At this team, players slow down faster than
 the curve does, so projections multiply each future year by an age factor relative to ages
@@ -382,13 +412,30 @@ profile card. It shows 5 stars in three tiers, measured on rating **with XP**:
 ## Profile chart: Skill / OR toggle
 
 All three profile growth charts have a Skill / OR toggle (`src/components/GrowthMetricToggle.vue`,
-state and session memory in `src/components/growthMetric.ts`, kept in `sessionStorage`). Switching
-swaps `chart.data.datasets` and the y-axis title in place, then `chart.update()`; it does not
-recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
+state and session memory in `src/components/growthMetric.ts`). The choice is kept in
+`chrome.storage.session`, which every sport subdomain, tab and the report page share; the
+background worker opens that area to content scripts (`setAccessLevel`). The page's own
+`sessionStorage` holds a copy, read first and used where the shared one isn't reachable.
+Switching swaps `chart.data.datasets` and the y-axis title in place, then `chart.update()`;
+it does not recreate the chart. Axis, legend and tooltip say "OR" in OR mode.
 
-- **OR history** uses every row with an `overallRating`, or the sum of its floored skills when
-  it has none, so an unscouted opponent's rating-only rows draw. Hockey's `historyPoints()`
-  (`skillHistoryChart.ts`) is the one reader; the Player Report uses it too. The OR y axis
+- **The Players reports' comparison chart** (`GrowthComparisonChart.vue`) switches in place
+  too (2026-11-23): every series keeps its dataset, empty on a metric it has no points for,
+  so dataset *i* stays series *i* and legend / Hide All choices survive the switch. Its y
+  axis uses `growthMetricScale` (OR: not from zero, titled "OR"). Seen in a static harness
+  from the 2026-11-22 backup: same chart instance after the switch, a hidden player still
+  hidden.
+- **An unscouted player** (no skills read) opens on OR, and the Skill view leaves out the
+  "now" points, whose rating would be a guess from OR.
+
+- **OR history, the same rule in every sport** (`overallOrSkillSum` in
+  `src/base/historyDownsample.ts`): the row's `overallRating`, else the sum of its floored
+  skills (OR = Σ floor(skill)), but only when every one of the sport's skills is in the row.
+  A partial capture gives no OR rather than a false dip. An unscouted opponent's rating-only
+  rows draw. Each sport's history reader (hockey `historyPoints()`, soccer
+  `soccerHistoryPoints()`, basketball `historyPoints()`) is a thin wrapper over one helper,
+  `historyChartPoints(entries, read, ageOf)`, which drops rows without a value before
+  thinning. The OR y axis
   auto-scales with 5% padding instead of starting at zero. `orDatasets()` in `growthMetric.ts`
   builds the OR view for all three charts and omits "Now (OR)" when the OR is missing or 0.
   The comparison chart's Skill / OR tabs use the same `GrowthMetricToggle`. Rows are filtered per metric *before* thinning (see the Skill path above).
@@ -968,13 +1015,33 @@ player list's Rel column and the market's Rel column.
   after more scouting, run `scripts/fit-relative-skill.ts <backup.json> --write`
   (`--compare` prints the user's players before and after). The script refuses to write
   NaN, Infinity or non-positive rows.
-- **League line: fitted at runtime** (`src/base/scout/leagueRelativeSkill.ts`). On first use
-  in a page, it reads the stored league list and the sport's scout snapshots from the
-  worker (`SCOUT_EXPORT`). It fits the league against the static global line and caches
-  the result for the page. The cache is reactive: Vue components re-render when it arrives,
-  and the market's DOM cells are redrawn. With no league list, fewer than 50 league
-  player-seasons or fewer than 3 measured ages, there is no league line, and only the
-  global value shows.
+- **League line: fitted in the background worker** (`src/storage/leagueReferenceFit.ts`,
+  2026-11-23). A view's entry point (profile, player list, market) calls
+  `loadLeagueReference(sport)` once with the page's season; the worker reads the league
+  list first, and only if there is a current one reads the snapshots, fits the league
+  against the static global line and sends back the table (about 30 rows), not the store.
+  It caches the table per sport, keyed on the list and the store's version (count plus a
+  write counter). `leagueLine(sport)` in `src/base/scout/leagueRelativeSkill.ts` holds the
+  answer reactively: Vue components re-render when it arrives, and the market's DOM cells
+  are redrawn.
+- **Only the list's season counts.** Snapshots of the league's teams from other seasons are
+  left out (a team may have been in another league). A list from an earlier season than
+  the page's is stale: no league line. On the 2026-11-22 backup this leaves hockey II.4 540
+  league player-seasons (1,203 before), soccer II.2 569 (unchanged, one season scouted) and
+  basketball III.3 273 (502 before); all three still fit (30, 24 and 22 measured ages).
+  Basketball's league is thin past 26: 1–7 players per age.
+- **Missing values show "???"** with no rank colour, and the tooltip says why: "87% / ???"
+  without a league line ("League: not enough scouted players from your league this season
+  (N found, 50 needed)", "League: league list is from season X; open your league page to
+  refresh it", no list, still loading), "??? / ???" outside the table's ages ("No reference
+  for age 46") or for an unscouted player ("Unscouted player: skills unknown"). Rows with a
+  global "???" sort last in either direction.
+- **The model is pure.** `player.getRelativeSkillMaxima(leagueTable)` takes the table as a
+  parameter and starts no I/O.
+- **Snapshots without a season** get one from their date where the store's dated
+  snapshots pin the calendar down (`withDerivedSeasons`); within a day of a season boundary
+  they stay out, and the rest are counted in a one-time warning. The 2026-11-22 backup has
+  none.
 - **One implementation.** `src/base/relativeSkillFit.ts` holds the fitting, and both the
   script and the runtime use it.
 - **Reading it.** `player.getRelativeSkillMaxima()` returns `{ global, league }`, with null
@@ -984,9 +1051,11 @@ player list's Rel column and the market's Rel column.
   the maxima once per player and sort by global, then league.
 - **The growth charts use the same global line** as their grey "Top 5%" line: the hockey
   and soccer profile charts, both list charts and the Players reports' Skill tab. So the
-  chart's top line and relative skill's 100% agree. Pace, the projections and
-  `AGE_PACE_FACTORS` still use `playerGrowthPrediction` internally, uncalibrated. Basketball
-  never had a top-player line and still has none.
+  chart's top line and relative skill's 100% agree. Since 2026-11-23 Pace, the projections
+  and their XP read it too, with `AGE_PACE_FACTORS` and the XP shares re-measured against it
+  (see "Pace slows with age"). Basketball's growth model has no table: its reference is
+  built from the squad's own history (`buildReferenceCurve`), so it is unchanged, and it
+  still has no top-player line.
   The grey lines use Chart.js's monotone interpolation: the plain spline bulged above the
   data at the axis edge (near 32.8 with ages 25-33 shown), even with the data smooth.
 - **The method:**
@@ -1113,6 +1182,7 @@ The repo has no test runner, so "verified" means it was actually run.
 | Squad-overview capture | **Never run in the browser.** |
 | Scouted rosters (basketball, hockey, soccer) | Parsing, merge, league list and the lines: **verified**, 23 checks in `test/scout-reference.check.ts`. The page markup was read from the live game (basketball 2026-10-02, hockey and soccer 2026-10-04, EN and LV). Basketball tested in the browser by the user on 2026-10-04. Hockey, soccer and the v3 backup round trip: **never run in the browser.** |
 | Auto-clearing notice, dialog focus trap | **Never run.** |
+| 4.1.0 review fixes (worker league fit, ??? display, comparison chart in place, unscouted basketball profile, shared session metric) | Checks in `test/relative-skill.check.ts` and `test/basketball-capture.check.ts`; the comparison chart's OR switch seen in a static harness. **Never run in the extension**: the worker message, `chrome.storage.session` access and the redraws are unverified. |
 
 The assertions live in [`test/`](../test/README.md), kept as-is because the *cases* were
 the expensive part to work out. `pnpm check` (`scripts/run-checks.mjs`) bundles and runs

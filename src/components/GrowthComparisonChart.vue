@@ -58,7 +58,7 @@ import Chart from "chart.js/auto";
 import type { ChartDataset } from "chart.js";
 
 import GrowthMetricToggle from "./GrowthMetricToggle.vue";
-import { useGrowthMetric } from "./growthMetric";
+import { applyGrowthMetricScale, growthMetricScale, useGrowthMetric } from "./growthMetric";
 import type {
   GrowthPoint as Point,
   GrowthReference,
@@ -116,6 +116,18 @@ const emptyReferenceTitle = (option: GrowthReferenceOption) => {
 // only swaps its data - see the watcher below.
 const REFERENCE_DATASETS = 1;
 
+/**
+ * A series' data and point style on the active metric. Every series keeps a
+ * dataset, empty on a metric it has no points for (left out of the legend),
+ * so a metric switch only swaps data and dataset i stays series i - the
+ * user's legend / Hide All selections survive it.
+ */
+const seriesStyle = (series: GrowthSeries) => {
+  const data = series[activeMetric.value];
+  // A lone point (no history yet) is drawn as a dot so the player still shows.
+  return { data, pointRadius: data.length === 1 ? 5 : 2, showLine: data.length > 1 };
+};
+
 const buildDatasets = (): ChartDataset<"line">[] => {
   const datasets: ChartDataset<"line">[] = [];
   datasets.push({
@@ -133,19 +145,14 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     order: 10,
   });
   props.series.forEach((series, index) => {
-    const data = series[activeMetric.value];
-    if (data.length === 0) return;
     const color = colorForIndex(index);
-    // A lone point (no history yet) is drawn as a dot so the player still shows.
     datasets.push({
       label: series.label,
-      data,
       borderColor: color,
       backgroundColor: color,
       borderWidth: 2,
-      pointRadius: data.length === 1 ? 5 : 2,
-      showLine: data.length > 1,
       tension: 0,
+      ...seriesStyle(series),
     });
   });
   return datasets;
@@ -178,10 +185,8 @@ const renderChart = () => {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: activeMetric.value === "or" ? "Overall Rating" : "Skill" },
-          },
+          // OR doesn't start from zero, or its growth would flatten into a line.
+          y: growthMetricScale(activeMetric.value),
           x: {
             type: "linear",
             min: range.min,
@@ -194,7 +199,8 @@ const renderChart = () => {
           legend: {
             display: true,
             position: "top",
-            // An empty reference line has nothing to show in the legend.
+            // An empty line (the reference, or a series on a metric it has
+            // no points for) has nothing to show in the legend.
             labels: {
               filter: (item, data) => (data.datasets[item.datasetIndex ?? 0]?.data.length ?? 0) > 0,
             },
@@ -232,7 +238,22 @@ const rerender = async () => {
 };
 
 onMounted(rerender);
-watch([() => props.series, () => props.loading, activeMetric], rerender);
+watch([() => props.series, () => props.loading], rerender);
+
+// A metric switch needs no new chart (the CLAUDE.md Chart.js rule): each
+// dataset object keeps its identity - Chart.js ties the hidden state to it -
+// and only its data, the reference's data and the y axis change.
+watch(activeMetric, (metric) => {
+  if (!chartInstance) return;
+  const [reference, ...players] = chartInstance.data.datasets as ChartDataset<"line">[];
+  reference.data = currentReference.value?.[metric] ?? [];
+  reference.label = currentReference.value?.label ?? "";
+  props.series.forEach((series, index) => {
+    if (players[index]) Object.assign(players[index], seriesStyle(series));
+  });
+  applyGrowthMetricScale(chartInstance, metric);
+  chartInstance.update();
+});
 
 // A different reference line needs no new chart: swapping the first dataset's
 // data in place keeps the user's legend / Hide All selections.

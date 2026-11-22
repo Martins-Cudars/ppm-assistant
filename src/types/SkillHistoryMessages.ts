@@ -15,6 +15,8 @@ import {
 } from "@/types/SkillHistory";
 import { ScoutCoverage, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { Sport } from "@/types/Sport";
+import { GrowthPrediction } from "@/types/GrowthData";
+import type { LeagueLineStatus } from "@/base/relativeSkill";
 
 /**
  * Every message may name a sport; each sport has its own object store, so the
@@ -60,7 +62,12 @@ type SkillHistoryRequest =
   | { type: "SCOUT_CLEAR" }
   // Three counts for the roster page's note, worked out in the worker so the
   // page isn't sent every stored snapshot just to count them.
-  | { type: "SCOUT_COVERAGE" };
+  | { type: "SCOUT_COVERAGE" }
+  // The viewer's league line for relative skill, fitted in the worker from the
+  // stored league list and snapshots (src/storage/leagueReferenceFit.ts), so
+  // the page gets one small table instead of every snapshot. `currentSeason`
+  // is the page's, or null when unknown: a list from an earlier season is stale.
+  | { type: "RELATIVE_SKILL_LEAGUE"; currentSeason: number | null };
 
 export type SkillHistoryResponse =
   | { type: "SCOUT_UPSERT"; written: number }
@@ -68,6 +75,7 @@ export type SkillHistoryResponse =
   | { type: "SCOUT_EXPORT"; snapshots: ScoutSnapshot[] | null }
   | { type: "SCOUT_CLEAR"; cleared: number | null }
   | { type: "SCOUT_COVERAGE"; coverage: ScoutCoverage | null }
+  | { type: "RELATIVE_SKILL_LEAGUE"; table: GrowthPrediction | null; status: LeagueLineStatus }
   | { type: "SKILL_HISTORY_UPSERT"; written: number }
   | { type: "SKILL_HISTORY_GET"; entries: SkillHistoryEntry[] }
   | { type: "SKILL_HISTORY_SUMMARY"; summaries: SkillHistorySummary[] }

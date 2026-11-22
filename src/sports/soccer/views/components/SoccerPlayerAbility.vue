@@ -16,8 +16,9 @@
         </div>
         <RelativeSkill
           :skill="relativeSkill"
-          :maxSkillForAge="maxima.global"
-          :leagueMaxSkillForAge="maxima.league"
+          :maxima="maxima"
+          :age="player.age"
+          :leagueStatus="league.status"
         />
       </div>
     </div>
@@ -32,6 +33,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import RelativeSkill from "@/components/RelativeSkill.vue";
+import { leagueLine } from "@/base/scout/leagueRelativeSkill";
 import RatingStars from "@/components/RatingStars.vue";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
 import { ratingSettings } from "@/sports/soccer/settings";
@@ -43,6 +45,8 @@ const props = defineProps<{
 
 const positions = computed(() => props.player.getPositions());
 const bestPosition = computed(() => props.player.getBestPosition());
-const maxima = computed(() => props.player.getRelativeSkillMaxima());
+// The view loaded the league line (loadLeagueReference); "loading" until it arrives.
+const league = computed(() => leagueLine("soccer"));
+const maxima = computed(() => props.player.getRelativeSkillMaxima(league.value.table));
 const relativeSkill = computed(() => getSoccerRelativeSkill(props.player));
 </script>

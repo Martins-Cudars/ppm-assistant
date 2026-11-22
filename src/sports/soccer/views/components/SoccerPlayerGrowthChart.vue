@@ -66,7 +66,8 @@ const exactAge =
 // the toggle never re-queries the store. OR-only rows (unscouted players) have
 // no skills, so they appear in OR mode only.
 const entries = ref<SkillHistoryEntry<SoccerSkills>[]>([]);
-const metric = useGrowthMetric();
+// An unscouted player has no skills: his chart opens on OR.
+const metric = useGrowthMetric(props.player.hasKnownSkills() ? {} : { force: "or" });
 // Derived, so a new metric or freshly loaded rows can never leave it stale.
 const history = computed<Point[]>(() =>
   soccerHistoryPoints(entries.value, exactAge, metric.value)

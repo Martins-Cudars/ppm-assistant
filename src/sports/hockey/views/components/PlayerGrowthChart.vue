@@ -41,7 +41,8 @@ const props = defineProps<{
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 const historyEntries = ref<SkillHistoryEntry[]>([]);
-const metric = useGrowthMetric();
+// An unscouted player has no skills: his chart opens on OR.
+const metric = useGrowthMetric(props.player.hasKnownSkills() ? {} : { force: "or" });
 
 // Default to a window around the player's current age rather than the full
 // 15-45 data range, so a young player's progress isn't squeezed into a
@@ -82,8 +83,11 @@ const calculateData = () => {
   // Player position
   const exactAge = currentExactAge();
 
-  currentPureData.push({ x: exactAge, y: currentPureSkill });
-  currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+  // An unscouted player's rating is a guess from OR: no "now" point for it.
+  if (props.player.hasKnownSkills()) {
+    currentPureData.push({ x: exactAge, y: currentPureSkill });
+    currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+  }
 
   // Actual skill history, sourced from prior visits to treninu-progress.html
   // and from profile visits. Entries captured from an unscouted player's
@@ -185,7 +189,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointHoverRadius: 12,
       showLine: false,
     },
-  ];
+  ].filter((dataset) => dataset.data.length > 0); // no "now" points when unscouted
 
   // Only add the actual-history line once there's data to show - omit it
   // entirely rather than showing an empty/misleading legend entry. History

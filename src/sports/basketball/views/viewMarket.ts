@@ -1,3 +1,5 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { ratingSettings } from "@/sports/basketball/settings";
 import { parseBasketballPlayerFromMarketRow } from "@/sports/basketball/parsers/playerRows";
 import {
@@ -8,6 +10,7 @@ import {
 } from "@/base/render";
 
 const viewMarket = () => {
+  const league = loadLeagueReference("basketball");
   const table = document.getElementById("table-1");
   if (!table) {
     console.error("Table with id 'table-1' not found");
@@ -42,9 +45,13 @@ const viewMarket = () => {
     }
   });
 
+  // Read once for the page, not per row.
+
+  const seasonDay = getCurrentSeasonDay();
+
   playerRows?.forEach((playerRow, index) => {
     playerRow.classList.add(`player-row`);
-    const player = parseBasketballPlayerFromMarketRow(playerRow);
+    const player = parseBasketballPlayerFromMarketRow(playerRow, seasonDay);
     player.calculatePositions();
     player.calculatePositionTrainingQualities();
 
@@ -76,7 +83,7 @@ const viewMarket = () => {
     const relativeCell = document.createElement("td");
     relativeCell.classList.add(`${rowClass}td1`);
     relativeCell.appendChild(
-      renderPlayerRelativeSkill(player, bestPosition.ratingWithXp)
+      renderPlayerRelativeSkill(player, bestPosition.ratingWithXp, league)
     );
     playerRow.appendChild(relativeCell);
   });

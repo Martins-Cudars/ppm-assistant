@@ -424,7 +424,7 @@ const atAgeMissingTitle = (player: HockeyPlayer, targetAge = PROJECTION_AGE) => 
 // --- Compare with: Squad / League / Elite ------------------------------------------
 // Shared with the other sports' reports - see src/base/scout/useCompareWith.ts.
 // Under Squad (and until a group has enough revisits) Pace is hockey's own,
-// against the top-player table; projections never follow the toggle.
+// against the top-5% line; projections never follow the toggle.
 
 const exactAgeByPlayer = computed(
   () => new Map(store.cachedPlayers.map((player: HockeyPlayer) => [player.id, exactAgeOf(player)]))
@@ -466,9 +466,9 @@ const {
   ownTeamId: () => store.teamId,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-5% line, the 100% of relative skill (Pace still measures against the older top-player table). OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against. OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-player table, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line, as before.",
   idOf: (player) => player.id,
   exactAgeOf,
   overallOf: (player) => player.overallRating,

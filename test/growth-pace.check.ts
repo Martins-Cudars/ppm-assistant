@@ -16,6 +16,58 @@ import {
   PACE_MIN_SPAN_DAYS,
   PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
+  POTENTIAL_AGE,
+  hockeyGrowthConfig,
+  expectedSeasonGain as hockeyExpectedSeasonGain,
+  topExpAt as hockeyTopExpAt,
+  agePaceFactor as hockeyAgePaceFactor,
+} from "@/sports/hockey/growthPace";
+import { createGrowthModel } from "@/base/growthModel";
+import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
+import { SkillHistoryEntry } from "@/types/SkillHistory";
+
+/**
+ * The model's mechanics are checked against a fixed table, factors and XP
+ * shares: hockey's hand-written table and the constants measured against it
+ * until 4.1.0, which every hand-worked number below was derived from. Hockey
+ * itself now runs on the top-5% line (src/sports/hockey/relativeSkillReference.ts);
+ * the last checks below cover that wiring.
+ */
+const FIXTURE_TABLE = [
+  { age: 15, skill: 120, exp: 0 },
+  { age: 16, skill: 240, exp: 9 },
+  { age: 17, skill: 346, exp: 19 },
+  { age: 18, skill: 450, exp: 28 },
+  { age: 19, skill: 551, exp: 39 },
+  { age: 20, skill: 649, exp: 51 },
+  { age: 21, skill: 746, exp: 63 },
+  { age: 22, skill: 841, exp: 74 },
+  { age: 23, skill: 938, exp: 88 },
+  { age: 24, skill: 1016, exp: 102 },
+  { age: 25, skill: 1093, exp: 116 },
+  { age: 26, skill: 1171, exp: 130 },
+  { age: 27, skill: 1248, exp: 146 },
+  { age: 28, skill: 1306, exp: 162 },
+  { age: 29, skill: 1365, exp: 178 },
+  { age: 30, skill: 1423, exp: 195 },
+  { age: 31, skill: 1461, exp: 213 },
+  { age: 32, skill: 1500, exp: 232 },
+  { age: 33, skill: 1538, exp: 250 },
+  { age: 34, skill: 1577, exp: 269 },
+  { age: 35, skill: 1596, exp: 287 },
+  { age: 36, skill: 1573, exp: 306 },
+  { age: 37, skill: 1542, exp: 324 },
+  { age: 38, skill: 1506, exp: 343 },
+  { age: 39, skill: 1456, exp: 361 },
+  { age: 40, skill: 1400, exp: 380 },
+  { age: 41, skill: 1335, exp: 398 },
+  { age: 42, skill: 1260, exp: 417 },
+  { age: 43, skill: 1175, exp: 435 },
+  { age: 44, skill: 1080, exp: 454 },
+  { age: 45, skill: 975, exp: 472 },
+];
+const {
   adjustedCurveGainBetween,
   agePaceFactor,
   curveGainBetween,
@@ -29,12 +81,22 @@ import {
   projectExperience,
   projectPotential,
   topExpAt,
-  POTENTIAL_AGE,
   projectionPoints,
   solveBalancedRating,
-} from "@/sports/hockey/growthPace";
-import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
-import { SkillHistoryEntry } from "@/types/SkillHistory";
+} = createGrowthModel({
+  ...hockeyGrowthConfig,
+  growthTable: FIXTURE_TABLE,
+  agePaceFactors: [
+    { fromAge: 0, factor: 1.0 },
+    { fromAge: 22, factor: 0.95 },
+    { fromAge: 25, factor: 0.67 },
+    { fromAge: 28, factor: 0.49 },
+  ],
+  xpShares: [
+    { fromAge: 0, share: 0.45 },
+    { fromAge: 22, share: 0.63 },
+  ],
+});
 
 let failures = 0;
 
@@ -577,6 +639,16 @@ check("at or past 32 the potential is where the player is now", () => {
 
 check("no potential without a pace", () => {
   eq(projectPotential(skills({ defence: 450 }), 10, 18, null, { rating: 1, ratingWithXp: 1 }), null);
+});
+
+check("hockey runs on the top-5% line: its slope, its XP, the re-measured factors", () => {
+  const row = (age: number) => relativeSkillReference.find((r) => r.age === age)!;
+  eq(hockeyExpectedSeasonGain(18.5), row(19).skill - row(18).skill, "slope at 18");
+  near(hockeyTopExpAt(28), row(28).exp, "XP at 28");
+  eq(hockeyAgePaceFactor(21.9), 1.0, "21");
+  eq(hockeyAgePaceFactor(22), 0.93, "22");
+  eq(hockeyAgePaceFactor(26), 1.03, "25-27");
+  eq(hockeyAgePaceFactor(30), 1.0, "28+");
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

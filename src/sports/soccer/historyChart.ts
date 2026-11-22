@@ -12,7 +12,8 @@ import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
 import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { calculatePositions } from "@/classes/playerCalculations";
 import type { GrowthMetric } from "@/components/growthMetric";
-import { downsampleHistory } from "@/base/historyDownsample";
+import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
+import { soccerGrowthConfig } from "@/sports/soccer/growthPace";
 
 export type Point = { x: number; y: number };
 export type { GrowthMetric };
@@ -31,14 +32,9 @@ export function soccerBestRating(skills: SoccerSkills): number {
   );
 }
 
-/** The day's OR, or the sum of floored skills when only skills were stored. */
+/** The day's OR, or the sum of its floored skills when only a full set was stored (overallOrSkillSum). */
 export function soccerEntryOverall(entry: ChartEntry): number | null {
-  if (typeof entry.overallRating === "number" && Number.isFinite(entry.overallRating)) {
-    return entry.overallRating;
-  }
-  return entry.skills
-    ? Object.values(entry.skills).reduce((sum, value) => sum + Math.floor(value), 0)
-    : null;
+  return overallOrSkillSum(entry.overallRating, entry.skills, soccerGrowthConfig.skillNames);
 }
 
 /** Age on an entry's date, counting a season as 112 calendar days. */
@@ -50,22 +46,18 @@ export function soccerEntryAge(date: string, currentExactAge: number, today: num
 const readMetric = (entry: ChartEntry, metric: GrowthMetric) =>
   metric === "or" ? soccerEntryOverall(entry) : entry.skills ? soccerBestRating(entry.skills) : null;
 
-/**
- * One player's history as age points, thinned to about one per two weeks.
- * Entries without a value on the metric are dropped BEFORE thinning, so an
- * OR-only day can't swallow a window that had usable skills.
- */
+/** One player's history as age points for a metric (historyChartPoints). */
 export function soccerHistoryPoints(
   entries: ChartEntry[],
   currentExactAge: number,
   metric: GrowthMetric,
   today: number = Date.now()
 ): Point[] {
-  const usable = entries.filter((entry) => readMetric(entry, metric) !== null);
-  return downsampleHistory(usable).map((entry) => ({
-    x: soccerEntryAge(entry.date, currentExactAge, today),
-    y: readMetric(entry, metric)!,
-  }));
+  return historyChartPoints(
+    entries,
+    (entry) => readMetric(entry, metric),
+    (entry) => soccerEntryAge(entry.date, currentExactAge, today)
+  );
 }
 
 /**

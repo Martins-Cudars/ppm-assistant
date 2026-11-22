@@ -1,37 +1,31 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import {
-  relativePercent,
+  LeagueLineStatus,
+  RelativeSkillMaxima,
   relativeSkillClass,
-  relativeSkillTitle,
+  relativeSkillView,
 } from "@/base/relativeSkill";
 
 const props = defineProps<{
   skill: number;
-  /** 100% among every scouted team (player.getRelativeSkillMaxima().global). */
-  maxSkillForAge: number | null;
-  /** 100% within the viewer's league; null or absent hides that half. */
-  leagueMaxSkillForAge?: number | null;
+  /** player.getRelativeSkillMaxima(league table). */
+  maxima: RelativeSkillMaxima;
+  /** The player's whole age, named when there is no reference for it. */
+  age: number;
+  /** Why the league value may be missing (leagueLine(sport).status). */
+  leagueStatus: LeagueLineStatus;
 }>();
 
-const global = computed(() => relativePercent(props.skill, props.maxSkillForAge));
-const league = computed(() => relativePercent(props.skill, props.leagueMaxSkillForAge));
-const title = computed(() =>
-  global.value !== null && league.value !== null
-    ? relativeSkillTitle(global.value, league.value)
-    : undefined
-);
+const view = computed(() => relativeSkillView(props.skill, props.maxima, props.age, props.leagueStatus));
 </script>
 
 <template>
-  <div class="relative-skill" :title="title">
-    <template v-if="global !== null">
-      <span :class="relativeSkillClass(global)">{{ global }}%</span>
-      <template v-if="league !== null">
-        <span class="relative-skill__separator"> / </span>
-        <span :class="relativeSkillClass(league)">{{ league }}%</span>
-      </template>
-    </template>
-    <span v-else class="relative-skill__none">–</span>
+  <div class="relative-skill" :title="view.title">
+    <span v-if="view.global !== null" :class="relativeSkillClass(view.global)">{{ view.global }}%</span>
+    <span v-else class="relative-skill__none">???</span>
+    <span class="relative-skill__separator"> / </span>
+    <span v-if="view.league !== null" :class="relativeSkillClass(view.league)">{{ view.league }}%</span>
+    <span v-else class="relative-skill__none">???</span>
   </div>
 </template>

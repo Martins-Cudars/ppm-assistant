@@ -1,3 +1,4 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { parseBasketballPlayerFromTrainingRow } from "@/sports/basketball/parsers/playerRows";
 import { renderTableCell, renderPotentialBadge } from "@/base/render";
 
@@ -15,9 +16,13 @@ const viewTraining = () => {
     head.querySelector("tr")!.appendChild(renderTableCell("Grd", "th1"));
   });
 
+  // Read once for the page, not per row.
+
+  const seasonDay = getCurrentSeasonDay();
+
   playerRows.forEach((playerRow, index) => {
     const rowClass = index % 2 === 0 ? "tr1" : "tr0";
-    const player = parseBasketballPlayerFromTrainingRow(playerRow);
+    const player = parseBasketballPlayerFromTrainingRow(playerRow, seasonDay);
     player.calculatePositions();
     player.calculatePositionTrainingQualities();
     const bestPotential = player.getCurrentPositionTrainingQuality();

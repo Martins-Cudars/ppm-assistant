@@ -8,9 +8,9 @@
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { calculatePositions } from "@/classes/playerCalculations";
-import { overallFromSkills } from "@/sports/hockey/growthPace";
+import { hockeyGrowthConfig } from "@/sports/hockey/growthPace";
 import type { GrowthMetric } from "@/components/growthMetric";
-import { downsampleHistory } from "@/base/historyDownsample";
+import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
 /**
@@ -73,31 +73,24 @@ export function readEntryBaseRating(entry: SkillHistoryEntry): number | null {
 }
 
 /**
- * The entry's overall rating, or the sum of its floored skills when only
- * skills were stored. Null when it has neither.
+ * The entry's overall rating, or the sum of its floored skills when only a
+ * full set of skills was stored (overallOrSkillSum). Null when it has neither.
  */
 export function entryOverallRating(entry: SkillHistoryEntry): number | null {
-  return (
-    readEntryOverallRating(entry) ?? (entry.skills ? overallFromSkills(entry.skills) : null)
-  );
+  return overallOrSkillSum(readEntryOverallRating(entry), entry.skills, hockeyGrowthConfig.skillNames);
 }
 
-/**
- * One player's history as age points for a metric, thinned to about one per
- * two weeks. Entries without a value on the metric are dropped BEFORE
- * thinning, so a rating-only day can't swallow a window that had usable
- * skills (and the other way round).
- */
+/** One player's history as age points for a metric (historyChartPoints). */
 export function historyPoints(
   entries: SkillHistoryEntry[],
   currentExactAge: number,
   metric: GrowthMetric
 ): { x: number; y: number }[] {
-  const read = metric === "or" ? entryOverallRating : readEntryBaseRating;
-  return downsampleHistory(entries.filter((entry) => read(entry) !== null)).map((entry) => ({
-    x: historyEntryAge(entry, currentExactAge),
-    y: read(entry)!,
-  }));
+  return historyChartPoints(
+    entries,
+    metric === "or" ? entryOverallRating : readEntryBaseRating,
+    (entry) => historyEntryAge(entry, currentExactAge)
+  );
 }
 
 // Chart thinning is shared with basketball; re-exported so hockey imports keep working.

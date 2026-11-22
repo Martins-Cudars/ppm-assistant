@@ -63,7 +63,8 @@ export function buildBasketballEntry(
   if (overallRating !== undefined) entry.overallRating = overallRating;
   if (skills) entry.skills = skills;
   if (isUsableNumber(player.height) && player.height > 0) entry.height = player.height;
-  if (isUsableNumber(player.experience)) entry.experience = player.experience;
+  // Not the age-based guess an unscouted profile gets: XP is stored only as read.
+  if (player.experienceKnown && isUsableNumber(player.experience)) entry.experience = player.experience;
   return entry;
 }
 
@@ -91,7 +92,7 @@ export function serializeBasketballPlayer(
     },
     skills: player.skills ?? null,
     trainingQualities: (player.trainingQualities as Record<string, number> | undefined) ?? null,
-    experience: player.experience ?? null,
+    experience: player.experienceKnown ? player.experience : null,
     injuryDays: player.injuryDays ?? 0,
     scoutingStatus: "SCOUTED",
     metadata: {

@@ -2,7 +2,8 @@
  * The growth model shared by hockey and soccer: how fast a player is being
  * trained, measured against a top-player curve, and where that pace lands
  * them if it holds. Each sport passes a GrowthConfig - its skills, positions,
- * top-player table and the constants measured on the user's own team - and
+ * top-player table (the top-5% line, the sport's global relative-skill
+ * reference) and the constants measured on the user's own team - and
  * gets back the functions bound to it (createGrowthModel).
  *
  * Pure functions only - no DOM, no chrome API - so the same numbers back the
@@ -44,7 +45,11 @@ export interface GrowthConfig<TSkills extends Skills> {
   /** The bonus is capped at this share of the base rating (hockey 0.6, soccer 0.35). */
   bonusCapRatio: number;
   daysPerSeason: number;
-  /** The top-player table: skill (position rating with bonus, no XP) and XP by whole age. */
+  /**
+   * The top-player table: skill (position rating with bonus, no XP) and XP by
+   * whole age. Hockey and soccer pass the top-5% line
+   * (src/sports/<sport>/relativeSkillReference.ts).
+   */
   growthTable: readonly { age: number; skill: number; exp: number }[];
   /**
    * Replaces the table's slope (skill[age+1] - skill[age]) at these whole ages

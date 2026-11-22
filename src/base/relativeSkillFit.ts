@@ -170,17 +170,70 @@ export function agesBetween(minAge: number, maxAge: number): number[] {
   return ages;
 }
 
+/** Days since 1970-01-01 of an ISO "YYYY-MM-DD" date. */
+function dayNumber(date: string): number {
+  return Math.round(Date.parse(`${date.slice(0, 10)}T00:00:00Z`) / 86_400_000);
+}
+
+/**
+ * Snapshots without `season` given one from their date, where the store's
+ * own dated snapshots pin the calendar down. Each snapshot with a season and
+ * day gives the day number season 0 would have started on; a season is
+ * `daysPerSeason` days, so a dated snapshot's season and day follow. The game
+ * day turns over at a different hour from the local date, so anchors may
+ * disagree by a day: with a spread over a day there is no derivation, and a
+ * snapshot within a day of a season boundary stays without one. `missing`
+ * counts the snapshots still without a season.
+ */
+export function withDerivedSeasons(
+  rows: readonly ScoutSnapshot[],
+  daysPerSeason: number
+): { rows: ScoutSnapshot[]; derived: number; missing: number } {
+  if (rows.every((row) => row.season != null)) return { rows: [...rows], derived: 0, missing: 0 };
+  const epochs = rows
+    .filter((row) => row.season != null && row.seasonDay != null && /^\d{4}-\d{2}-\d{2}/.test(row.date))
+    .map((row) => dayNumber(row.date) - row.seasonDay! - row.season! * daysPerSeason);
+  const epoch = epochs.length > 0 ? Math.round(quantile(epochs, 0.5)) : null;
+  const reliable = epoch !== null && Math.max(...epochs) - Math.min(...epochs) <= 1;
+  let derived = 0;
+  let missing = 0;
+  const out = rows.map((row) => {
+    if (row.season != null) return row;
+    if (reliable && /^\d{4}-\d{2}-\d{2}/.test(row.date)) {
+      const offset = dayNumber(row.date) - epoch!;
+      const season = Math.floor((offset - 1) / daysPerSeason);
+      const seasonDay = offset - season * daysPerSeason;
+      if (seasonDay > 1 && seasonDay < daysPerSeason) {
+        derived++;
+        return { ...row, season, seasonDay: row.seasonDay ?? seasonDay };
+      }
+    }
+    missing++;
+    return row;
+  });
+  return { rows: out, derived, missing };
+}
+
+let loggedMissingSeasons = false;
+
 /**
  * One point per player and season - his latest snapshot - at its exact age.
- * `keep` filters rows first (e.g. the league's teams).
+ * Snapshots without a season get one from their date where possible
+ * (withDerivedSeasons) before `keep` filters them (e.g. the league's teams and
+ * season); the rest are left out, and counted in a one-time warning.
  */
 export function scoutPoints(
   rows: readonly ScoutSnapshot[],
   daysPerSeason: number,
   keep: (row: ScoutSnapshot) => boolean = () => true
 ): AgedPoint[] {
+  const dated = withDerivedSeasons(rows, daysPerSeason);
+  if (dated.missing > 0 && !loggedMissingSeasons) {
+    loggedMissingSeasons = true;
+    console.warn(`[RelativeSkillFit] ${dated.missing} scout snapshot(s) without a season left out`);
+  }
   const latest = new Map<string, { date: string; point: AgedPoint }>();
-  for (const row of rows) {
+  for (const row of dated.rows) {
     if (!keep(row)) continue;
     if (row.age == null || row.overallRating == null || row.season == null) continue;
     const key = `${row.playerId}:${row.season}`;
@@ -223,6 +276,21 @@ export function fitGlobalOr(points: AgedPoint[], ages: number[], percentile: num
   return { measured, curve };
 }
 
+/** Per age, the league's percentile (windows up to ±1 season) and its ratio to the global curve. */
+function measureLeague(points: AgedPoint[], ages: number[], percentile: number, globalOr: number[]) {
+  const measured = windowed(
+    points,
+    ages,
+    MIN_LEAGUE_AGE_SAMPLES,
+    (values) => quantile(values, percentile),
+    1,
+    driftTo(ages, globalOr)
+  );
+  const ratios = measured.map((m, i) => (m && globalOr[i] > 0 ? m.value / globalOr[i] : null));
+  const known = ratios.flatMap((r, i) => (r == null ? [] : [{ age: ages[i], r, w: measured[i]!.n }]));
+  return { measured, ratios, known };
+}
+
 /**
  * A league's OR reference against the global one: per age the league's
  * percentile as a ratio to the global curve, shrunk toward a weighted linear
@@ -237,16 +305,7 @@ export function fitLeagueOr(
   globalOr: number[]
 ) {
   if (points.length < MIN_LEAGUE_POINTS) return null;
-  const measured = windowed(
-    points,
-    ages,
-    MIN_LEAGUE_AGE_SAMPLES,
-    (values) => quantile(values, percentile),
-    1,
-    driftTo(ages, globalOr)
-  );
-  const ratios = measured.map((m, i) => (m && globalOr[i] > 0 ? m.value / globalOr[i] : null));
-  const known = ratios.flatMap((r, i) => (r == null ? [] : [{ age: ages[i], r, w: measured[i]!.n }]));
+  const { measured, ratios, known } = measureLeague(points, ages, percentile, globalOr);
   if (known.length < MIN_LEAGUE_AGES) return null;
 
   let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
@@ -353,4 +412,48 @@ export function referenceTable(fit: RelativeSkillFit, or: number[] = fit.rows.ma
     skill: Math.round(row.share * or[i]),
     exp: Math.round(row.exp),
   }));
+}
+
+/** The league list fields the league fit needs (src/types/ScoutSnapshot.ts LeagueTeams). */
+export type LeagueList = { season: number; teamIds: readonly string[] };
+
+/**
+ * Whether a stored league list still describes the viewer's league: read in
+ * the current season. A list from an earlier season is stale - the league
+ * can change every season - so it gives no league line. With the current
+ * season unknown, the list is taken as current.
+ */
+export function isLeagueListCurrent(league: LeagueList, currentSeason: number | null): boolean {
+  return currentSeason === null || league.season >= currentSeason;
+}
+
+/**
+ * The league table from a sport's snapshots and league list - null when too
+ * sparse - with the league's player-season points and measured ages, which
+ * say why. Only snapshots of the list's teams taken in the list's season
+ * count: a team in the league this season may have played elsewhere before.
+ */
+export function fitLeagueReference(
+  fit: RelativeSkillFit,
+  snapshots: readonly ScoutSnapshot[],
+  league: LeagueList,
+  daysPerSeason: number
+): { table: GrowthPrediction | null; points: number; ages: number } {
+  if (fit.rows.length === 0 || league.teamIds.length === 0) return { table: null, points: 0, ages: 0 };
+  const teams = new Set(league.teamIds);
+  const ages = agesBetween(fit.rows[0].age, fit.rows[fit.rows.length - 1].age);
+  const globalOr = fit.rows.map((row) => row.or);
+  const points = scoutPoints(snapshots, daysPerSeason, (row) => isLeagueSnapshot(row, league, teams));
+  const measuredAges = measureLeague(points, ages, fit.percentile, globalOr).known.length;
+  const fitted = fitLeagueOr(points, ages, fit.percentile, globalOr);
+  return {
+    table: fitted ? referenceTable(fit, fitted.curve) : null,
+    points: points.length,
+    ages: measuredAges,
+  };
+}
+
+/** A snapshot of one of the league's teams, taken in the list's season. */
+export function isLeagueSnapshot(row: ScoutSnapshot, league: LeagueList, teams = new Set(league.teamIds)): boolean {
+  return row.teamId !== undefined && teams.has(row.teamId) && row.season === league.season;
 }

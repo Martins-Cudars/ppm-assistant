@@ -9,14 +9,14 @@
 
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import type { GrowthMetric } from "@/components/growthMetric";
-import { downsampleHistory } from "@/base/historyDownsample";
+import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import {
   BasketballPace,
   REFERENCE_FIRST_AGE,
   REFERENCE_LAST_AGE,
+  BASKETBALL_SKILLS,
   ReferenceCurve,
-  basketballOverall,
   bestBasketballPosition,
   entryAge,
   projectBasketball,
@@ -39,23 +39,15 @@ export function entryBestRating(entry: ChartEntry, fallbackHeight: number): numb
   return bestBasketballPosition(entry.skills, entry.height ?? fallbackHeight).rating;
 }
 
-/** The day's overall rating, or the sum of floored skills when only skills were stored. */
+/** The day's OR, or the sum of its floored skills when only a full set was stored (overallOrSkillSum). */
 export function entryOverall(entry: ChartEntry): number | null {
-  if (typeof entry.overallRating === "number" && Number.isFinite(entry.overallRating)) {
-    return entry.overallRating;
-  }
-  return entry.skills ? basketballOverall(entry.skills) : null;
+  return overallOrSkillSum(entry.overallRating, entry.skills, BASKETBALL_SKILLS);
 }
 
 const readMetric = (entry: ChartEntry, metric: GrowthMetric, fallbackHeight: number) =>
   metric === "or" ? entryOverall(entry) : entryBestRating(entry, fallbackHeight);
 
-/**
- * One player's history as age points, thinned to about one per two weeks.
- * Entries without a value on the metric are dropped BEFORE thinning, so an
- * OR-only day can't swallow a window that had usable skills (the same rule as
- * hockey's comparison chart).
- */
+/** One player's history as age points for a metric (historyChartPoints). */
 export function historyPoints(
   entries: ChartEntry[],
   currentExactAge: number,
@@ -63,11 +55,11 @@ export function historyPoints(
   fallbackHeight: number,
   today: number = Date.now()
 ): Point[] {
-  const usable = entries.filter((entry) => readMetric(entry, metric, fallbackHeight) !== null);
-  return downsampleHistory(usable).map((entry) => ({
-    x: entryAge(entry.date, currentExactAge, today),
-    y: readMetric(entry, metric, fallbackHeight)!,
-  }));
+  return historyChartPoints(
+    entries,
+    (entry) => readMetric(entry, metric, fallbackHeight),
+    (entry) => entryAge(entry.date, currentExactAge, today)
+  );
 }
 
 /** How far from a whole-age birthday a stored day may be to count for it. */

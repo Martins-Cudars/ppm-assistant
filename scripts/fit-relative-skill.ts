@@ -42,6 +42,7 @@ import {
   fitLeagueOr,
   fitShareAndExp,
   referenceTable,
+  isLeagueSnapshot,
   scoutPoints,
   xpCurve,
 } from "@/base/relativeSkillFit";
@@ -225,7 +226,11 @@ function fitSport(sport: Sport) {
   };
 
   // 3. The backup's own league, as the extension would fit it.
-  const leaguePoints = scoutPoints(snapshots, config.daysPerSeason, (row) => row.teamId !== undefined && leagueTeams.has(row.teamId));
+  // Only the list's season, as the extension does (isLeagueSnapshot).
+  const leagueList = backup.leagues?.[sport];
+  const leaguePoints = leagueList
+    ? scoutPoints(snapshots, config.daysPerSeason, (row) => isLeagueSnapshot(row, leagueList, leagueTeams))
+    : [];
   const league = fitLeagueOr(leaguePoints, ages, percentile, fit.rows.map((row) => row.or));
 
   return { config, ages, points, leaguePoints, global, league, pairs, shareExp, fit, players };

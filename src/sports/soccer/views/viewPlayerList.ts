@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import SoccerPlayerListTable from "./components/SoccerPlayerListTable.vue";
 import { getCurrentSeasonDay } from "@/utils/dom";
@@ -55,6 +56,8 @@ const viewPlayerList = () => {
   table.parentNode.insertBefore(buttonRow, table);
   table.parentNode.replaceChild(appContainer, table);
 
+  // Relative skill's league value: fetched once here, read by the components.
+  void loadLeagueReference("soccer");
   const app = createApp(SoccerPlayerListTable, {
     items,
     headers,
