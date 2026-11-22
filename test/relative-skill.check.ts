@@ -11,7 +11,9 @@ import {
   fitLeagueOr,
   referenceTable,
   scoutPoints,
+  smoothSteps,
   unimodal,
+  xpCurve,
 } from "@/base/relativeSkillFit";
 import { relativePercent, relativeSortValue } from "@/base/relativeSkill";
 import {
@@ -111,6 +113,24 @@ const fitOf = (or: number[]): RelativeSkillFit => ({
     const fit = fitOf(agesBetween(15, 30).map(() => 1000));
     eq(fitLeagueReference(fit, population("t1"), [], 112), null);
     eq(fitLeagueReference(fit, population("t1"), ["elsewhere"], 112), null);
+  });
+
+  await check("XP curve: 0 at 15, 200 at 28, slower before 20, no kink at 20, slower after 28", () => {
+    const xp = xpCurve(agesBetween(15, 45));
+    eq(xp[0], 0, "15");
+    ok(Math.abs(xp[13] - 200) < 1e-9, `28 at ${xp[13]}`);
+    const gain = (i: number) => xp[i + 1] - xp[i];
+    ok(gain(0) < gain(3) && gain(3) < gain(6), "junior gains rise");
+    ok(Math.abs(gain(5) - gain(8)) < 1e-9, "constant 20-28");
+    ok(Math.abs(xp[5] - xp[4] - 0.9 * gain(5)) < 1e-9, "the ramp reaches the full rate at 20");
+    ok(Math.abs(gain(14) - 0.85 * gain(8)) < 1e-9, "0.85 after 28");
+  });
+
+  await check("step smoothing keeps one peak and the ends", () => {
+    const smooth = smoothSteps([100, 200, 300, 300, 300, 250, 250, 200]);
+    eq([smooth[0], smooth[7]], [100, 200]);
+    const peak = smooth.indexOf(Math.max(...smooth));
+    ok(smooth.slice(peak).every((v, i, a) => i === 0 || v <= a[i - 1]), `${smooth}`);
   });
 
   await check("the table: skill = share x OR", () => {

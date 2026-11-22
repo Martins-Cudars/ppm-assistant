@@ -11,13 +11,25 @@
  * bundle via a throwaway vite config, input this file):
  *
  *   node fit.mjs path/to/ppm-assistant-backup.json [--sport hockey|soccer|basketball]
- *     [--percentile 0.95] [--compare] [--write]
+ *     [--percentile 0.95] [--exp-at-28 200] [--exp-ramp-until 20] [--exp-late-rate 0.85]
+ *     [--compare] [--write]
+ *
+ * XP is not fitted: the `exp` column is xpCurve() in src/base/relativeSkillFit.ts,
+ * set by these parameters (every sport alike). Fixed, not a parameter: XP is
+ * exactly 0 at 15, when a player arrives from the youth facilities or the draft.
+ *   --exp-at-28      XP of a top player at 28 (the user's figure: about 200)
+ *   --exp-ramp-until the per-season gain rises from 0 at 15 to its full rate at
+ *                    this age, then stays at it to 28
+ *   --exp-late-rate  the per-season gain after 28, as a share of the full rate
+ * The median XP of the players with full skills is printed (medXP) as a
+ * diagnostic only.
  */
 
 import fs from "fs";
 import path from "path";
 import { calculateSkillWithExp } from "@/base/calculations";
 import {
+  DEFAULT_XP_CURVE,
   RELATIVE_SKILL_PERCENTILE,
   RelativeSkillFit,
   SkillPair,
@@ -27,6 +39,7 @@ import {
   fitShareAndExp,
   referenceTable,
   scoutPoints,
+  xpCurve,
 } from "@/base/relativeSkillFit";
 import { calculateProjectedMaxSkillForAge } from "@/classes/playerCalculations";
 import {
@@ -97,7 +110,7 @@ const option = (name: string, fallback: string) => {
   return index >= 0 ? args[index + 1] : fallback;
 };
 const backupPath = args.find(
-  (arg, i) => !arg.startsWith("--") && !(args[i - 1] ?? "").match(/^--(sport|percentile)$/)
+  (arg, i) => !arg.startsWith("--") && !(args[i - 1] ?? "").match(/^--(sport|percentile|exp-at-28|exp-ramp-until|exp-late-rate)$/)
 );
 if (!backupPath) {
   throw new Error(
@@ -106,6 +119,12 @@ if (!backupPath) {
 }
 const percentile = Number(option("percentile", String(RELATIVE_SKILL_PERCENTILE)));
 const onlySport = option("sport", "");
+const xpOptions = {
+  ...DEFAULT_XP_CURVE,
+  expAtAnchor: Number(option("exp-at-28", String(DEFAULT_XP_CURVE.expAtAnchor))),
+  rampUntil: Number(option("exp-ramp-until", String(DEFAULT_XP_CURVE.rampUntil))),
+  lateRate: Number(option("exp-late-rate", String(DEFAULT_XP_CURVE.lateRate))),
+};
 const compare = args.includes("--compare");
 const write = args.includes("--write");
 
@@ -181,6 +200,7 @@ function fitSport(sport: Sport) {
       if (age != null) addPair(entry.playerId, age, entry.skills as AnySkills, height, entry.experience!);
     });
   const shareExp = fitShareAndExp(pairs, ages);
+  const exp = xpCurve(ages, xpOptions);
 
   const fit: RelativeSkillFit = {
     percentile,
@@ -188,7 +208,7 @@ function fitSport(sport: Sport) {
       age,
       or: Math.round(global.curve[i]),
       share: Number(shareExp.share[i].toFixed(4)),
-      exp: Math.round(shareExp.exp[i]),
+      exp: Math.round(exp[i]),
     })),
   };
 
@@ -252,7 +272,7 @@ for (const sport of (onlySport ? [onlySport] : Object.keys(SPORTS)) as Sport[]) 
       `(${result.leaguePoints.length} in the backup's league); ${result.pairs.length} skill+XP points ` +
       `from ${new Set(result.pairs.map((q) => q.id)).size} players`
   );
-  console.log("age |  n  win  raw    OR | lgN lgRaw ratio lgOR | prs share exp | global ratingXp  league ratingXp | current");
+  console.log("age |  n  win  raw    OR | lgN lgRaw ratio lgOR | prs share medXP  exp | global ratingXp  league ratingXp | current");
   ages.forEach((age, i) => {
     const g = global.measured[i];
     const l = league?.measured[i];
@@ -260,7 +280,7 @@ for (const sport of (onlySport ? [onlySport] : Object.keys(SPORTS)) as Sport[]) 
     console.log(
       `${age} | ${fmt(g?.n, 4)} ${g ? `±${g.half}`.padEnd(5) : "  -  "}${fmt(g?.value, 5)} ${fmt(global.curve[i], 5)} | ` +
         `${fmt(l?.n, 3)} ${fmt(l?.value, 5)} ${(league?.ratios[i] ?? NaN).toFixed(2).padStart(5)} ${fmt(league?.curve[i], 5)} | ` +
-        `${fmt(shareExp.shareMeasured[i]?.n, 3)} ${shareExp.share[i].toFixed(3)} ${fmt(shareExp.exp[i], 3)} | ` +
+        `${fmt(shareExp.shareMeasured[i]?.n, 3)} ${shareExp.share[i].toFixed(3)} ${fmt(shareExp.exp[i], 5)} ${fmt(fit.rows[i].exp, 4)} | ` +
         `${fmt(calculateSkillWithExp(table[i].skill, table[i].exp), 15)} ` +
         `${fmt(leagueTable ? calculateSkillWithExp(leagueTable[i].skill, leagueTable[i].exp) : null, 16)} | ` +
         `${fmt(current ? calculateSkillWithExp(current.skill, current.exp) : null, 7)}`

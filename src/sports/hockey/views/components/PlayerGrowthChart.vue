@@ -148,6 +148,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointBorderColor: "#ccc",
       fill: false,
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone",
     },
     {
       label: "Top 5% Skill (Base)",
@@ -160,6 +163,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointBorderColor: "#ccc",
       fill: false,
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone",
     },
     {
       label: "Current Skill (Total)",

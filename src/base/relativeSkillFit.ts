@@ -144,6 +144,18 @@ export function fillGaps(values: (number | null)[], extendStart = false, floor =
   });
 }
 
+/**
+ * The unimodal fit leaves flat blocks with steps between them (e.g. 34-36
+ * level, then a drop at 37), which a chart's spline draws as bumps. A 1-2-1
+ * average of each inner age smooths the steps; it keeps a single peak, since
+ * averaging with a log-concave kernel preserves unimodality. The ends stay.
+ */
+export function smoothSteps(values: number[]): number[] {
+  return values.map((v, i) =>
+    i === 0 || i === values.length - 1 ? v : (values[i - 1] + 2 * v + values[i + 1]) / 4
+  );
+}
+
 /** A per-whole-age curve read at an exact age: linear between ages, flat past either end. */
 export function curveAt(ages: number[], values: number[], x: number): number {
   if (x <= ages[0]) return values[0];
@@ -205,9 +217,8 @@ export function fitGlobalOr(points: AgedPoint[], ages: number[], percentile: num
     roughMeasured.map((m) => (m ? m.n : 0.5))
   );
   const measured = windowed(points, ages, MIN_OR_SAMPLES, p, MAX_HALF_WINDOW, driftTo(ages, rough));
-  const curve = unimodal(
-    fillGaps(measured.map((m) => m?.value ?? null)),
-    measured.map((m) => (m ? m.n : 0.5))
+  const curve = smoothSteps(
+    unimodal(fillGaps(measured.map((m) => m?.value ?? null)), measured.map((m) => (m ? m.n : 0.5)))
   );
   return { measured, curve };
 }
@@ -253,9 +264,11 @@ export function fitLeagueOr(
     const n = measured[i]?.n ?? 0;
     return r == null ? trend(ages[i]) : (n * r + LEAGUE_SHRINK * trend(ages[i])) / (n + LEAGUE_SHRINK);
   });
-  const curve = unimodal(
-    shrunk.map((r, i) => r * globalOr[i]),
-    measured.map((m) => (m?.n ?? 0) + LEAGUE_SHRINK)
+  const curve = smoothSteps(
+    unimodal(
+      shrunk.map((r, i) => r * globalOr[i]),
+      measured.map((m) => (m?.n ?? 0) + LEAGUE_SHRINK)
+    )
   );
   return { measured, ratios, curve };
 }
@@ -289,6 +302,48 @@ export function fitShareAndExp(pairs: SkillPair[], ages: number[]) {
   const gain = span > 0 ? Math.max(0, (smooth[lastExp] - smooth[lastExp - span]) / span) : 0;
   const exp = ages.map((_, i) => (i <= lastExp ? smooth[i] : smooth[lastExp] + gain * (i - lastExp)));
   return { shareMeasured, share, expMeasured, exp };
+}
+
+/**
+ * The reference XP curve: a user-set shape, not fitted. Roster pages show no
+ * XP, and the ~6 mostly-own players per age with XP sit well below the elite
+ * players the OR line describes (median ~100 at 28; elite players have ~200).
+ *
+ * - Fixed point: exactly 0 XP at `startAge` (15), when a player arrives from
+ *   the youth facilities or the draft.
+ * - From `startAge` the per-season gain rises linearly to the full rate
+ *   at `rampUntil`: juniors play fewer matches. XP is quadratic there.
+ * - From `rampUntil` to `anchorAge` a constant full rate, chosen so that XP at
+ *   `anchorAge` is `expAtAnchor`. The two parts join without a kink.
+ * - After `anchorAge` `lateRate` x the full rate: scouted veterans with XP
+ *   (hockey 299 at 34, 362-368 at 39-40, 394 at 42) sit on about 0.85 x.
+ */
+export type XpCurveOptions = {
+  startAge: number;
+  rampUntil: number;
+  anchorAge: number;
+  expAtAnchor: number;
+  lateRate: number;
+};
+
+export const DEFAULT_XP_CURVE: XpCurveOptions = {
+  startAge: 15,
+  rampUntil: 20,
+  anchorAge: 28,
+  expAtAnchor: 200,
+  lateRate: 0.85,
+};
+
+export function xpCurve(ages: number[], options: XpCurveOptions = DEFAULT_XP_CURVE): number[] {
+  const { startAge, rampUntil, anchorAge, expAtAnchor, lateRate } = options;
+  const ramp = rampUntil - startAge;
+  const rate = expAtAnchor / (ramp / 2 + (anchorAge - rampUntil));
+  return ages.map((age) => {
+    if (age <= startAge) return 0;
+    if (age < rampUntil) return (rate * (age - startAge) ** 2) / (2 * ramp);
+    if (age <= anchorAge) return (rate * ramp) / 2 + rate * (age - rampUntil);
+    return expAtAnchor + lateRate * rate * (age - anchorAge);
+  });
 }
 
 /** The table getMaxSkillForAge reads: skill = share x OR, exp. */

@@ -113,6 +113,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointRadius: 2,
       pointBackgroundColor: "#fff",
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone",
     },
     {
       label: "Top 5% (no XP)",
@@ -123,6 +126,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       pointRadius: 2,
       pointBackgroundColor: "#fff",
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone",
     },
     {
       label: `Now with XP (${best.name})`,

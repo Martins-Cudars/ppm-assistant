@@ -987,6 +987,8 @@ player list's Rel column and the market's Rel column.
   chart's top line and relative skill's 100% agree. Pace, the projections and
   `AGE_PACE_FACTORS` still use `playerGrowthPrediction` internally, uncalibrated. Basketball
   never had a top-player line and still has none.
+  The grey lines use Chart.js's monotone interpolation: the plain spline bulged above the
+  data at the axis edge (near 32.8 with ages 25-33 shown), even with the data smooth.
 - **The method:**
   1. **OR reference (global).** Each player counts once per season, using his latest
      snapshot. For each whole age, the line is the 95th percentile of OR in a one-season
@@ -995,26 +997,42 @@ player list's Rel column and the market's Rel column.
      The first pass uses full windows only; its first ages continue the next two ages'
      slope, because at 15 nobody is younger. A window with fewer than 25 points widens by
      quarter seasons, up to ±2 seasons. The curve is then fitted to rise to a peak and
-     fall after it, weighted by each age's count.
+     fall after it, weighted by each age's count. A 1-2-1 average of each inner age then
+     removes the fit's flat blocks and steps, which charts drew as bumps (hockey 34-36
+     level, then a drop at 37). The average keeps a single peak.
   2. **League.** For each age, the league's 95th percentile (windows of at least 3 points,
      up to ±1 season) is taken as a ratio to the global curve. That ratio is shrunk toward
      a weighted linear trend of all the ratios, held within the measured ratios' range: an
      age with n points weighs n against the trend's 25. So an age with three veterans
      leans on its neighbours.
-  3. **From OR to rating.** A roster shows OR only. Players with full skills and XP give,
-     per age, the best position's rating as a share of OR and the median XP. They come
-     from every cache of the sport, one record per player, plus history days with XP. The
-     share rises from about 0.30 at 15 to 0.452 for adults in hockey (soccer 0.29,
-     basketball 0.25), and never falls. XP is smoothed over 5 ages and keeps its last
-     yearly gain after the last measured age.
+  3. **From OR to rating.** A roster shows OR only. Players with full skills give, per
+     age, the best position's rating as a share of OR. They come from every cache of the
+     sport, one record per player, plus history days with skills. The share rises from
+     about 0.30 at 15 to 0.452 for adults in hockey (soccer 0.29, basketball 0.25), and
+     never falls.
+  4. **XP is set, not fitted** (`xpCurve`, the user's choice, 2026-11-22). The median XP of
+     the players with XP, about 6 per age and mostly the user's own, was about 100 at 28.
+     Elite players have about 200. The curve has the same shape in every sport:
+     - exactly 0 at 15, when a player arrives from the youth facilities or the draft;
+     - a per-season gain rising linearly from 0 at 15 to the full rate at 20 (juniors play
+       less), then constant to 28, where XP is 200. The full rate is 200 / 10.5 ≈ 19 a
+       season;
+     - after 28, 0.85 × that rate (≈16 a season). Scouted hockey veterans sit on it: 299 XP
+       at 34, 362-368 at 39-40, 394 at 42.
+     - The values: 15:0 16:2 17:8 18:17 19:30 20:48 22:86 25:143 28:200 30:232 35:313
+       40:394 45:475.
+     - The script's `--exp-at-28`, `--exp-ramp-until` and `--exp-late-rate` retune it. The
+       median is printed as `medXP` for comparison only.
 - **Numbers on the 2026-11-22 backup.** Hockey had 2,177 scouted player-seasons (1,203 in
-  the league), soccer 1,025 (569), and basketball 710 (502). The new global line is
-  mostly 0.75-0.95× the old table; only the oldest ages (44+ in hockey, 39+ in soccer) sit
-  above it. On the user's 84 hockey and soccer players, the global value rose by 2 to 17
-  points (median 6). Basketball's league (III.3) is weak past 27, with two to five
-  players per age at 0.4-0.6 of the global line, so its league line rests on the trend
-  there.
-- **The user's sanity check: Grīns (28, OR 2270) reads 87% globally.** The I.1 players
+  the league), soccer 1,025 (569), and basketball 710 (502). With the 200-XP curve, the
+  global line as rating with XP is 0.85-1.03× the old hand-written table in hockey from 16
+  to 43 (lowest at 33-39, above it at 44-45) and 0.84-1.52× it in soccer (above it from
+  25, because the old soccer table stopped gaining XP early). Basketball's league (III.3)
+  is weak past 27, with two to five players per age at 0.4-0.6 of the global line, so its
+  league line rests on the trend there.
+- **The user's sanity check: Grīns (28, OR 2270) read 87% globally with the median XP; with
+  the 200-XP curve he reads 74% / 80%.** His XP is 105, about half a top player's, so his
+  rating with XP falls well short. Before the XP change: The I.1 players
   the user named are in the sample: Deputat (28.38, OR 2712) and Sējējs (27.94, 2739).
   The top 12 at 28 run from 2871 to 2493, so the sample has no lower-division bias at the
   top. Grīns's OR alone is about 84% of the 95th percentile (about 2717 at 28.4). He reads
