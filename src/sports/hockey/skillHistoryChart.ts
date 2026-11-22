@@ -83,6 +83,20 @@ export function historyEntryToAgePoint(
   return { x: historyEntryAge(entry, currentExactAge), y: bestRating };
 }
 
+/**
+ * Converts a single history entry into a {x: age, y: overall rating} chart
+ * point, or null when the entry has no overall rating. Unlike the base-rating
+ * point this works for unscouted players' rating-only entries.
+ */
+export function historyEntryToOverallPoint(
+  entry: SkillHistoryEntry,
+  currentExactAge: number
+): { x: number; y: number } | null {
+  const rating = readEntryOverallRating(entry);
+  if (rating === null) return null;
+
+  return { x: historyEntryAge(entry, currentExactAge), y: rating };
+}
 
 // Chart thinning is shared with basketball; re-exported so hockey imports keep working.
 export { CHART_BUCKET_DAYS, downsampleHistory } from "@/base/historyDownsample";

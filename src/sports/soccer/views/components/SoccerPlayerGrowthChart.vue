@@ -1,7 +1,8 @@
 <template>
   <div class="player-growth-chart">
     <div class="chart-header">
-      <span class="chart-title">Growth (best position)</span>
+      <span class="chart-title">{{ metric === "or" ? "Growth (OR)" : "Growth (best position)" }}</span>
+      <GrowthMetricToggle v-model="metric" class="chart-metric" />
       <div class="age-filter">
         <label>
           Age:
@@ -40,6 +41,8 @@ import { normalizePlayerId } from "@/base/captureUtils";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
+import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
+import { growthMetricAxisTitle, useGrowthMetric } from "@/components/growthMetric";
 
 const props = defineProps<{ player: SoccerPlayer }>();
 
@@ -54,16 +57,21 @@ const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 const exactAge =
   props.player.age + (getCurrentSeasonDay() || 1) / soccerPlayerProfile.daysPerSeason;
 
+// The history rows read once; each metric is derived from them on demand, so
+// the toggle never re-queries the store. OR-only rows (unscouted players) have
+// no skills, so they appear in OR mode only.
+const entries = ref<SkillHistoryEntry<SoccerSkills>[]>([]);
+const metric = useGrowthMetric();
 const history = ref<Point[]>([]);
 const projection = ref<Point[]>([]);
 const pace = ref<{ value: number; provisional: boolean } | null>(null);
 
 const load = async () => {
   const id = normalizePlayerId(props.player.id) ?? props.player.id;
-  const entries = (await getSkillHistoryForPlayer(id, "soccer")) as unknown as SkillHistoryEntry<SoccerSkills>[];
-  history.value = soccerHistoryPoints(entries, exactAge, "skill");
+  entries.value = (await getSkillHistoryForPlayer(id, "soccer")) as unknown as SkillHistoryEntry<SoccerSkills>[];
+  history.value = soccerHistoryPoints(entries.value, exactAge, metric.value);
 
-  const measured = measureGrowthPace(entries, exactAge, props.player.getBestPosition().name);
+  const measured = measureGrowthPace(entries.value, exactAge, props.player.getBestPosition().name);
   pace.value =
     measured?.pace != null ? { value: measured.pace, provisional: measured.provisional } : null;
   projection.value = projectionPoints(props.player.skills, exactAge, measured, 45);
@@ -76,17 +84,33 @@ const range = () => {
   return min < max ? { min, max } : null;
 };
 
-const render = () => {
-  const bounds = range();
-  if (!chartCanvas.value || !bounds) return;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[SoccerPlayerGrowthChart] Failed to destroy previous chart:", error);
+const buildDatasets = (): ChartDataset<"line">[] => {
+  if (metric.value === "or") {
+    // OR view: the skill-only lines (top-player table, rating with XP,
+    // projection) have no OR equivalent in the data, so they are left out.
+    const datasets: ChartDataset<"line">[] = [
+      {
+        label: "Now (OR)",
+        data: [{ x: exactAge, y: props.player.overallRating }],
+        borderColor: "rgba(255, 99, 132, 1)",
+        backgroundColor: "rgba(255, 99, 132, 1)",
+        pointRadius: 10,
+        pointHoverRadius: 12,
+        showLine: false,
+      },
+    ];
+    if (history.value.length > 0) {
+      datasets.push({
+        label: "History (OR)",
+        data: history.value,
+        borderColor: "rgba(54, 162, 235, 1)",
+        backgroundColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0,
+      });
     }
-    chartInstance = null;
+    return datasets;
   }
 
   const best = props.player.getBestPosition();
@@ -157,15 +181,31 @@ const render = () => {
     });
   }
 
+  return datasets;
+};
+
+const render = () => {
+  const bounds = range();
+  if (!chartCanvas.value || !bounds) return;
+
+  if (chartInstance) {
+    try {
+      chartInstance.destroy();
+    } catch (error) {
+      console.error("[SoccerPlayerGrowthChart] Failed to destroy previous chart:", error);
+    }
+    chartInstance = null;
+  }
+
   try {
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
-      data: { datasets },
+      data: { datasets: buildDatasets() },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true, title: { display: true, text: "Skill" } },
+          y: { beginAtZero: true, title: { display: true, text: growthMetricAxisTitle(metric.value) } },
           x: {
             type: "linear",
             min: bounds.min,
@@ -196,6 +236,15 @@ const render = () => {
 onMounted(() => {
   render();
   load().catch((error) => console.error("[SoccerPlayerGrowthChart] Failed to load history:", error));
+});
+
+// Switching metric swaps the datasets and axis title in place - no new chart.
+watch(metric, (next) => {
+  history.value = soccerHistoryPoints(entries.value, exactAge, next);
+  if (!chartInstance) return;
+  chartInstance.data.datasets = buildDatasets();
+  chartInstance.options.scales!.y!.title!.text = growthMetricAxisTitle(next);
+  chartInstance.update();
 });
 
 // Mutate the axis in place: keeps the user's legend toggles.
@@ -233,6 +282,7 @@ watch([minAge, maxAge], () => {
 
 .chart-title {
   font-weight: 600;
+  margin-right: auto;
 }
 
 .age-input {
