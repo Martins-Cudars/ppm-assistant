@@ -688,6 +688,22 @@ This also sidesteps the unsettled age-curve question (research item 7).
   `src/components/GrowthComparisonChart.vue`.
   - It has a Skill / OR toggle, an age range, Hide / Show All, and the same squad-best
     grey line.
+  - **Side list instead of Chart.js's legend** (2026-11-23, all three sports): players
+    grouped by best position (`groupOrder`: hockey G/D/W/C, soccer and basketball their
+    position lists, "?" in Other), with a name search (accent-insensitive), a tri-state
+    checkbox per group, and swatch, name, age and checkbox per row. The reference line has
+    its own row above the groups. Hovering or focusing a row thickens that line and dims
+    the others, in place with `chart.update("none")`; the points' colours are scriptable
+    and follow the line, because Chart.js keeps shared point options on a `"none"` update.
+    Hidden lines are kept by series id in the component, so they survive a metric,
+    reference or filter change.
+  - **Full screen** (toolbar button): the Fullscreen API on the whole card, white
+    background, chart and list filling the height. Esc or the button leaves;
+    `fullscreenchange` keeps the icon in step and calls `chart.resize()`.
+  - Seen in the real report page in headless Chrome, restored from the 2026-11-22 backup
+    (hockey 38 players, soccer 31, basketball 23). Not seen: a real Esc key press (headless
+    CDP keys don't reach the browser's Esc handler; `document.exitFullscreen()`, the same
+    page-side path, was checked).
   - The component takes prebuilt series, so hockey's report could move to it too.
 - History is thinned to one point per ~14 days by the shared
   `src/base/historyDownsample.ts`, which hockey re-exports.

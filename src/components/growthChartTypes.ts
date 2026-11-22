@@ -6,7 +6,18 @@
 
 /** `note` is extra tooltip text - e.g. whose value a reference point is. */
 export type GrowthPoint = { x: number; y: number; note?: string };
-export type GrowthSeries = { id: string; label: string; skill: GrowthPoint[]; or: GrowthPoint[] };
+/**
+ * One player's line. `group` (the best position) groups him in the chart's
+ * side list - none, or "?", lands in "Other"; `age` is shown beside his name.
+ */
+export type GrowthSeries = {
+  id: string;
+  label: string;
+  skill: GrowthPoint[];
+  or: GrowthPoint[];
+  group?: string;
+  age?: number;
+};
 export type GrowthReference = { label: string; skill: GrowthPoint[]; or: GrowthPoint[] };
 /** One choice of the reference toggle: button name, the line, and what it is built from. */
 export type GrowthReferenceOption = {

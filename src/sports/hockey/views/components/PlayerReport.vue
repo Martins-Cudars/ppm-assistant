@@ -488,6 +488,9 @@ const {
   rateShape: (age) => expectedSeasonGain(age) ?? 0,
 });
 
+// The chart's side list groups players by best position, goalies first.
+const HOCKEY_GROUPS = ["G", "D", "W", "C"] as const;
+
 // Every filtered player's history on the shared chart. Entries are filtered to
 // the metric before thinning: an unscouted profile capture has an OR but no
 // skills, and must not swallow a window that had usable skills.
@@ -500,6 +503,8 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
     return {
       id: player.id,
       label: player.name,
+      group: player.getBestPosition().name,
+      age: player.age,
       skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
       or:
         or.length > 0 || !(player.overallRating > 0)
@@ -1409,6 +1414,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       v-else-if="activeTab === 'graph'"
       v-model:reference-key="chartReferenceKey"
       :series="comparisonSeries"
+      :group-order="HOCKEY_GROUPS"
       :reference-options="referenceOptions"
       :loading="allHistory === null"
     />

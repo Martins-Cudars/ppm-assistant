@@ -150,6 +150,8 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
     return {
       id: idOf(player),
       label: player.name,
+      group: player.getBestPosition().name,
+      age: player.age,
       skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
       or: or.length > 0 ? or : [{ x: exactAge, y: player.overallRating }],
     };
@@ -738,6 +740,7 @@ const profileUrl = (player: BasketballPlayer) =>
     <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :series="comparisonSeries"
+      :group-order="POSITIONS"
       v-model:reference-key="chartReferenceKey"
       :reference-options="referenceOptions"
       :loading="history === null"
