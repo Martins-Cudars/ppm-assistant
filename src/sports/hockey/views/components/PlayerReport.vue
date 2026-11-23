@@ -437,7 +437,7 @@ const squadReference = computed<GrowthReference>(() => ({
   skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
-    squadHistoryOnly(allHistory.value ?? new Map()),
+    squadHistoryOnly(allHistory.value ?? new Map<string, SkillHistoryEntry[]>()),
     exactAgeByPlayer.value,
     hockeyPlayerProfile.daysPerSeason,
     readEntryOverallRating,

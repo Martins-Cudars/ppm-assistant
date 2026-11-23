@@ -596,7 +596,7 @@ const squadReference = computed<GrowthReference>(() => ({
   skill: topPlayerSkillCurve,
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
-    squadHistoryOnly(history.value ?? new Map()),
+    squadHistoryOnly(history.value ?? new Map<string, SkillHistoryEntry<SoccerSkills>[]>()),
     new Map(players.value.map((player) => [idOf(player), exactAgeOf(player)])),
     soccerPlayerProfile.daysPerSeason,
     soccerEntryOverall,

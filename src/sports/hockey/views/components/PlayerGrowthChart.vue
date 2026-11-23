@@ -171,7 +171,7 @@ const buildDatasets = (): KeyedDataset[] => {
       tension: 0.4,
       // Monotone: a plain spline overshoots between ages and bulges at the
       // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
-      cubicInterpolationMode: "monotone",
+      cubicInterpolationMode: "monotone" as const,
     },
     {
       key: "top-base",
@@ -187,7 +187,7 @@ const buildDatasets = (): KeyedDataset[] => {
       tension: 0.4,
       // Monotone: a plain spline overshoots between ages and bulges at the
       // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
-      cubicInterpolationMode: "monotone",
+      cubicInterpolationMode: "monotone" as const,
     },
     {
       key: "now-total",

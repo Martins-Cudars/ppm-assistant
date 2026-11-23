@@ -46,6 +46,7 @@ export type HockeySkills = {
 export type ScoutingStatus = "SCOUTED" | "IN_PROGRESS" | "UNSCOUTED";
 
 export class HockeyPlayer extends BasePlayer {
+  public override skills: HockeySkills | undefined;
   public preferredSide: "L" | "R" | "U";
   public countryImage?: string;
   public countryLink?: string;
@@ -82,10 +83,11 @@ export class HockeyPlayer extends BasePlayer {
     this.countryLink = baseInfo.countryLink;
     this.teamPosition = baseInfo.teamPosition;
     this.contract = baseInfo.contract;
+    this.skills = skills;
     this.scoutingStatus = scoutingStatus;
   }
 
-  protected getCalculationProfile(): PlayerCalculationProfile {
+  getCalculationProfile(): PlayerCalculationProfile {
     return hockeyPlayerProfile;
   }
 }
