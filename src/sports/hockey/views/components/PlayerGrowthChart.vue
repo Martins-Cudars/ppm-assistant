@@ -27,6 +27,7 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import type { OrPace } from "@/base/orGrowth";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
+  ageRange,
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
@@ -246,18 +247,37 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   return datasets;
 };
 
+// --- Legend-hidden lines ---------------------------------------------------------
+// Kept here, not only in Chart.js: Chart.js keeps a line's hidden state with
+// its dataset object, so a rebuilt chart or a swapped dataset list (a metric
+// switch, a changed player) would show every line again. Keyed by label, with
+// the own-pace projection's pace left out of its key: the pace changes when
+// the history loads, and the line is still the same line.
+const hiddenLines = new Set<string>();
+const lineKey = (label: string | undefined) => {
+  const text = label ?? "";
+  if (!text.startsWith("Projected at own pace")) return text;
+  return text.startsWith("Projected at own pace (OR") ? "projection (OR)" : "projection";
+};
+const withHiddenLines = (datasets: ChartDataset<"line">[]) =>
+  datasets.map((dataset) => ({ ...dataset, hidden: hiddenLines.has(lineKey(dataset.label)) }));
+
+// A rebuild that came due while the age range was invalid (mid-edit): new
+// history or a changed player isn't drawn yet, so the next valid range
+// rebuilds the chart instead of only moving its axis.
+let rebuildPending = false;
+
 const renderChartWithLogic = () => {
   if (!chartCanvas.value) return;
 
-  // v-model.number leaves the ref as a raw (empty) string while the user is
-  // mid-edit (e.g. backspacing before typing a new value), since Vue only
-  // converts via parseFloat when it succeeds. Fall back to sane defaults
-  // rather than feeding Chart.js a non-numeric axis bound, and skip
-  // rendering entirely on a momentarily-degenerate range (min >= max) - the
-  // next keystroke will produce a valid one.
-  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (safeMinAge >= safeMaxAge) return;
+  // Skip rendering on a momentarily invalid range (min >= max); the next
+  // valid one renders (see rebuildPending).
+  const range = ageRange(minAge.value, maxAge.value);
+  if (!range) {
+    rebuildPending = true;
+    return;
+  }
+  rebuildPending = false;
 
   if (chartInstance) {
     try {
@@ -272,7 +292,7 @@ const renderChartWithLogic = () => {
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
       data: {
-        datasets: buildDatasets(),
+        datasets: withHiddenLines(buildDatasets()),
       },
       options: {
         responsive: true,
@@ -281,8 +301,8 @@ const renderChartWithLogic = () => {
           y: growthMetricScale(metric.value),
           x: {
             type: "linear",
-            min: safeMinAge,
-            max: safeMaxAge,
+            min: range.min,
+            max: range.max,
             title: {
               display: true,
               text: "Age",
@@ -296,6 +316,18 @@ const renderChartWithLogic = () => {
           legend: {
             display: true,
             position: "top",
+            // Chart.js's own toggle, also recorded in hiddenLines.
+            onClick: (_event, item, legend) => {
+              const chart = legend.chart;
+              const index = item.datasetIndex;
+              if (index === undefined) return;
+              const key = lineKey(chart.data.datasets[index]?.label);
+              const hide = chart.isDatasetVisible(index);
+              if (hide) hiddenLines.add(key);
+              else hiddenLines.delete(key);
+              chart.setDatasetVisibility(index, !hide);
+              chart.update();
+            },
           },
           tooltip: {
             mode: "index",
@@ -332,25 +364,23 @@ watch(
 );
 
 // An age-range change moves the bounds in place, as the basketball and soccer
-// charts do: a rebuilt chart would forget the lines hidden from its legend.
+// charts do, unless a rebuild came due while the range was invalid.
 watch([minAge, maxAge], () => {
-  // No chart yet (the range was invalid when it was due): build it now.
-  if (!chartInstance) {
+  const range = ageRange(minAge.value, maxAge.value);
+  if (!range) return;
+  if (!chartInstance || rebuildPending) {
     renderChartWithLogic();
     return;
   }
-  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (min >= max) return;
-  chartInstance.options.scales!.x!.min = min;
-  chartInstance.options.scales!.x!.max = max;
+  chartInstance.options.scales!.x!.min = range.min;
+  chartInstance.options.scales!.x!.max = range.max;
   chartInstance.update();
 });
 
 // Switching metric swaps the datasets and axis title in place - no new chart.
 watch(metric, (next) => {
   if (!chartInstance) return;
-  chartInstance.data.datasets = buildDatasets();
+  chartInstance.data.datasets = withHiddenLines(buildDatasets());
   applyGrowthMetricScale(chartInstance, next);
   chartInstance.update();
 });

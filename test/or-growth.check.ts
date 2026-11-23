@@ -13,6 +13,7 @@ import { OR_BASIS_AFTER_DAYS, measureOrGain } from "@/base/orGrowth";
 import { orReferenceTable, smoothedOrSeasonGains } from "@/base/relativeSkillFit";
 import {
   GROWTH_METRIC_KEY,
+  ageRange,
   orProjectionDataset,
   orReferenceDataset,
   useGrowthMetric,
@@ -289,6 +290,14 @@ check("the OR datasets: a grey Top 5% (OR) line and a dashed projection with the
   eq(orProjectionDataset(points, { value: 0.61, provisional: true })!.borderDash, [6, 4], "dashed");
   eq(orProjectionDataset([], { value: 0.61, provisional: false }), null, "no points");
   eq(orProjectionDataset(points, null), null, "no pace");
+});
+
+check("age range: a bound mid-edit falls back to 15 / 45; min >= max is no range", () => {
+  eq(ageRange(17, 25), { min: 17, max: 25 });
+  eq(ageRange("", 25), { min: 15, max: 25 }, "min being typed");
+  eq(ageRange(20, ""), { min: 20, max: 45 }, "max being typed");
+  eq(ageRange(25, 25), null, "equal");
+  eq(ageRange(30, 2), null, "max mid-edit");
 });
 
 // The remembered metric: chrome.storage.session is read late, and a choice

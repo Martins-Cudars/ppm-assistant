@@ -75,6 +75,18 @@ export function rememberGrowthMetric(metric: GrowthMetric): void {
     });
 }
 
+/**
+ * The growth charts' age range from their Age inputs, or null while it is
+ * momentarily invalid (min >= max). v-model.number leaves an input's ref as
+ * a raw (empty) string mid-edit, so a bound that isn't a number falls back
+ * to 15 or 45 rather than reaching Chart.js.
+ */
+export function ageRange(minAge: unknown, maxAge: unknown): { min: number; max: number } | null {
+  const min = typeof minAge === "number" && Number.isFinite(minAge) ? minAge : 15;
+  const max = typeof maxAge === "number" && Number.isFinite(maxAge) ? maxAge : 45;
+  return min < max ? { min, max } : null;
+}
+
 /** The y-axis title, which is also the word the legend and tooltip use. */
 export const growthMetricAxisTitle = (metric: GrowthMetric) =>
   metric === "or" ? "OR" : "Skill";

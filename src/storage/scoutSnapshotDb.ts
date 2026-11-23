@@ -98,7 +98,12 @@ export async function loadLeagueTeams(sport: Sport): Promise<LeagueTeams | null>
   return validLeagueTeams(data[key]);
 }
 
-/** loadLeagueTeams, with a read failure logged and taken as no list. */
+/**
+ * loadLeagueTeams, with a read failure logged and taken as no list. Only for
+ * readers that just display it (the Player Reports, where a failed read
+ * leaves the league lines empty); anything that writes a list back, or saves
+ * it in a backup, uses loadLeagueTeams.
+ */
 export async function readLeagueTeams(sport: Sport): Promise<LeagueTeams | null> {
   try {
     return await loadLeagueTeams(sport);

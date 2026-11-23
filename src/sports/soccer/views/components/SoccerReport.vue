@@ -625,9 +625,9 @@ const {
   ownTeamId: () => teamId.value,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against (as a smoothed growth rate; soccer: up to 23, the squad's own decline from 24). OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against (as a smoothed growth rate, raised for juniors at 15 and 16; from 24, your squad's own decline). OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate (from 24, your squad's own decline).",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate (raised for juniors at 15 and 16; from 24, your squad's own decline).",
   idOf,
   exactAgeOf,
   overallOf: (player) => player.overallRating,

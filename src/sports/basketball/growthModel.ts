@@ -478,8 +478,10 @@ export function projectBasketball(
   // this is the per-age sum of (rate at age / rate measured) x (factor at age
   // / factor measured) x days: the bonus skills slow with the line, age by
   // age, as in src/base/growthModel.ts projectSkills. The line's rate never
-  // rises after 16, so a small measured rate can't inflate it (the
-  // basketball-growth check sums it a year at a time).
+  // rises after 16, so a small measured rate can't inflate it; measured at 15
+  // the bonus skills follow the line's rise into 16 (up to 1.12x their own
+  // rate). The basketball-growth check sums it a year at a time and checks
+  // both bounds for every measured age from 15.
   const curveDays =
     pace.referencePerDay && pace.referencePerDay > 0 ? curvePoints / (pace.referencePerDay * measuredFactor) : 0;
   const bonusPoints = (skill: Skill) => Math.max(0, pace.pointsPerDay * pace.skillShares[skill]) * curveDays;

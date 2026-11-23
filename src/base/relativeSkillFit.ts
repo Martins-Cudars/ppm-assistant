@@ -304,17 +304,20 @@ export function fitLeagueOr(
   percentile: number,
   globalOr: number[]
 ) {
-  if (points.length < MIN_LEAGUE_POINTS) return null;
-  return fitMeasuredLeague(measureLeague(points, ages, percentile, globalOr), ages, globalOr);
+  return fitMeasuredLeague(points.length, measureLeague(points, ages, percentile, globalOr), ages, globalOr);
 }
 
-/** fitLeagueOr from a measureLeague result, so a caller that also counts its ages measures once. */
+/**
+ * fitLeagueOr from a measureLeague result, so a caller that also counts its
+ * ages measures once. Both sparseness guards live here.
+ */
 function fitMeasuredLeague(
+  pointCount: number,
   { measured, ratios, known }: ReturnType<typeof measureLeague>,
   ages: number[],
   globalOr: number[]
 ) {
-  if (known.length < MIN_LEAGUE_AGES) return null;
+  if (pointCount < MIN_LEAGUE_POINTS || known.length < MIN_LEAGUE_AGES) return null;
 
   let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
   known.forEach(({ age, r, w }) => {
@@ -473,7 +476,7 @@ export function fitLeagueReference(
   const points = scoutPoints(snapshots, daysPerSeason, (row) => isLeagueSnapshot(row, league, teams));
   // Measured once: the ages count is reported even when the fit is too sparse.
   const measurement = measureLeague(points, ages, fit.percentile, globalOr);
-  const fitted = points.length >= MIN_LEAGUE_POINTS ? fitMeasuredLeague(measurement, ages, globalOr) : null;
+  const fitted = fitMeasuredLeague(points.length, measurement, ages, globalOr);
   return {
     table: fitted ? referenceTable(fit, fitted.curve) : null,
     points: points.length,

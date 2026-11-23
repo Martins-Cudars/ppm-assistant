@@ -51,6 +51,7 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
+  ageRange,
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
@@ -105,11 +106,7 @@ const load = async () => {
   render();
 };
 
-const range = () => {
-  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  return min < max ? { min, max } : null;
-};
+const range = () => ageRange(minAge.value, maxAge.value);
 
 const buildDatasets = (): ChartDataset<"line">[] => {
   // OR view: the top-5% OR line, today's OR, the OR history and the

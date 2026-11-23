@@ -24,13 +24,13 @@ import {
 import { SPORTS, Sport } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
-import { ScoutSnapshot } from "@/types/ScoutSnapshot";
+import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { exportAllCaches, importCaches } from "@/storage/playerCache";
 import {
   clearLeagueTeams,
   clearScoutSnapshots,
   exportScoutSnapshots,
-  readLeagueTeams,
+  loadLeagueTeams,
   saveLeagueTeams,
   upsertScoutSnapshots,
   validLeagueTeams,
@@ -58,7 +58,18 @@ export async function createBackup(): Promise<BackupFile | null> {
     exportAllCaches(),
     exportSkillHistory("hockey"),
     Promise.all(SPORTS.map((sport) => exportScoutSnapshots(sport))),
-    Promise.all(SPORTS.map((sport) => readLeagueTeams(sport))),
+    // A list that can't be read is a failed read (null), not "no list".
+    Promise.all(
+      SPORTS.map((sport) =>
+        loadLeagueTeams(sport).then(
+          (list) => ({ list }),
+          (error) => {
+            console.error(`[Backup] Could not read the ${sport} league list:`, error);
+            return null;
+          }
+        )
+      )
+    ),
     ...OTHER_SPORTS.map((sport) => exportSkillHistory(sport)),
   ]);
 
@@ -67,9 +78,10 @@ export async function createBackup(): Promise<BackupFile | null> {
   if (
     skillHistory === null ||
     others.some((entries) => entries === null) ||
-    scouted.some((snapshots) => snapshots === null)
+    scouted.some((snapshots) => snapshots === null) ||
+    leagueLists.some((read) => read === null)
   ) {
-    console.error("[Backup] Aborting export: could not read skill history");
+    console.error("[Backup] Aborting export: could not read the history, scouted data or a league list");
     return null;
   }
 
@@ -77,7 +89,8 @@ export async function createBackup(): Promise<BackupFile | null> {
   const leagues: BackupFile["leagues"] = {};
   SPORTS.forEach((sport, i) => {
     if (scouted[i]!.length > 0) scoutSnapshots[sport] = scouted[i]!;
-    if (leagueLists[i]) leagues[sport] = leagueLists[i]!;
+    const list = leagueLists[i]!.list;
+    if (list) leagues[sport] = list;
   });
 
   const sportSkillHistory: BackupFile["sportSkillHistory"] = {};
@@ -324,7 +337,17 @@ export async function restoreBackup(
 
     const league = backup.leagues?.[sport];
     if (league) {
-      const stored = mode === "merge" ? await readLeagueTeams(sport) : null;
+      // A stored list that can't be read stops the restore: taken as no list,
+      // the file's (maybe older) one would overwrite it.
+      let stored: LeagueTeams | null = null;
+      if (mode === "merge") {
+        try {
+          stored = await loadLeagueTeams(sport);
+        } catch (error) {
+          console.error(`[Backup] Could not read the stored ${sport} league list:`, error);
+          throw new Error(`Could not read the stored ${sport} league list. Try importing again.`);
+        }
+      }
       // In a merge the newer list wins - the league changes every season.
       if (!stored || stored.updatedAt <= league.updatedAt) await saveLeagueTeams(league, sport);
     } else if (mode === "replace") {

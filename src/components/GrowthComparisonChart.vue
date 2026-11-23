@@ -105,7 +105,7 @@
               </li>
             </ul>
           </section>
-          <p v-if="legendGroups.length === 0" class="legend-empty">No players match "{{ search }}".</p>
+          <p v-if="legendGroups.length === 0 && search.trim()" class="legend-empty">No players match "{{ search }}".</p>
         </div>
       </aside>
     </div>
@@ -131,7 +131,7 @@ import Chart from "chart.js/auto";
 import type { ChartDataset, Color, ScriptableContext } from "chart.js";
 
 import GrowthMetricToggle from "./GrowthMetricToggle.vue";
-import { applyGrowthMetricScale, growthMetricScale, useGrowthMetric } from "./growthMetric";
+import { ageRange, applyGrowthMetricScale, growthMetricScale, useGrowthMetric } from "./growthMetric";
 import type {
   GrowthPoint as Point,
   GrowthReference,
@@ -364,7 +364,8 @@ const seriesStyle = (series: GrowthSeries) => {
   };
 };
 
-const buildDatasets = (): ChartDataset<"line">[] => {
+/** The datasets for a chart of `list`: the reference first, then series i at i + 1. */
+const buildDatasets = (list: GrowthSeries[]): ChartDataset<"line">[] => {
   const datasets: ChartDataset<"line">[] = [];
   datasets.push({
     label: currentReference.value?.label ?? "",
@@ -381,7 +382,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     order: 10,
     hidden: referenceHidden.value,
   });
-  chartSeries.value.forEach((series, index) => {
+  list.forEach((series, index) => {
     datasets.push({
       label: series.label,
       tension: 0,
@@ -397,15 +398,11 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   return datasets;
 };
 
-const safeRange = () => {
-  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  return min < max ? { min, max } : null;
-};
-// The last valid range the chart was given. A rebuild while the inputs are
-// mid-edit (min >= max) keeps it rather than skipping the rebuild, which
-// would leave the chart and the side list on the old series.
-let shownRange = { min: minAge.value, max: maxAge.value };
+const safeRange = () => ageRange(minAge.value, maxAge.value);
+// The last valid range entered, with or without a chart to show it. A rebuild
+// while the inputs are mid-edit (min >= max) uses it rather than skipping the
+// rebuild, which would leave the chart and the side list on the old series.
+let shownRange = safeRange() ?? { min: 15, max: 45 };
 
 const destroyChart = () => {
   if (!chartInstance) return;
@@ -415,7 +412,6 @@ const destroyChart = () => {
     console.error("[GrowthComparisonChart] Failed to destroy previous chart:", error);
   }
   chartInstance = null;
-  chartSeries.value = [];
 };
 
 const renderChart = () => {
@@ -425,11 +421,13 @@ const renderChart = () => {
 
   destroyChart();
 
+  // chartSeries is set once the chart exists, so the side list is rebuilt
+  // once per chart, and a chart that fails leaves no rows beside a blank canvas.
+  const series = props.series;
   try {
-    chartSeries.value = props.series;
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
-      data: { datasets: buildDatasets() },
+      data: { datasets: buildDatasets(series) },
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -466,9 +464,11 @@ const renderChart = () => {
         },
       },
     });
+    chartSeries.value = series;
   } catch (error) {
     console.error("[GrowthComparisonChart] Failed to render chart:", error);
     chartInstance = null;
+    chartSeries.value = [];
   }
 };
 
@@ -541,8 +541,10 @@ watch(currentReference, (reference) => {
 // An age-range change needs no new chart: the bounds change in place.
 watch([minAge, maxAge], () => {
   const range = safeRange();
-  if (!chartInstance || !range) return;
+  if (!range) return;
+  // Recorded first: a range entered before the chart exists is the one it gets.
   shownRange = range;
+  if (!chartInstance) return;
   chartInstance.options.scales!.x!.min = range.min;
   chartInstance.options.scales!.x!.max = range.max;
   chartInstance.update();

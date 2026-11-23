@@ -54,6 +54,7 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
+  ageRange,
   applyGrowthMetricScale,
   growthMetricScale,
   orDatasets,
@@ -211,9 +212,8 @@ const buildDatasets = (): ChartDataset<"line">[] => {
 
 const render = () => {
   if (!chartCanvas.value) return;
-  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (min >= max) return;
+  const range = ageRange(minAge.value, maxAge.value);
+  if (!range) return;
 
   if (chartInstance) {
     try {
@@ -235,8 +235,8 @@ const render = () => {
           y: growthMetricScale(metric.value),
           x: {
             type: "linear",
-            min,
-            max,
+            min: range.min,
+            max: range.max,
             title: { display: true, text: "Age" },
             ticks: { stepSize: 1 },
           },
@@ -275,11 +275,10 @@ watch(metric, (next) => {
 
 // Mutate the axis in place: keeps the user's legend toggles.
 watch([minAge, maxAge], () => {
-  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (!chartInstance || min >= max) return;
-  chartInstance.options.scales!.x!.min = min;
-  chartInstance.options.scales!.x!.max = max;
+  const range = ageRange(minAge.value, maxAge.value);
+  if (!chartInstance || !range) return;
+  chartInstance.options.scales!.x!.min = range.min;
+  chartInstance.options.scales!.x!.max = range.max;
   chartInstance.update();
 });
 </script>
