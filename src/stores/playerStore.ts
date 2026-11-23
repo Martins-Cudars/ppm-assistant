@@ -1,3 +1,4 @@
+import { markRaw, type Raw } from "vue";
 import { defineStore } from "pinia";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import {
@@ -12,10 +13,14 @@ import { clearLeagueTeams, clearScoutSnapshots } from "@/storage/scoutSnapshotDb
 import { SPORTS } from "@/types/Sport";
 import { PlayerCacheStorage } from "@/types/StoredPlayer";
 
+// Raw: pinia's deep state unwrapping drops the player class's protected members
+// from the type, so the instances are marked raw (never made reactive) as well.
+type RawPlayer = Raw<HockeyPlayer>;
+
 interface PlayerState {
-  players: HockeyPlayer[];
+  players: RawPlayer[];
   tableHeaders: string[];
-  cachedPlayers: HockeyPlayer[];
+  cachedPlayers: RawPlayer[];
   currentSeasonDay: number;
   teamId: string;
   /**
@@ -67,7 +72,7 @@ export const usePlayerStore = defineStore("player", {
   },
   actions: {
     setPlayers(players: HockeyPlayer[]) {
-      this.players = players;
+      this.players = players.map((player) => markRaw(player));
     },
     setTableHeaders(headers: string[]) {
       this.tableHeaders = headers;
@@ -76,7 +81,7 @@ export const usePlayerStore = defineStore("player", {
       try {
         // Use getAllPlayersFromAllCaches which works in extension pages without DOM
         const { players, currentSeasonDay, teamId, squad } = await getAllPlayersFromAllCaches();
-        this.cachedPlayers = players;
+        this.cachedPlayers = players.map((player) => markRaw(player));
         this.currentSeasonDay = currentSeasonDay;
         this.teamId = teamId;
         this.squad = squad;

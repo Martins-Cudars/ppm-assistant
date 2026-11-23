@@ -1,5 +1,7 @@
 overrides:
   picomatch: 2.3.2
+  minimatch: ">=11.0.1"
+  source-map-js: ">=1.2.2"
 
 allowBuilds:
   esbuild: true

@@ -1026,8 +1026,8 @@ Hockey was the first to follow; soccer is next.
 | `useCompareWith.ts` | The report toggle as a Vue composable: options, captions, "OR vs best", the shown Pace and the chart's reference options. Each report passes its own squad pace, squad reference and history readers |
 
 - `smoothFromPeak` moved to `src/base/smoothFromPeak.ts`. The shared chart's types moved
-  to `src/components/growthChartTypes.ts`, since `tsc` can't read types out of a `.vue`
-  file.
+  to `src/components/growthChartTypes.ts`, so that `.ts` modules (`useCompareWith.ts`
+  among them) can import them without importing the `.vue` component.
 - **Hockey specifics** (read from the live game on 2026-10-04):
   - The roster has 10 columns, `# Name Fun ScP Age AvQ CL Con Pop OR`, with no height.
   - Profile links go to `player.html` / `speletajs.html`.

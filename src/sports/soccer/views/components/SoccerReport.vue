@@ -10,7 +10,7 @@
  * docs/skill-history.md, Soccer. Backup and Clear live on the Hockey tab;
  * they already cover every sport.
  */
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { StoredSoccerPlayer, deserializeSoccerPlayer } from "@/sports/soccer/capture";
 import { normalizePlayerId } from "@/base/captureUtils";
@@ -64,7 +64,8 @@ import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
 const loading = ref(true);
-const players = ref<SoccerPlayer[]>([]);
+// shallowRef: Vue's deep ref unwrapping drops the player classes' protected members from the type.
+const players = shallowRef<SoccerPlayer[]>([]);
 const teamId = ref("unknown");
 const squad = ref<{ playerIds: string[]; updatedAt: string } | null>(null);
 const summaries = ref<Map<string, SkillHistorySummary>>(new Map());

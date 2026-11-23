@@ -75,7 +75,7 @@ export class BasketballPlayer extends BasePlayer {
     this.trainingQualities = qualities;
   }
 
-  getCalculationProfile(): PlayerCalculationProfile {
+  protected getCalculationProfile(): PlayerCalculationProfile {
     return basketballPlayerProfile;
   }
 

@@ -89,7 +89,7 @@ export abstract class BasePlayer {
     this.injuryDays = injuryDays;
   }
 
-  abstract getCalculationProfile(): PlayerCalculationProfile;
+  protected abstract getCalculationProfile(): PlayerCalculationProfile;
 
   calculatePositions(): void {
     const profile = this.getCalculationProfile();
@@ -192,7 +192,7 @@ export abstract class BasePlayer {
     return quality;
   }
 
-  getUnknownRating(): number {
+  protected getUnknownRating(): number {
     return (this.overallRating - 100) / 2;
   }
 

@@ -74,13 +74,12 @@ export class SoccerPlayer extends BasePlayer {
     this.skills = skills;
   }
 
-  getCalculationProfile(): PlayerCalculationProfile {
+  protected getCalculationProfile(): PlayerCalculationProfile {
     return soccerPlayerProfile;
   }
 
-  // A plain string: the base class's getBestPosition() names positions as strings.
   getPositionTrainingQuality(
-    position: string
+    position: SoccerPlayerPositionName
   ): SoccerPlayerTrainingQuality | undefined {
     return this.positionTrainingQualities.find((item) => item.position === position);
   }

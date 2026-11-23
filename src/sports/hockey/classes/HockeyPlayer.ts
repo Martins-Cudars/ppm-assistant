@@ -87,7 +87,7 @@ export class HockeyPlayer extends BasePlayer {
     this.scoutingStatus = scoutingStatus;
   }
 
-  getCalculationProfile(): PlayerCalculationProfile {
+  protected getCalculationProfile(): PlayerCalculationProfile {
     return hockeyPlayerProfile;
   }
 }
