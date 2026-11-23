@@ -17,8 +17,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
-import Chart from "chart.js/auto";
-import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 import { getCurrentSeasonDay } from "@/utils/dom";
@@ -27,14 +25,13 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import type { OrPace } from "@/base/orGrowth";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
-  ageRange,
-  applyGrowthMetricScale,
-  growthMetricScale,
   orDatasets,
   orProjectionDataset,
   orReferenceDataset,
   useGrowthMetric,
+  type KeyedDataset,
 } from "@/components/growthMetric";
+import { useProfileGrowthChart } from "@/components/growthChart";
 import { getExactAge, historyPoints } from "@/sports/hockey/skillHistoryChart";
 import {
   measureGrowthPace,
@@ -48,7 +45,6 @@ const props = defineProps<{
 }>();
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
 const historyEntries = ref<SkillHistoryEntry[]>([]);
 // The OR view's pace, measured once when the history loads (src/base/orGrowth.ts).
 const orPace = ref<OrPace | null>(null);
@@ -126,7 +122,7 @@ const calculateData = () => {
   };
 };
 
-const buildDatasets = (): ChartDataset<"line">[] => {
+const buildDatasets = (): KeyedDataset[] => {
   if (metric.value === "or") {
     // OR view: the top-5% OR line, today's OR, the OR history and the
     // projection at the player's OR pace (src/base/orGrowth.ts) - measured on
@@ -160,8 +156,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     provisional,
   } = calculateData();
 
-  const datasets: ChartDataset<"line">[] = [
+  const datasets: KeyedDataset[] = [
     {
+      key: "top-total",
       label: "Top 5% Skill (Total)",
       data: projectedTotalData,
       borderColor: "#ccc",
@@ -177,6 +174,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       cubicInterpolationMode: "monotone",
     },
     {
+      key: "top-base",
       label: "Top 5% Skill (Base)",
       data: projectedPureData,
       borderColor: "#ccc",
@@ -192,6 +190,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       cubicInterpolationMode: "monotone",
     },
     {
+      key: "now-total",
       label: "Current Skill (Total)",
       data: currentTotalData,
       borderColor: "rgba(255, 99, 132, 1)",
@@ -201,6 +200,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       showLine: false,
     },
     {
+      key: "now-base",
       label: "Current Skill (Base)",
       data: currentPureData,
       borderColor: "rgba(255, 99, 132, 1)",
@@ -217,6 +217,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   // treninu-progress.html simply won't have this line yet; that's expected.
   if (actualHistoryData.length > 0) {
     datasets.push({
+      key: "history",
       label: "Actual Skill History (Base)",
       data: actualHistoryData,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -232,6 +233,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
 
   if (ownPaceProjection.length > 0 && pace !== null) {
     datasets.push({
+      key: "projection",
       label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(pace * 100)}%${provisional ? ", provisional" : ""})`,
       data: ownPaceProjection,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -247,143 +249,38 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   return datasets;
 };
 
-// --- Legend-hidden lines ---------------------------------------------------------
-// Kept here, not only in Chart.js: Chart.js keeps a line's hidden state with
-// its dataset object, so a rebuilt chart or a swapped dataset list (a metric
-// switch, a changed player) would show every line again. Keyed by label, with
-// the own-pace projection's pace left out of its key: the pace changes when
-// the history loads, and the line is still the same line.
-const hiddenLines = new Set<string>();
-const lineKey = (label: string | undefined) => {
-  const text = label ?? "";
-  if (!text.startsWith("Projected at own pace")) return text;
-  return text.startsWith("Projected at own pace (OR") ? "projection (OR)" : "projection";
-};
-const withHiddenLines = (datasets: ChartDataset<"line">[]) =>
-  datasets.map((dataset) => ({ ...dataset, hidden: hiddenLines.has(lineKey(dataset.label)) }));
-
-// A rebuild that came due while the age range was invalid (mid-edit): new
-// history or a changed player isn't drawn yet, so the next valid range
-// rebuilds the chart instead of only moving its axis.
-let rebuildPending = false;
-
-const renderChartWithLogic = () => {
-  if (!chartCanvas.value) return;
-
-  // Skip rendering on a momentarily invalid range (min >= max); the next
-  // valid one renders (see rebuildPending).
-  const range = ageRange(minAge.value, maxAge.value);
-  if (!range) {
-    rebuildPending = true;
-    return;
-  }
-  rebuildPending = false;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
-    }
-    chartInstance = null;
-  }
-
-  try {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: "line",
-      data: {
-        datasets: withHiddenLines(buildDatasets()),
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: growthMetricScale(metric.value),
-          x: {
-            type: "linear",
-            min: range.min,
-            max: range.max,
-            title: {
-              display: true,
-              text: "Age",
-            },
-            ticks: {
-              stepSize: 1,
-            },
-          },
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: "top",
-            // Chart.js's own toggle, also recorded in hiddenLines.
-            onClick: (_event, item, legend) => {
-              const chart = legend.chart;
-              const index = item.datasetIndex;
-              if (index === undefined) return;
-              const key = lineKey(chart.data.datasets[index]?.label);
-              const hide = chart.isDatasetVisible(index);
-              if (hide) hiddenLines.add(key);
-              else hiddenLines.delete(key);
-              chart.setDatasetVisibility(index, !hide);
-              chart.update();
-            },
-          },
-          tooltip: {
-            mode: "index",
-            intersect: false,
-          },
-        },
-      },
-    });
-  } catch (error) {
-    console.error("[PlayerGrowthChart] Failed to render chart:", error);
-    chartInstance = null;
-  }
-};
+// The chart, its age range and metric switch, and the legend's hidden lines:
+// shared by the three profile charts (src/components/growthChart.ts).
+const { render } = useProfileGrowthChart({
+  name: "PlayerGrowthChart",
+  canvas: chartCanvas,
+  minAge,
+  maxAge,
+  metric,
+  buildDatasets,
+  tooltip: { mode: "index", intersect: false },
+});
 
 const loadHistory = () => {
   getSkillHistoryForPlayer(props.player.id).then((entries) => {
     historyEntries.value = entries;
     orPace.value = measureOrPace(entries, currentExactAge());
-    renderChartWithLogic();
+    render();
   });
 };
 
 onMounted(() => {
-  renderChartWithLogic();
+  render();
   loadHistory();
 });
 
 watch(
   () => props.player,
   () => {
-    renderChartWithLogic();
+    render();
   },
   { deep: true }
 );
-
-// An age-range change moves the bounds in place, as the basketball and soccer
-// charts do, unless a rebuild came due while the range was invalid.
-watch([minAge, maxAge], () => {
-  const range = ageRange(minAge.value, maxAge.value);
-  if (!range) return;
-  if (!chartInstance || rebuildPending) {
-    renderChartWithLogic();
-    return;
-  }
-  chartInstance.options.scales!.x!.min = range.min;
-  chartInstance.options.scales!.x!.max = range.max;
-  chartInstance.update();
-});
-
-// Switching metric swaps the datasets and axis title in place - no new chart.
-watch(metric, (next) => {
-  if (!chartInstance) return;
-  chartInstance.data.datasets = withHiddenLines(buildDatasets());
-  applyGrowthMetricScale(chartInstance, next);
-  chartInstance.update();
-});
 </script>
 
 <style scoped>

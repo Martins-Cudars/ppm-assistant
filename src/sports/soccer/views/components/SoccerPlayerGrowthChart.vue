@@ -32,9 +32,7 @@
  * The OR view draws the same without XP: the top-5% OR line, today's OR, the
  * OR history and the projection at the player's OR pace (src/base/orGrowth.ts).
  */
-import { computed, onMounted, ref, watch } from "vue";
-import Chart from "chart.js/auto";
-import type { ChartDataset } from "chart.js";
+import { computed, onMounted, ref } from "vue";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { relativeOrReference, relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { soccerPlayerProfile } from "@/sports/soccer/playerProfile";
@@ -51,19 +49,17 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
-  ageRange,
-  applyGrowthMetricScale,
-  growthMetricScale,
   orDatasets,
   orProjectionDataset,
   orReferenceDataset,
   useGrowthMetric,
+  type KeyedDataset,
 } from "@/components/growthMetric";
+import { useProfileGrowthChart } from "@/components/growthChart";
 
 const props = defineProps<{ player: SoccerPlayer }>();
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
 
 // A window around the player's age rather than 15-45, so a young player's
 // progress isn't squeezed into a sliver of the chart.
@@ -106,9 +102,7 @@ const load = async () => {
   render();
 };
 
-const range = () => ageRange(minAge.value, maxAge.value);
-
-const buildDatasets = (): ChartDataset<"line">[] => {
+const buildDatasets = (): KeyedDataset[] => {
   // OR view: the top-5% OR line, today's OR, the OR history and the
   // projection at the player's OR pace. No with-XP line: OR has no XP.
   if (metric.value === "or") {
@@ -125,8 +119,9 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   }
 
   const best = props.player.getBestPosition();
-  const datasets: ChartDataset<"line">[] = [
+  const datasets: KeyedDataset[] = [
     {
+      key: "top-with-xp",
       label: "Top 5% (with XP)",
       data: relativeSkillReference.map((p) => ({ x: p.age, y: Math.round(p.skill * (1 + p.exp / 500)) })),
       borderColor: "#ccc",
@@ -140,6 +135,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       cubicInterpolationMode: "monotone",
     },
     {
+      key: "top-no-xp",
       label: "Top 5% (no XP)",
       data: relativeSkillReference.map((p) => ({ x: p.age, y: p.skill })),
       borderColor: "#ccc",
@@ -153,6 +149,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       cubicInterpolationMode: "monotone",
     },
     {
+      key: "now-with-xp",
       label: `Now with XP (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithXp }],
       borderColor: "rgba(255, 99, 132, 1)",
@@ -162,6 +159,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       showLine: false,
     },
     {
+      key: "now",
       label: `Now (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithBonus }],
       borderColor: "rgba(255, 99, 132, 1)",
@@ -175,6 +173,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   // Omitted rather than drawn empty: a player never captured has no history yet.
   if (history.value.length > 0) {
     datasets.push({
+      key: "history",
       label: "History (no XP)",
       data: history.value,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -187,6 +186,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   if (projection.value.length > 0 && pace.value) {
     const { value, provisional } = pace.value;
     datasets.push({
+      key: "projection",
       label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(value * 100)}%${provisional ? ", provisional" : ""})`,
       data: projection.value,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -201,75 +201,28 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   return datasets;
 };
 
-const render = () => {
-  const bounds = range();
-  if (!chartCanvas.value || !bounds) return;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[SoccerPlayerGrowthChart] Failed to destroy previous chart:", error);
-    }
-    chartInstance = null;
-  }
-
-  try {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: "line",
-      data: { datasets: buildDatasets() },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: growthMetricScale(metric.value),
-          x: {
-            type: "linear",
-            min: bounds.min,
-            max: bounds.max,
-            title: { display: true, text: "Age" },
-            ticks: { stepSize: 1 },
-          },
-        },
-        plugins: {
-          legend: { display: true, position: "top" },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const point = context.raw as Point;
-                return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})`;
-              },
-            },
-          },
-        },
+// The chart, its age range and metric switch, and the legend's hidden lines:
+// shared by the three profile charts (src/components/growthChart.ts).
+const { render } = useProfileGrowthChart({
+  name: "SoccerPlayerGrowthChart",
+  canvas: chartCanvas,
+  minAge,
+  maxAge,
+  metric,
+  buildDatasets,
+  tooltip: {
+    callbacks: {
+      label: (context) => {
+        const point = context.raw as Point;
+        return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})`;
       },
-    });
-  } catch (error) {
-    console.error("[SoccerPlayerGrowthChart] Failed to render chart:", error);
-    chartInstance = null;
-  }
-};
+    },
+  },
+});
 
 onMounted(() => {
   render();
   load().catch((error) => console.error("[SoccerPlayerGrowthChart] Failed to load history:", error));
-});
-
-// Switching metric swaps the datasets and axis title in place - no new chart.
-watch(metric, (next) => {
-  if (!chartInstance) return;
-  chartInstance.data.datasets = buildDatasets();
-  applyGrowthMetricScale(chartInstance, next);
-  chartInstance.update();
-});
-
-// Mutate the axis in place: keeps the user's legend toggles.
-watch([minAge, maxAge], () => {
-  const bounds = range();
-  if (!chartInstance || !bounds) return;
-  chartInstance.options.scales!.x!.min = bounds.min;
-  chartInstance.options.scales!.x!.max = bounds.max;
-  chartInstance.update();
 });
 </script>
 

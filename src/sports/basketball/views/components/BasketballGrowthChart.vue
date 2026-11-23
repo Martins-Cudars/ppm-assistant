@@ -34,9 +34,7 @@
  * The OR view draws the same without XP: the top-5% OR line, today's OR, the
  * OR history and the projection at the player's OR pace (basketballOrModel).
  */
-import { computed, onMounted, ref, watch } from "vue";
-import Chart from "chart.js/auto";
-import type { ChartDataset } from "chart.js";
+import { computed, onMounted, ref } from "vue";
 import { BasketballPlayer, BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import { normalizePlayerId } from "@/sports/basketball/capture";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
@@ -54,21 +52,19 @@ import { SkillHistoryEntry } from "@/types/SkillHistory";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
-  ageRange,
-  applyGrowthMetricScale,
-  growthMetricScale,
   orDatasets,
   orProjectionDataset,
   orReferenceDataset,
   useGrowthMetric,
+  type KeyedDataset,
 } from "@/components/growthMetric";
+import { useProfileGrowthChart } from "@/components/growthChart";
 
 const props = defineProps<{ player: BasketballPlayer }>();
 
 type Entry = SkillHistoryEntry<BasketballSkills>;
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
 
 const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
 const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
@@ -124,7 +120,8 @@ const load = async () => {
 };
 
 /** A grey top-5% line, as hockey's and soccer's charts draw it. */
-const topDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
+const topDataset = (key: string, data: Point[], label: string): KeyedDataset => ({
+  key,
   label,
   data,
   borderColor: "#ccc",
@@ -137,11 +134,11 @@ const topDataset = (data: Point[], label: string): ChartDataset<"line"> => ({
   cubicInterpolationMode: "monotone",
 });
 
-const buildDatasets = (): ChartDataset<"line">[] => {
+const buildDatasets = (): KeyedDataset[] => {
   if (metric.value === "or") {
     // OR view: the top-5% OR line, today's OR, the OR history and the
     // projection at the player's OR pace. No XP variant: OR has no XP.
-    const datasets: ChartDataset<"line">[] = [orReferenceDataset(relativeOrReference)];
+    const datasets: KeyedDataset[] = [orReferenceDataset(relativeOrReference)];
     const projected = orProjectionDataset(orProjection.value, orPace.value);
     return datasets.concat(
       orDatasets({ exactAge, current: props.player.overallRating, history: history.value }),
@@ -150,12 +147,14 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   }
 
   const best = props.player.getBestPosition();
-  const datasets: ChartDataset<"line">[] = [
+  const datasets: KeyedDataset[] = [
     topDataset(
+      "top-with-xp",
       relativeSkillReference.map((p) => ({ x: p.age, y: calculateSkillWithExp(p.skill, p.exp) })),
       "Top 5% (with XP)"
     ),
     topDataset(
+      "top-no-xp",
       relativeSkillReference.map((p) => ({ x: p.age, y: p.skill })),
       "Top 5% (no XP)"
     ),
@@ -163,6 +162,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   // An unscouted player's rating is a guess from OR: no "now" points for it.
   if (props.player.hasKnownSkills()) datasets.push(
     {
+      key: "now-with-xp",
       label: `Now with XP (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithXp }],
       borderColor: "rgba(255, 99, 132, 1)",
@@ -172,6 +172,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
       showLine: false,
     },
     {
+      key: "now",
       label: `Now (${best.name})`,
       data: [{ x: exactAge, y: best.ratingWithBonus }],
       borderColor: "rgba(255, 99, 132, 1)",
@@ -185,6 +186,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   // overview or training-progress page simply has no history yet.
   if (history.value.length > 0) {
     datasets.push({
+      key: "history",
       label: "History",
       data: history.value,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -197,6 +199,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   if (projection.value.length > 0 && pace.value) {
     const { value, provisional } = pace.value;
     datasets.push({
+      key: "projection",
       label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(value * 100)}%${provisional ? ", provisional" : ""})`,
       data: projection.value,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -210,76 +213,28 @@ const buildDatasets = (): ChartDataset<"line">[] => {
   return datasets;
 };
 
-const render = () => {
-  if (!chartCanvas.value) return;
-  const range = ageRange(minAge.value, maxAge.value);
-  if (!range) return;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[BasketballGrowthChart] Failed to destroy previous chart:", error);
-    }
-    chartInstance = null;
-  }
-
-  try {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: "line",
-      data: { datasets: buildDatasets() },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: growthMetricScale(metric.value),
-          x: {
-            type: "linear",
-            min: range.min,
-            max: range.max,
-            title: { display: true, text: "Age" },
-            ticks: { stepSize: 1 },
-          },
-        },
-        plugins: {
-          legend: { display: true, position: "top" },
-          tooltip: {
-            callbacks: {
-              label: (context) => {
-                const point = context.raw as Point;
-                return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})`;
-              },
-            },
-          },
-        },
+// The chart, its age range and metric switch, and the legend's hidden lines:
+// shared by the three profile charts (src/components/growthChart.ts).
+const { render } = useProfileGrowthChart({
+  name: "BasketballGrowthChart",
+  canvas: chartCanvas,
+  minAge,
+  maxAge,
+  metric,
+  buildDatasets,
+  tooltip: {
+    callbacks: {
+      label: (context) => {
+        const point = context.raw as Point;
+        return `${context.dataset.label}: ${point.y} (Age ${point.x.toFixed(1)})`;
       },
-    });
-  } catch (error) {
-    console.error("[BasketballGrowthChart] Failed to render chart:", error);
-    chartInstance = null;
-  }
-};
+    },
+  },
+});
 
 onMounted(() => {
   render();
   load().catch((error) => console.error("[BasketballGrowthChart] Failed to load history:", error));
-});
-
-// Switching metric swaps the datasets and axis title in place - no new chart.
-watch(metric, (next) => {
-  if (!chartInstance) return;
-  chartInstance.data.datasets = buildDatasets();
-  applyGrowthMetricScale(chartInstance, next);
-  chartInstance.update();
-});
-
-// Mutate the axis in place: keeps the user's legend toggles.
-watch([minAge, maxAge], () => {
-  const range = ageRange(minAge.value, maxAge.value);
-  if (!chartInstance || !range) return;
-  chartInstance.options.scales!.x!.min = range.min;
-  chartInstance.options.scales!.x!.max = range.max;
-  chartInstance.update();
 });
 </script>
 

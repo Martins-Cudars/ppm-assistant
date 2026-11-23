@@ -11,6 +11,14 @@ import type { Chart, ChartDataset } from "chart.js";
 
 export type GrowthMetric = "skill" | "or";
 
+/**
+ * A profile chart's line with a stable key, set where the dataset is made.
+ * The chart keeps a line hidden from its legend by this key across rebuilds
+ * and metric switches (src/components/growthChart.ts); a label won't do, as
+ * some carry the pace, which changes when the history loads.
+ */
+export type KeyedDataset = ChartDataset<"line"> & { key: string };
+
 export const GROWTH_METRIC_KEY = "ppm-assistant:growth-metric";
 
 const asMetric = (value: unknown): GrowthMetric | null =>
@@ -117,10 +125,11 @@ export function orDatasets(options: {
   exactAge: number;
   current: number | undefined;
   history: { x: number; y: number }[];
-}): ChartDataset<"line">[] {
-  const datasets: ChartDataset<"line">[] = [];
+}): KeyedDataset[] {
+  const datasets: KeyedDataset[] = [];
   if (typeof options.current === "number" && options.current > 0) {
     datasets.push({
+      key: "or-now",
       label: "Now (OR)",
       data: [{ x: options.exactAge, y: options.current }],
       borderColor: "rgba(255, 99, 132, 1)",
@@ -132,6 +141,7 @@ export function orDatasets(options: {
   }
   if (options.history.length > 0) {
     datasets.push({
+      key: "or-history",
       label: "History (OR)",
       data: options.history,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -149,8 +159,9 @@ export function orDatasets(options: {
  * (relativeOrReference), drawn like the Skill view's top-5% lines. All three
  * sports' profile charts.
  */
-export function orReferenceDataset(line: readonly { age: number; or: number }[]): ChartDataset<"line"> {
+export function orReferenceDataset(line: readonly { age: number; or: number }[]): KeyedDataset {
   return {
+    key: "or-reference",
     label: "Top 5% (OR)",
     data: line.map((row) => ({ x: row.age, y: row.or })),
     borderColor: "#ccc",
@@ -174,10 +185,11 @@ export function orReferenceDataset(line: readonly { age: number; or: number }[])
 export function orProjectionDataset(
   points: { x: number; y: number }[],
   pace: { value: number; provisional: boolean } | null
-): ChartDataset<"line"> | null {
+): KeyedDataset | null {
   if (points.length === 0 || !pace) return null;
   const { value, provisional } = pace;
   return {
+    key: "or-projection",
     label: `Projected at own pace (OR, ${provisional ? "~" : ""}${Math.round(value * 100)}%${provisional ? ", provisional" : ""})`,
     data: points,
     borderColor: "rgba(54, 162, 235, 1)",

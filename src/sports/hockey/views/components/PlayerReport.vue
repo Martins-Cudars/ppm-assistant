@@ -655,6 +655,12 @@ const scheduleNoticeClear = () => {
   }, NOTICE_TIMEOUT_MS);
 };
 
+/** " The soccer league list ... ." for the sports named, or "" for none. */
+const leagueSkipNote = (sports: readonly string[], what: string) =>
+  sports.length === 0
+    ? ""
+    : ` The ${sports.join(" and ")} league list${sports.length > 1 ? "s" : ""} ${what}.`;
+
 const setNotice = (message: string, isError = false) => {
   backupNotice.value = message;
   backupError.value = isError;
@@ -672,15 +678,18 @@ const exportBackup = async () => {
   backupBusy.value = "export";
   setNotice("");
   try {
-    const backup = await createBackup();
-    if (!backup) {
+    const created = await createBackup();
+    if (!created) {
       setNotice("Could not read the skill history - no file was saved.", true);
       return;
     }
+    const { backup, skippedLeagues } = created;
     downloadBackup(backup);
     setNotice(
       `Saved ${backup.skillHistory.length.toLocaleString()} history records and ` +
-        `${Object.keys(backup.playerCaches).length} team cache(s).`
+        `${Object.keys(backup.playerCaches).length} team cache(s).` +
+        leagueSkipNote(skippedLeagues, "could not be read, so the file doesn't include it"),
+      skippedLeagues.length > 0
     );
   } catch (error) {
     console.error("[PlayerReport] Export failed:", error);
@@ -730,8 +739,9 @@ const performImport = async () => {
       : "";
     setNotice(
       `Imported ${result.entriesWritten.toLocaleString()} history records and ` +
-        `${result.playersWritten} players.${skipped}`,
-      parsed.skippedEntries > 0
+        `${result.playersWritten} players.${skipped}` +
+        leagueSkipNote(result.skippedLeagues, "stored here could not be read, so it was left as it is"),
+      parsed.skippedEntries > 0 || result.skippedLeagues.length > 0
     );
   } catch (error) {
     console.error("[PlayerReport] Import failed:", error);

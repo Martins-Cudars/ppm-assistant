@@ -304,12 +304,17 @@ export function fitLeagueOr(
   percentile: number,
   globalOr: number[]
 ) {
+  // The same test fitMeasuredLeague makes, first: too few points need no measuring.
+  if (tooFewLeaguePoints(points.length)) return null;
   return fitMeasuredLeague(points.length, measureLeague(points, ages, percentile, globalOr), ages, globalOr);
 }
 
+/** The league line's sparseness rule for its player-season points. */
+const tooFewLeaguePoints = (pointCount: number) => pointCount < MIN_LEAGUE_POINTS;
+
 /**
  * fitLeagueOr from a measureLeague result, so a caller that also counts its
- * ages measures once. Both sparseness guards live here.
+ * ages measures once. The sparseness guards that decide live here.
  */
 function fitMeasuredLeague(
   pointCount: number,
@@ -317,7 +322,7 @@ function fitMeasuredLeague(
   ages: number[],
   globalOr: number[]
 ) {
-  if (pointCount < MIN_LEAGUE_POINTS || known.length < MIN_LEAGUE_AGES) return null;
+  if (tooFewLeaguePoints(pointCount) || known.length < MIN_LEAGUE_AGES) return null;
 
   let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
   known.forEach(({ age, r, w }) => {

@@ -270,18 +270,25 @@ check("projection: shooting follows the line's rate age by age, and never outrun
   near(gained(26.4, 26.6, 32), perAge(26.4, 26.6, 32), 1e-6, "26 to 32");
   near(gained(18.5, 18.7, 25), perAge(18.5, 18.7, 25), 1e-6, "18 to 25");
   near(gained(15.5, 15.7, 18), perAge(15.5, 15.7, 18), 1e-6, "15 to 18");
-  // From 16 on the line's rate never rises, so a small rate at the measured
-  // age can't blow the bonus skills up: at most the observed rate a day. At
-  // 15 the line still rises into 16 (1.46 to 1.63 a day, x1.12), so a pace
-  // measured at 15 carries the bonus skills up to 1.12x their own rate - the
-  // line's own rise, not a blow-up; that is the bound there.
-  const rise15 = referencePerDay(curve, 16)! / referencePerDay(curve, 15)!;
-  near(rise15, 1.12, 0.01, "the line's rise from 15 to 16");
+  // A small rate at the measured age can't blow the bonus skills up: they
+  // outrun their own rate a day by at most the line's rise after that age,
+  // read off the curve. From 16 the line doesn't rise, so that is 1; a pace
+  // measured at 15 follows the line's rise from 15 to 16.
+  const riseAfter = (midAge: number, to: number) => {
+    let most = 1;
+    for (let age = Math.floor(midAge) + 1; age < to; age++) {
+      most = Math.max(most, referencePerDay(curve, age)! / referencePerDay(curve, midAge)!);
+    }
+    return most;
+  };
+  for (let midAge = 16; midAge < 34.5; midAge += 0.25) {
+    if (riseAfter(midAge, 35) !== 1) throw new Error(`the line rises after ${midAge}`);
+  }
   for (let midAge = 15; midAge < 34.5; midAge += 0.25) {
     for (const from of [midAge, midAge + 0.3]) {
       const to = Math.min(Math.floor(from) + 3, 35);
       if (from >= to) continue;
-      const most = shootingPerDay * 70 * (to - from) * (midAge < 16 ? rise15 : 1);
+      const most = shootingPerDay * 70 * (to - from) * riseAfter(midAge, to);
       if (gained(midAge, from, to) > most + 1e-9) {
         throw new Error(`measured at ${midAge}, ${from} to ${to}: ${gained(midAge, from, to)} > ${most}`);
       }

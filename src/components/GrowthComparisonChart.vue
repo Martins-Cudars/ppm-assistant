@@ -208,15 +208,17 @@ const referenceHidden = ref(false);
 // The row under the mouse wins over the one with keyboard focus.
 const hoveredId = ref<string | null>(null);
 const focusedId = ref<string | null>(null);
-// A hidden line, or one with no points on this metric, has nothing to pick
-// out, so the others aren't dimmed for it. Read from chartSeries, the list the
-// chart's datasets were built from (see there).
-const highlightedId = computed(() => {
+// The picked-out line among `list`. A hidden line, or one with no points on
+// this metric, has nothing to pick out, so the others aren't dimmed for it.
+const highlightIn = (list: readonly GrowthSeries[]) => {
   const id = hoveredId.value ?? focusedId.value;
   if (id === null || hiddenIds.value.has(id)) return null;
-  const series = chartSeries.value.find((candidate) => candidate.id === id);
+  const series = list.find((candidate) => candidate.id === id);
   return series && series[activeMetric.value].length > 0 ? id : null;
-});
+};
+// Against chartSeries, the list the chart's datasets were built from (see
+// there). A chart being built resolves it against its own list instead.
+const highlightedId = computed(() => highlightIn(chartSeries.value));
 // Only keyboard focus highlights: a clicked checkbox keeps the focus, and
 // its line would stay picked out after the mouse has left the list.
 const onRowFocus = (id: string, event: FocusEvent) => {
@@ -243,8 +245,7 @@ const setPlayersVisible = (visible: boolean) => {
  * highlight is an update per row passed), where plain values are resolved once
  * and shared by all of a line's points.
  */
-const playerLineStyle = (index: number, id: string) => {
-  const focus = highlightedId.value;
+const playerLineStyle = (index: number, id: string, focus = highlightedId.value) => {
   const color = colorForIndex(index, focus !== null && focus !== id ? 0.15 : 1);
   return {
     borderColor: color,
@@ -256,8 +257,8 @@ const playerLineStyle = (index: number, id: string) => {
     order: focus === id ? -1 : 0,
   };
 };
-const referenceLineColor = () =>
-  highlightedId.value !== null ? "rgba(187, 187, 187, 0.35)" : "#bbb";
+const referenceLineColor = (focus = highlightedId.value) =>
+  focus !== null ? "rgba(187, 187, 187, 0.35)" : "#bbb";
 
 // The one exception is a lone dot (see seriesStyle). Chart.js keeps shared
 // plain point options on an update("none"), so as a value the dot would stay
@@ -366,11 +367,13 @@ const seriesStyle = (series: GrowthSeries) => {
 
 /** The datasets for a chart of `list`: the reference first, then series i at i + 1. */
 const buildDatasets = (list: GrowthSeries[]): ChartDataset<"line">[] => {
+  // The highlight among the new list: chartSeries is still the old one here.
+  const focus = highlightIn(list);
   const datasets: ChartDataset<"line">[] = [];
   datasets.push({
     label: currentReference.value?.label ?? "",
     data: currentReference.value?.[activeMetric.value] ?? [],
-    borderColor: referenceLineColor(),
+    borderColor: referenceLineColor(focus),
     backgroundColor: "transparent",
     borderWidth: 2,
     borderDash: [4, 4],
@@ -391,7 +394,7 @@ const buildDatasets = (list: GrowthSeries[]): ChartDataset<"line">[] => {
       parsing: false,
       normalized: true,
       hidden: hiddenIds.value.has(series.id),
-      ...playerLineStyle(index, series.id),
+      ...playerLineStyle(index, series.id, focus),
       ...seriesStyle(series),
     });
   });
