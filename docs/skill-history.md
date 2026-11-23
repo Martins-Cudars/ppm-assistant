@@ -875,10 +875,19 @@ This also sidesteps the unsettled age-curve question (research item 7).
     its own row above the groups. Hovering a row, or reaching it by keyboard, thickens that
     line and dims the others (not for a hidden row or one with no points on the metric),
     in place with `chart.update("none")`; a clicked checkbox keeps the focus but doesn't
-    keep the highlight; the points' colours are scriptable
-    and follow the line, because Chart.js keeps shared point options on a `"none"` update.
+    keep the highlight. Only a lone dot's colour is scriptable (it follows its line, because
+    Chart.js keeps shared plain point options on a `"none"` update); every other point option
+    is a plain value, since a scriptable one makes Chart.js resolve options per point per update.
     Hidden lines are kept by series id in the component, so they survive a metric,
     reference or filter change.
+  - **Performance** (2026-11-23): the chart runs with `animation: false` (tooltip included),
+    `pointRadius` 0 on lines (a dot only under the mouse, `pointHitRadius` 5), `parsing: false` +
+    `normalized: true` on the player datasets (the points are already x-ascending `{x, y}`), and
+    the highlight update coalesced to one per animation frame. Before: the tooltip took ~210 ms
+    to appear (its fade-in animation), each side-list row hover cost ~80-100 ms of synchronous
+    update, a full redraw rasterised in 45-97 ms (after: ~1 ms, ~20 ms, 13-38 ms). Measured in headless Chrome on the real
+    component with 122 hockey players and ~2.7k points from the 2026-11-22 backup; the
+    harness was not committed.
   - **Full screen** (toolbar button): the Fullscreen API on the whole card, white
     background, chart and list filling the height. Esc or the button leaves;
     `fullscreenchange` keeps the icon in step and calls `chart.resize()`.

@@ -234,25 +234,35 @@ const setPlayersVisible = (visible: boolean) => {
   else setHidden(props.series.map((series) => series.id), true);
 };
 
-/** Colour, width and stacking of player `index`'s line under the current highlight. */
+/**
+ * Colour, width and stacking of player `index`'s line under the current
+ * highlight. The colours are plain values, not functions: a scriptable option
+ * makes Chart.js resolve the point options once per point on every update (the
+ * highlight is an update per row passed), where plain values are resolved once
+ * and shared by all of a line's points.
+ */
 const playerLineStyle = (index: number, id: string) => {
   const focus = highlightedId.value;
   const color = colorForIndex(index, focus !== null && focus !== id ? 0.15 : 1);
   return {
     borderColor: color,
     backgroundColor: color,
+    pointHoverBackgroundColor: color,
+    pointHoverBorderColor: color,
     borderWidth: focus === id ? 4 : 2,
     // Lower order draws on top; the reference sits underneath at 10.
     order: focus === id ? -1 : 0,
   };
 };
-// The points follow their line's colour through a function: Chart.js shares
-// (and, on update("none"), keeps) plain point options between updates, so
-// set as values the points would stay bright while their line dims.
-const pointColorOfLine = (context: ScriptableContext<"line">) =>
-  context.dataset.borderColor as Color;
 const referenceLineColor = () =>
   highlightedId.value !== null ? "rgba(187, 187, 187, 0.35)" : "#bbb";
+
+// The one exception is a lone dot (see seriesStyle). Chart.js keeps shared
+// plain point options on an update("none"), so as a value the dot would stay
+// bright while its line dims; as a function it follows. There are few lone
+// dots, so the per-point cost this avoids elsewhere doesn't apply.
+const pointColorOfLine = (context: ScriptableContext<"line">) =>
+  context.dataset.borderColor as Color;
 
 // --- Side list ------------------------------------------------------------------
 
@@ -333,8 +343,21 @@ const referenceLabel = computed(() =>
  */
 const seriesStyle = (series: GrowthSeries) => {
   const data = series[activeMetric.value];
+  const lone = data.length === 1;
   // A lone point (no history yet) is drawn as a dot so the player still shows.
-  return { data, pointRadius: data.length === 1 ? 5 : 2, showLine: data.length > 1 };
+  // On a line the points are drawn only under the mouse: with ~100 lines, a
+  // dot per capture is both clutter and the bulk of every redraw.
+  return {
+    data,
+    pointRadius: lone ? 5 : 0,
+    // Undefined falls back to the default, which a radius-0 point never shows.
+    pointBackgroundColor: lone ? pointColorOfLine : undefined,
+    pointBorderColor: lone ? pointColorOfLine : undefined,
+    pointHoverRadius: 5,
+    // What a hover has to land within (with no visible dot, this is the whole target).
+    pointHitRadius: 5,
+    showLine: data.length > 1,
+  };
 };
 
 const buildDatasets = (): ChartDataset<"line">[] => {
@@ -358,8 +381,10 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     datasets.push({
       label: series.label,
       tension: 0,
-      pointBackgroundColor: pointColorOfLine,
-      pointBorderColor: pointColorOfLine,
+      // Already x-ascending {x, y} (history is date-sorted), so Chart.js
+      // skips parsing and sorting every point on each update.
+      parsing: false,
+      normalized: true,
       hidden: hiddenIds.value.has(series.id),
       ...playerLineStyle(index, series.id),
       ...seriesStyle(series),
@@ -399,6 +424,12 @@ const renderChart = () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        // No transitions: with ~100 lines, each hover and each update would
+        // otherwise replay one (every frame a full redraw), so the tooltip
+        // fades in over a few hundred ms and the side list's highlight lags.
+        animation: false,
+        // Only a point under the mouse gets a tooltip.
+        interaction: { mode: "nearest", intersect: true },
         scales: {
           // OR doesn't start from zero, or its growth would flatten into a line.
           y: growthMetricScale(activeMetric.value),
@@ -414,6 +445,7 @@ const renderChart = () => {
           // The side list is the legend.
           legend: { display: false },
           tooltip: {
+            animation: false,
             callbacks: {
               label: (context) => {
                 const point = context.raw as Point;
@@ -452,7 +484,17 @@ const applyHighlight = () => {
   });
   chartInstance.update("none");
 };
-watch(highlightedId, applyHighlight);
+// Moving from one row to the next is a mouseleave and a mouseenter, so the
+// highlight clears and sets within one frame: wait for the frame, and a sweep
+// down the list costs one update per frame, not two per row.
+let highlightFrame = 0;
+watch(highlightedId, () => {
+  if (highlightFrame) return;
+  highlightFrame = requestAnimationFrame(() => {
+    highlightFrame = 0;
+    applyHighlight();
+  });
+});
 
 // The canvas box is measured at construction, so wait for v-show to flush.
 const rerender = async () => {
@@ -527,6 +569,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("fullscreenchange", onFullscreenChange);
+  cancelAnimationFrame(highlightFrame);
   destroyChart();
 });
 </script>
