@@ -183,6 +183,22 @@ const fitOf = (or: number[]): RelativeSkillFit => ({
     eq(empty.reads.snapshots, 0, "empty list");
   });
 
+  await check("worker fit: a league list that can't be read -> error, not no-league", async () => {
+    const fitter = createLeagueReferenceFitter(settings);
+    const failing = sources(league(58), population("t1"));
+    failing.readLeague = async () => {
+      throw new Error("storage unavailable");
+    };
+    const quiet = console.error;
+    console.error = () => {};
+    try {
+      eq(await fitter("hockey", 58, failing), { table: null, status: { kind: "error" } });
+    } finally {
+      console.error = quiet;
+    }
+    eq(failing.reads.snapshots, 0, "the snapshots are never read");
+  });
+
   await check("worker fit: a list from an earlier season is stale, and the snapshots are never read", async () => {
     const fitter = createLeagueReferenceFitter(settings);
     const stale = sources(league(57), population("t1"));

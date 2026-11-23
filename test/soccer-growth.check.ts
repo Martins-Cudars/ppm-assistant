@@ -91,6 +91,14 @@ check("juniors: League / Elite take the shape without the correction", () => {
   eq(uncorrectedSeasonGain(35), null, "past the projection age");
 });
 
+check("juniors: Pace's rate is the uncorrected one, raised at 15 and 16 only", () => {
+  for (let age = 15; age < 35; age++) {
+    const factor = JUNIOR_RATE_FACTORS[age];
+    const expected = factor ? smoothed[age] * factor : uncorrectedSeasonGain(age + 0.5);
+    eq(expectedSeasonGain(age + 0.5), expected, `at ${age}`);
+  }
+});
+
 check("juniors: the same points read the same Pace at 15 as the squad median does at 17", () => {
   // 0.53 x the rate at 17 is the 17+ median; a 15-year-old who gains what the
   // measured 15-year-old median gains (0.95 of the line's raw rate at 15)

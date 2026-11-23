@@ -331,8 +331,20 @@ watch(
   { deep: true }
 );
 
+// An age-range change moves the bounds in place, as the basketball and soccer
+// charts do: a rebuilt chart would forget the lines hidden from its legend.
 watch([minAge, maxAge], () => {
-  renderChartWithLogic();
+  // No chart yet (the range was invalid when it was due): build it now.
+  if (!chartInstance) {
+    renderChartWithLogic();
+    return;
+  }
+  const min = Number.isFinite(minAge.value) ? minAge.value : 15;
+  const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
+  if (min >= max) return;
+  chartInstance.options.scales!.x!.min = min;
+  chartInstance.options.scales!.x!.max = max;
+  chartInstance.update();
 });
 
 // Switching metric swaps the datasets and axis title in place - no new chart.

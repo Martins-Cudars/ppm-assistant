@@ -6,7 +6,7 @@
  * that isn't available (a static harness, or before the worker ran), the
  * page's own sessionStorage keeps it per origin and tab.
  */
-import { ref, type Ref } from "vue";
+import { ref, watch, type Ref } from "vue";
 import type { Chart, ChartDataset } from "chart.js";
 
 export type GrowthMetric = "skill" | "or";
@@ -42,15 +42,20 @@ export function useGrowthMetric(options: { fallback?: GrowthMetric; force?: Grow
   const metric = ref<GrowthMetric>(options.force ?? readLocal() ?? options.fallback ?? "skill");
   const area = sessionArea();
   if (!options.force && area) {
-    const initial = metric.value;
+    // Any change while the read is pending is the user's choice, and it
+    // stands. Comparing with the initial value instead would miss a switch
+    // there and back (Skill, OR, Skill) and overwrite it.
+    let userChose = false;
+    const stopWatching = watch(metric, () => (userChose = true), { flush: "sync" });
     area
       .get(GROWTH_METRIC_KEY)
       .then((data) => {
+        stopWatching();
         const stored = asMetric(data?.[GROWTH_METRIC_KEY]);
-        // Only if the user hasn't switched while it was read.
-        if (stored && metric.value === initial) metric.value = stored;
+        if (stored && !userChose) metric.value = stored;
       })
       .catch(() => {
+        stopWatching();
         // Not opened to this context: the sessionStorage copy stands.
       });
   }

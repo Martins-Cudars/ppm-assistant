@@ -305,7 +305,15 @@ export function fitLeagueOr(
   globalOr: number[]
 ) {
   if (points.length < MIN_LEAGUE_POINTS) return null;
-  const { measured, ratios, known } = measureLeague(points, ages, percentile, globalOr);
+  return fitMeasuredLeague(measureLeague(points, ages, percentile, globalOr), ages, globalOr);
+}
+
+/** fitLeagueOr from a measureLeague result, so a caller that also counts its ages measures once. */
+function fitMeasuredLeague(
+  { measured, ratios, known }: ReturnType<typeof measureLeague>,
+  ages: number[],
+  globalOr: number[]
+) {
   if (known.length < MIN_LEAGUE_AGES) return null;
 
   let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
@@ -463,12 +471,13 @@ export function fitLeagueReference(
   const ages = agesBetween(fit.rows[0].age, fit.rows[fit.rows.length - 1].age);
   const globalOr = fit.rows.map((row) => row.or);
   const points = scoutPoints(snapshots, daysPerSeason, (row) => isLeagueSnapshot(row, league, teams));
-  const measuredAges = measureLeague(points, ages, fit.percentile, globalOr).known.length;
-  const fitted = fitLeagueOr(points, ages, fit.percentile, globalOr);
+  // Measured once: the ages count is reported even when the fit is too sparse.
+  const measurement = measureLeague(points, ages, fit.percentile, globalOr);
+  const fitted = points.length >= MIN_LEAGUE_POINTS ? fitMeasuredLeague(measurement, ages, globalOr) : null;
   return {
     table: fitted ? referenceTable(fit, fitted.curve) : null,
     points: points.length,
-    ages: measuredAges,
+    ages: measurement.known.length,
   };
 }
 

@@ -126,7 +126,7 @@
  * pick one line out. Which lines are hidden is kept here by series id, so it
  * survives a metric switch, a reference switch and a rebuilt chart.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import Chart from "chart.js/auto";
 import type { ChartDataset, Color, ScriptableContext } from "chart.js";
 
@@ -156,8 +156,11 @@ const root = ref<HTMLElement | null>(null);
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
 // The series the chart was built from: dataset i + 1 is chartSeries[i]. Until
-// a rerender catches up, props.series can already be a different list.
-let chartSeries: GrowthSeries[] = [];
+// a rerender catches up, props.series can already be a different list, so
+// everything that has to match the chart (the side list's rows and colours,
+// the highlight, visibility) reads this, never props.series. Reactive, so the
+// side list and the highlight follow each rebuilt chart.
+const chartSeries = shallowRef<GrowthSeries[]>([]);
 const minAge = ref(15);
 const maxAge = ref(30);
 const activeMetric = useGrowthMetric();
@@ -207,12 +210,11 @@ const hoveredId = ref<string | null>(null);
 const focusedId = ref<string | null>(null);
 // A hidden line, or one with no points on this metric, has nothing to pick
 // out, so the others aren't dimmed for it. Read from chartSeries, the list the
-// chart's datasets were built from, as applyVisibility and applyHighlight do:
-// props.series can already be a newer list before the rerender.
+// chart's datasets were built from (see there).
 const highlightedId = computed(() => {
   const id = hoveredId.value ?? focusedId.value;
   if (id === null || hiddenIds.value.has(id)) return null;
-  const series = chartSeries.find((candidate) => candidate.id === id);
+  const series = chartSeries.value.find((candidate) => candidate.id === id);
   return series && series[activeMetric.value].length > 0 ? id : null;
 });
 // Only keyboard focus highlights: a clicked checkbox keeps the focus, and
@@ -286,10 +288,12 @@ type LegendRow = {
 };
 type LegendGroup = { name: string; rows: LegendRow[]; state: "all" | "some" | "none" };
 
+// The chart's series, not props.series: a row's colour is its line's, by the
+// line's index in the chart.
 const legendGroups = computed<LegendGroup[]>(() => {
   const query = normalizeName(search.value.trim());
   const groups = new Map<string, LegendRow[]>();
-  props.series.forEach((series, index) => {
+  chartSeries.value.forEach((series, index) => {
     if (query && !normalizeName(series.label).includes(query)) return;
     const name = series.group && series.group !== "?" ? series.group : OTHER_GROUP;
     const rows = groups.get(name) ?? [];
@@ -377,7 +381,7 @@ const buildDatasets = (): ChartDataset<"line">[] => {
     order: 10,
     hidden: referenceHidden.value,
   });
-  props.series.forEach((series, index) => {
+  chartSeries.value.forEach((series, index) => {
     datasets.push({
       label: series.label,
       tension: 0,
@@ -398,6 +402,10 @@ const safeRange = () => {
   const max = Number.isFinite(maxAge.value) ? maxAge.value : 45;
   return min < max ? { min, max } : null;
 };
+// The last valid range the chart was given. A rebuild while the inputs are
+// mid-edit (min >= max) keeps it rather than skipping the rebuild, which
+// would leave the chart and the side list on the old series.
+let shownRange = { min: minAge.value, max: maxAge.value };
 
 const destroyChart = () => {
   if (!chartInstance) return;
@@ -407,17 +415,18 @@ const destroyChart = () => {
     console.error("[GrowthComparisonChart] Failed to destroy previous chart:", error);
   }
   chartInstance = null;
-  chartSeries = [];
+  chartSeries.value = [];
 };
 
 const renderChart = () => {
-  const range = safeRange();
-  if (!chartCanvas.value || !range) return;
+  if (!chartCanvas.value) return;
+  const range = safeRange() ?? shownRange;
+  shownRange = range;
 
   destroyChart();
 
   try {
-    chartSeries = props.series;
+    chartSeries.value = props.series;
     chartInstance = new Chart(chartCanvas.value, {
       type: "line",
       data: { datasets: buildDatasets() },
@@ -466,7 +475,7 @@ const renderChart = () => {
 const applyVisibility = () => {
   if (!chartInstance) return;
   chartInstance.setDatasetVisibility(0, !referenceHidden.value);
-  chartSeries.forEach((series, index) => {
+  chartSeries.value.forEach((series, index) => {
     chartInstance!.setDatasetVisibility(index + REFERENCE_DATASETS, !hiddenIds.value.has(series.id));
   });
   chartInstance.update();
@@ -479,7 +488,7 @@ const applyHighlight = () => {
   if (!chartInstance) return;
   const [reference, ...players] = chartInstance.data.datasets as ChartDataset<"line">[];
   reference.borderColor = referenceLineColor();
-  chartSeries.forEach((series, index) => {
+  chartSeries.value.forEach((series, index) => {
     if (players[index]) Object.assign(players[index], playerLineStyle(index, series.id));
   });
   chartInstance.update("none");
@@ -512,7 +521,7 @@ watch(activeMetric, (metric) => {
   const [reference, ...players] = chartInstance.data.datasets as ChartDataset<"line">[];
   reference.data = currentReference.value?.[metric] ?? [];
   reference.label = currentReference.value?.label ?? "";
-  chartSeries.forEach((series, index) => {
+  chartSeries.value.forEach((series, index) => {
     if (players[index]) Object.assign(players[index], seriesStyle(series));
   });
   applyGrowthMetricScale(chartInstance, metric);
@@ -533,6 +542,7 @@ watch(currentReference, (reference) => {
 watch([minAge, maxAge], () => {
   const range = safeRange();
   if (!chartInstance || !range) return;
+  shownRange = range;
   chartInstance.options.scales!.x!.min = range.min;
   chartInstance.options.scales!.x!.max = range.max;
   chartInstance.update();

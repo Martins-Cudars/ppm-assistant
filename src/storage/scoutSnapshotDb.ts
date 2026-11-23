@@ -87,12 +87,21 @@ export function validLeagueTeams(value: unknown): LeagueTeams | null {
   };
 }
 
-/** The stored league list of a sport, or null when none was saved yet. */
+/**
+ * The stored league list of a sport, or null when none was saved yet.
+ * Rejects when storage can't be read, so a caller can tell a failure from a
+ * list that isn't there (the league fit reports the first as an error).
+ */
+export async function loadLeagueTeams(sport: Sport): Promise<LeagueTeams | null> {
+  const key = leagueStorageKey(sport);
+  const data = await chrome.storage.local.get(key);
+  return validLeagueTeams(data[key]);
+}
+
+/** loadLeagueTeams, with a read failure logged and taken as no list. */
 export async function readLeagueTeams(sport: Sport): Promise<LeagueTeams | null> {
   try {
-    const key = leagueStorageKey(sport);
-    const data = await chrome.storage.local.get(key);
-    return validLeagueTeams(data[key]);
+    return await loadLeagueTeams(sport);
   } catch (error) {
     console.error("[ScoutSnapshotDb] Failed to read the league list:", error);
     return null;

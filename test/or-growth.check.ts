@@ -11,7 +11,12 @@
 
 import { OR_BASIS_AFTER_DAYS, measureOrGain } from "@/base/orGrowth";
 import { orReferenceTable, smoothedOrSeasonGains } from "@/base/relativeSkillFit";
-import { orProjectionDataset, orReferenceDataset } from "@/components/growthMetric";
+import {
+  GROWTH_METRIC_KEY,
+  orProjectionDataset,
+  orReferenceDataset,
+  useGrowthMetric,
+} from "@/components/growthMetric";
 import * as hockey from "@/sports/hockey/growthPace";
 import * as soccer from "@/sports/soccer/growthPace";
 import {
@@ -285,6 +290,65 @@ check("the OR datasets: a grey Top 5% (OR) line and a dashed projection with the
   eq(orProjectionDataset([], { value: 0.61, provisional: false }), null, "no points");
   eq(orProjectionDataset(points, null), null, "no pace");
 });
+
+// The remembered metric: chrome.storage.session is read late, and a choice
+// the user made while it was read wins over it, even a switch there and back.
+{
+  let settle: (data: Record<string, unknown>) => void = () => {};
+  (globalThis as { chrome?: unknown }).chrome = {
+    storage: {
+      session: {
+        get: () => new Promise<Record<string, unknown>>((resolve) => (settle = resolve)),
+        set: async () => {},
+      },
+    },
+  };
+  const stored = { [GROWTH_METRIC_KEY]: "or" };
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const metricChecks: [string, () => Promise<void>][] = [
+    [
+      "metric: the shared session's value applies when the user hasn't chosen",
+      async () => {
+        const metric = useGrowthMetric();
+        eq(metric.value, "skill", "before the read");
+        settle(stored);
+        await flush();
+        eq(metric.value, "or");
+      },
+    ],
+    [
+      "metric: a switch there and back while the read is pending stands (Skill, OR, Skill)",
+      async () => {
+        const metric = useGrowthMetric();
+        metric.value = "or";
+        metric.value = "skill";
+        settle(stored);
+        await flush();
+        eq(metric.value, "skill");
+      },
+    ],
+    [
+      "metric: a switch while the read is pending stands",
+      async () => {
+        const metric = useGrowthMetric();
+        metric.value = "or";
+        settle({ [GROWTH_METRIC_KEY]: "skill" });
+        await flush();
+        eq(metric.value, "or");
+      },
+    ],
+  ];
+  for (const [name, fn] of metricChecks) {
+    try {
+      await fn();
+      console.log("PASS", name);
+    } catch (e) {
+      failures++;
+      console.log("FAIL", name, "-", (e as Error).message);
+    }
+  }
+  delete (globalThis as { chrome?: unknown }).chrome;
+}
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 if (failures > 0) process.exitCode = 1;

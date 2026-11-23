@@ -29,6 +29,7 @@ import {
   measureBasketballPace,
   projectBasketball,
   projectBasketballPotential,
+  referencePerDay,
   referencePointsBetween,
   solveBalancedBasketballRating,
 } from "@/sports/basketball/growthModel";
@@ -237,6 +238,49 @@ check("projection: the factor a pace was measured at is divided out", () => {
   const b = projectBasketball(now, 190, 26, { ...at20, midAge: 26, campDaysPerSeason: 0 }, flatCurve(1), 27)!;
   // The same pace read at 26 stands for a faster underlying pace than at 20.
   near(b.points / a.points, 1 / 0.84, 1e-6, "1 / 0.84");
+});
+
+check("projection: shooting follows the line's rate age by age, and never outruns its own rate", () => {
+  // The bonus skills' rate scales with the line's rate (and the age factor)
+  // at each future age, relative to the age the pace was measured at. That
+  // is curvePoints / (rate at the measured age x its factor), summed here a
+  // year at a time on the real line, whose rate varies (1.09 at 26, 0.13 at 32).
+  const entries = history(56, ["passing", "technical", "speed", "shooting"], () => 1);
+  const measured = measureBasketballPace(entries, 20, BASKETBALL_REFERENCE_CURVE, TODAY)!;
+  const curve = BASKETBALL_REFERENCE_CURVE;
+  const at = (midAge: number) => ({
+    ...measured,
+    midAge,
+    referencePerDay: referencePerDay(curve, midAge),
+    campDaysPerSeason: 0,
+  });
+  const now = entries[entries.length - 1].skills;
+  const shootingPerDay = measured.pointsPerDay * measured.skillShares.shooting;
+  const perAge = (midAge: number, from: number, to: number) => {
+    let total = 0;
+    for (let age = from; age < to; age = Math.min(Math.floor(age) + 1, to)) {
+      const end = Math.min(Math.floor(age) + 1, to);
+      const rate = referencePerDay(curve, age)! / referencePerDay(curve, midAge)!;
+      total += shootingPerDay * 70 * (end - age) * rate * (agePaceFactor(age) / agePaceFactor(midAge));
+    }
+    return total;
+  };
+  const gained = (midAge: number, from: number, to: number) =>
+    projectBasketball(now, 190, from, at(midAge), curve, to)!.skills.shooting - now.shooting;
+  near(gained(26.4, 26.6, 32), perAge(26.4, 26.6, 32), 1e-6, "26 to 32");
+  near(gained(18.5, 18.7, 25), perAge(18.5, 18.7, 25), 1e-6, "18 to 25");
+  // From 17 on the line's rate never rises, so a small rate at the measured
+  // age can't blow the bonus skills up: at most the observed rate a day.
+  for (let midAge = 17; midAge < 34.5; midAge += 0.25) {
+    for (const from of [midAge, midAge + 0.3]) {
+      const to = Math.min(Math.floor(from) + 3, 35);
+      if (from >= to) continue;
+      const most = shootingPerDay * 70 * (to - from);
+      if (gained(midAge, from, to) > most + 1e-9) {
+        throw new Error(`measured at ${midAge}, ${from} to ${to}: ${gained(midAge, from, to)} > ${most}`);
+      }
+    }
+  }
 });
 
 check("projection: height grows at its rate until the stop age, then holds", () => {

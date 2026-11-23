@@ -21,7 +21,7 @@ import { mergeHistoryEntry } from "@/storage/historyMerge";
 import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
 import { ScoutCoverage, ScoutSnapshot, scoutStoreName } from "@/types/ScoutSnapshot";
 import { mergeScoutSnapshot } from "@/storage/scoutMerge";
-import { readLeagueTeams } from "@/storage/scoutSnapshotDb";
+import { loadLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { createLeagueReferenceFitter } from "@/storage/leagueReferenceFit";
 
 const DB_NAME = "ppm-assistant-skill-history";
@@ -102,6 +102,11 @@ async function upsertEntries(
  * Bumped on every write to a sport's scout store, so the league fit's cache
  * (src/storage/leagueReferenceFit.ts) sees a same-day merge that leaves the
  * count unchanged. In memory: a restarted worker has no cache to invalidate.
+ *
+ * Bumped once the write's transaction has committed, never before: a fit
+ * running meanwhile could otherwise read the new version and the old
+ * snapshots, and cache the old fit under the new key. A fit that reads the
+ * old version and the new snapshots is harmless: the next one refits.
  */
 const scoutWrites = new Map<Sport, number>();
 const bumpScoutWrites = (sport: Sport) => scoutWrites.set(sport, (scoutWrites.get(sport) ?? 0) + 1);
@@ -109,7 +114,6 @@ const bumpScoutWrites = (sport: Sport) => scoutWrites.set(sport, (scoutWrites.ge
 /** Scouted roster snapshots: merged per player/day, like the history above. */
 async function upsertScoutSnapshots(snapshots: ScoutSnapshot[], sport: Sport): Promise<number> {
   if (snapshots.length === 0) return 0;
-  bumpScoutWrites(sport);
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -125,7 +129,10 @@ async function upsertScoutSnapshots(snapshots: ScoutSnapshot[], sport: Sport): P
       };
     });
 
-    tx.oncomplete = () => resolve(snapshots.length);
+    tx.oncomplete = () => {
+      bumpScoutWrites(sport);
+      resolve(snapshots.length);
+    };
     tx.onerror = () => reject(tx.error);
   });
 }
@@ -639,7 +646,7 @@ chrome.runtime.onMessage.addListener(
 
     if (message.type === "RELATIVE_SKILL_LEAGUE") {
       fitLeagueReference(sport, message.currentSeason, {
-        readLeague: () => readLeagueTeams(sport),
+        readLeague: () => loadLeagueTeams(sport),
         snapshotVersion: async () => `${scoutWrites.get(sport) ?? 0}:${await countScoutSnapshots(sport)}`,
         readSnapshots: () => getAllScoutSnapshots(sport),
       })
@@ -662,9 +669,12 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === "SCOUT_CLEAR") {
-      bumpScoutWrites(sport);
       clearEntries(sport, scoutStoreName(sport))
-        .then((cleared) => sendResponse({ type: "SCOUT_CLEAR", cleared }))
+        .then((cleared) => {
+          // After the commit, as in upsertScoutSnapshots.
+          bumpScoutWrites(sport);
+          sendResponse({ type: "SCOUT_CLEAR", cleared });
+        })
         .catch((error) => {
           console.error("[Background] Failed to clear scout snapshots:", error);
           sendResponse({ type: "SCOUT_CLEAR", cleared: null });

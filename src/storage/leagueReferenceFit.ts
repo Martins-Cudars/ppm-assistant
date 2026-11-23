@@ -31,6 +31,7 @@ export type LeagueReferenceResult = { table: GrowthPrediction | null; status: Le
 
 /** What the fit reads, injected so a check can run it without the worker. */
 export type LeagueReferenceSources = {
+  /** Null when no list is stored; rejects when it can't be read. */
   readLeague: () => Promise<LeagueTeams | null>;
   /** Changes whenever the sport's snapshots change. */
   snapshotVersion: () => Promise<string>;
@@ -55,7 +56,15 @@ export function createLeagueReferenceFitter(settings = LEAGUE_FIT_SETTINGS) {
     currentSeason: number | null,
     sources: LeagueReferenceSources
   ): Promise<LeagueReferenceResult> {
-    const league = await sources.readLeague();
+    let league: LeagueTeams | null;
+    try {
+      league = await sources.readLeague();
+    } catch (error) {
+      // A list that can't be read is not a missing one: "no-league" would
+      // send the user to a league page that already has one stored.
+      console.error("[LeagueReferenceFit] Failed to read the league list:", error);
+      return { table: null, status: { kind: "error" } };
+    }
     if (!league || league.teamIds.length === 0) return { table: null, status: { kind: "no-league" } };
     if (!isLeagueListCurrent(league, currentSeason)) {
       return { table: null, status: { kind: "stale", listSeason: league.season, currentSeason: currentSeason! } };

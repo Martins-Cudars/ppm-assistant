@@ -29,6 +29,7 @@ import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import {
   CAMP_UNTIL_AGE,
+  JUNIOR_RATE_FACTORS,
   PACE_MIN_SPAN_DAYS,
   PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
@@ -161,8 +162,7 @@ const paceTitle = (player: SoccerPlayer) => {
     `(${pace.measuredDays} days measured, ${pace.fromDate} to ${pace.toDate})`,
     pace.expectedPerSeason === null
       ? "No reference pace to compare against at this age"
-      : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` +
-        (age <= 23 ? "the top-5% line" : "your squad's own slowdown after 23"),
+      : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` + referenceRateSource(age),
   ];
   const skipped = [
     pace.skippedNoTrainingDays > 0 ? `${pace.skippedNoTrainingDays} no-training days` : "",
@@ -178,6 +178,17 @@ const paceTitle = (player: SoccerPlayer) => {
     lines.unshift(`Provisional: only ${pace.measuredDays} days of data - settles at ${PACE_MIN_SPAN_DAYS}`);
   }
   return lines.join("\n");
+};
+
+/**
+ * Where the 100% rate at a whole age comes from, for the Pace tooltip. At 15
+ * and 16 it is the top-5% line's rate raised by JUNIOR_RATE_FACTORS, so it
+ * isn't the line itself.
+ */
+const referenceRateSource = (age: number) => {
+  const junior = JUNIOR_RATE_FACTORS[age];
+  if (junior !== undefined) return `the top-5% line's rate x ${junior}, raised for juniors at 15 and 16`;
+  return age <= 23 ? "the top-5% line's rate" : "your squad's own slowdown after 23";
 };
 
 /** How the projection accounts for camps, for the @25 title. */
@@ -235,7 +246,8 @@ const atAgeValues = (targetAge: number) => {
       title:
         `Projected: ${pace.position} rating (no XP) at ${targetAge}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the reference pace from ` +
-        "here on (the top-5% line to 23, your squad's own slowdown after). Any lagging main " +
+        `here on (the top-5% line to 23${exactAge < 17 ? ", raised for juniors at 15 and 16" : ""}, ` +
+        "your squad's own slowdown after). Any lagging main " +
         "skill is caught up first; other skills keep their current rate. " +
         campAllowanceText(pace, exactAge) +
         (pace.provisional ? `Provisional: the pace rests on only ${pace.measuredDays} days of data.` : ""),

@@ -77,6 +77,12 @@ export const REFERENCE_SLOPE_FROM_24: Readonly<Record<number, number>> = Object.
   Object.entries(SQUAD_SLOPE_SHARE_FROM_24).map(([age, share]) => [age, Math.round(share * slopeAt23)])
 );
 
+/** The 100% rate without the junior correction, per whole age: see uncorrectedSeasonGain. */
+const UNCORRECTED_SEASON_GAINS: Readonly<Record<number, number>> = {
+  ...SMOOTHED_SEASON_GAINS,
+  ...REFERENCE_SLOPE_FROM_24,
+};
+
 /**
  * The junior correction of the 100% rate at 15 and 16 (2026-11-23). The
  * line's smoothed rate starts at only 42 a season at 15 (58 at 16, 64 at 17):
@@ -113,14 +119,6 @@ export const juniorRates = (
   );
 
 /**
- * How fast players pace at each age against the reference, relative to 17+.
- * All 1.00 since the junior correction moved into the rate
- * (JUNIOR_RATE_FACTORS); the bands stay so scripts/measure-age-factors.ts
- * keeps measuring 15, 16 and 17+ separately (it should now read ~1.00 at
- * each). Against the old table the junior factors were 1.4 / 1.18, against
- * the line's raw steps 1.74 / 0.80.
- */
-/**
  * The 100% rate's shape without the junior correction: the line's smoothed
  * rate to 23 and the squad's decline from 24, per whole age, null where it
  * isn't positive or from the projection age limit on. The correction belongs
@@ -129,10 +127,18 @@ export const juniorRates = (
  */
 export function uncorrectedSeasonGain(age: number): number | null {
   if (!Number.isFinite(age) || age >= PROJECTION_MAX_AGE) return null;
-  const gain = { ...SMOOTHED_SEASON_GAINS, ...REFERENCE_SLOPE_FROM_24 }[Math.floor(age)];
+  const gain = UNCORRECTED_SEASON_GAINS[Math.floor(age)];
   return gain !== undefined && gain > 0 ? gain : null;
 }
 
+/**
+ * How fast players pace at each age against the reference, relative to 17+.
+ * All 1.00 since the junior correction moved into the rate
+ * (JUNIOR_RATE_FACTORS); the bands stay so scripts/measure-age-factors.ts
+ * keeps measuring 15, 16 and 17+ separately (it should now read ~1.00 at
+ * each). Against the old table the junior factors were 1.4 / 1.18, against
+ * the line's raw steps 1.74 / 0.80.
+ */
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
   { fromAge: 0, factor: 1.0 },
   { fromAge: 16, factor: 1.0 },
@@ -171,10 +177,10 @@ export const soccerGrowthConfig: GrowthConfig<SoccerSkills> = {
   bonusCapRatio: soccerPlayerProfile.bonusCapRatio ?? 1,
   daysPerSeason: soccerPlayerProfile.daysPerSeason,
   growthTable: relativeSkillReference,
+  // The junior ages (15, 16) and the squad's slope (24 on) don't overlap.
   referenceSlopeOverrides: {
-    ...SMOOTHED_SEASON_GAINS,
+    ...UNCORRECTED_SEASON_GAINS,
     ...juniorRates(SMOOTHED_SEASON_GAINS, JUNIOR_RATE_FACTORS),
-    ...REFERENCE_SLOPE_FROM_24,
   },
   agePaceFactors: AGE_PACE_FACTORS,
   pace: {
