@@ -60,6 +60,12 @@ export interface BackupFile {
   scoutSnapshots?: Partial<Record<Sport, ScoutSnapshot[]>>;
   /** Version 3+: the user's league per sport, which the LEAGUE line filters by. */
   leagues?: Partial<Record<Sport, LeagueTeams>>;
+  /**
+   * Sports whose stored league list couldn't be read at export, so `leagues`
+   * lacks them though a list may be stored. A restore leaves those sports'
+   * stored lists alone. Absent from older files: none were skipped.
+   */
+  leaguesSkipped?: Sport[];
 }
 
 /**

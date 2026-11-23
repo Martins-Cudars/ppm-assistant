@@ -10,7 +10,12 @@
  * All 12 passed against the compiled module on 2026-08-30.
  */
 
-import { parseBackup, readLeagueListsForBackup, restoreLeagueList } from "@/storage/backup";
+import {
+  fileLeagueList,
+  parseBackup,
+  readLeagueListsForBackup,
+  restoreLeagueList,
+} from "@/storage/backup";
 import type { LeagueTeams } from "@/types/ScoutSnapshot";
 import type { Sport } from "@/types/Sport";
 import { BACKUP_FORMAT, BACKUP_VERSION } from "@/types/Backup";
@@ -72,6 +77,12 @@ check("accepts a valid backup", () => {
   eq(r.backup.skillHistory.length, 2, "entries");
   eq(r.skippedEntries, 0, "skipped");
   eq(Object.keys(r.backup.playerCaches).length, 1, "caches");
+});
+
+check("league lists the export couldn't read: kept from the file; unknown sports dropped", () => {
+  const r = parseBackup(JSON.stringify({ ...good, leaguesSkipped: ["soccer", "curling", 3] }));
+  eq(JSON.stringify(r.backup.leaguesSkipped), JSON.stringify(["soccer"]));
+  eq(parseBackup(JSON.stringify(good)).backup.leaguesSkipped, undefined, "older files have none");
 });
 
 check("rejects non-JSON", () => throws(() => parseBackup("not json"), "valid JSON"));
@@ -218,6 +229,17 @@ check("basketball history is read and filtered like hockey's", () => {
         eq(await restoreLeagueList("soccer", list("2026-10-01"), "replace", io), "saved");
         eq(await restoreLeagueList("hockey", undefined, "replace", io), "cleared");
         eq(JSON.stringify([io.saved, io.cleared]), JSON.stringify([["soccer"], ["hockey"]]));
+      },
+    ],
+    [
+      "restore: a list the export couldn't read leaves the stored one alone, in both modes",
+      async () => {
+        const io = store(failing);
+        const file = { leagues: { hockey: list("2026-11-20") }, leaguesSkipped: ["soccer" as Sport] };
+        eq(await restoreLeagueList("soccer", fileLeagueList(file, "soccer"), "replace", io), "unchanged", "replace");
+        eq(await restoreLeagueList("soccer", fileLeagueList(file, "soccer"), "merge", io), "unchanged", "merge");
+        eq(await restoreLeagueList("basketball", fileLeagueList(file, "basketball"), "replace", io), "cleared");
+        eq(JSON.stringify([io.saved, io.cleared]), JSON.stringify([[], ["basketball"]]), "soccer untouched");
       },
     ],
   ];

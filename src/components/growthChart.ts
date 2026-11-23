@@ -48,8 +48,9 @@ export function useProfileGrowthChart(options: {
   // Chart.js's own legend toggle, also recorded in hiddenKeys.
   const toggleLine = (target: Chart, index: number | undefined) => {
     if (index === undefined) return;
-    const dataset = target.data.datasets[index] as Partial<KeyedDataset> | undefined;
-    const key = dataset?.key ?? dataset?.label ?? "";
+    const dataset = target.data.datasets[index] as KeyedDataset | undefined;
+    if (!dataset) return;
+    const key = dataset.key;
     const hide = target.isDatasetVisible(index);
     if (hide) hiddenKeys.add(key);
     else hiddenKeys.delete(key);

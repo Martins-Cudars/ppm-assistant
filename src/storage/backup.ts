@@ -102,7 +102,7 @@ export async function createBackup(): Promise<CreatedBackup | null> {
     others.some((entries) => entries === null) ||
     scouted.some((snapshots) => snapshots === null)
   ) {
-    console.error("[Backup] Aborting export: could not read skill history");
+    console.error("[Backup] Aborting export: could not read the skill history or scouted data");
     return null;
   }
 
@@ -127,6 +127,7 @@ export async function createBackup(): Promise<CreatedBackup | null> {
       sportSkillHistory,
       scoutSnapshots,
       leagues: leagueLists.leagues,
+      ...(leagueLists.skipped.length > 0 ? { leaguesSkipped: leagueLists.skipped } : {}),
     },
     skippedLeagues: leagueLists.skipped,
   };
@@ -247,6 +248,11 @@ export function parseBackup(text: string): ParsedBackup {
     const league = validLeagueTeams(candidate.leagues?.[sport]);
     if (league) leagues[sport] = league;
   });
+  // Only known sports; anything else in the field is ignored.
+  const rawSkipped: unknown = candidate.leaguesSkipped;
+  const leaguesSkipped = Array.isArray(rawSkipped)
+    ? SPORTS.filter((sport) => rawSkipped.includes(sport))
+    : [];
 
   const rawCaches =
     typeof candidate.playerCaches === "object" && candidate.playerCaches !== null
@@ -274,6 +280,7 @@ export function parseBackup(text: string): ParsedBackup {
       sportSkillHistory,
       scoutSnapshots,
       leagues,
+      ...(leaguesSkipped.length > 0 ? { leaguesSkipped } : {}),
     },
     skippedEntries,
     skippedCaches,
@@ -290,15 +297,27 @@ export interface RestoreResult {
 /** What restoring one sport's league list did. */
 export type LeagueRestore = "saved" | "kept" | "cleared" | "unchanged" | "skipped";
 
+/** A sport the file's export couldn't read the league list of (BackupFile.leaguesSkipped). */
+export const LEAGUE_NOT_EXPORTED = "not-exported";
+
+/** A sport's league list as the file has it: the list, none, or not exported. */
+export const fileLeagueList = (
+  backup: Pick<BackupFile, "leagues" | "leaguesSkipped">,
+  sport: Sport
+): LeagueTeams | undefined | typeof LEAGUE_NOT_EXPORTED =>
+  backup.leaguesSkipped?.includes(sport) ? LEAGUE_NOT_EXPORTED : backup.leagues?.[sport];
+
 /**
  * One sport's league list from a backup. Replace makes the stored list match
- * the file; merge keeps the newer one. In a merge, a stored list that can't
- * be read is never taken as no list (the file's, maybe older, one would
- * overwrite it): that sport is skipped and its stored list left as it is.
+ * the file; merge keeps the newer one. A list the file's export couldn't read
+ * leaves the stored one alone in both modes: the file has nothing to say
+ * about it. In a merge, a stored list that can't be read is never taken as
+ * no list (the file's, maybe older, one would overwrite it): that sport is
+ * skipped and its stored list left as it is.
  */
 export async function restoreLeagueList(
   sport: Sport,
-  league: LeagueTeams | undefined,
+  league: LeagueTeams | undefined | typeof LEAGUE_NOT_EXPORTED,
   mode: ImportMode,
   store: {
     load: (sport: Sport) => Promise<LeagueTeams | null>;
@@ -306,6 +325,7 @@ export async function restoreLeagueList(
     clear: (sport: Sport) => Promise<void>;
   } = { load: loadLeagueTeams, save: saveLeagueTeams, clear: clearLeagueTeams }
 ): Promise<LeagueRestore> {
+  if (league === LEAGUE_NOT_EXPORTED) return "unchanged";
   if (!league) {
     if (mode !== "replace") return "unchanged";
     await store.clear(sport);
@@ -398,7 +418,7 @@ export async function restoreBackup(
       );
     }
 
-    if ((await restoreLeagueList(sport, backup.leagues?.[sport], mode)) === "skipped") {
+    if ((await restoreLeagueList(sport, fileLeagueList(backup, sport), mode)) === "skipped") {
       skippedLeagues.push(sport);
     }
   }

@@ -655,11 +655,16 @@ const scheduleNoticeClear = () => {
   }, NOTICE_TIMEOUT_MS);
 };
 
-/** " The soccer league list ... ." for the sports named, or "" for none. */
-const leagueSkipNote = (sports: readonly string[], what: string) =>
-  sports.length === 0
-    ? ""
-    : ` The ${sports.join(" and ")} league list${sports.length > 1 ? "s" : ""} ${what}.`;
+/**
+ * " The soccer league list <one>." or " The hockey, soccer and basketball
+ * league lists <many>." for the sports named, or "" for none.
+ */
+const leagueSkipNote = (sports: readonly string[], one: string, many: string) => {
+  if (sports.length === 0) return "";
+  if (sports.length === 1) return ` The ${sports[0]} league list ${one}.`;
+  const names = `${sports.slice(0, -1).join(", ")} and ${sports[sports.length - 1]}`;
+  return ` The ${names} league lists ${many}.`;
+};
 
 const setNotice = (message: string, isError = false) => {
   backupNotice.value = message;
@@ -680,7 +685,7 @@ const exportBackup = async () => {
   try {
     const created = await createBackup();
     if (!created) {
-      setNotice("Could not read the skill history - no file was saved.", true);
+      setNotice("Could not read the skill history or scouted data - no file was saved.", true);
       return;
     }
     const { backup, skippedLeagues } = created;
@@ -688,8 +693,11 @@ const exportBackup = async () => {
     setNotice(
       `Saved ${backup.skillHistory.length.toLocaleString()} history records and ` +
         `${Object.keys(backup.playerCaches).length} team cache(s).` +
-        leagueSkipNote(skippedLeagues, "could not be read, so the file doesn't include it"),
-      skippedLeagues.length > 0
+        leagueSkipNote(
+          skippedLeagues,
+          "could not be read, so the file doesn't include it",
+          "could not be read, so the file doesn't include them"
+        )
     );
   } catch (error) {
     console.error("[PlayerReport] Export failed:", error);
@@ -740,7 +748,11 @@ const performImport = async () => {
     setNotice(
       `Imported ${result.entriesWritten.toLocaleString()} history records and ` +
         `${result.playersWritten} players.${skipped}` +
-        leagueSkipNote(result.skippedLeagues, "stored here could not be read, so it was left as it is"),
+        leagueSkipNote(
+          result.skippedLeagues,
+          "stored here could not be read, so it was left as it is",
+          "stored here could not be read, so they were left as they are"
+        ),
       parsed.skippedEntries > 0 || result.skippedLeagues.length > 0
     );
   } catch (error) {
