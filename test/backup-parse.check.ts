@@ -10,7 +10,14 @@
  * All 12 passed against the compiled module on 2026-08-30.
  */
 
-import { parseBackup } from "@/storage/backup";
+import {
+  fileLeagueList,
+  parseBackup,
+  readLeagueListsForBackup,
+  restoreLeagueList,
+} from "@/storage/backup";
+import type { LeagueTeams } from "@/types/ScoutSnapshot";
+import type { Sport } from "@/types/Sport";
 import { BACKUP_FORMAT, BACKUP_VERSION } from "@/types/Backup";
 
 let failures = 0;
@@ -70,6 +77,12 @@ check("accepts a valid backup", () => {
   eq(r.backup.skillHistory.length, 2, "entries");
   eq(r.skippedEntries, 0, "skipped");
   eq(Object.keys(r.backup.playerCaches).length, 1, "caches");
+});
+
+check("league lists the export couldn't read: kept from the file; unknown sports dropped", () => {
+  const r = parseBackup(JSON.stringify({ ...good, leaguesSkipped: ["soccer", "curling", 3] }));
+  eq(JSON.stringify(r.backup.leaguesSkipped), JSON.stringify(["soccer"]));
+  eq(parseBackup(JSON.stringify(good)).backup.leaguesSkipped, undefined, "older files have none");
 });
 
 check("rejects non-JSON", () => throws(() => parseBackup("not json"), "valid JSON"));
@@ -156,5 +169,92 @@ check("basketball history is read and filtered like hockey's", () => {
   eq(r.skippedEntries, 1, "bad row counted with hockey's");
   eq(r.backup.skillHistory.length, 2, "hockey untouched");
 });
+
+// League lists: a list that can't be read is never taken as "no list". The
+// backup leaves it out and names the sport; a merge restore leaves the stored
+// one as it is and carries on.
+{
+  const list = (updatedAt: string): LeagueTeams => ({
+    season: 58, leagueId: "lva-ii-4", leagueName: "II.4", teamIds: ["t1"], updatedAt,
+  });
+  const failing = async (sport: Sport): Promise<LeagueTeams | null> => {
+    if (sport === "soccer") throw new Error("storage unavailable");
+    return sport === "hockey" ? list("2026-11-01") : null;
+  };
+  const store = (stored: (sport: Sport) => Promise<LeagueTeams | null>) => {
+    const saved: string[] = [];
+    const cleared: string[] = [];
+    return {
+      saved,
+      cleared,
+      load: stored,
+      save: async (_league: LeagueTeams, sport: Sport) => void saved.push(sport),
+      clear: async (sport: Sport) => void cleared.push(sport),
+    };
+  };
+  const asyncChecks: [string, () => Promise<void>][] = [
+    [
+      "backup: an unreadable league list is left out and named; the others are kept",
+      async () => {
+        const { leagues, skipped } = await readLeagueListsForBackup(failing);
+        eq(JSON.stringify(skipped), JSON.stringify(["soccer"]), "skipped");
+        eq(leagues.hockey?.updatedAt, "2026-11-01", "hockey kept");
+        eq("soccer" in leagues, false, "soccer left out");
+        eq("basketball" in leagues, false, "no list stored");
+      },
+    ],
+    [
+      "restore (merge): an unreadable stored list is skipped, not overwritten",
+      async () => {
+        const io = store(failing);
+        eq(await restoreLeagueList("soccer", list("2026-11-20"), "merge", io), "skipped");
+        eq(io.saved.length, 0, "nothing saved");
+      },
+    ],
+    [
+      "restore (merge): the newer list wins; no stored list takes the file's",
+      async () => {
+        const io = store(failing);
+        eq(await restoreLeagueList("hockey", list("2026-10-01"), "merge", io), "kept", "stored is newer");
+        eq(await restoreLeagueList("hockey", list("2026-11-20"), "merge", io), "saved", "file is newer");
+        eq(await restoreLeagueList("basketball", list("2026-10-01"), "merge", io), "saved", "none stored");
+        eq(await restoreLeagueList("basketball", undefined, "merge", io), "unchanged", "none in the file");
+        eq(JSON.stringify(io.saved), JSON.stringify(["hockey", "basketball"]));
+      },
+    ],
+    [
+      "restore (replace): the file's list is written without reading the stored one",
+      async () => {
+        const io = store(failing);
+        eq(await restoreLeagueList("soccer", list("2026-10-01"), "replace", io), "saved");
+        eq(await restoreLeagueList("hockey", undefined, "replace", io), "cleared");
+        eq(JSON.stringify([io.saved, io.cleared]), JSON.stringify([["soccer"], ["hockey"]]));
+      },
+    ],
+    [
+      "restore: a list the export couldn't read leaves the stored one alone, in both modes",
+      async () => {
+        const io = store(failing);
+        const file = { leagues: { hockey: list("2026-11-20") }, leaguesSkipped: ["soccer" as Sport] };
+        eq(await restoreLeagueList("soccer", fileLeagueList(file, "soccer"), "replace", io), "unchanged", "replace");
+        eq(await restoreLeagueList("soccer", fileLeagueList(file, "soccer"), "merge", io), "unchanged", "merge");
+        eq(await restoreLeagueList("basketball", fileLeagueList(file, "basketball"), "replace", io), "cleared");
+        eq(JSON.stringify([io.saved, io.cleared]), JSON.stringify([[], ["basketball"]]), "soccer untouched");
+      },
+    ],
+  ];
+  const quiet = console.error;
+  console.error = () => {};
+  for (const [name, fn] of asyncChecks) {
+    try {
+      await fn();
+      console.log("PASS", name);
+    } catch (e) {
+      failures++;
+      console.log("FAIL", name, "-", (e as Error).message);
+    }
+  }
+  console.error = quiet;
+}
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

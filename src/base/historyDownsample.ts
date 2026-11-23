@@ -90,3 +90,44 @@ export function downsampleHistory<T extends { date: string }>(
 
   return kept;
 }
+
+/**
+ * One player's history as chart points for one metric, thinned by
+ * downsampleHistory. Entries `read` gives no value for are dropped BEFORE
+ * thinning, so a day without the metric (an OR-only day on the skill line, a
+ * skills-only day without a full set on the OR line) can't swallow a window
+ * that had a usable one. `ageOf` places an entry on the age axis.
+ */
+export function historyChartPoints<T extends { date: string }>(
+  entries: readonly T[],
+  read: (entry: T) => number | null,
+  ageOf: (entry: T) => number
+): { x: number; y: number }[] {
+  const usable = entries.flatMap((entry) => {
+    const y = read(entry);
+    return y === null ? [] : [{ date: entry.date, entry, y }];
+  });
+  return downsampleHistory(usable).map(({ entry, y }) => ({ x: ageOf(entry), y }));
+}
+
+/**
+ * A history day's OR, the same rule in every sport: the stored OR, else the
+ * sum of the day's skills, each rounded down (OR = sum of skills). The sum is
+ * only taken when every one of the sport's skills is there: a partial capture
+ * would otherwise draw a false dip. Null when there is neither.
+ */
+export function overallOrSkillSum(
+  stored: number | null | undefined,
+  skills: Partial<Record<string, number>> | undefined,
+  skillNames: readonly string[]
+): number | null {
+  if (typeof stored === "number" && Number.isFinite(stored)) return stored;
+  if (!skills || skillNames.length === 0) return null;
+  let sum = 0;
+  for (const name of skillNames) {
+    const value = skills[name];
+    if (typeof value !== "number" || !Number.isFinite(value)) return null;
+    sum += Math.floor(value);
+  }
+  return sum;
+}

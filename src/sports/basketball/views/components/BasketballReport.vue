@@ -9,7 +9,7 @@
  * from the stored history on every load - see growthModel.ts.
  * Backup and Clear live on the Hockey tab - they already cover every sport.
  */
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { BasketballPlayer, BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import {
   StoredBasketballPlayer,
@@ -32,13 +32,12 @@ import {
   PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
   POTENTIAL_AGE,
-  ReferenceCurve,
-  ReferencePoint,
+  AGE_PACE_FACTORS,
+  BASKETBALL_REFERENCE_CURVE,
   basketballDateAtAge,
   basketballEntryNear,
   basketballOverall,
   bestBasketballPosition,
-  buildReferenceCurve,
   entryAge,
   measureBasketballPace,
   projectBasketball,
@@ -56,23 +55,25 @@ import GrowthComparisonChart, {
   type GrowthSeries,
 } from "@/components/GrowthComparisonChart.vue";
 import { useCompareWith } from "@/base/scout/useCompareWith";
-import { squadHistoryOnly } from "@/base/scout/scoutReference";
+import { relativeSkillReference } from "@/sports/basketball/relativeSkillReference";
+import { squadBestOrByAge, squadHistoryOnly } from "@/base/scout/scoutReference";
 import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
-import { buildSquadBestCurve, entryOverall, historyPoints } from "@/sports/basketball/historyChart";
+import { entryOverall, historyPoints } from "@/sports/basketball/historyChart";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
 const loading = ref(true);
-const players = ref<BasketballPlayer[]>([]);
+// shallowRef: Vue's deep ref unwrapping drops the player classes' protected members from the type.
+const players = shallowRef<BasketballPlayer[]>([]);
 const teamId = ref("unknown");
 const squad = ref<{ playerIds: string[]; updatedAt: string } | null>(null);
 const summaries = ref<Map<string, SkillHistorySummary>>(new Map());
 const historyStats = ref<SkillHistoryStats | null>(null);
 const lang = ref("en");
 const seasonDay = ref(1);
-// Every stored basketball day, grouped by player: the reference curve needs
-// the whole squad's past, not just recent weeks. Null when the read failed,
+// Every stored basketball day, grouped by player: the squad's best OR on the
+// chart needs the whole squad's past, not just recent weeks. Null when the read failed,
 // so growth cells show "-" with a reason rather than "no history".
 const history = ref<Map<string, SkillHistoryEntry<BasketballSkills>[]> | null>(new Map());
 // Other teams' rosters and the user's league, for the chart's League / Elite lines.
@@ -124,16 +125,9 @@ const PROJECTION_AGE = 25;
 /** How far from the computed "turned 25" date a recorded day may be. */
 const AT_AGE_TOLERANCE_DAYS = 14;
 
-const nameById = computed(() => new Map(players.value.map((p) => [idOf(p), p.name])));
-
-const curve = computed<ReferenceCurve>(() =>
-  buildReferenceCurve(
-    history.value ?? new Map(),
-    new Map(players.value.map((p) => [idOf(p), exactAgeOf(p)]))
-  )
-);
-
-const measuredCurve = computed(() => curve.value.filter((p) => p.source === "squad"));
+// The 100% Pace and the projections measure against: the top-5% line's
+// smoothed rating gain, as rated points a day (src/sports/basketball/growthModel.ts).
+const curve = BASKETBALL_REFERENCE_CURVE;
 
 // --- Growth comparison chart ------------------------------------------------------
 
@@ -150,26 +144,33 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
     return {
       id: idOf(player),
       label: player.name,
+      group: player.getBestPosition().name,
+      age: player.age,
       skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
       or: or.length > 0 ? or : [{ x: exactAge, y: player.overallRating }],
     };
   })
 );
 
-// The grey line: the best any squad player had on reaching each age.
-const squadBestReference = computed<GrowthReference>(() => {
-  const best = buildSquadBestCurve(
+// The Squad choice: the top-5% line (relative skill's 100%) on the Skill tab, and the
+// squad's own best OR at each age on the OR tab - as hockey's and soccer's reports.
+const squadReference = computed<GrowthReference>(() => ({
+  label: "Top 5% (Skill) / your squad's best (OR)",
+  skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
+  or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
-    squadHistoryOnly(history.value ?? new Map()),
+    squadHistoryOnly(history.value ?? new Map<string, SkillHistoryEntry<BasketballSkills>[]>()),
     new Map(players.value.map((p) => [idOf(p), exactAgeOf(p)])),
-    new Map(players.value.map((p) => [idOf(p), p.height]))
-  );
-  return { label: "Your squad's best at each age", ...best };
-});
+    basketballPlayerProfile.daysPerSeason,
+    entryOverall,
+    new Map(players.value.map((p) => [idOf(p), p.name]))
+  ),
+}));
 
 // --- Compare with: Squad / League / Elite ------------------------------------------
 // Shared with the other sports' reports - see src/base/scout/useCompareWith.ts.
-// Under Squad (and until a group has enough revisits) Pace is basketball's own.
+// Under Squad (and until a group has enough revisits) Pace is basketball's own,
+// against the top-5% line; projections never follow the toggle.
 
 const {
   COMPARE_OPTIONS,
@@ -191,10 +192,11 @@ const {
   snapshots: () => scoutSnapshots.value,
   league: () => league.value,
   ownTeamId: () => teamId.value,
-  squadReference: () => squadBestReference.value,
-  squadChartCaption: "The best any of your own players had on reaching each age",
+  squadReference: () => squadReference.value,
+  squadChartCaption:
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against, as a smoothed growth rate. OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: the best any of your own players had on reaching each age. Pace: against your best player's training at each age.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate.",
   idOf,
   exactAgeOf,
   overallOf: (player) => player.overallRating,
@@ -211,14 +213,8 @@ const {
       return or !== null ? [{ date: entry.date, or }] : [];
     }),
   ageOnDate: (player, date) => entryAge(date, exactAgeOf(player)),
-  rateShape: (age) => curve.value.find((point) => point.age === age)?.perDay ?? 0,
+  rateShape: (age) => curve.find((point) => point.age === age)?.perDay ?? 0,
 });
-
-const referenceTitle = (point: ReferencePoint) =>
-  point.source === "squad"
-    ? `${nameById.value.get(point.bestPlayerId ?? "") ?? "a former player"}: ` +
-      `${point.bestPerDay?.toFixed(2)}/day; ${point.players} player(s) measured at ${point.age}`
-    : "No squad data at this age yet - default curve";
 
 const paceByPlayer = computed(() => {
   const paces = new Map<string, BasketballPace | null>();
@@ -226,7 +222,7 @@ const paceByPlayer = computed(() => {
     const entries = history.value?.get(idOf(player));
     paces.set(
       idOf(player),
-      entries ? measureBasketballPace(entries, exactAgeOf(player), curve.value) : null
+      entries ? measureBasketballPace(entries, exactAgeOf(player), curve) : null
     );
   });
   return paces;
@@ -245,19 +241,14 @@ const paceTitle = (player: BasketballPlayer) => {
       `days of history (${stored} day${stored === 1 ? "" : "s"} stored)`
     );
   }
-  if (pace.pace === null) return "Past the reference curve's last age - no pace to compare";
+  if (pace.pace === null) return "Past the top-5% line's growth (34+) - no pace to compare";
   const age = Math.floor(pace.midAge);
-  const point = curve.value.find((p) => p.age === age);
-  const smoothed =
-    point?.bestPerDay !== undefined && Math.abs(point.bestPerDay - point.perDay) > 0.005
-      ? ` (${round2(point.bestPerDay)}, smoothed)`
-      : "";
+  const point = curve.find((p) => p.age === age);
   const lines = [
-    `${round2(pace.pointsPerDay)} skill points per training day (${Math.round(pace.pointsPerSeason)}/season)`,
-    `100% at ${age} = ${round2(pace.referencePerDay ?? 0)}/day - ` +
-      (point?.source === "squad"
-        ? `your best at ${age}: ${nameById.value.get(point.bestPlayerId ?? "") ?? "a former player"}${smoothed}`
-        : "no squad data at this age yet, default curve"),
+    `${round2(pace.ratedPointsPerDay)} rated-skill points per training day ` +
+      `(${round2(pace.pointsPerDay)} with shooting and blocking)`,
+    `100% at ${age} = ${round2(pace.referencePerDay ?? 0)}/day: the top-5% line's ` +
+      `${round2(point?.ratingPerSeason ?? 0)} rating a season, x3 balanced`,
     `(${pace.measuredDays} days measured, ${pace.fromDate} to ${pace.toDate})`,
   ];
   const skipped = [
@@ -321,7 +312,7 @@ const atAgeValues = (targetAge: number) => {
       player.height,
       exactAge,
       pace,
-      curve.value,
+      curve,
       targetAge
     );
     if (!pace || pace.pace === null || !projection) {
@@ -343,9 +334,9 @@ const atAgeValues = (targetAge: number) => {
       kind: "projected",
       title:
         `Projected: ${projection.position} rating (no XP) at ${targetAge}, training at ` +
-        `${Math.round(pace.pace * 100)}% of your best player's pace at each age from here on ` +
-        `(+${Math.round(projection.points)} skill points). Shooting and blocking keep their ` +
-        "current share of training; the rest is spent balanced on the rated skills. " +
+        `${Math.round(pace.pace * 100)}% of the top-5% line's growth from here on, slowing by this ` +
+        `team's age factors (+${Math.round(projection.points)} skill points). Shooting and blocking ` +
+        "keep their own rate; the rated skills are trained balanced. " +
         growing +
         camps +
         (pace.provisional ? `Provisional: the pace rests on only ${pace.measuredDays} days of data.` : ""),
@@ -379,7 +370,7 @@ const potentialByPlayer = computed(() => {
         player.experience,
         exactAgeOf(player),
         paceFor(player),
-        curve.value,
+        curve,
         { rating: best.ratingWithBonus, ratingWithXp: best.ratingWithXp, position: best.name }
       )
     );
@@ -738,6 +729,7 @@ const profileUrl = (player: BasketballPlayer) =>
     <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :series="comparisonSeries"
+      :group-order="POSITIONS"
       v-model:reference-key="chartReferenceKey"
       :reference-options="referenceOptions"
       :loading="history === null"
@@ -756,35 +748,29 @@ const profileUrl = (player: BasketballPlayer) =>
         Growth (lowest to highest in view)
       </p>
 
-      <details v-if="measuredCurve.length > 0" class="reference white_box">
+      <details class="reference white_box">
         <summary>
-          {{ paceHeader !== "Pace" ? "Squad reference (used by the @25, @32 and Potential projections)" : "Pace reference" }}:
-          your best player at each age = 100%
-          ({{ measuredCurve.length }} ages measured from your history)
+          {{ paceHeader !== "Pace" ? "Top-5% reference (used by the @25, @32 and Potential projections)" : "Pace reference" }}:
+          the top-5% line's growth = 100%
         </summary>
         <p class="reference__note">
-          Skill points per normal training day (camp and injury days left out). After the peak
-          the curve never rises, so a projection can't speed up with age just because a
-          different player was best. Grey ages have no squad data yet and use the default curve.
-          Rebuilt from your history every time the report opens.
+          The top-5% line's rating gain a season (no XP), smoothed, and the rated-skill points per
+          normal training day it takes (camp and injury days left out; a balanced rating point
+          costs 3). Projections also slow by this team's age factors:
+          {{ AGE_PACE_FACTORS.map((band) => `${band.fromAge === 0 ? "to 21" : `${band.fromAge}+`} ${band.factor.toFixed(2)}`).join(", ") }}.
         </p>
         <table class="reference__table">
           <tr>
             <th>Age</th>
-            <td v-for="p in curve" :key="p.age" :class="{ 'history-none': p.source === 'default' }">
-              {{ p.age }}
-            </td>
+            <td v-for="p in curve" :key="p.age">{{ p.age }}</td>
           </tr>
           <tr>
-            <th>100% =</th>
-            <td
-              v-for="p in curve"
-              :key="p.age"
-              :class="{ 'history-none': p.source === 'default' }"
-              :title="referenceTitle(p)"
-            >
-              {{ p.perDay.toFixed(2) }}
-            </td>
+            <th>Rating/season</th>
+            <td v-for="p in curve" :key="p.age">{{ p.ratingPerSeason.toFixed(1) }}</td>
+          </tr>
+          <tr>
+            <th>Points/day</th>
+            <td v-for="p in curve" :key="p.age">{{ p.perDay.toFixed(2) }}</td>
           </tr>
         </table>
       </details>

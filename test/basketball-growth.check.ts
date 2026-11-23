@@ -3,19 +3,22 @@
  * src/base/gainCleaning.ts - see test/README.md.
  *
  * The cases that matter most:
- * - The reference is the squad's best at each age, never rising after the
- *   peak, and filled from the default curve where there's no data.
+ * - The reference is the top-5% line's smoothed rating gain, as rated-skill
+ *   points a day (x3, the rated weights' sum); pace counts rated points only.
  * - Camp days are judged against the SAME skill's normal day. One player
  *   gained 0.74/day on speed and 1.13 on passing; judged against the overall
  *   median, his speed camp days fell below the bar and broke the camp in two.
  * - A player training exactly at the reference projects exactly the
- *   reference's points.
+ *   reference's points, age factors divided out and reapplied.
  */
 
 import {
+  AGE_PACE_FACTORS,
+  BASKETBALL_REFERENCE_CURVE,
   CAMP_MAX_DAYS_PER_SEASON,
-  DEFAULT_REFERENCE,
   HEIGHT_STOP_AGE,
+  SMOOTHED_SEASON_GAINS,
+  agePaceFactor,
   PACE_PROVISIONAL_MIN_DAYS,
   POTENTIAL_AGE,
   entryAge,
@@ -23,17 +26,18 @@ import {
   typicalXpAt,
   ReferenceCurve,
   basketballOverall,
-  buildReferenceCurve,
   measureBasketballPace,
   projectBasketball,
   projectBasketballPotential,
+  referencePerDay,
   referencePointsBetween,
   solveBalancedBasketballRating,
 } from "@/sports/basketball/growthModel";
 import { BasketballSkills } from "@/sports/basketball/classes/BasketballPlayer";
 import { cleanedGains } from "@/base/gainCleaning";
+import { squadBestOrByAge } from "@/base/scout/scoutReference";
 import {
-  buildSquadBestCurve,
+  entryOverall,
   historyPoints,
   projectionPoints,
 } from "@/sports/basketball/historyChart";
@@ -96,7 +100,7 @@ function history(
 }
 
 const flatCurve = (perDay: number): ReferenceCurve =>
-  Array.from({ length: 20 }, (_, k) => ({ age: 15 + k, perDay, source: "squad" as const }));
+  Array.from({ length: 20 }, (_, k) => ({ age: 15 + k, perDay, ratingPerSeason: (perDay * 70) / 3 }));
 
 // --- Season length -------------------------------------------------------------
 
@@ -126,36 +130,29 @@ check("flat days are skipped and counted", () => {
 
 // --- Reference curve ------------------------------------------------------------
 
-check("reference: the best player at each age, non-increasing after the peak", () => {
-  // Two players with 2 seasons (70 days each) on whole-age boundaries: A was 18-20, B 22-24.
-  const a = history(140, ["passing"], (i) => (i <= 70 ? 1.2 : 1.0), { playerId: "A" });
-  const b = history(140, ["passing"], (i) => (i <= 70 ? 0.8 : 0.9), { playerId: "B" });
-  const curve = buildReferenceCurve(
-    new Map([["A", a], ["B", b]]),
-    new Map([["A", 20], ["B", 24]]),
-    TODAY
-  );
-  const at = (age: number) => curve.find((p) => p.age === age)!;
-  near(at(18).perDay, 1.2, 0.02, "18");
-  near(at(19).perDay, 1.0, 0.02, "19");
-  // B's 22 (0.8) then 23 (0.9) is a rise after the peak: pooled to 0.85.
-  near(at(22).perDay, 0.85, 0.02, "22 pooled");
-  near(at(23).perDay, 0.85, 0.02, "23 pooled");
-  eq(at(22).bestPlayerId, "B");
-  // 20 and 21 have no data: filled from the default, scaled to meet it.
-  eq(at(21).source, "default");
-  for (let age = at(18).age + 1; age <= 33; age++) {
-    const prev = curve.find((p) => p.age === age - 1)!.perDay;
-    const cur = curve.find((p) => p.age === age)!.perDay;
-    if (cur > prev + 1e-9 && at(age).source === "squad" && at(age - 1).source === "squad") {
-      throw new Error(`measured curve rose at ${age}`);
-    }
-  }
+check("reference: the top-5% line's smoothed rating gain x3 rated points, per 70-day season", () => {
+  const at = (age: number) => BASKETBALL_REFERENCE_CURVE.find((p) => p.age === age)!;
+  near(at(18).perDay, (SMOOTHED_SEASON_GAINS[18] * 3) / 70, 1e-9, "18");
+  near(at(28).ratingPerSeason, SMOOTHED_SEASON_GAINS[28], 1e-9, "28");
+  eq(BASKETBALL_REFERENCE_CURVE[0].age, 15, "from 15");
+  eq(BASKETBALL_REFERENCE_CURVE[BASKETBALL_REFERENCE_CURVE.length - 1].age, 34, "to 34");
+  BASKETBALL_REFERENCE_CURVE.forEach((p) => {
+    if (!(p.perDay >= 0)) throw new Error(`negative at ${p.age}`);
+  });
 });
 
-check("reference: no history at all gives the default curve", () => {
-  const curve = buildReferenceCurve(new Map(), new Map(), TODAY);
-  curve.forEach((p) => near(p.perDay, DEFAULT_REFERENCE[p.age], 1e-9, `age ${p.age}`));
+check("reference: a 28-year-old at the squad's 28+ median doesn't read 150%", () => {
+  // The squad's 28+ windows gained ~0.2 rated points a day (34% of the line at 28).
+  const entries = history(56, ["passing", "aggression"], () => 0.2);
+  const pace = measureBasketballPace(entries, 28.5, BASKETBALL_REFERENCE_CURVE, TODAY)!;
+  if (!(pace.pace! < 1.5)) throw new Error(`read ${pace.pace}`);
+  near(pace.pace, 0.2 / ((SMOOTHED_SEASON_GAINS[28] * 3) / 70), 1e-9, "rated points / the line's");
+});
+
+check("age factors: 1.00 to 24, 0.84 from 25, carried past 27", () => {
+  eq(AGE_PACE_FACTORS.map((band) => band.factor).join(","), "1,1,0.84,0.84");
+  eq(agePaceFactor(21.9), 1);
+  eq(agePaceFactor(29), 0.84);
 });
 
 // --- Pace -----------------------------------------------------------------------
@@ -175,11 +172,14 @@ check("pace: provisional from a week, none before", () => {
   eq(measureBasketballPace(short, 16, flatCurve(1), TODAY), null);
 });
 
-check("pace: skill shares follow the schedule", () => {
+check("pace: skill shares follow the schedule; only rated points count", () => {
   const entries = history(56, ["passing", "passing", "shooting", "speed"], () => 1);
   const pace = measureBasketballPace(entries, 18, flatCurve(1), TODAY)!;
   near(pace.skillShares.passing, 0.5, 0.03);
   near(pace.skillShares.shooting, 0.25, 0.03);
+  near(pace.pointsPerDay, 1, 1e-9, "all seven skills");
+  near(pace.ratedPointsPerDay, 0.75, 0.03, "shooting left out");
+  near(pace.pace, pace.ratedPointsPerDay, 1e-9, "against a 1.0 curve");
 });
 
 check("camp allowance: a camp in progress doesn't hide last season's, capped at 10", () => {
@@ -200,8 +200,8 @@ check("height: steady growth measured; none once it has stopped", () => {
 
 // --- Projection ------------------------------------------------------------------
 
-check("points: pace 100% on a flat curve = reference x 70 days a season", () => {
-  near(referencePointsBetween(flatCurve(1), 27, 29, 10), 140, 1e-9, "no camps from 25");
+check("points: pace 100% on a flat curve = reference x 70 days a season x the age factor", () => {
+  near(referencePointsBetween(flatCurve(1), 27, 29, 10), 140 * 0.84, 1e-9, "no camps from 25, factor 0.84");
   // Before 25 the camp days add CAMP_DAY_EXTRA each.
   near(referencePointsBetween(flatCurve(1), 20, 21, 10), 80, 1e-9, "with camps");
 });
@@ -216,16 +216,84 @@ check("balanced solver: points spent at the position's weights, bottleneck first
   near(solveBalancedBasketballRating(skills, "PG", 52), 70, 1e-6, "then the next skills");
 });
 
-check("projection: all points land; shooting keeps its share; OR adds up", () => {
+check("projection: all points land; shooting keeps its own rate; OR adds up", () => {
   const entries = history(56, ["passing", "technical", "speed", "shooting"], () => 1);
   const pace = measureBasketballPace(entries, 20, flatCurve(1), TODAY)!;
   const now = entries[entries.length - 1].skills;
   const projection = projectBasketball(now, 190, 27, { ...pace, campDaysPerSeason: 0 }, flatCurve(1), 28)!;
-  near(projection.points, 70, 1e-6, "points");
-  near(projection.skills.shooting - now.shooting, 17.5, 1, "shooting share");
+  // Measured at 20 (factor 1), one season at 27 (factor 0.84): 58.8 normal-day points,
+  // 3/4 rated at the pace, 1/4 shooting at its own rate.
+  near(projection.points, 70 * 0.84, 1e-6, "points");
+  near(projection.skills.shooting - now.shooting, 0.25 * 70 * 0.84, 1, "shooting at its own rate");
   const added = SKILLS.reduce((sum, s) => sum + projection.skills[s] - now[s], 0);
-  near(added, 70, 1e-3, "every point placed");
+  near(added, projection.points, 1e-3, "every point placed");
   near(projection.overall, basketballOverall(projection.skills), 0);
+});
+
+check("projection: the factor a pace was measured at is divided out", () => {
+  const entries = history(56, ["passing", "technical", "speed"], () => 1);
+  const at20 = measureBasketballPace(entries, 20, flatCurve(1), TODAY)!;
+  const now = entries[entries.length - 1].skills;
+  const a = projectBasketball(now, 190, 26, { ...at20, campDaysPerSeason: 0 }, flatCurve(1), 27)!;
+  const b = projectBasketball(now, 190, 26, { ...at20, midAge: 26, campDaysPerSeason: 0 }, flatCurve(1), 27)!;
+  // The same pace read at 26 stands for a faster underlying pace than at 20.
+  near(b.points / a.points, 1 / 0.84, 1e-6, "1 / 0.84");
+});
+
+check("projection: shooting follows the line's rate age by age, and never outruns its own rate", () => {
+  // The bonus skills' rate scales with the line's rate (and the age factor)
+  // at each future age, relative to the age the pace was measured at. That
+  // is curvePoints / (rate at the measured age x its factor), summed here a
+  // year at a time on the real line, whose rate varies (1.09 at 26, 0.13 at 32).
+  const entries = history(56, ["passing", "technical", "speed", "shooting"], () => 1);
+  const measured = measureBasketballPace(entries, 20, BASKETBALL_REFERENCE_CURVE, TODAY)!;
+  const curve = BASKETBALL_REFERENCE_CURVE;
+  const at = (midAge: number) => ({
+    ...measured,
+    midAge,
+    referencePerDay: referencePerDay(curve, midAge),
+    campDaysPerSeason: 0,
+  });
+  const now = entries[entries.length - 1].skills;
+  const shootingPerDay = measured.pointsPerDay * measured.skillShares.shooting;
+  const perAge = (midAge: number, from: number, to: number) => {
+    let total = 0;
+    for (let age = from; age < to; age = Math.min(Math.floor(age) + 1, to)) {
+      const end = Math.min(Math.floor(age) + 1, to);
+      const rate = referencePerDay(curve, age)! / referencePerDay(curve, midAge)!;
+      total += shootingPerDay * 70 * (end - age) * rate * (agePaceFactor(age) / agePaceFactor(midAge));
+    }
+    return total;
+  };
+  const gained = (midAge: number, from: number, to: number) =>
+    projectBasketball(now, 190, from, at(midAge), curve, to)!.skills.shooting - now.shooting;
+  near(gained(26.4, 26.6, 32), perAge(26.4, 26.6, 32), 1e-6, "26 to 32");
+  near(gained(18.5, 18.7, 25), perAge(18.5, 18.7, 25), 1e-6, "18 to 25");
+  near(gained(15.5, 15.7, 18), perAge(15.5, 15.7, 18), 1e-6, "15 to 18");
+  // A small rate at the measured age can't blow the bonus skills up: they
+  // outrun their own rate a day by at most the line's rise after that age,
+  // read off the curve. From 16 the line doesn't rise, so that is 1; a pace
+  // measured at 15 follows the line's rise from 15 to 16.
+  const riseAfter = (midAge: number, to: number) => {
+    let most = 1;
+    for (let age = Math.floor(midAge) + 1; age < to; age++) {
+      most = Math.max(most, referencePerDay(curve, age)! / referencePerDay(curve, midAge)!);
+    }
+    return most;
+  };
+  for (let midAge = 16; midAge < 34.5; midAge += 0.25) {
+    if (riseAfter(midAge, 35) !== 1) throw new Error(`the line rises after ${midAge}`);
+  }
+  for (let midAge = 15; midAge < 34.5; midAge += 0.25) {
+    for (const from of [midAge, midAge + 0.3]) {
+      const to = Math.min(Math.floor(from) + 3, 35);
+      if (from >= to) continue;
+      const most = shootingPerDay * 70 * (to - from) * riseAfter(midAge, to);
+      if (gained(midAge, from, to) > most + 1e-9) {
+        throw new Error(`measured at ${midAge}, ${from} to ${to}: ${gained(midAge, from, to)} > ${most}`);
+      }
+    }
+  }
 });
 
 check("projection: height grows at its rate until the stop age, then holds", () => {
@@ -271,18 +339,20 @@ check("chart: OR-only days don't swallow a window's skill days", () => {
   if (skill.some((p) => !Number.isFinite(p.y))) throw new Error("non-numeric point");
 });
 
-check("chart: squad best is the highest value on reaching each whole age", () => {
+check("chart: squad best OR is the highest value on reaching each whole age (70-day seasons)", () => {
   // Same schedule, A trains twice as fast; both are 20 today with a season of history.
   const a = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 2, { playerId: "A" });
   const b = history(70, ["passing", "technical", "speed", "aggression", "jumping"], () => 1, { playerId: "B" });
-  const best = buildSquadBestCurve(
+  const best = squadBestOrByAge(
     new Map([["A", a], ["B", b]]),
     new Map([["A", 20], ["B", 20]]),
-    new Map([["A", 190], ["B", 190]]),
+    70,
+    entryOverall,
+    new Map(),
     TODAY
   );
-  eq(best.or.map((p) => p.x).join(","), "19,20");
-  near(best.or[1].y, Math.max(...a.slice(-1).map((e) => basketballOverall(e.skills))), 0, "A sets 20");
+  eq(best.map((p) => p.x).join(","), "19,20");
+  near(best[1].y, Math.max(...a.slice(-1).map((e) => basketballOverall(e.skills))), 0, "A sets 20");
 });
 
 check("chart: projection starts at today's rating and never falls with a positive pace", () => {

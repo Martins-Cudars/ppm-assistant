@@ -15,13 +15,12 @@ import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import { useCompareWith } from "@/base/scout/useCompareWith";
 import { squadBestOrByAge, squadHistoryOnly } from "@/base/scout/scoutReference";
-import { downsampleHistory } from "@/base/historyDownsample";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { SkillHistoryEntry, SkillHistoryStats, SkillHistorySummary } from "@/types/SkillHistory";
 import {
   getExactAge,
   historyEntryAge,
-  readEntryBaseRating,
+  historyPoints,
   readEntryOverallRating,
 } from "@/sports/hockey/skillHistoryChart";
 import {
@@ -63,7 +62,8 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import RatingStars from "@/components/RatingStars.vue";
 import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
-import { playerGrowthPrediction, ratingSettings } from "@/sports/hockey/settings";
+import { ratingSettings } from "@/sports/hockey/settings";
+import { relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 
 const store = usePlayerStore();
 const activeTab = ref<"table" | "graph">("table");
@@ -424,20 +424,20 @@ const atAgeMissingTitle = (player: HockeyPlayer, targetAge = PROJECTION_AGE) => 
 // --- Compare with: Squad / League / Elite ------------------------------------------
 // Shared with the other sports' reports - see src/base/scout/useCompareWith.ts.
 // Under Squad (and until a group has enough revisits) Pace is hockey's own,
-// against the top-player table; projections never follow the toggle.
+// against the top-5% line; projections never follow the toggle.
 
 const exactAgeByPlayer = computed(
   () => new Map(store.cachedPlayers.map((player: HockeyPlayer) => [player.id, exactAgeOf(player)]))
 );
 
-// The Squad choice: the top-player curve on the Skill tab, as before, and the
+// The Squad choice: the top-5% line (relative skill's 100%) on the Skill tab, and the
 // squad's own best OR at each age on the OR tab.
 const squadReference = computed<GrowthReference>(() => ({
-  label: "Top player (Skill) / your squad's best (OR)",
-  skill: playerGrowthPrediction.map((point) => ({ x: point.age, y: point.skill })),
+  label: "Top 5% (Skill) / your squad's best (OR)",
+  skill: relativeSkillReference.map((point) => ({ x: point.age, y: point.skill })),
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
-    squadHistoryOnly(allHistory.value ?? new Map()),
+    squadHistoryOnly(allHistory.value ?? new Map<string, SkillHistoryEntry[]>()),
     exactAgeByPlayer.value,
     hockeyPlayerProfile.daysPerSeason,
     readEntryOverallRating,
@@ -466,9 +466,9 @@ const {
   ownTeamId: () => store.teamId,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-player curve the Pace column measures against. OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against, as a smoothed growth rate. OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-player table, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate.",
   idOf: (player) => player.id,
   exactAgeOf,
   overallOf: (player) => player.overallRating,
@@ -488,6 +488,9 @@ const {
   rateShape: (age) => expectedSeasonGain(age) ?? 0,
 });
 
+// The chart's side list groups players by best position, goalies first.
+const HOCKEY_GROUPS = ["G", "D", "W", "C"] as const;
+
 // Every filtered player's history on the shared chart. Entries are filtered to
 // the metric before thinning: an unscouted profile capture has an OR but no
 // skills, and must not swallow a window that had usable skills.
@@ -495,16 +498,13 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
   filteredPlayers.value.map((player: HockeyPlayer) => {
     const entries = allHistory.value?.get(player.id) ?? [];
     const exactAge = exactAgeOf(player);
-    const points = (read: (entry: SkillHistoryEntry) => number | null) =>
-      downsampleHistory(entries.filter((entry) => read(entry) !== null)).map((entry) => ({
-        x: historyEntryAge(entry, exactAge),
-        y: read(entry)!,
-      }));
-    const skill = points(readEntryBaseRating);
-    const or = points(readEntryOverallRating);
+    const skill = historyPoints(entries, exactAge, "skill");
+    const or = historyPoints(entries, exactAge, "or");
     return {
       id: player.id,
       label: player.name,
+      group: player.getBestPosition().name,
+      age: player.age,
       skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
       or:
         or.length > 0 || !(player.overallRating > 0)
@@ -655,6 +655,17 @@ const scheduleNoticeClear = () => {
   }, NOTICE_TIMEOUT_MS);
 };
 
+/**
+ * " The soccer league list <one>." or " The hockey, soccer and basketball
+ * league lists <many>." for the sports named, or "" for none.
+ */
+const leagueSkipNote = (sports: readonly string[], one: string, many: string) => {
+  if (sports.length === 0) return "";
+  if (sports.length === 1) return ` The ${sports[0]} league list ${one}.`;
+  const names = `${sports.slice(0, -1).join(", ")} and ${sports[sports.length - 1]}`;
+  return ` The ${names} league lists ${many}.`;
+};
+
 const setNotice = (message: string, isError = false) => {
   backupNotice.value = message;
   backupError.value = isError;
@@ -672,15 +683,21 @@ const exportBackup = async () => {
   backupBusy.value = "export";
   setNotice("");
   try {
-    const backup = await createBackup();
-    if (!backup) {
-      setNotice("Could not read the skill history - no file was saved.", true);
+    const created = await createBackup();
+    if (!created) {
+      setNotice("Could not read the skill history or scouted data - no file was saved.", true);
       return;
     }
+    const { backup, skippedLeagues } = created;
     downloadBackup(backup);
     setNotice(
       `Saved ${backup.skillHistory.length.toLocaleString()} history records and ` +
-        `${Object.keys(backup.playerCaches).length} team cache(s).`
+        `${Object.keys(backup.playerCaches).length} team cache(s).` +
+        leagueSkipNote(
+          skippedLeagues,
+          "could not be read, so the file doesn't include it",
+          "could not be read, so the file doesn't include them"
+        )
     );
   } catch (error) {
     console.error("[PlayerReport] Export failed:", error);
@@ -730,8 +747,13 @@ const performImport = async () => {
       : "";
     setNotice(
       `Imported ${result.entriesWritten.toLocaleString()} history records and ` +
-        `${result.playersWritten} players.${skipped}`,
-      parsed.skippedEntries > 0
+        `${result.playersWritten} players.${skipped}` +
+        leagueSkipNote(
+          result.skippedLeagues,
+          "stored here could not be read, so it was left as it is",
+          "stored here could not be read, so they were left as they are"
+        ),
+      parsed.skippedEntries > 0 || result.skippedLeagues.length > 0
     );
   } catch (error) {
     console.error("[PlayerReport] Import failed:", error);
@@ -1414,6 +1436,7 @@ const getCompletenessBadgeText = (player: HockeyPlayer) => {
       v-else-if="activeTab === 'graph'"
       v-model:reference-key="chartReferenceKey"
       :series="comparisonSeries"
+      :group-order="HOCKEY_GROUPS"
       :reference-options="referenceOptions"
       :loading="allHistory === null"
     />

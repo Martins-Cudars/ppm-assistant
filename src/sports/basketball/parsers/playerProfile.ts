@@ -1,3 +1,4 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
 import {
   BasketballPlayer,
   BasketballPlayerInfo,
@@ -5,25 +6,49 @@ import {
   BasketballTrainingQualities,
 } from "@/sports/basketball/classes/BasketballPlayer";
 
-function readRequiredNumber(root: ParentNode, selector: string): number {
-  const value = root.querySelector(selector)?.textContent;
-
-  if (!value) {
-    throw new Error(`Missing numeric value for selector: ${selector}`);
-  }
-
-  return parseInt(value);
+/**
+ * A whole number from the profile table, or null when the cell is missing,
+ * empty or not a number - an unscouted player's page shows "-" or nothing
+ * for skills, qualities and sometimes XP.
+ */
+function readNumber(root: ParentNode, selector: string): number | null {
+  // \s covers the non-breaking space the game puts in thousands.
+  const text = root.querySelector(selector)?.textContent?.replace(/\s/g, "") ?? "";
+  const value = parseInt(text, 10);
+  return /^-?\d/.test(text) && Number.isFinite(value) ? value : null;
 }
 
+/** Every value of a group, or undefined when any is unknown (no partial sets). */
+function readAll<K extends string>(root: ParentNode, selectors: Record<K, string>): Record<K, number> | undefined {
+  const values = {} as Record<K, number>;
+  for (const key of Object.keys(selectors) as K[]) {
+    const value = readNumber(root, selectors[key]);
+    if (value === null) return undefined;
+    values[key] = value;
+  }
+  return values;
+}
+
+function readRequiredNumber(root: ParentNode, selector: string): number {
+  const value = readNumber(root, selector);
+  if (value === null) throw new Error(`Missing numeric value for selector: ${selector}`);
+  return value;
+}
+
+/**
+ * The player on a basketball profile page. `seasonDay` defaults to the game
+ * bar's; `playerTable` and `playerInfo` may be any ParentNode/Element (a
+ * check passes a fixture).
+ */
 export function parseBasketballPlayerFromProfilePage(
-  playerTable: HTMLElement,
-  playerInfo: Element
+  playerTable: ParentNode,
+  playerInfo: Element,
+  seasonDay: number = getCurrentSeasonDay(),
+  dataParam: string = new URLSearchParams(window.location.search).get("data") || ""
 ): BasketballPlayer {
-  const searchParams = new URLSearchParams(window.location.search);
-  const dataParam = searchParams.get("data") || "";
   const extractedId =
     dataParam.split("-")[0] ||
-    window.location.pathname.split("/").pop() ||
+    (typeof window !== "undefined" ? window.location.pathname.split("/").pop() : "") ||
     "unknown";
 
   const baseInfo: BasketballPlayerInfo = {
@@ -37,34 +62,38 @@ export function parseBasketballPlayerFromProfilePage(
     ) as BasketballPlayerInfo["careerLongitivity"],
     overallRating: readRequiredNumber(playerTable, "#index_skill"),
     averageTrainingRatio: 0,
-    height: readRequiredNumber(playerTable, "#vyska"),
+    // 0 when the page doesn't show it; capture and the charts skip a 0 height.
+    height: readNumber(playerTable, "#vyska") ?? 0,
   };
 
-  const skills: BasketballSkills = {
-    shooting: readRequiredNumber(playerTable, "#shooting"),
-    blocking: readRequiredNumber(playerTable, "#block"),
-    passing: readRequiredNumber(playerTable, "#passing"),
-    technical: readRequiredNumber(playerTable, "#technique_attribute"),
-    speed: readRequiredNumber(playerTable, "#speed"),
-    aggression: readRequiredNumber(playerTable, "#aggressivity"),
-    jumping: readRequiredNumber(playerTable, "#leaping"),
-  };
+  // An unscouted player's page has OR, age, height and a few info fields, but
+  // no skills or qualities: those stay unknown (undefined), never 0.
+  const skills: BasketballSkills | undefined = readAll(playerTable, {
+    shooting: "#shooting",
+    blocking: "#block",
+    passing: "#passing",
+    technical: "#technique_attribute",
+    speed: "#speed",
+    aggression: "#aggressivity",
+    jumping: "#leaping",
+  });
 
-  const qualities: BasketballTrainingQualities = {
-    shooting: readRequiredNumber(playerTable, "#kva_shooting"),
-    blocking: readRequiredNumber(playerTable, "#kva_block"),
-    passing: readRequiredNumber(playerTable, "#kva_passing"),
-    technical: readRequiredNumber(playerTable, "#technique_quality"),
-    speed: readRequiredNumber(playerTable, "#kva_speed"),
-    aggression: readRequiredNumber(playerTable, "#kva_aggressivity"),
-    jumping: readRequiredNumber(playerTable, "#kva_leaping"),
-  };
+  const qualities: BasketballTrainingQualities | undefined = readAll(playerTable, {
+    shooting: "#kva_shooting",
+    blocking: "#kva_block",
+    passing: "#kva_passing",
+    technical: "#technique_quality",
+    speed: "#kva_speed",
+    aggression: "#kva_aggressivity",
+    jumping: "#kva_leaping",
+  });
 
-  const experience = readRequiredNumber(playerTable, "#experience");
-  const averageTrainingRatio = Math.floor(
-    Object.values(qualities).reduce((sum, quality) => sum + quality, 0) /
-      Object.values(qualities).length
-  );
+  const experience = readNumber(playerTable, "#experience") ?? undefined;
+  const averageTrainingRatio = qualities
+    ? Math.floor(
+        Object.values(qualities).reduce((sum, quality) => sum + quality, 0) / Object.values(qualities).length
+      )
+    : 0;
 
   return new BasketballPlayer(
     {
@@ -73,7 +102,7 @@ export function parseBasketballPlayerFromProfilePage(
     },
     new Date(),
     true,
-    1,
+    seasonDay,
     skills,
     experience,
     qualities

@@ -2,6 +2,10 @@
 import { computed, ref } from "vue";
 import SortableTable, { type Column } from "@/components/SortableTable.vue";
 import RatingStars from "@/components/RatingStars.vue";
+import RelativeSkill from "@/components/RelativeSkill.vue";
+import { leagueLine } from "@/base/scout/leagueRelativeSkill";
+import { relativeSortValue } from "@/base/relativeSkill";
+import type { BasketballPlayer } from "@/sports/basketball/classes/BasketballPlayer";
 import BasketballPlayerListChart from "./BasketballPlayerListChart.vue";
 import { positionSettings, ratingSettings } from "@/sports/basketball/settings";
 import type { BasketballPlayerListItem } from "../types";
@@ -14,6 +18,15 @@ const props = defineProps<{
 const selectedPosition = ref("All");
 const minAge = ref(15);
 const maxAge = ref(50);
+
+// Both relative-skill 100% values once per player, not per cell and sort.
+// The view loaded the league line (loadLeagueReference); "loading" until it arrives.
+const league = computed(() => leagueLine("basketball"));
+const relativeMaxima = computed(
+  () => new Map(props.items.map((item) => [item.player.id, item.player.getRelativeSkillMaxima(league.value.table)]))
+);
+const maximaOf = (player: BasketballPlayer) =>
+  relativeMaxima.value.get(player.id) ?? player.getRelativeSkillMaxima(league.value.table);
 
 const filteredItems = computed(() =>
   props.items.filter(({ player }) => {
@@ -165,6 +178,15 @@ const tableColumns = computed<Column[]>(() => {
         item.player.getBestPosition().ratingWithXp,
       headerClass: "th1",
     },
+    {
+      header: "Rel",
+      key: "relative",
+      slot: "relative",
+      sortable: true,
+      sortValue: (item: BasketballPlayerListItem) =>
+        relativeSortValue(item.player.getBestPosition().ratingWithXp, maximaOf(item.player)),
+      headerClass: "th2",
+    },
   ];
 
   return cols;
@@ -253,6 +275,15 @@ const tableColumns = computed<Column[]>(() => {
         <RatingStars
           :skill="item.player.getBestPosition().ratingWithXp"
           :settings="ratingSettings"
+        />
+      </template>
+
+      <template #relative="{ item }">
+        <RelativeSkill
+          :skill="item.player.getBestPosition().ratingWithXp"
+          :maxima="maximaOf(item.player)"
+          :age="item.player.age"
+          :leagueStatus="league.status"
         />
       </template>
     </SortableTable>

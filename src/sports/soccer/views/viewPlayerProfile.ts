@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import { getCurrentSeasonDay, getPlayerTeamId } from "@/utils/dom";
 import { parseSoccerProfile } from "@/sports/soccer/parsers/players";
@@ -40,6 +41,8 @@ const viewPlayerProfile = () => {
   sidebarContainer.id = "ppm-assistant-soccer-sidebar";
   contentColumn.appendChild(sidebarContainer);
 
+  // Relative skill's league value: fetched once here, read by the components.
+  void loadLeagueReference("soccer");
   const sidebarApp = createApp(SoccerPlayerSidebar, { player });
   sidebarApp.mount(sidebarContainer);
 

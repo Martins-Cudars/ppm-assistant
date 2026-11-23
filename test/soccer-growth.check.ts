@@ -3,18 +3,25 @@
  * src/base/growthModel.ts with soccer's constants) - see test/README.md.
  *
  * What matters:
- * - The reference is the top-player table up to 23, the squad's own decline
- *   from 24 (the user's choice - the table's slope collapses after 23).
- * - Juniors' faster pace is divided out by the age factors, so it isn't
- *   carried to 25.
+ * - The reference is the top-5% line's smoothed growth rate
+ *   (smoothedSeasonGains) up to 23, the squad's own decline from 24, scaled
+ *   to the smoothed rate at 23 (the user's choice).
+ * - Juniors' faster pace is divided out by the junior correction of the
+ *   rate (JUNIOR_RATE_FACTORS), so an average 15-year-old doesn't read 100%
+ *   and his pace isn't carried to 25.
  * - One skill a day at the position's ratios measures the same base pace as
  *   a split, and camps are found per skill.
  */
 
 import {
   CAMP_MAX_DAYS_PER_SEASON,
+  JUNIOR_RATE_FACTORS,
+  OR_JUNIOR_RATE_FACTORS,
+  OR_SMOOTHED_SEASON_GAINS,
   agePaceFactor,
   curveGainBetween,
+  juniorRates,
+  uncorrectedSeasonGain,
   expectedSeasonGain,
   measureGrowthPace,
   projectPositionRating,
@@ -22,6 +29,8 @@ import {
   projectPotential,
   projectionPoints,
 } from "@/sports/soccer/growthPace";
+import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
+import { smoothedSeasonGains } from "@/base/relativeSkillFit";
 import { SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
@@ -42,20 +51,60 @@ const eq = (a: unknown, b: unknown, m = "") => {
   if (a !== b) throw new Error(`${m} expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
 };
 
-check("reference: the table's slope up to 23, the squad's own from 24", () => {
-  eq(expectedSeasonGain(20.5), 70, "20: 455 -> 525");
-  eq(expectedSeasonGain(23.2), 50, "23: 650 -> 700");
-  eq(expectedSeasonGain(24.0), 46, "24: override (the table says 20)");
-  eq(expectedSeasonGain(25.9), 44, "25: override (the table says 15)");
+const expAt = (age: number) => relativeSkillReference.find((row) => row.age === age)!.exp;
+const smoothed = smoothedSeasonGains(relativeSkillReference);
+const slope20 = smoothed[20];
+const slope23 = smoothed[23];
+
+check("reference: the top-5% line's smoothed rate up to 23, the squad's own from 24", () => {
+  eq(expectedSeasonGain(20.5), slope20, "20 -> 21");
+  eq(Math.round(slope23), 52, "23 -> 24, smoothed, on the 2026-11-22 line");
+  eq(expectedSeasonGain(23.2), slope23, "23 -> 24");
+  eq(expectedSeasonGain(24.0), Math.round(0.92 * slope23), "24: the squad's 0.92 of the slope at 23");
+  eq(expectedSeasonGain(25.9), Math.round(0.88 * slope23), "25: 0.88");
   eq(expectedSeasonGain(34.5), null, "34: 0 - no reference");
-  near(curveGainBetween(23, 25), 96, 1e-9, "50 + 46");
+  near(curveGainBetween(23, 25), slope23 + Math.round(0.92 * slope23), 1e-9, "23 + 24");
 });
 
-check("age factors: juniors' faster pace is divided out", () => {
-  eq(agePaceFactor(15.3), 1.4);
-  eq(agePaceFactor(16.9), 1.18);
-  eq(agePaceFactor(17), 1.0);
-  eq(agePaceFactor(28), 1.0);
+check("juniors: the rate at 15 and 16 carries the correction, the age factors are 1", () => {
+  near(expectedSeasonGain(15.3), smoothed[15] * 1.78, 1e-9, "15: 1.78 x the line's rate");
+  near(expectedSeasonGain(16.9), smoothed[16] * 1.23, 1e-9, "16: 1.23 x");
+  eq(expectedSeasonGain(17.2), smoothed[17], "17: the line's rate");
+  [15.3, 16.9, 17, 28].forEach((age) => eq(agePaceFactor(age), 1.0, `factor at ${age}`));
+});
+
+check("juniors: every corrected age is on the line, and a missing one is left out, not NaN", () => {
+  Object.keys(JUNIOR_RATE_FACTORS).forEach((age) => {
+    if (!Number.isFinite(smoothed[Number(age)])) throw new Error(`the line has no rate at ${age}`);
+  });
+  Object.keys(OR_JUNIOR_RATE_FACTORS).forEach((age) => {
+    if (!Number.isFinite(OR_SMOOTHED_SEASON_GAINS[Number(age)])) throw new Error(`the OR line has no rate at ${age}`);
+  });
+  const partial = juniorRates({ 16: 50 }, { 15: 1.78, 16: 1.23 });
+  eq(JSON.stringify(partial), JSON.stringify({ 16: 61.5 }), "15 left out");
+});
+
+check("juniors: League / Elite take the shape without the correction", () => {
+  eq(uncorrectedSeasonGain(15.5), smoothed[15], "15: the line's own rate");
+  eq(uncorrectedSeasonGain(17.5), expectedSeasonGain(17.5), "17: the same as Pace's");
+  eq(uncorrectedSeasonGain(25.5), expectedSeasonGain(25.5), "25: the squad's decline");
+  eq(uncorrectedSeasonGain(35), null, "past the projection age");
+});
+
+check("juniors: Pace's rate is the uncorrected one, raised at 15 and 16 only", () => {
+  for (let age = 15; age < 35; age++) {
+    const factor = JUNIOR_RATE_FACTORS[age];
+    const expected = factor ? smoothed[age] * factor : uncorrectedSeasonGain(age + 0.5);
+    eq(expectedSeasonGain(age + 0.5), expected, `at ${age}`);
+  }
+});
+
+check("juniors: the same points read the same Pace at 15 as the squad median does at 17", () => {
+  // 0.53 x the rate at 17 is the 17+ median; a 15-year-old who gains what the
+  // measured 15-year-old median gains (0.95 of the line's raw rate at 15)
+  // reads about the same, not 95%.
+  const pace15 = (0.95 * smoothed[15]) / expectedSeasonGain(15.5)!;
+  near(pace15, 0.53, 0.02, "15-year-old median");
 });
 
 // --- A side midfielder trained one skill a day, at the SM ratios ---------------
@@ -86,7 +135,7 @@ check("one skill a day at the ratios: 1 point/day = 112/season = 37.3 base", () 
   const pace = measureGrowthPace(history(56), 20.5, "SM")!;
   near(pace.pointsPerSeason, 112, 0.5, "points");
   near(pace.basePerSeason, 112 / 3, 0.2, "base");
-  near(pace.basePace, 112 / 3 / 70, 0.01, "vs the 20-21 slope of 70");
+  near(pace.basePace, 112 / 3 / slope20, 0.01, "vs the line's 20-21 slope");
 });
 
 check("camps are found per skill: a heading camp day is 2x a heading day", () => {
@@ -121,7 +170,7 @@ check("a 15-year-old's catch-up pace isn't carried to 25", () => {
   const entries = history(56);
   const skills = entries[entries.length - 1].skills!;
   // The same history read at 15 vs at 17: the 15-year-old's pace is divided
-  // by 1.4, so both project the same future growth from the same skills.
+  // by its factor, so it never projects more growth than at 17.
   const at15 = measureGrowthPace(entries, 15.5, "SM")!;
   const at17 = measureGrowthPace(entries, 17.5, "SM")!;
   const gain15 = projectPositionRating(skills, 17.5, at15, 25)!;
@@ -133,9 +182,9 @@ check("a 15-year-old's catch-up pace isn't carried to 25", () => {
 // table, the squad sits at 0.34-0.71). His own share once projected 401 XP at
 // 32 and a 1,235 potential - 5 diamond stars - for a ~685 rating.
 check("an elite-team junior's XP isn't extrapolated: 42 + typical", () => {
-  // Table exp: 19 -> 22, 20 -> 35, 22 -> 62, 32 -> 238; shares 0.45 then 0.52.
-  const exp19_2 = 22 + (35 - 22) * 0.2;
-  const expected = 42 + (62 - exp19_2) * 0.45 + (238 - 62) * 0.52;
+  // The line's XP at 19.2, 22 and 32; shares 0.43 then 0.40.
+  const exp19_2 = expAt(19) + (expAt(20) - expAt(19)) * 0.2;
+  const expected = 42 + (expAt(22) - exp19_2) * 0.43 + (expAt(32) - expAt(22)) * 0.4;
   near(projectExperience(42, 19.2, 32), expected, 1e-6);
   const rating = 685;
   const withXp = Math.round(rating * (1 + expected / 500));

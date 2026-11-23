@@ -1,6 +1,8 @@
 /**
  * Hockey's growth pace: the shared growth model (src/base/growthModel.ts)
- * bound to hockey's skills, positions, top-player table and the constants
+ * bound to hockey's skills, positions, the top-5% line (the global
+ * relative-skill reference, src/sports/hockey/relativeSkillReference.ts - the
+ * same line the charts draw and relative skill's 100% reads) and the constants
  * measured on the user's own team. Every name the report, the profile chart
  * and test/growth-pace.check.ts import is exported here as before.
  *
@@ -13,7 +15,10 @@
  * quality would have made the numbers worse. See docs/skill-history.md.
  */
 
-import { playerGrowthPrediction, positionSettings } from "@/sports/hockey/settings";
+import { positionSettings } from "@/sports/hockey/settings";
+import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
+import { smoothedOrSeasonGains, smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { createOrGrowthModel } from "@/base/orGrowth";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { HockeySkills } from "@/sports/hockey/classes/HockeyPlayer";
 import {
@@ -71,8 +76,23 @@ export const CAMP_LOOKBACK_DAYS = 112;
 
 /**
  * How fast players train at each age, relative to ages 16-21, at the user's
- * own team. Projections slow down by these factors on top of the top-player
- * curve's own slowdown, which on its own was too optimistic after 21.
+ * own team. Projections slow down by these factors on top of the top-5%
+ * line's own slowdown.
+ *
+ * Re-measured 2026-11-23 against the smoothed growth rate of the top-5% line
+ * (smoothedSeasonGains of the global relative-skill reference), on the
+ * 2026-11-22 backup, 56-day windows since 2025-12-01, with
+ * scripts/measure-age-factors.ts (base pace 59% at <=21):
+ *
+ *   <=21   1.00   27 players, the reference
+ *   22-24  0.96   11 players
+ *   25-27  0.96   11 players
+ *   28+    0.88    3 players
+ *
+ * The scouted line already slows down much as this team's players do, so the
+ * factors are near 1 (against its raw yearly steps they read 1.00 / 0.93 /
+ * 1.03 / 1.00). Against the old hand-written table the same windows
+ * read 1.00 / 0.96 / 0.66 / 0.46. The earlier measurement, against that table:
  *
  * Measured 2026-09-26 from the Aug 28 backup, 56-day windows since 2025-12-01,
  * as median BASE pace (basePace - the part projections scale) per age band
@@ -102,9 +122,9 @@ export const CAMP_LOOKBACK_DAYS = 112;
  */
 export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
   { fromAge: 0, factor: 1.0 },
-  { fromAge: 22, factor: 0.95 },
-  { fromAge: 25, factor: 0.67 },
-  { fromAge: 28, factor: 0.49 },
+  { fromAge: 22, factor: 0.96 },
+  { fromAge: 25, factor: 0.96 },
+  { fromAge: 28, factor: 0.88 },
 ];
 
 /**
@@ -122,16 +142,17 @@ export const PROJECTION_MAX_AGE = 35;
 export const POTENTIAL_AGE = 32;
 
 /**
- * Typical XP as a share of the top-player table's `exp` at the same age, at
- * the user's team. XP comes from ice time, and young players get less.
- * Measured on the Aug 2026 cache: median 0.45 at 15-21, 0.63 from 22 (regulars
- * mostly 0.55-0.75). Future XP accrues at this share for everyone - a
- * player's own past share isn't carried forward (see projectExperience in
- * src/base/growthModel.ts).
+ * Typical XP as a share of the top-5% line's `exp` at the same age, at the
+ * user's team: median own-squad XP / the line's XP, on the 2026-11-22 backup
+ * cache - 0.58 at 16-21 (15 players), 0.52 from 22 (21 players). The line's
+ * XP is near 0 until 17 and 200 at 28 (xpCurve), so juniors read a higher
+ * share than against the old table (0.45 / 0.63 there). Future XP accrues at
+ * this share for everyone - a player's own past share isn't carried forward
+ * (see projectExperience in src/base/growthModel.ts).
  */
 export const SQUAD_XP_SHARE: readonly { fromAge: number; share: number }[] = [
-  { fromAge: 0, share: 0.45 },
-  { fromAge: 22, share: 0.63 },
+  { fromAge: 0, share: 0.58 },
+  { fromAge: 22, share: 0.52 },
 ];
 
 export const hockeyGrowthConfig: GrowthConfig<HockeySkills> = {
@@ -139,7 +160,10 @@ export const hockeyGrowthConfig: GrowthConfig<HockeySkills> = {
   positionSettings,
   bonusCapRatio: hockeyPlayerProfile.bonusCapRatio ?? 1,
   daysPerSeason: hockeyPlayerProfile.daysPerSeason,
-  growthTable: playerGrowthPrediction,
+  growthTable: relativeSkillReference,
+  // The 100% growth rate: the line's gains smoothed, not its raw yearly steps
+  // (90 a season at 15, 33 at 26 - see smoothedSeasonGains).
+  referenceSlopeOverrides: smoothedSeasonGains(relativeSkillReference),
   agePaceFactors: AGE_PACE_FACTORS,
   pace: {
     windowDays: PACE_WINDOW_DAYS,
@@ -178,3 +202,31 @@ export const {
   projectExperience,
   projectPotential,
 } = model;
+
+/**
+ * The OR view's pace and projection (src/base/orGrowth.ts): OR growth against
+ * the top-5% OR line's smoothed rate, with the skill model's camp allowance
+ * and age limit.
+ */
+export const OR_SMOOTHED_SEASON_GAINS = smoothedOrSeasonGains(relativeOrReference);
+
+/**
+ * The OR pace's age factors, the same bands as AGE_PACE_FACTORS. Measured
+ * 2026-11-23 with scripts/measure-age-factors.ts METRIC=or on the 2026-11-22
+ * backup, the same 56-day windows since 2025-12-01 (OR pace 70% at <=21):
+ * 1.00 / 0.94 / 0.94 / 0.78 (27 / 11 / 11 / 3 players). Close to the skill
+ * factors up to 27; 28+ rests on 3 players.
+ */
+export const OR_AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 22, factor: 0.94 },
+  { fromAge: 25, factor: 0.94 },
+  { fromAge: 28, factor: 0.78 },
+];
+
+export const { measureOrPace, projectOr, orProjectionPoints, orExpectedSeasonGain, orAgePaceFactor } =
+  createOrGrowthModel(hockeyGrowthConfig, {
+    line: relativeOrReference,
+    slopes: OR_SMOOTHED_SEASON_GAINS,
+    agePaceFactors: OR_AGE_PACE_FACTORS,
+  });

@@ -10,7 +10,7 @@
  * docs/skill-history.md, Soccer. Backup and Clear live on the Hockey tab;
  * they already cover every sport.
  */
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import { SoccerPlayer, SoccerSkills } from "@/sports/soccer/classes/SoccerPlayer";
 import { StoredSoccerPlayer, deserializeSoccerPlayer } from "@/sports/soccer/capture";
 import { normalizePlayerId } from "@/base/captureUtils";
@@ -29,6 +29,7 @@ import { exportScoutSnapshots, readLeagueTeams } from "@/storage/scoutSnapshotDb
 import { LeagueTeams, ScoutSnapshot } from "@/types/ScoutSnapshot";
 import {
   CAMP_UNTIL_AGE,
+  JUNIOR_RATE_FACTORS,
   PACE_MIN_SPAN_DAYS,
   PACE_PROVISIONAL_MIN_DAYS,
   PACE_WINDOW_DAYS,
@@ -38,12 +39,12 @@ import {
   bestPositionRating,
   dateAtAge,
   entryNearestDate,
-  expectedSeasonGain,
   measureGrowthPace,
   overallFromSkills,
   projectOverallRating,
   projectPositionRating,
   projectPotential,
+  uncorrectedSeasonGain,
 } from "@/sports/soccer/growthPace";
 import { readSportTeamCache } from "@/storage/playerCache";
 import { exportSkillHistory } from "@/storage/skillHistoryDb";
@@ -63,7 +64,8 @@ import { GROWTH_RAMP, SKILL_RAMP, heatStyle } from "@/components/heatmap";
 import "@/components/reportTable.css";
 
 const loading = ref(true);
-const players = ref<SoccerPlayer[]>([]);
+// shallowRef: Vue's deep ref unwrapping drops the player classes' protected members from the type.
+const players = shallowRef<SoccerPlayer[]>([]);
 const teamId = ref("unknown");
 const squad = ref<{ playerIds: string[]; updatedAt: string } | null>(null);
 const summaries = ref<Map<string, SkillHistorySummary>>(new Map());
@@ -161,8 +163,7 @@ const paceTitle = (player: SoccerPlayer) => {
     `(${pace.measuredDays} days measured, ${pace.fromDate} to ${pace.toDate})`,
     pace.expectedPerSeason === null
       ? "No reference pace to compare against at this age"
-      : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` +
-        (age <= 23 ? "the top-player table" : "your squad's own slowdown after 23"),
+      : `100% at ${age}: ${signed(pace.expectedPerSeason)}/season - ` + referenceRateSource(age),
   ];
   const skipped = [
     pace.skippedNoTrainingDays > 0 ? `${pace.skippedNoTrainingDays} no-training days` : "",
@@ -178,6 +179,17 @@ const paceTitle = (player: SoccerPlayer) => {
     lines.unshift(`Provisional: only ${pace.measuredDays} days of data - settles at ${PACE_MIN_SPAN_DAYS}`);
   }
   return lines.join("\n");
+};
+
+/**
+ * Where the 100% rate at a whole age comes from, for the Pace tooltip. At 15
+ * and 16 it is the top-5% line's rate raised by JUNIOR_RATE_FACTORS, so it
+ * isn't the line itself.
+ */
+const referenceRateSource = (age: number) => {
+  const junior = JUNIOR_RATE_FACTORS[age];
+  if (junior !== undefined) return `the top-5% line's rate x ${junior}, raised for juniors at 15 and 16`;
+  return age <= 23 ? "the top-5% line's rate" : "your squad's own slowdown after 23";
 };
 
 /** How the projection accounts for camps, for the @25 title. */
@@ -235,7 +247,8 @@ const atAgeValues = (targetAge: number) => {
       title:
         `Projected: ${pace.position} rating (no XP) at ${targetAge}, assuming balanced ` +
         `${pace.position} training at ${Math.round(pace.pace * 100)}% of the reference pace from ` +
-        "here on (the top-player table to 23, your squad's own slowdown after). Any lagging main " +
+        `here on (the top-5% line to 23${exactAge < 17 ? ", raised for juniors at 15 and 16" : ""}, ` +
+        "your squad's own slowdown after). Any lagging main " +
         "skill is caught up first; other skills keep their current rate. " +
         campAllowanceText(pace, exactAge) +
         (pace.provisional ? `Provisional: the pace rests on only ${pace.measuredDays} days of data.` : ""),
@@ -564,6 +577,8 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
     return {
       id: idOf(player),
       label: player.name,
+      group: player.getBestPosition().name,
+      age: player.age,
       skill: skill.length > 0 ? skill : [{ x: exactAge, y: player.getBestPosition().ratingWithBonus }],
       or: or.length > 0 ? or : [{ x: exactAge, y: player.overallRating }],
     };
@@ -575,14 +590,14 @@ const comparisonSeries = computed<GrowthSeries[]>(() =>
 // Under Squad (and until a group has enough revisits) Pace is soccer's own,
 // against the reference table; projections never follow the toggle.
 
-// The Squad choice: the top-player table's rating on the Skill tab, as before,
+// The Squad choice: the top-5% line's rating (relative skill's 100%) on the Skill tab,
 // and the squad's own best OR at each age on the OR tab.
 const squadReference = computed<GrowthReference>(() => ({
-  label: "Top player (Skill) / your squad's best (OR)",
+  label: "Top 5% (Skill) / your squad's best (OR)",
   skill: topPlayerSkillCurve,
   or: squadBestOrByAge(
     // Opponents opened on their profile are in the history too - not "your squad".
-    squadHistoryOnly(history.value ?? new Map()),
+    squadHistoryOnly(history.value ?? new Map<string, SkillHistoryEntry<SoccerSkills>[]>()),
     new Map(players.value.map((player) => [idOf(player), exactAgeOf(player)])),
     soccerPlayerProfile.daysPerSeason,
     soccerEntryOverall,
@@ -611,9 +626,9 @@ const {
   ownTeamId: () => teamId.value,
   squadReference: () => squadReference.value,
   squadChartCaption:
-    "Skill: the top-player table the Pace column measures against. OR: the best any of your own players had on reaching each age.",
+    "Skill: the top-5% line - the 100% of relative skill, and what Pace and the projections measure against (as a smoothed growth rate, raised for juniors at 15 and 16; from 24, your squad's own decline). OR: the best any of your own players had on reaching each age.",
   squadCaption:
-    "Squad: OR against the best any of your own players had at the same age. Pace: against the reference table, as before.",
+    "Squad: OR against the best any of your own players had at the same age. Pace: against the top-5% line's smoothed growth rate (raised for juniors at 15 and 16; from 24, your squad's own decline).",
   idOf,
   exactAgeOf,
   overallOf: (player) => player.overallRating,
@@ -630,7 +645,8 @@ const {
       return or !== null ? [{ date: entry.date, or }] : [];
     }),
   ageOnDate: (player, date) => soccerEntryAge(date, exactAgeOf(player)),
-  rateShape: (age) => expectedSeasonGain(age) ?? 0,
+  // The group curves' shape: the line's rate without the own squad's junior correction.
+  rateShape: (age) => uncorrectedSeasonGain(age) ?? 0,
 });
 </script>
 
@@ -702,6 +718,7 @@ const {
     <GrowthComparisonChart
       v-else-if="activeTab === 'graph'"
       :series="comparisonSeries"
+      :group-order="POSITIONS"
       v-model:reference-key="chartReferenceKey"
       :reference-options="referenceOptions"
       :loading="history === null"

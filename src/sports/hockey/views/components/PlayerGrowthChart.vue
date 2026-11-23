@@ -1,6 +1,7 @@
 <template>
   <div class="player-growth-chart">
     <div class="chart-header">
+      <GrowthMetricToggle v-model="metric" />
       <div class="age-filter">
         <label>
           Age:
@@ -16,28 +17,39 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
-import Chart from "chart.js/auto";
-import type { ChartDataset } from "chart.js";
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
-import { playerGrowthPrediction } from "@/sports/hockey/settings";
+import { relativeOrReference, relativeSkillReference } from "@/sports/hockey/relativeSkillReference";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import { getSkillHistoryForPlayer } from "@/storage/skillHistoryDb";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
+import type { OrPace } from "@/base/orGrowth";
+import GrowthMetricToggle from "@/components/GrowthMetricToggle.vue";
 import {
-  downsampleHistory,
-  getExactAge,
-  historyEntryToAgePoint,
-  readEntryBaseRating,
-} from "@/sports/hockey/skillHistoryChart";
-import { measureGrowthPace, projectionPoints } from "@/sports/hockey/growthPace";
+  orDatasets,
+  orProjectionDataset,
+  orReferenceDataset,
+  useGrowthMetric,
+  type KeyedDataset,
+} from "@/components/growthMetric";
+import { useProfileGrowthChart } from "@/components/growthChart";
+import { getExactAge, historyPoints } from "@/sports/hockey/skillHistoryChart";
+import {
+  measureGrowthPace,
+  measureOrPace,
+  orProjectionPoints,
+  projectionPoints,
+} from "@/sports/hockey/growthPace";
 
 const props = defineProps<{
   player: HockeyPlayer;
 }>();
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
-let chartInstance: Chart | null = null;
 const historyEntries = ref<SkillHistoryEntry[]>([]);
+// The OR view's pace, measured once when the history loads (src/base/orGrowth.ts).
+const orPace = ref<OrPace | null>(null);
+// An unscouted player has no skills: his chart opens on OR.
+const metric = useGrowthMetric(props.player.hasKnownSkills() ? {} : { force: "or" });
 
 // Default to a window around the player's current age rather than the full
 // 15-45 data range, so a young player's progress isn't squeezed into a
@@ -46,6 +58,9 @@ const historyEntries = ref<SkillHistoryEntry[]>([]);
 const minAge = ref(Math.max(15, Math.floor(props.player.age) - 3));
 const maxAge = ref(Math.min(45, Math.ceil(props.player.age) + 5));
 
+const currentExactAge = () => getExactAge(props.player, getCurrentSeasonDay() || 1);
+
+// Skill mode only: the OR view needs none of this (see buildDatasets).
 const calculateData = () => {
   const projectedPureData = [];
   const projectedTotalData = [];
@@ -58,7 +73,7 @@ const calculateData = () => {
 
   // We loop from 15 to 45
   for (let age = 15; age <= 45; age++) {
-    const targetGrowthData = playerGrowthPrediction.find((p) => p.age === age);
+    const targetGrowthData = relativeSkillReference.find((p) => p.age === age);
 
     if (targetGrowthData) {
       // Base / Pure skill line
@@ -73,26 +88,19 @@ const calculateData = () => {
   }
 
   // Player position
-  const seasonDay = getCurrentSeasonDay() || 1;
-  const exactAge = getExactAge(props.player, seasonDay);
+  const exactAge = currentExactAge();
 
-  currentPureData.push({ x: exactAge, y: currentPureSkill });
-  currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+  // An unscouted player's rating is a guess from OR: no "now" point for it.
+  if (props.player.hasKnownSkills()) {
+    currentPureData.push({ x: exactAge, y: currentPureSkill });
+    currentTotalData.push({ x: exactAge, y: currentTotalSkill });
+  }
 
   // Actual skill history, sourced from prior visits to treninu-progress.html
   // and from profile visits. Entries captured from an unscouted player's
   // profile carry an overall rating but no attributes, so they yield no base
-  // rating and drop out here.
-  //
-  // That filtering happens *before* downsampling on purpose: were one of those
-  // rating-only entries the latest in its window, thinning first would discard
-  // the whole window even though earlier entries in it had usable skills.
-  const usable = historyEntries.value.filter(
-    (entry) => readEntryBaseRating(entry) !== null
-  );
-  const actualHistoryData = downsampleHistory(usable)
-    .map((entry) => historyEntryToAgePoint(entry, exactAge))
-    .filter((point): point is { x: number; y: number } => point !== null);
+  // rating and drop out here (historyPoints filters before thinning).
+  const actualHistoryData = historyPoints(historyEntries.value, exactAge, "skill");
 
   // Where the player lands if their recent pace holds, assuming balanced
   // training for their best position from here, starting from the red
@@ -114,26 +122,27 @@ const calculateData = () => {
   };
 };
 
-const renderChartWithLogic = () => {
-  if (!chartCanvas.value) return;
-
-  // v-model.number leaves the ref as a raw (empty) string while the user is
-  // mid-edit (e.g. backspacing before typing a new value), since Vue only
-  // converts via parseFloat when it succeeds. Fall back to sane defaults
-  // rather than feeding Chart.js a non-numeric axis bound, and skip
-  // rendering entirely on a momentarily-degenerate range (min >= max) - the
-  // next keystroke will produce a valid one.
-  const safeMinAge = Number.isFinite(minAge.value) ? minAge.value : 15;
-  const safeMaxAge = Number.isFinite(maxAge.value) ? maxAge.value : 45;
-  if (safeMinAge >= safeMaxAge) return;
-
-  if (chartInstance) {
-    try {
-      chartInstance.destroy();
-    } catch (error) {
-      console.error("[PlayerGrowthChart] Failed to destroy previous chart:", error);
-    }
-    chartInstance = null;
+const buildDatasets = (): KeyedDataset[] => {
+  if (metric.value === "or") {
+    // OR view: the top-5% OR line, today's OR, the OR history and the
+    // projection at the player's OR pace (src/base/orGrowth.ts) - measured on
+    // his skills where the history has them, else on his OR numbers, so an
+    // unscouted player gets one too. No with-XP split: OR has no XP.
+    const exactAge = currentExactAge();
+    const pace = orPace.value;
+    const projection = orProjectionDataset(
+      orProjectionPoints(props.player.overallRating, exactAge, pace, 45),
+      pace?.pace != null ? { value: pace.pace, provisional: pace.provisional } : null
+    );
+    return [
+      orReferenceDataset(relativeOrReference),
+      ...orDatasets({
+        exactAge,
+        current: props.player.overallRating,
+        history: historyPoints(historyEntries.value, exactAge, "or"),
+      }),
+      ...(projection ? [projection] : []),
+    ];
   }
 
   const {
@@ -147,9 +156,10 @@ const renderChartWithLogic = () => {
     provisional,
   } = calculateData();
 
-  const datasets: ChartDataset<"line">[] = [
+  const datasets: KeyedDataset[] = [
     {
-      label: "Top Player Skill (Total)",
+      key: "top-total",
+      label: "Top 5% Skill (Total)",
       data: projectedTotalData,
       borderColor: "#ccc",
       backgroundColor: "#ccc",
@@ -159,9 +169,13 @@ const renderChartWithLogic = () => {
       pointBorderColor: "#ccc",
       fill: false,
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone" as const,
     },
     {
-      label: "Top Player Skill (Base)",
+      key: "top-base",
+      label: "Top 5% Skill (Base)",
       data: projectedPureData,
       borderColor: "#ccc",
       backgroundColor: "#ccc",
@@ -171,8 +185,12 @@ const renderChartWithLogic = () => {
       pointBorderColor: "#ccc",
       fill: false,
       tension: 0.4,
+      // Monotone: a plain spline overshoots between ages and bulges at the
+      // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+      cubicInterpolationMode: "monotone" as const,
     },
     {
+      key: "now-total",
       label: "Current Skill (Total)",
       data: currentTotalData,
       borderColor: "rgba(255, 99, 132, 1)",
@@ -182,6 +200,7 @@ const renderChartWithLogic = () => {
       showLine: false,
     },
     {
+      key: "now-base",
       label: "Current Skill (Base)",
       data: currentPureData,
       borderColor: "rgba(255, 99, 132, 1)",
@@ -190,7 +209,7 @@ const renderChartWithLogic = () => {
       pointHoverRadius: 12,
       showLine: false,
     },
-  ];
+  ].filter((dataset) => dataset.data.length > 0); // no "now" points when unscouted
 
   // Only add the actual-history line once there's data to show - omit it
   // entirely rather than showing an empty/misleading legend entry. History
@@ -198,6 +217,7 @@ const renderChartWithLogic = () => {
   // treninu-progress.html simply won't have this line yet; that's expected.
   if (actualHistoryData.length > 0) {
     datasets.push({
+      key: "history",
       label: "Actual Skill History (Base)",
       data: actualHistoryData,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -213,6 +233,7 @@ const renderChartWithLogic = () => {
 
   if (ownPaceProjection.length > 0 && pace !== null) {
     datasets.push({
+      key: "projection",
       label: `Projected at own pace (${provisional ? "~" : ""}${Math.round(pace * 100)}%${provisional ? ", provisional" : ""})`,
       data: ownPaceProjection,
       borderColor: "rgba(54, 162, 235, 1)",
@@ -225,77 +246,41 @@ const renderChartWithLogic = () => {
     });
   }
 
-  try {
-    chartInstance = new Chart(chartCanvas.value, {
-      type: "line",
-      data: {
-        datasets,
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: "Skill",
-            },
-          },
-          x: {
-            type: "linear",
-            min: safeMinAge,
-            max: safeMaxAge,
-            title: {
-              display: true,
-              text: "Age",
-            },
-            ticks: {
-              stepSize: 1,
-            },
-          },
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: "top",
-          },
-          tooltip: {
-            mode: "index",
-            intersect: false,
-          },
-        },
-      },
-    });
-  } catch (error) {
-    console.error("[PlayerGrowthChart] Failed to render chart:", error);
-    chartInstance = null;
-  }
+  return datasets;
 };
+
+// The chart, its age range and metric switch, and the legend's hidden lines:
+// shared by the three profile charts (src/components/growthChart.ts).
+const { render } = useProfileGrowthChart({
+  name: "PlayerGrowthChart",
+  canvas: chartCanvas,
+  minAge,
+  maxAge,
+  metric,
+  buildDatasets,
+  tooltip: { mode: "index", intersect: false },
+});
 
 const loadHistory = () => {
   getSkillHistoryForPlayer(props.player.id).then((entries) => {
     historyEntries.value = entries;
-    renderChartWithLogic();
+    orPace.value = measureOrPace(entries, currentExactAge());
+    render();
   });
 };
 
 onMounted(() => {
-  renderChartWithLogic();
+  render();
   loadHistory();
 });
 
 watch(
   () => props.player,
   () => {
-    renderChartWithLogic();
+    render();
   },
   { deep: true }
 );
-
-watch([minAge, maxAge], () => {
-  renderChartWithLogic();
-});
 </script>
 
 <style scoped>

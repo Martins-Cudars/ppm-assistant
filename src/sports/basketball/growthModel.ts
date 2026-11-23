@@ -1,17 +1,19 @@
 /**
  * Basketball growth: pace, the @25 projection and potential, measured against
- * an ADAPTIVE reference - the best player in the user's own squad history at
- * each age counts as 100%. Basketball has no top-player table like hockey's,
- * and the squad's own best is measured under the same facilities and coaches,
- * so the comparison stays fair as those change.
+ * the top-5% line (src/sports/basketball/relativeSkillReference.ts), as in
+ * hockey and soccer: the line's rating gain per season, smoothed
+ * (smoothedSeasonGains), is 100%. Until 2026-11-23 it was the best player in
+ * the user's own squad history at each age; that read 182-224% for two
+ * 28-year-olds, where one former player and a default tail set the bar
+ * (docs/skill-history.md, "Basketball Pace on the top-5% line").
  *
- * Why it differs from hockey (docs/skill-history.md, "Research findings"):
+ * How it differs from hockey (docs/skill-history.md, "Research findings"):
  *
  * - Basketball trains exactly ONE skill a day, chosen by the manager's
- *   schedule (0 of 10,158 days moved two skills). So pace is simply skill
- *   points per normal day - there's no position split to model.
- * - The reference curve IS the age effect (the best 18-year-old gains more
- *   per day than the best 26-year-old), so there are no separate age factors.
+ *   schedule (0 of 10,158 days moved two skills). Pace counts the points that
+ *   went into the five rated skills: every position weighs them summing to 3,
+ *   so a balanced rating point costs 3 of them. Shooting and blocking feed
+ *   only the game engine's bonuses, not the rating.
  * - Height grows 4-14 cm a season and stops at 18-22. The rating's height
  *   modifier depends on it, so projections grow it too.
  *
@@ -23,8 +25,10 @@ import { calculateBasketballPositions } from "@/sports/basketball/calculations/p
 import { positionSettings } from "@/sports/basketball/settings";
 import { basketballPlayerProfile } from "@/sports/basketball/playerProfile";
 import { calculateSkillWithExp } from "@/base/calculations";
-import { SkilledEntry, cleanedGains, daysBetween } from "@/base/gainCleaning";
-import { smoothFromPeak } from "@/base/smoothFromPeak";
+import { daysBetween, measureSkilledWindow } from "@/base/gainCleaning";
+import { createOrModel } from "@/base/orGrowth";
+import { smoothedOrSeasonGains, smoothedSeasonGains } from "@/base/relativeSkillFit";
+import { relativeOrReference, relativeSkillReference } from "@/sports/basketball/relativeSkillReference";
 
 type Skill = keyof BasketballSkills;
 
@@ -77,6 +81,14 @@ export const CAMP_UNTIL_AGE = 25;
  */
 export const CAMP_LOOKBACK_DAYS = 84;
 
+/** The pace window, its minimum and the camp record, shared by the skill and OR paces. */
+const SKILLED_WINDOW = {
+  windowDays: PACE_WINDOW_DAYS,
+  provisionalMinDays: PACE_PROVISIONAL_MIN_DAYS,
+  camps: { maxDaysPerSeason: CAMP_MAX_DAYS_PER_SEASON, lookbackDays: CAMP_LOOKBACK_DAYS },
+  cleaning: CLEANING,
+};
+
 /**
  * Height grows from 15 at a steady per-player rate (2.6-8.6 cm a season) and
  * stops at 17.9-19.8 - most players around 19. Projections extend a
@@ -84,58 +96,76 @@ export const CAMP_LOOKBACK_DAYS = 84;
  */
 export const HEIGHT_STOP_AGE = 19;
 
-/** The fewest normal days a player needs at an age to set the reference there. */
-export const REFERENCE_MIN_DAYS = 28;
-
-/** Ages the reference covers. Past 34 players decline; projections stop there. */
+/** Ages the reference covers. Past 34 the line declines; projections stop there. */
 export const REFERENCE_FIRST_AGE = 15;
 export const REFERENCE_LAST_AGE = 34;
 
+/** Every position's rated-skill weights sum to 3: a balanced rating point costs 3 skill points. */
+export const RATED_WEIGHT_SUM = 3;
+
 /**
- * Fallback reference, in skill points per normal (camp-free) day: the best
- * squad player at each age, smoothed, from the Sep 2026 backup (20 players,
- * 10,178 days, 70-day seasons). 28+ rests on one player, so the drop
- * from 27 is uncertain. Used for ages the user's own history doesn't cover yet,
- * scaled to meet the measured curve - so a new user, or an age nobody on the
- * squad has reached, still gets a sensible shape.
+ * The 100% rate: the top-5% line's rating gain (no XP) per 70-day season,
+ * smoothed - fitted unimodal, then 1-2-1 averaged, as hockey's and soccer's
+ * (src/base/relativeSkillFit.ts). On the 2026-11-22 line: 15:34 16:38 17:36
+ * 18:31 20:28 22-24:27.5 26:25 27:20.5 28:13.4 29:7.3 30:4.3 32:3.1 34:0.8.
  */
-export const DEFAULT_REFERENCE: Readonly<Record<number, number>> = {
-  15: 1.25,
-  16: 1.15,
-  17: 1.13,
-  18: 1.13,
-  19: 1.03,
-  20: 1.03,
-  21: 0.96,
-  22: 0.91,
-  23: 0.91,
-  24: 0.91,
-  25: 0.76,
-  26: 0.65,
-  27: 0.6,
-  28: 0.23,
-  29: 0.17,
-  30: 0.13,
-  31: 0.07,
-  32: 0.03,
-  33: 0,
-  34: 0,
-};
+export const SMOOTHED_SEASON_GAINS = smoothedSeasonGains(relativeSkillReference);
+
+/**
+ * How fast players train at each age relative to ages up to 21, at the
+ * user's team, against that rate. Measured 2026-11-23 with
+ * scripts/measure-age-factors.ts SPORT=basketball ERA_START=2000-01-01 on the
+ * 2026-11-22 backup (all history: no facility change is known; since
+ * 2025-12-01 the bands hold 19 / 9 / 5 / 1 players and read 1.00 / 0.94 /
+ * 0.79 / 0.37), median pace 50% at <=21:
+ *
+ *   <=21   1.00   23 players, the reference
+ *   22-24  1.00   11 players
+ *   25-27  0.84    7 players
+ *   28+    0.84   carried from 25-27: 3 players (measured 0.68) are too few,
+ *                 so after 27 only the line's smoothed rate slows further
+ *                 (20.5 a season at 27, 13.4 at 28, 7.3 at 29). The user's
+ *                 rule: where the data is too thin, the smoothed rate.
+ */
+export const AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 22, factor: 1.0 },
+  { fromAge: 25, factor: 0.84 },
+  { fromAge: 28, factor: 0.84 },
+];
+
+const factorIn = (bands: readonly { fromAge: number; factor: number }[], age: number) =>
+  [...bands].reverse().find((band) => age >= band.fromAge)?.factor ?? 1;
+
+/** The skill pace's age factor at an exact age. */
+export const agePaceFactor = (age: number) => factorIn(AGE_PACE_FACTORS, age);
 
 export interface ReferencePoint {
   age: number;
-  /** Skill points per normal day that count as 100% at this age. */
+  /** Rated-skill points per normal (camp-free) day that count as 100% at this age. */
   perDay: number;
-  /** "squad": measured from the user's history; "default": filled in from DEFAULT_REFERENCE. */
-  source: "squad" | "default";
-  /** The best player at this age, before smoothing. Only for measured ages. */
-  bestPlayerId?: string;
-  bestPerDay?: number;
-  /** How many players had enough days at this age. */
-  players?: number;
+  /** The rating gain per season behind it: the smoothed top-5% rate. */
+  ratingPerSeason: number;
 }
 
 export type ReferenceCurve = ReferencePoint[];
+
+/**
+ * A reference curve from rating gains per season: per whole age from 15 to
+ * 34, the rated points a day a balanced player needs to gain them
+ * (gain x RATED_WEIGHT_SUM / 70). A gain at or below 0 reads 0: no pace there.
+ */
+export function referenceCurveFromGains(gains: Readonly<Record<number, number>>): ReferenceCurve {
+  const curve: ReferenceCurve = [];
+  for (let age = REFERENCE_FIRST_AGE; age <= REFERENCE_LAST_AGE; age++) {
+    const ratingPerSeason = Math.max(0, gains[age] ?? 0);
+    curve.push({ age, perDay: (ratingPerSeason * RATED_WEIGHT_SUM) / DAYS_PER_SEASON, ratingPerSeason });
+  }
+  return curve;
+}
+
+/** The top-5% line as the pace reference: what the report, the chart and the checks read. */
+export const BASKETBALL_REFERENCE_CURVE = referenceCurveFromGains(SMOOTHED_SEASON_GAINS);
 
 type HistoryEntry = {
   playerId: string;
@@ -144,110 +174,12 @@ type HistoryEntry = {
   height?: number;
 };
 
-type Skilled = SkilledEntry<Skill> & HistoryEntry & { skills: BasketballSkills };
-
-const hasSkills = (entry: HistoryEntry): entry is Skilled => !!entry.skills;
+type Skilled = HistoryEntry & { skills: BasketballSkills };
 
 /** Age on an entry's date, counting a season as daysPerSeason (70) calendar days. */
 export function entryAge(date: string, currentExactAge: number, today: number = Date.now()): number {
   const daysAgo = (today - Date.parse(`${date}T00:00:00`)) / 86_400_000;
   return currentExactAge - daysAgo / DAYS_PER_SEASON;
-}
-
-/**
- * Builds the reference from every player's history: at each age, the best
- * player's skill points per normal day (no-training and camp days skipped,
- * only players with REFERENCE_MIN_DAYS measured day by day).
- *
- * The raw best is jagged - a different player is best at each age, so 24 can
- * read higher than 23. After the peak the curve is made non-increasing
- * (pool-adjacent-violators: a rise is averaged with the ages before it), so a
- * projection never speeds up with age just because of who happened to be on
- * the squad. Ages without enough data come from DEFAULT_REFERENCE, scaled by
- * the nearest measured age's ratio to it.
- */
-export function buildReferenceCurve(
-  historyByPlayer: Map<string, HistoryEntry[]>,
-  exactAgeByPlayer: Map<string, number>,
-  today: number = Date.now()
-): ReferenceCurve {
-  const best = new Map<number, { perDay: number; playerId: string; players: number }>();
-
-  historyByPlayer.forEach((entries, playerId) => {
-    const exactAge = exactAgeByPlayer.get(playerId);
-    if (exactAge === undefined) return;
-
-    const byAge = new Map<number, Skilled[]>();
-    entries
-      .filter(hasSkills)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .forEach((entry) => {
-        const age = Math.floor(entryAge(entry.date, exactAge, today));
-        const list = byAge.get(age);
-        if (list) list.push(entry);
-        else byAge.set(age, [entry]);
-      });
-
-    byAge.forEach((segment, age) => {
-      if (segment.length < 2) return;
-      const span = daysBetween(segment[0].date, segment[segment.length - 1].date);
-      const cleaned = cleanedGains(segment, BASKETBALL_SKILLS, span, CLEANING);
-      // Mostly day-by-day data only: a pair of profile visits months apart
-      // can't be cleaned of camps and would let another team's player set
-      // the bar. A missed day here and there is fine.
-      if (cleaned.measuredDailyDays < REFERENCE_MIN_DAYS) return;
-      if (cleaned.measuredDailyDays < 0.8 * cleaned.measuredDays) return;
-      const total = BASKETBALL_SKILLS.reduce((sum, skill) => sum + cleaned.gains[skill], 0);
-      const perDay = total / cleaned.measuredDays;
-      const current = best.get(age);
-      if (!current) best.set(age, { perDay, playerId, players: 1 });
-      else {
-        current.players++;
-        if (perDay > current.perDay) {
-          current.perDay = perDay;
-          current.playerId = playerId;
-        }
-      }
-    });
-  });
-
-  const measuredAges = [...best.keys()]
-    .filter((age) => age >= REFERENCE_FIRST_AGE && age <= REFERENCE_LAST_AGE)
-    .sort((a, b) => a - b);
-
-  const smoothed = smoothFromPeak(
-    new Map(measuredAges.map((age) => [age, best.get(age)!.perDay]))
-  );
-
-  const curve: ReferenceCurve = [];
-  for (let age = REFERENCE_FIRST_AGE; age <= REFERENCE_LAST_AGE; age++) {
-    const measured = smoothed.get(age);
-    if (measured !== undefined) {
-      const raw = best.get(age)!;
-      curve.push({
-        age,
-        perDay: measured,
-        source: "squad",
-        bestPlayerId: raw.playerId,
-        bestPerDay: raw.perDay,
-        players: raw.players,
-      });
-      continue;
-    }
-    // Scale the default by the nearest measured age's ratio to it, so the
-    // filled-in part meets the measured part instead of jumping.
-    const nearest = measuredAges.reduce<number | null>(
-      (found, candidate) =>
-        found === null || Math.abs(candidate - age) < Math.abs(found - age) ? candidate : found,
-      null
-    );
-    const scale =
-      nearest !== null && DEFAULT_REFERENCE[nearest] > 0
-        ? smoothed.get(nearest)! / DEFAULT_REFERENCE[nearest]
-        : 1;
-    curve.push({ age, perDay: (DEFAULT_REFERENCE[age] ?? 0) * scale, source: "default" });
-  }
-  return curve;
 }
 
 /** The reference's points per normal day at an exact age (constant within each year). */
@@ -257,14 +189,16 @@ export function referencePerDay(curve: ReferenceCurve, age: number): number | nu
 }
 
 export interface BasketballPace {
-  /** Skill points per normal (camp-free, training) day. */
+  /** Skill points per normal (camp-free, training) day, all seven skills. */
   pointsPerDay: number;
   pointsPerSeason: number;
+  /** The part of pointsPerDay that went into the five rated skills - what pace counts. */
+  ratedPointsPerDay: number;
   /** Share of the points each skill got - the manager's training schedule. */
   skillShares: Record<Skill, number>;
-  /** The reference's points per day at the window's midpoint age, or null past the curve. */
+  /** The reference's rated points per day at the window's midpoint age, or null past the curve. */
   referencePerDay: number | null;
-  /** pointsPerDay / referencePerDay: 1.0 = trains like the squad's best at that age. */
+  /** ratedPointsPerDay / referencePerDay: 1.0 = the top-5% line's rating growth at that age. */
   pace: number | null;
   midAge: number;
   fromDate: string;
@@ -287,46 +221,23 @@ export interface BasketballPace {
 export function measureBasketballPace(
   entries: HistoryEntry[],
   currentExactAge: number,
-  curve: ReferenceCurve,
+  curve: ReferenceCurve = BASKETBALL_REFERENCE_CURVE,
   today: number = Date.now()
 ): BasketballPace | null {
-  const usable = entries.filter(hasSkills).sort((a, b) => a.date.localeCompare(b.date));
-  if (usable.length < 2) return null;
-
-  const last = usable[usable.length - 1];
-  const first = usable.find((entry) => daysBetween(entry.date, last.date) <= PACE_WINDOW_DAYS);
-  if (!first || first === last) return null;
-
-  const window = usable.slice(usable.indexOf(first));
-  const spanDays = daysBetween(first.date, last.date);
-  const cleaned = cleanedGains(window, BASKETBALL_SKILLS, spanDays, CLEANING);
-  if (cleaned.measuredDays < PACE_PROVISIONAL_MIN_DAYS) return null;
+  const measured = measureSkilledWindow(entries, BASKETBALL_SKILLS, SKILLED_WINDOW);
+  if (!measured) return null;
+  const { usable, first, last, spanDays, cleaned, campDaysPerSeason, campDaysAssumed } = measured;
 
   const total = BASKETBALL_SKILLS.reduce((sum, skill) => sum + cleaned.gains[skill], 0);
   const pointsPerDay = total / cleaned.measuredDays;
+  const ratedPointsPerDay =
+    RATED_SKILLS.reduce((sum, skill) => sum + cleaned.gains[skill], 0) / cleaned.measuredDays;
   const skillShares = Object.fromEntries(
     BASKETBALL_SKILLS.map((skill) => [
       skill,
       total > 0 ? Math.max(0, cleaned.gains[skill]) / total : 0,
     ])
   ) as Record<Skill, number>;
-
-  // Camps come every ~70 days, so a full season is read, not just the window.
-  const seasonStart = usable.find(
-    (entry) => daysBetween(entry.date, last.date) <= CAMP_LOOKBACK_DAYS
-  )!;
-  const campDaysAssumed = daysBetween(usable[0].date, last.date) < CAMP_LOOKBACK_DAYS;
-  const campDaysPerSeason = campDaysAssumed
-    ? CAMP_MAX_DAYS_PER_SEASON
-    : Math.min(
-        CAMP_MAX_DAYS_PER_SEASON,
-        cleanedGains(
-          usable.slice(usable.indexOf(seasonStart)),
-          BASKETBALL_SKILLS,
-          daysBetween(seasonStart.date, last.date),
-          CLEANING
-        ).skippedCampDays
-      );
 
   const midAge =
     (entryAge(first.date, currentExactAge, today) + entryAge(last.date, currentExactAge, today)) / 2;
@@ -335,9 +246,10 @@ export function measureBasketballPace(
   return {
     pointsPerDay,
     pointsPerSeason: pointsPerDay * DAYS_PER_SEASON,
+    ratedPointsPerDay,
     skillShares,
     referencePerDay: reference,
-    pace: reference && reference > 0 ? pointsPerDay / reference : null,
+    pace: reference && reference > 0 ? ratedPointsPerDay / reference : null,
     midAge,
     fromDate: first.date,
     toDate: last.date,
@@ -368,12 +280,14 @@ function measureHeightGrowth(usable: Skilled[]): number {
 }
 
 /**
- * Reference points between two ages at a pace, with the camp allowance: each
- * camp day before CAMP_UNTIL_AGE adds CAMP_DAY_EXTRA of a normal day. The
- * reference is camp-free, so camps have to be added back here.
+ * A rate's rise between two ages, each year weighted by its age factor and,
+ * before CAMP_UNTIL_AGE, by the camp allowance (each camp day adds
+ * CAMP_DAY_EXTRA of a normal day; the rate is camp-free). Stops after
+ * REFERENCE_LAST_AGE. Shared by the skill and OR references.
  */
-export function referencePointsBetween(
-  curve: ReferenceCurve,
+function adjustedRiseBetween(
+  perSeason: (age: number) => number,
+  factor: (age: number) => number,
   fromAge: number,
   toAge: number,
   campDaysPerSeason: number
@@ -384,12 +298,86 @@ export function referencePointsBetween(
   let age = fromAge;
   while (age < endAge) {
     const segmentEnd = Math.min(Math.floor(age) + 1, endAge);
-    const perDay = referencePerDay(curve, age) ?? 0;
     const camps = age < CAMP_UNTIL_AGE ? campBoost : 1;
-    total += perDay * DAYS_PER_SEASON * camps * (segmentEnd - age);
+    total += perSeason(age) * factor(age) * camps * (segmentEnd - age);
     age = segmentEnd;
   }
   return total;
+}
+
+/**
+ * The reference's rated points between two ages, with the age factors and
+ * the camp allowance - what a 100% (underlying) pace spends on the rating.
+ */
+export function referencePointsBetween(
+  curve: ReferenceCurve,
+  fromAge: number,
+  toAge: number,
+  campDaysPerSeason: number
+): number {
+  return adjustedRiseBetween(
+    (age) => (referencePerDay(curve, age) ?? 0) * DAYS_PER_SEASON,
+    agePaceFactor,
+    fromAge,
+    toAge,
+    campDaysPerSeason
+  );
+}
+
+/** The top-5% OR line's smoothed gain per season (smoothedOrSeasonGains), by whole age. */
+export const OR_SMOOTHED_SEASON_GAINS = smoothedOrSeasonGains(relativeOrReference);
+
+/**
+ * The OR pace's age factors, the same bands and data as AGE_PACE_FACTORS
+ * (scripts/measure-age-factors.ts SPORT=basketball METRIC=or
+ * ERA_START=2000-01-01; OR pace 65% at <=21): 1.00 / 0.81 / 0.47, 28+
+ * carried from 25-27 (3 players measured 0.41). The OR line's rate peaks at
+ * 25-26 (145 a season against 95 at 15-21) while the squad keeps slowing, so
+ * the OR factors fall further than the skill ones.
+ */
+export const OR_AGE_PACE_FACTORS: readonly { fromAge: number; factor: number }[] = [
+  { fromAge: 0, factor: 1.0 },
+  { fromAge: 22, factor: 0.81 },
+  { fromAge: 25, factor: 0.47 },
+  { fromAge: 28, factor: 0.47 },
+];
+
+const orRateAt = (age: number): number | null => {
+  if (!Number.isFinite(age) || age >= REFERENCE_LAST_AGE + 1) return null;
+  const gain = OR_SMOOTHED_SEASON_GAINS[Math.floor(age)];
+  return gain !== undefined && gain > 0 ? gain : null;
+};
+
+/**
+ * The OR view's model (createOrModel in src/base/orGrowth.ts), as hockey's and
+ * soccer's: OR points per season against the top-5% OR line's smoothed gain
+ * at the window's middle age, its own age factors, the camp allowance, and
+ * projections to REFERENCE_LAST_AGE + 1. For a player with skills it is
+ * measured on the skill pace's window over all seven skills, while that
+ * window is fresh (OR_BASIS_AFTER_DAYS); an unscouted player's, or one seen
+ * only on his profile since, is read from his OR numbers end to end.
+ */
+export function basketballOrModel(today: number = Date.now()) {
+  const orFactor = (age: number) => factorIn(OR_AGE_PACE_FACTORS, age);
+  return createOrModel({
+    gain: {
+      skillNames: BASKETBALL_SKILLS,
+      daysPerSeason: DAYS_PER_SEASON,
+      pace: {
+        windowDays: PACE_WINDOW_DAYS,
+        minSpanDays: PACE_MIN_SPAN_DAYS,
+        provisionalMinDays: PACE_PROVISIONAL_MIN_DAYS,
+      },
+      camps: SKILLED_WINDOW.camps,
+      cleaning: CLEANING,
+    },
+    ageOn: (date, currentExactAge) => entryAge(date, currentExactAge, today),
+    expectedSeasonGain: orRateAt,
+    agePaceFactor: orFactor,
+    adjustedGainBetween: (fromAge, toAge, campDays) =>
+      adjustedRiseBetween((age) => orRateAt(age) ?? 0, orFactor, fromAge, toAge, campDays),
+    maxAge: REFERENCE_LAST_AGE + 1,
+  });
 }
 
 /**
@@ -457,13 +445,15 @@ export interface BasketballProjection {
 
 /**
  * Where the player lands at `targetAge` if they keep training at the same
- * fraction of the reference:
+ * fraction of the top-5% line's rate:
  *
- * - Points = pace x the reference's points from now to the target, camps included.
- * - Shooting and blocking get their current share of those points (the
- *   manager's schedule); the rest goes into the five rated skills, spent
- *   balanced for each position in turn. The best resulting position wins, so
+ * - Rated points = the pace, with the age factor it was measured at divided
+ *   out, x the reference's rated points from now to the target (each year's
+ *   factor and camps included). They go into the five rated skills, spent
+ *   balanced for each position in turn; the best resulting position wins, so
  *   a growing 16-year-old can project into a different position.
+ * - Shooting and blocking keep their own observed rate, carried along the
+ *   same age-adjusted curve (as hockey's non-main skills).
  * - Height keeps its observed rate until HEIGHT_STOP_AGE.
  *
  * Null without a pace, or at or past the target.
@@ -479,12 +469,24 @@ export function projectBasketball(
   if (!skills || !pace || pace.pace === null) return null;
   if (currentExactAge >= targetAge) return null;
 
-  const points =
-    Math.max(0, pace.pace) *
-    referencePointsBetween(curve, currentExactAge, targetAge, pace.campDaysPerSeason);
-
-  const ratedShare = RATED_SKILLS.reduce((sum, skill) => sum + pace.skillShares[skill], 0);
-  const ratedPoints = points * ratedShare;
+  const measuredFactor = agePaceFactor(pace.midAge);
+  const curvePoints = referencePointsBetween(curve, currentExactAge, targetAge, pace.campDaysPerSeason);
+  const ratedPoints = (Math.max(0, pace.pace) / measuredFactor) * curvePoints;
+  // Normal training days the curve's rise stands for, at the measured age's
+  // rate and factor: the bonus skills' own rates are carried over these.
+  // curvePoints already sums each future age's own rate x factor x camps, so
+  // this is the per-age sum of (rate at age / rate measured) x (factor at age
+  // / factor measured) x days: the bonus skills slow with the line, age by
+  // age, as in src/base/growthModel.ts projectSkills. So the bonus skills
+  // never outrun their own rate by more than the line rises after the
+  // measured age: from 16 it doesn't rise, and measured at 15 they follow the
+  // line's rise from 15 to 16. A small measured rate can't inflate it. The
+  // basketball-growth check sums it a year at a time and checks that bound
+  // for every measured age from 15.
+  const curveDays =
+    pace.referencePerDay && pace.referencePerDay > 0 ? curvePoints / (pace.referencePerDay * measuredFactor) : 0;
+  const bonusPoints = (skill: Skill) => Math.max(0, pace.pointsPerDay * pace.skillShares[skill]) * curveDays;
+  const points = ratedPoints + bonusPoints("shooting") + bonusPoints("blocking");
 
   const growthUntil = Math.min(targetAge, HEIGHT_STOP_AGE);
   const projectedHeight =
@@ -500,8 +502,8 @@ export function projectBasketball(
     (Object.entries(position.ratios) as [Skill, number][]).forEach(([skill, ratio]) => {
       projected[skill] = Math.max(skills[skill], rating * ratio);
     });
-    projected.shooting = skills.shooting + points * pace.skillShares.shooting;
-    projected.blocking = skills.blocking + points * pace.skillShares.blocking;
+    projected.shooting = skills.shooting + bonusPoints("shooting");
+    projected.blocking = skills.blocking + bonusPoints("blocking");
 
     const withHeight = calculateBasketballPositions(projected, projectedHeight, 0, positionSettings).find(
       (p) => p.name === position.name

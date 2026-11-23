@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import {
   ratingSettings,
 } from "@/sports/hockey/settings";
@@ -5,7 +6,7 @@ import {
   renderTableCell,
   renderComparison,
   renderPotentialBadge,
-  renderRelativeSkill,
+  renderPlayerRelativeSkill,
 } from "@/base/render";
 import { getCurrentSeasonDay } from "@/utils/dom";
 import {
@@ -18,6 +19,7 @@ import {
  */
 
 const viewMarket = () => {
+  const league = loadLeagueReference("hockey");
   const table = document.getElementById("table-1");
 
   if (!table) {
@@ -132,11 +134,7 @@ const viewMarket = () => {
 
     const relativeCell = document.createElement("td");
 
-    const relativeSkill = renderRelativeSkill(
-      player.age,
-      bestPosition.ratingWithXp,
-      player.getMaxSkillForAge()
-    );
+    const relativeSkill = renderPlayerRelativeSkill(player, bestPosition.ratingWithXp, league);
     relativeCell.classList.add(`${rowClass}td2`);
     relativeCell.appendChild(relativeSkill);
 

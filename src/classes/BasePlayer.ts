@@ -1,4 +1,6 @@
 import { PlayerCalculationProfile } from "@/classes/playerProfile";
+import { RelativeSkillMaxima } from "@/base/relativeSkill";
+import { GrowthPrediction } from "@/types/GrowthData";
 import {
   calculatePositionTrainingQualities,
   calculatePositions,
@@ -40,6 +42,8 @@ export abstract class BasePlayer {
   public skills: Record<string, number> | undefined;
   public trainingQualities: Record<string, number> | undefined;
   public experience: number;
+  /** False when `experience` is the age-based guess, not a value the page showed. */
+  public experienceKnown: boolean;
   public age: number;
   public careerLongitivity: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   public overallRating: number;
@@ -79,6 +83,7 @@ export abstract class BasePlayer {
 
     this.skills = skills || undefined;
     this.experience = experience ?? (this.age - 15) * 8;
+    this.experienceKnown = experience !== undefined;
     this.trainingQualities = trainingQualities || undefined;
     this.updatedAt = updatedAt;
     this.injuryDays = injuryDays;
@@ -191,6 +196,11 @@ export abstract class BasePlayer {
     return (this.overallRating - 100) / 2;
   }
 
+  /**
+   * The global 100% of relative skill at the player's exact age: the rating
+   * with XP of a top-5% player among every scouted team. 0 outside the
+   * table's ages.
+   */
   getMaxSkillForAge(): number {
     const profile = this.getCalculationProfile();
 
@@ -198,7 +208,32 @@ export abstract class BasePlayer {
       this.age,
       this.seasonDay,
       profile.daysPerSeason,
-      profile.growthPrediction
+      profile.relativeSkillReference
     );
+  }
+
+  /**
+   * Whether the skills were read: an unscouted player's page shows only OR,
+   * so his rating is a guess from OR, and relative skill can't be worked out.
+   */
+  hasKnownSkills(): boolean {
+    const profile = this.getCalculationProfile();
+    return this.skills !== undefined && (!profile.requiresVisibility || this.isVisible);
+  }
+
+  /**
+   * Both 100% values: global, and the viewer's league from `league` - the
+   * table the view loaded (src/base/scout/leagueRelativeSkill.ts), or null
+   * when there is none. Null where the table has no value for the age, and
+   * both null (skillsUnknown) for a player whose skills weren't read.
+   */
+  getRelativeSkillMaxima(league: GrowthPrediction | null): RelativeSkillMaxima {
+    if (!this.hasKnownSkills()) return { global: null, league: null, skillsUnknown: true };
+    const profile = this.getCalculationProfile();
+    const leagueMax = league
+      ? calculateProjectedMaxSkillForAge(this.age, this.seasonDay, profile.daysPerSeason, league)
+      : 0;
+
+    return { global: this.getMaxSkillForAge() || null, league: leagueMax || null };
   }
 }

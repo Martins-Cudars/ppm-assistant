@@ -1,35 +1,31 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import {
+  LeagueLineStatus,
+  RelativeSkillMaxima,
+  relativeSkillClass,
+  relativeSkillView,
+} from "@/base/relativeSkill";
 
 const props = defineProps<{
   skill: number;
-  maxSkillForAge: number;
+  /** player.getRelativeSkillMaxima(league table). */
+  maxima: RelativeSkillMaxima;
+  /** The player's whole age, named when there is no reference for it. */
+  age: number;
+  /** Why the league value may be missing (leagueLine(sport).status). */
+  leagueStatus: LeagueLineStatus;
 }>();
 
-const relativeSkill = computed(() => {
-  if (!props.maxSkillForAge) return 0;
-  return Math.round((props.skill / props.maxSkillForAge) * 100);
-});
-
-const relativeSkillClass = computed(() => {
-  const rounded = Math.floor(relativeSkill.value / 5) * 5;
-  return `relative-skill--${rounded}`;
-});
+const view = computed(() => relativeSkillView(props.skill, props.maxima, props.age, props.leagueStatus));
 </script>
 
 <template>
-  <div class="relative-skill" :class="relativeSkillClass">
-    {{ relativeSkill }}%
+  <div class="relative-skill" :title="view.title">
+    <span v-if="view.global !== null" :class="relativeSkillClass(view.global)">{{ view.global }}%</span>
+    <span v-else class="relative-skill__none">???</span>
+    <span class="relative-skill__separator"> / </span>
+    <span v-if="view.league !== null" :class="relativeSkillClass(view.league)">{{ view.league }}%</span>
+    <span v-else class="relative-skill__none">???</span>
   </div>
 </template>
-
-<style scoped>
-/* Styles are likely global or imported, but we can add scoped styles if needed. 
-   The original code used classes like 'relative-skill--95'. 
-   We assume these classes are defined in the global CSS. 
-*/
-.relative-skill {
-  font-weight: bold;
-  text-align: center;
-}
-</style>

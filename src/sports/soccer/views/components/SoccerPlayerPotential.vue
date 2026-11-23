@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { potentialGrade } from "@/base/utilities";
-import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
+import { SoccerPlayer, SoccerPlayerPositionName } from "@/sports/soccer/classes/SoccerPlayer";
 
 const props = defineProps<{
   player: SoccerPlayer;
@@ -34,7 +34,7 @@ const props = defineProps<{
 const potentials = computed(() => props.player.getPositionTrainingQualities());
 const currentPositionTrainingQuality = computed(() =>
   props.player.getPositionTrainingQuality(
-    props.player.getBestPosition().name
+    props.player.getBestPosition().name as SoccerPlayerPositionName
   ) ?? props.player.getBestPositionTrainingQuality()
 );
 const potentialGradeObj = computed(() =>

@@ -8,6 +8,9 @@
 import { HockeyPlayer } from "@/sports/hockey/classes/HockeyPlayer";
 import { hockeyPlayerProfile } from "@/sports/hockey/playerProfile";
 import { calculatePositions } from "@/classes/playerCalculations";
+import { hockeyGrowthConfig } from "@/sports/hockey/growthPace";
+import type { GrowthMetric } from "@/components/growthMetric";
+import { historyChartPoints, overallOrSkillSum } from "@/base/historyDownsample";
 import { SkillHistoryEntry } from "@/types/SkillHistory";
 
 /**
@@ -70,19 +73,25 @@ export function readEntryBaseRating(entry: SkillHistoryEntry): number | null {
 }
 
 /**
- * Converts a single history entry into a {x: age, y: base rating} chart point,
- * or null when the entry has no skills to derive a rating from.
+ * The entry's overall rating, or the sum of its floored skills when only a
+ * full set of skills was stored (overallOrSkillSum). Null when it has neither.
  */
-export function historyEntryToAgePoint(
-  entry: SkillHistoryEntry,
-  currentExactAge: number
-): { x: number; y: number } | null {
-  const bestRating = readEntryBaseRating(entry);
-  if (bestRating === null) return null;
-
-  return { x: historyEntryAge(entry, currentExactAge), y: bestRating };
+export function entryOverallRating(entry: SkillHistoryEntry): number | null {
+  return overallOrSkillSum(readEntryOverallRating(entry), entry.skills, hockeyGrowthConfig.skillNames);
 }
 
+/** One player's history as age points for a metric (historyChartPoints). */
+export function historyPoints(
+  entries: SkillHistoryEntry[],
+  currentExactAge: number,
+  metric: GrowthMetric
+): { x: number; y: number }[] {
+  return historyChartPoints(
+    entries,
+    metric === "or" ? entryOverallRating : readEntryBaseRating,
+    (entry) => historyEntryAge(entry, currentExactAge)
+  );
+}
 
 // Chart thinning is shared with basketball; re-exported so hockey imports keep working.
 export { CHART_BUCKET_DAYS, downsampleHistory } from "@/base/historyDownsample";

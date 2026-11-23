@@ -266,9 +266,17 @@
   width: 100%;
 }
 
-/** Relative Skills */
+/** Relative Skills: "87% / 95%" (global / league), "–" outside the table's ages */
 .relative-skill {
   font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.relative-skill__separator,
+.relative-skill__none {
+  font-weight: normal;
+  color: #999;
 }
 
 .relative-skill--100,

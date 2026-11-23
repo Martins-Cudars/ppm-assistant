@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import PlayerListTable from "./components/PlayerListTable.vue";
@@ -173,6 +174,8 @@ const viewPlayerList = () => {
 
   try {
     const pinia = createPinia();
+    // Relative skill's league value: fetched once here, read by the components.
+    void loadLeagueReference("hockey");
     const app = createApp(PlayerListTable);
     app.use(pinia);
 

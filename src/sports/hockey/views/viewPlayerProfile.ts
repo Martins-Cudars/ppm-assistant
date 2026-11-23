@@ -1,3 +1,4 @@
+import { loadLeagueReference } from "@/base/scout/leagueRelativeSkill";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import {
@@ -189,6 +190,8 @@ const viewPlayerProfile = () => {
     sidebarContainer.id = "ppm-assistant-sidebar";
     contentColumn.appendChild(sidebarContainer);
 
+    // Relative skill's league value: fetched once here, read by the components.
+    void loadLeagueReference("hockey");
     const sidebarApp = createApp(PlayerSidebar, { player });
     const pinia = createPinia();
     sidebarApp.use(pinia);

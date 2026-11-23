@@ -34,7 +34,12 @@ function averageQuality(
   return Math.floor(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
 
+/**
+ * `seasonDay` is the page's (getCurrentSeasonDay()), read once by the view
+ * rather than from the DOM for every row.
+ */
 function createPlayer(
+  seasonDay: number,
   baseInfo: BasketballPlayerInfo,
   skills: BasketballSkills,
   experience?: number,
@@ -50,7 +55,7 @@ function createPlayer(
     },
     new Date(),
     true,
-    1,
+    seasonDay,
     skills,
     experience ?? (baseInfo.age > 0 ? undefined : 0),
     qualities
@@ -69,7 +74,10 @@ function extractSpanSkill(cell: HTMLTableCellElement): number {
   return parseNumber(cell.querySelector("span:first-child")?.textContent);
 }
 
-export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement): BasketballPlayer {
+export function parseBasketballPlayerFromListRow(
+  playerRow: HTMLTableRowElement,
+  seasonDay: number
+): BasketballPlayer {
   const playerColumns = playerRow.querySelectorAll("td");
 
   const skills: BasketballSkills = {
@@ -83,6 +91,7 @@ export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement)
   };
 
   return createPlayer(
+    seasonDay,
     {
       // The profile link specifically: the cell's *first* link is the country
       // flag (country-profile.html?data=lva), which made every row's id a
@@ -106,7 +115,10 @@ export function parseBasketballPlayerFromListRow(playerRow: HTMLTableRowElement)
   );
 }
 
-export function parseBasketballPlayerFromMarketRow(playerRow: HTMLTableRowElement): BasketballPlayer {
+export function parseBasketballPlayerFromMarketRow(
+  playerRow: HTMLTableRowElement,
+  seasonDay: number
+): BasketballPlayer {
   const playerColumns = playerRow.querySelectorAll("td");
   const playerQualities = playerRow.querySelectorAll(".kva");
 
@@ -131,6 +143,7 @@ export function parseBasketballPlayerFromMarketRow(playerRow: HTMLTableRowElemen
   };
 
   return createPlayer(
+    seasonDay,
     {
       id:
         playerColumns[0]?.querySelectorAll("a")[1]?.getAttribute("href") ?? "unknown",
@@ -150,11 +163,13 @@ export function parseBasketballPlayerFromMarketRow(playerRow: HTMLTableRowElemen
 }
 
 export function parseBasketballPlayerFromLineupRow(
-  playerRow: HTMLTableRowElement
+  playerRow: HTMLTableRowElement,
+  seasonDay: number
 ): BasketballPlayerWithId {
   const playerColumns = playerRow.querySelectorAll("td");
 
   const player = createPlayer(
+    seasonDay,
     {
       id:
         playerColumns[1]
@@ -187,7 +202,8 @@ export function parseBasketballPlayerFromLineupRow(
 }
 
 export function parseBasketballPlayerFromTrainingRow(
-  playerRow: HTMLTableRowElement
+  playerRow: HTMLTableRowElement,
+  seasonDay: number
 ): BasketballPlayer {
   const playerColumns = playerRow.querySelectorAll("td");
   const playerQualities = playerRow.querySelectorAll(".kva");
@@ -213,6 +229,7 @@ export function parseBasketballPlayerFromTrainingRow(
   };
 
   return createPlayer(
+    seasonDay,
     {
       id: "training-row",
       name: "Training Player",

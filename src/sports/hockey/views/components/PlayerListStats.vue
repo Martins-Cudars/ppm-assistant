@@ -9,16 +9,23 @@ const props = defineProps<{
   settings: RatingSettings;
 }>();
 
-const calculateAverage = (
+// Whole numbers without `decimals`, a fixed-decimal string with it.
+function calculateAverage(items: HockeyPlayer[], getValue: (p: HockeyPlayer) => number): number;
+function calculateAverage(
+  items: HockeyPlayer[],
+  getValue: (p: HockeyPlayer) => number,
+  decimals: number
+): number | string;
+function calculateAverage(
   items: HockeyPlayer[],
   getValue: (p: HockeyPlayer) => number,
   decimals = 0
-) => {
+) {
   if (items.length === 0) return decimals === 0 ? 0 : (0).toFixed(decimals);
   const sum = items.reduce((acc, p) => acc + getValue(p), 0);
   const avg = sum / items.length;
   return decimals === 0 ? Math.round(avg) : avg.toFixed(decimals);
-};
+}
 
 const top22 = computed(() => {
   return [...props.players]

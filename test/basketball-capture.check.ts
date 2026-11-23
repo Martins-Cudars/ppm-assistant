@@ -1,5 +1,6 @@
 /**
- * Assertions for src/sports/basketball/capture.ts - see test/README.md.
+ * Assertions for src/sports/basketball/capture.ts and the profile parser's
+ * unscouted case - see test/README.md.
  *
  * Basketball has no history page: these daily snapshots are the only history
  * it will ever have, so a malformed id or a dropped field is lost for good.
@@ -14,6 +15,8 @@ import {
   deserializeBasketballPlayer,
   normalizePlayerId,
 } from "@/sports/basketball/capture";
+import { parseBasketballPlayerFromProfilePage } from "@/sports/basketball/parsers/playerProfile";
+import { relativeSkillView } from "@/base/relativeSkill";
 
 let failures = 0;
 
@@ -143,6 +146,80 @@ check("a cached player comes back with the same position ratings, height include
   );
   eq(restored.teamId, "9", "team id carried over");
   eq(restored.updatedAt.toISOString(), "2026-10-01T10:00:00.000Z", "updated at");
+});
+
+// --- An unscouted player's profile page --------------------------------------
+// The user's live crash (2026-11-23): "Missing numeric value for selector:
+// #shooting". An unscouted profile shows "-" for every skill and quality; only
+// OR (KR), age, height, CL and a few info fields have values. The fixture is
+// the profile table's cells by selector, as the parser queries them.
+const unscoutedCells: Record<string, string> = {
+  "#age": "28",
+  "#index_skill": "2 712",
+  "#vyska": "201",
+  "#life_time span": "4/6",
+  "#shooting": "-",
+  "#block": "-",
+  "#passing": "-",
+  "#technique_attribute": "-",
+  "#speed": "-",
+  "#aggressivity": "-",
+  "#leaping": "-",
+  "#kva_shooting": "-",
+  "#kva_block": "-",
+  "#kva_passing": "-",
+  "#technique_quality": "-",
+  "#kva_speed": "-",
+  "#kva_aggressivity": "-",
+  // "#kva_leaping" and "#experience" missing altogether.
+};
+const fixture = (cells: Record<string, string>) =>
+  ({
+    querySelector: (selector: string) => (selector in cells ? { textContent: cells[selector] } : null),
+    querySelectorAll: () => [{ textContent: "Latvia" }, { textContent: "Unscouted Centre" }],
+  }) as unknown as ParentNode & Element;
+
+check("unscouted profile: parses without throwing; skills unknown, OR and age read", () => {
+  const player = parseBasketballPlayerFromProfilePage(fixture(unscoutedCells), fixture(unscoutedCells), 20, "77-c");
+  eq(player.skills, undefined, "skills");
+  eq(player.qualities, undefined, "qualities");
+  eq(player.overallRating, 2712, "OR");
+  eq(player.age, 28, "age");
+  eq(player.height, 201, "height");
+  eq(player.experienceKnown, false, "XP not shown, so not known");
+  eq(player.hasKnownSkills(), false, "skills known");
+  player.calculatePositions();
+  player.calculatePositionTrainingQualities();
+  const best = player.getBestPosition();
+  eq(Number.isFinite(best.ratingWithXp) && Number.isFinite(best.ratingWithBonus), true, "no NaN rating");
+  // The potential card reads the current position's quality: no throw, no NaN.
+  eq(Number.isFinite(player.getCurrentPositionTrainingQuality().totalTrainingQuality), true, "potential card");
+  const maxima = player.getRelativeSkillMaxima(null);
+  eq(maxima.skillsUnknown, true, "relative skill unknown");
+  const view = relativeSkillView(best.ratingWithXp, maxima, player.age, { kind: "fitted" });
+  eq(`${view.global}/${view.league}/${view.title}`, "null/null/Unscouted player: skills unknown", "??? / ???");
+
+  // History: an OR-only row, no skills and no guessed XP.
+  const entry = buildBasketballEntry(player, "PlayerProfile", "2026-11-23")!;
+  eq(entry.overallRating, 2712, "OR stored");
+  eq(entry.skills, undefined, "no skills stored");
+  eq(entry.experience, undefined, "no XP stored");
+  eq(entry.height, 201, "height stored");
+});
+
+check("scouted profile: still parsed in full", () => {
+  const cells = {
+    ...unscoutedCells,
+    "#shooting": "60", "#block": "40", "#passing": "120", "#technique_attribute": "110",
+    "#speed": "100", "#aggressivity": "30", "#leaping": "25",
+    "#kva_shooting": "70", "#kva_block": "70", "#kva_passing": "70", "#technique_quality": "70",
+    "#kva_speed": "70", "#kva_aggressivity": "70", "#kva_leaping": "70", "#experience": "105",
+  };
+  const player = parseBasketballPlayerFromProfilePage(fixture(cells), fixture(cells), 20, "77-c");
+  eq(player.skills?.jumping, 25, "skills");
+  eq(player.averageTrainingRatio, 70, "AvQ");
+  eq([player.experience, player.experienceKnown].join(), "105,true", "XP");
+  eq(buildBasketballEntry(player, "PlayerProfile", "2026-11-23")!.experience, 105, "XP stored");
 });
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

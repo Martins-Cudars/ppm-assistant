@@ -5,3 +5,4 @@ export type GrowthPredictionItem = {
 };
 
 export type GrowthPrediction = GrowthPredictionItem[];
+

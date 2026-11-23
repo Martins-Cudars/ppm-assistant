@@ -1,7 +1,7 @@
 import { parseLeagueIdentity, teamIdFromHref } from "@/base/scout/rosterParser";
 import { Sport } from "@/types/Sport";
 import { nextLeagueTeams } from "@/storage/scoutMerge";
-import { readLeagueTeams, saveLeagueTeams } from "@/storage/scoutSnapshotDb";
+import { loadLeagueTeams, saveLeagueTeams } from "@/storage/scoutSnapshotDb";
 import { getCurrentSeason, getUserTeamId } from "@/utils/dom";
 import { showScoutNote } from "./scoutNote";
 
@@ -45,7 +45,9 @@ const captureLeague = async (sport: Sport) => {
     !new URLSearchParams(window.location.search).has("data") &&
     (!headerLeague || headerLeague.toUpperCase() === pageLabel);
 
-  const stored = await readLeagueTeams(sport);
+  // Rejects when the stored list can't be read, so the capture stops there
+  // (viewLeague logs it) instead of taking it as no list and overwriting it.
+  const stored = await loadLeagueTeams(sport);
   const next = nextLeagueTeams(
     stored,
     { ...identity, teamIds, isDefaultPage },

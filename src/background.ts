@@ -21,6 +21,8 @@ import { mergeHistoryEntry } from "@/storage/historyMerge";
 import { OR_THOUSANDS_REPAIR_FLAG, repairedOverallRating } from "@/storage/historyRepair";
 import { ScoutCoverage, ScoutSnapshot, scoutStoreName } from "@/types/ScoutSnapshot";
 import { mergeScoutSnapshot } from "@/storage/scoutMerge";
+import { loadLeagueTeams } from "@/storage/scoutSnapshotDb";
+import { createLeagueReferenceFitter } from "@/storage/leagueReferenceFit";
 
 const DB_NAME = "ppm-assistant-skill-history";
 /**
@@ -96,6 +98,19 @@ async function upsertEntries(
   });
 }
 
+/**
+ * Bumped on every write to a sport's scout store, so the league fit's cache
+ * (src/storage/leagueReferenceFit.ts) sees a same-day merge that leaves the
+ * count unchanged. In memory: a restarted worker has no cache to invalidate.
+ *
+ * Bumped once the write's transaction has committed, never before: a fit
+ * running meanwhile could otherwise read the new version and the old
+ * snapshots, and cache the old fit under the new key. A fit that reads the
+ * old version and the new snapshots is harmless: the next one refits.
+ */
+const scoutWrites = new Map<Sport, number>();
+const bumpScoutWrites = (sport: Sport) => scoutWrites.set(sport, (scoutWrites.get(sport) ?? 0) + 1);
+
 /** Scouted roster snapshots: merged per player/day, like the history above. */
 async function upsertScoutSnapshots(snapshots: ScoutSnapshot[], sport: Sport): Promise<number> {
   if (snapshots.length === 0) return 0;
@@ -114,7 +129,10 @@ async function upsertScoutSnapshots(snapshots: ScoutSnapshot[], sport: Sport): P
       };
     });
 
-    tx.oncomplete = () => resolve(snapshots.length);
+    tx.oncomplete = () => {
+      bumpScoutWrites(sport);
+      resolve(snapshots.length);
+    };
     tx.onerror = () => reject(tx.error);
   });
 }
@@ -130,6 +148,18 @@ async function getAllScoutSnapshots(sport: Sport): Promise<ScoutSnapshot[]> {
     request.onerror = () => reject(request.error);
   });
 }
+
+async function countScoutSnapshots(sport: Sport): Promise<number> {
+  const db = await openDb();
+
+  return new Promise<number>((resolve, reject) => {
+    const request = db.transaction(scoutStoreName(sport), "readonly").objectStore(scoutStoreName(sport)).count();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+const fitLeagueReference = createLeagueReferenceFitter();
 
 /** Distinct players, teams and ages, counted over the store in one cursor pass. */
 async function getScoutCoverage(sport: Sport): Promise<ScoutCoverage> {
@@ -494,6 +524,14 @@ repairTruncatedOverallRatings().catch((error) => {
   console.error("[Background] OR repair failed:", error);
 });
 
+// The growth charts' Skill / OR choice lives in chrome.storage.session so
+// every sport subdomain, tab and the report page share it
+// (src/components/growthMetric.ts); content scripts can only reach that area
+// once it is opened to them. It holds nothing else.
+chrome.storage.session
+  ?.setAccessLevel?.({ accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" })
+  .catch((error) => console.error("[Background] Failed to open session storage:", error));
+
 chrome.runtime.onMessage.addListener(
   (message: SkillHistoryMessage, _sender, sendResponse: (response: SkillHistoryResponse) => void) => {
     // Messages from before basketball carry no sport; they're hockey's.
@@ -606,6 +644,20 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
+    if (message.type === "RELATIVE_SKILL_LEAGUE") {
+      fitLeagueReference(sport, message.currentSeason, {
+        readLeague: () => loadLeagueTeams(sport),
+        snapshotVersion: async () => `${scoutWrites.get(sport) ?? 0}:${await countScoutSnapshots(sport)}`,
+        readSnapshots: () => getAllScoutSnapshots(sport),
+      })
+        .then((result) => sendResponse({ type: "RELATIVE_SKILL_LEAGUE", ...result }))
+        .catch((error) => {
+          console.error("[Background] Failed to fit the league line:", error);
+          sendResponse({ type: "RELATIVE_SKILL_LEAGUE", table: null, status: { kind: "error" } });
+        });
+      return true;
+    }
+
     if (message.type === "SCOUT_COVERAGE") {
       getScoutCoverage(sport)
         .then((coverage) => sendResponse({ type: "SCOUT_COVERAGE", coverage }))
@@ -618,7 +670,11 @@ chrome.runtime.onMessage.addListener(
 
     if (message.type === "SCOUT_CLEAR") {
       clearEntries(sport, scoutStoreName(sport))
-        .then((cleared) => sendResponse({ type: "SCOUT_CLEAR", cleared }))
+        .then((cleared) => {
+          // After the commit, as in upsertScoutSnapshots.
+          bumpScoutWrites(sport);
+          sendResponse({ type: "SCOUT_CLEAR", cleared });
+        })
         .catch((error) => {
           console.error("[Background] Failed to clear scout snapshots:", error);
           sendResponse({ type: "SCOUT_CLEAR", cleared: null });

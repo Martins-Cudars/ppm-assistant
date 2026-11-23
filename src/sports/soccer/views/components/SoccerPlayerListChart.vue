@@ -25,7 +25,7 @@
 import { onMounted, ref, computed, watch } from "vue";
 import Chart from "chart.js/auto";
 import { SoccerPlayer } from "@/sports/soccer/classes/SoccerPlayer";
-import { playerGrowthPrediction } from "@/sports/soccer/settings";
+import { relativeSkillReference } from "@/sports/soccer/relativeSkillReference";
 import { getCurrentSeasonDay } from "@/utils/dom";
 
 const props = defineProps<{
@@ -105,12 +105,12 @@ const calculateData = () => {
 
   let projectedData: { x: number; y: number }[] = [];
   if (activeMetric.value === "skill") {
-    projectedData = playerGrowthPrediction.map((prediction) => ({
+    projectedData = relativeSkillReference.map((prediction) => ({
       x: prediction.age,
       y: Math.round(prediction.skill * (1 + prediction.exp / 500)),
     }));
   } else if (activeMetric.value === "exp") {
-    projectedData = playerGrowthPrediction.map((prediction) => ({
+    projectedData = relativeSkillReference.map((prediction) => ({
       x: prediction.age,
       y: prediction.exp,
     }));
@@ -130,7 +130,7 @@ const renderChart = () => {
     ...(projectedData.length
       ? [
           {
-            label: "Top Player Curve",
+            label: "Top 5% Curve",
             data: projectedData,
             borderColor: "#ccc",
             backgroundColor: "transparent",
@@ -138,6 +138,9 @@ const renderChart = () => {
             pointRadius: 0,
             showLine: true,
             tension: 0.4,
+            // Monotone: a plain spline overshoots between ages and bulges at the
+            // axis edge (the top line rose above 33 near 32.8 with 25-33 shown).
+            cubicInterpolationMode: "monotone" as const,
             order: 10,
           },
         ]

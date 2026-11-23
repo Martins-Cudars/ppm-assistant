@@ -175,15 +175,15 @@ export function calculateProjectedMaxSkillForAge(
   age: number,
   seasonDay: number,
   daysPerSeason: number,
-  playerGrowthPrediction: GrowthPrediction
+  reference: GrowthPrediction
 ): number {
-  const predictionByAge = playerGrowthPrediction.find((row) => row.age === age);
+  const predictionByAge = reference.find((row) => row.age === age);
 
   if (!predictionByAge) {
     return 0;
   }
 
-  const nextPrediction = playerGrowthPrediction.find((row) => row.age === age + 1);
+  const nextPrediction = reference.find((row) => row.age === age + 1);
 
   let skill = predictionByAge.skill;
   let exp = predictionByAge.exp;

@@ -1,3 +1,4 @@
+import { getCurrentSeasonDay } from "@/utils/dom";
 import { ratingSettings } from "@/sports/basketball/settings";
 import { BasketballPlayerPosition } from "@/sports/basketball/classes/BasketballPlayer";
 import { parseBasketballPlayerFromLineupRow } from "@/sports/basketball/parsers/playerRows";
@@ -42,9 +43,13 @@ const viewLineup = () => {
     }
   });
 
+  // Read once for the page, not per row.
+
+  const seasonDay = getCurrentSeasonDay();
+
   playerRows?.forEach((playerRow, index) => {
     playerRow.classList.add(`player-row`);
-    const parsed = parseBasketballPlayerFromLineupRow(playerRow);
+    const parsed = parseBasketballPlayerFromLineupRow(playerRow, seasonDay);
     parsed.player.calculatePositions();
     players.push({
       id: parsed.id,
